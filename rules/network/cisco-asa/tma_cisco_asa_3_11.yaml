@@ -1,0 +1,20 @@
+id: TMA-CISCO-ASA-3.11
+title: Ensure Java applet filtering is enabled
+description: Removes Java applets from the HTTP reply traffic crossing the security appliance. Java applets enhance users' Web experience with more interactivity. Because the applet is a code that is downloaded and executed on the users' machines, it can be used by attackers to perform malicious activities on the systems visiting untrusted websites. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 2
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 3.11 Ensure Java applet filtering is enabled
+audit:
+  type: config_regex
+  pattern: '(?m)^filter java \d+ '
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the TCP port used for the HTTP traffic containing Java objects, the IP address <internal_users_ip> and mask <internal_users_mask> of internal users generating the HTTP traffic, and the IP address <external_servers_ip> and mask <external_servers_mask> of the external servers to which the internal users connect and that are source of Java objects.
+    - Step 2: Run the following command to filter Java applets.
+    filter java <port> <internal_users_ip> <internal_users_mask> <external_servers_ip> <external_servers_mask>

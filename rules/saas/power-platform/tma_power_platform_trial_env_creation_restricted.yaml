@@ -1,0 +1,17 @@
+id: TMA-POWERPLATFORM-TRIAL-ENV-CREATION
+title: Ensure trial environment creation is restricted to administrators
+description: Trial environments created by makers frequently hold real data with no governance. Requires Microsoft.PowerApps.Administration.PowerShell and an authenticated session (Add-PowerAppsAccount) as a Power Platform administrator; the audit throws if the module is missing.
+target: power-platform
+level: 2
+severity: low
+tags:
+- power-platform
+- governance
+reference: CIS Microsoft Dynamics 365 Power Platform Benchmark v1.0.1 - Trial environment creation (no dedicated CIS benchmark exists for Power Platform)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-TenantSettings -ErrorAction SilentlyContinue)) { throw ''Microsoft.PowerApps.Administration.PowerShell is not loaded: run Add-PowerAppsAccount first'' }; $s = Get-TenantSettings -ErrorAction Stop; if ($s.disableTrialEnvironmentCreationByNonAdminUsers -eq $true) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Power Platform admin center > Settings > Tenant settings > Trial environment assignments > Only specific admins (or set disableTrialEnvironmentCreationByNonAdminUsers = $true via Set-TenantSettings).

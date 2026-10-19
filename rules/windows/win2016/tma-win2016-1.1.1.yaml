@@ -1,0 +1,51 @@
+id: TMA-WIN2016-1.1.1
+title: Ensure 'Enforce password history' is set to '24 or more password(s)'
+description: 'This policy setting determines the number of renewed, unique passwords that have to be associated with a user account before you can reuse an old password. The value for this policy setting must be between 0 and 24 passwords. The default value for stand- alone systems is 0 passwords, but the default setting when joined to a domain is 24 passwords. To maintain the effectiveness of this policy setting, use the Minimum password age setting to prevent users from repeatedly changing their password. The recommended state for this setting is: 24 or more password(s). Note: Password Policy settings (se'
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- secedit
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 1.1.1
+audit:
+  type: command
+  command: '$f = Join-Path $env:TEMP (''tmaegis-'' + [guid]::NewGuid().ToString() + ''.inf''); secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null; $c = Get-Content $f -ErrorAction SilentlyContinue; Remove-Item $f -Force -ErrorAction SilentlyContinue; $line = $c | Where-Object { $_ -match ''^\s*PasswordHistorySize\s*='' } | Select-Object -First 1; $v = if ($line) { ($line -split ''='', 2)[1].Trim().Trim(''"'') } else { $null }; if (($null -ne $v -and [int64]$v -ge 24)) { ''compliant'' } else { ''non-compliant: '' + $v }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    function Get-TmaSec([string]$Key) {
+      $f = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $c = Get-Content $f -ErrorAction SilentlyContinue
+      Remove-Item $f -Force -ErrorAction SilentlyContinue
+      $line = $c | Where-Object { $_ -match ('^\s*' + $Key + '\s*=') } | Select-Object -First 1
+      if ($line) { ($line -split '=', 2)[1].Trim().Trim('"') } else { $null }
+    }
+    function Backup-TmaSec {
+      $bk = Join-Path $env:ProgramData 'TMAegis\backup'
+      New-Item -ItemType Directory -Force -Path $bk | Out-Null
+      secedit /export /cfg (Join-Path $bk ('secedit-' + (Get-Date -Format 'yyyyMMddHHmmss') + '.inf')) /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+    }
+    function Set-TmaSec([string]$Section, [string]$Line) {
+      $inf = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      $db = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.sdb')
+      $txt = @('[Unicode]', 'Unicode=yes', '[Version]', 'signature="$CHICAGO$"', 'Revision=1', ('[' + $Section + ']'), $Line) -join "`r`n"
+      Set-Content -Path $inf -Value $txt -Encoding Unicode
+      secedit /configure /db $db /cfg $inf /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $rc = $LASTEXITCODE
+      Remove-Item $inf, $db -Force -ErrorAction SilentlyContinue
+      if ($rc -ne 0) { throw ('secedit /configure failed: ' + $rc) }
+    }
+    $v = Get-TmaSec 'PasswordHistorySize'
+    if (-not ($null -ne $v -and [int64]$v -ge 24)) {
+      Backup-TmaSec
+      net accounts /uniquepw:24 | Out-Null; if ($LASTEXITCODE -ne 0) { throw 'net accounts failed' }
+    }
+  guidance: "Set through Group Policy (domain policy for domain members): Computer Configuration\\Policies\\Windows Settings\\Security Settings\\Account Policies\\Password Policy\\Enforce password history"

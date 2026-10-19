@@ -1,0 +1,53 @@
+id: TMA-FORTIGATE-2.5.3
+title: Ensure HA Reserved Management Interface is configured
+description: Ensure Reserved Management Interfaces are configured on HA devices. PASS requires ha-mgmt-status enable and at least one ha-mgmt-interfaces entry with an interface. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- high-availability
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.5.3 Ensure HA Reserved Management Interface is configured
+audit:
+  type: config_regex
+  pattern: (?ms)^config system ha\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ha-mgmt-status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+config ha-mgmt-interfaces\n[ \t]+edit \d+\n(?:[ \t]+[^\n]*\n)*?[ \t]+set interface \"[^\n]*
+remediation:
+  type: iac_patch
+  command: |-
+    config system ha
+        set ha-mgmt-status enable
+        config ha-mgmt-interfaces
+            edit 1
+                set interface "port6"
+                set gateway 10.10.10.1
+            next
+        end
+    end
+    # CIS guidance:
+    Remediate through the GUI:
+    1. Go to System > HA edit the "Master" device.
+    2. Enable "Management Interface Reservation" once this is enabled select an an interface, and configure the appropriate gateway. Remediate through the CLI:
+    config system ha
+        set ha-mgmt-status enable
+        config ha-mgmt-interfaces
+            edit 1
+    new entry '1' added
+    set interface port6
+    set gateway 10.10.10.1
+    end
+    show
+    config system ha
+        set group-name "FGT-HA"
+        set mode a-p
+        set password ENC
+    enrwD467hJmO6j6YW/l6FEOa1YNVYdo8Z5mCcTDEKUFpOVXcNYnPBmQDGX//ViXk6TkwNH0il5aJr /fZY25lq+husndQHZVWp2LIlXmCv/n81U43nkZUWaIKvqkellGFbhv0/IHoOLzQPCsVcBbyrsgopr YMvh6w7F06+nRriBtMNQxpiTE+12xAHz7lA3EoYZzf8A==
+    set ha-mgmt-status enable
+    config ha-mgmt-interfaces
+        edit 1
+            set interface "port6"
+            set gateway 10.10.10.1
+        next
+    end
+    set override disable
+    end
+    end

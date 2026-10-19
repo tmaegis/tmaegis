@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.5.4
+title: Ensure scanners are in place for code vulnerabilities
+description: Detect and prevent known open source vulnerabilities in the code. Open source code blocks are used a lot in developed software. This has its own advantages, but it also has risks. Because the code is open for everyone, it means that attackers can publish or add malicious code to these open-source code blocks, or use their knowledge to find vulnerabilities in an existing code. Detecting and fixing such code vulnerabilities, by SCA (Software Composition Analysis) prevents insecure flaws from reaching production. It gives another opportunity for developers to secure the source code before it is deployed in production, where it is far more exposed and vulnerable to attacks.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.5.4 Ensure scanners are in place for code vulnerabilities
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediation: For every repository that is in use, set a scanning tool to identify and prevent code vulnerabilities by performing the following: 1. On GitLab, navigate to the main page of the repository. 2. Configure SAST to run on this project.'

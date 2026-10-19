@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.2.7
+title: Ensure that access to all APF-authorized objects is controlled
+description: The Authorized Program List (APF) designates those libraries that can contain program modules which possess a significant level of security bypass capability. The extattr command can grant the same capability in the UNIX file system, and is secured by the BPX.FILEATTR.APF resource in the FACILITY class.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.2.7 Ensure that access to all APF-authorized objects is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY and OPERCMDS appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY and OPERCMDS appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY and OPERCMDS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering APF data sets Verify that ... (full steps: CIS section 2.2.7)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) SETROPTS CLASSACT(OPERCMDS) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) SETROPTS GENERIC(OPERCMDS) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) SETROPTS RACLIST(OPERCMDS) To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + DATA(''APF LIBRARY'') PERMIT ''<profile>'' GENERIC + ACCESS(READ) ID(*) PERMIT ''<profile>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To create a FACILITY or OPERCMDS profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE FACILITY BPX.FILEATTR.APF + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''ACCESS TO SET APF AUTHORIZATION ON UNIX FILE'') PERMIT BPX.FILEATTR.APF CLASS(FACILITY) + ACCESS(READ) ID(SYSPROG) SETROPTS REFRESH RACLIST(FACILITY)
+    RDEFINE OPERCMDS MVS.SETPROG + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + DATA(''SETPROG COMMAND'') PERMIT MVS.SETPROG CLASS(OPERCMDS) + ACCESS(UPDATE) ID(SYSPROG) RDEFINE OPERCMDS ... (see CIS section 2.2.7)'

@@ -1,0 +1,17 @@
+id: TMA-KUBERNETES-4.1.4
+title: If proxy kubeconfig file exists ensure ownership is set to root:root
+description: If kube-proxy is running, ensure that the file ownership of its kubeconfig file is set to root:root. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- worker-node
+- file-permissions
+reference: CIS Kubernetes Benchmark v2.1.0 - 4.1.4 If proxy kubeconfig file exists ensure ownership is set to root:root
+audit:
+  type: manual
+  command: 'Find the kubeconfig file being used by kube-proxy by running the following command: ps -ef | grep kube-proxy If kube-proxy is running, get the kubeconfig file location from the --kubeconfig parameter. To perform the audit: Run the below command (based on the file location on your system) on the each worker node. For example, stat -c %U:%G <path><filename> Verify that the ownership is set to root:root.'
+remediation:
+  type: iac_patch
+  command: Run the below command (based on the file location on your system) on the each worker node. For example, chown root:root <proxy kubeconfig file>

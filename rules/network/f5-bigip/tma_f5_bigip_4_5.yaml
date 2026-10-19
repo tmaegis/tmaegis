@@ -1,0 +1,21 @@
+id: TMA-F5-BIGIP-4.5
+title: Ensure minimum SSH Encryption algorithm is set to aes128-cbc
+description: To set strong SSH Encryption algorithm.
+target: f5-bigip
+level: 1
+severity: high
+tags:
+- f5-bigip
+- crypto
+reference: CIS F5 Networks Benchmark v1.0.0 - 4.5 Ensure minimum SSH Encryption algorithm is set to aes128-cbc
+audit:
+  type: manual
+  command: 'Run ''tmsh list sys sshd all-properties'' and review the include statement: a ''Ciphers'' line must restrict SSH to the organisation-approved ciphers (the CIS example starts the list with aes128-cbc, aes128-ctr, aes192-ctr, aes256-ctr). Note the CIS example also lists arcfour ciphers, which are weak; prefer CTR/GCM ciphers only.'
+remediation:
+  type: iac_patch
+  command: |-
+    1-Log in to tmsh by typing the following command:tmsh
+    2-To modify the sshd configuration, type the following command to start the vi editor:edit /sys sshd all-properties
+    3-To change the list of ciphers, you can navigate to the line that starts with the include statement, and use the keyword Ciphers :
+    include "Ciphers aes128-cbc,aes128-ctr,aes192-ctr,aes256-
+    ctr,arcfour128,arcfour256,arcfour"

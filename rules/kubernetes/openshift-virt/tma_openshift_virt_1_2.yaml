@@ -1,0 +1,23 @@
+id: TMA-OPENSHIFT-VIRT-1.2
+title: Enable nonRoot feature gate in OCPvirt prior to 4.18
+description: 'Root is a default account with elevated privileges, including full administrative access to both security and non - security related functions. The "nonRoot" feature gate in OpenShift environments ensures virtual machine access is restricted to resources and functionality required to operate. Audit: Passes when .spec.featureGates.nonRoot of the HyperConverged resource is true, or when the cluster is OpenShift 4.18 or newer where the setting is ignored and always enabled. Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 1
+severity: high
+tags:
+- openshift-virt
+- feature-gates
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.2 Enable nonRoot feature gate in OCPvirt prior to 4.18
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; v=$(oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.spec.featureGates.nonRoot}') || exit 1; mi=$(oc get clusterversion version -o jsonpath='{.status.desired.version}' 2>/dev/null | cut -d. -f2); if [ "$v" = true ] || { [ -n "$mi" ] && [ "$mi" -ge 18 ] 2>/dev/null; }; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: 'Enable nonRoot and set its value to True . $ oc patch hyperconverged kubevirt-hyperconverged - n openshift - cnv --type=''json'' -p=''[ {"op": "replace", "path": "/spec/featureGates/nonRoot", "value": true }, ]'''

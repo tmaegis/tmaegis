@@ -1,0 +1,17 @@
+id: TMA-GKE-5.10.2
+title: Use GKE Sandbox for untrusted or high risk workloads
+description: Use GKE Sandbox for untrusted, third party, multi tenant, or high risk workloads that need stronger isolation from the node host. GKE Sandbox uses gVisor to add an isolation layer between the container and the host kernel, reducing the risk that untrusted code can affect the node. Reported as a manual review because it needs site-specific judgement.
+target: gke
+level: 2
+severity: low
+tags:
+- gke
+- managed-services
+- pod-security
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.10.2 Use GKE Sandbox for untrusted or high risk workloads
+audit:
+  type: manual
+  command: 'Review the GKE node pool and verify that GKE Sandbox is enabled for node pools that run untrusted or high risk workloads. GKE Sandbox uses gVisor to provide additional isolation between the container and the host kernel. gcloud container node-pools describe $NODE_POOL \ --cluster $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --format json | jq ''.config.sandboxConfig'' • Expected result: the output should show the sandbox type as GVISOR. The older sandboxType field can appear in some output, but the current field is type.'
+remediation:
+  type: iac_patch
+  command: 'Create a new GKE Sandbox enabled node pool for untrusted or high risk workloads. GKE Sandbox cannot be enabled on the default node pool when it is the only node pool, and GKE Sandbox node pools must use the cos_containerd node image. gcloud container node-pools create $NODE_POOL \ --cluster $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --image-type=cos_containerd \ --sandbox type=gvisor Update workload manifests for untrusted or high risk workloads to request the gvisor RuntimeClass. spec: runtimeClassName: gvisor Migrate the applicable workloads to the sandbox enabled node pool, validate application behavior, and confirm the Pods are running with runtimeClassName: gvisor. Keep trusted system workloads and regular workloads on separate node pools unless there is an approved reason to run them in the sandbox.'

@@ -1,0 +1,18 @@
+id: TMA-MARIADB-7.2
+title: Ensure Passwords are Not Stored in the Global Configuration
+description: The [client] section of the MariaDB configuration file allows setting a user and password to be used. Verify the password option is not used in the global configuration file (mariadb.cnf). Reads the [client] groups of /etc/my.cnf and /etc/mysql/my.cnf (including !include files) with my_print_defaults; per-user ~/.my.cnf files are not global and are ignored.
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- credentials
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 7.2 Ensure Passwords are Not Stored in the Global Configuration
+audit:
+  type: command
+  command: n=0; found=0; for c in /etc/my.cnf /etc/mysql/my.cnf; do [ -f "$c" ] || continue; found=1; o=$(my_print_defaults --defaults-file="$c" client client-server client-mariadb 2>/dev/null) || exit 1; n=$((n + $(printf '%s\n' "$o" | grep -c '^--password'))); done; [ "$found" -eq 1 ] || exit 1; echo "$n"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove password= from the [client] section of the global option files; use a per-user ~/.my.cnf with mode 0600 instead.

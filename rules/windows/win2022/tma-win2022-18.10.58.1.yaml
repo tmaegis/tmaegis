@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.10.58.1
+title: Ensure 'Prevent downloading of enclosures' is set to 'Enabled'
+description: 'This policy setting prevents the user from having enclosures (file attachments) downloaded from an RSS feed to the user''s computer. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.10.58.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Feeds'' -Name ''DisableEnclosureDownload'' -ErrorAction SilentlyContinue).''DisableEnclosureDownload''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DisableEnclosureDownload='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Feeds')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Feeds' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Feeds' -Name 'DisableEnclosureDownload' -Value 1 -PropertyType DWord -Force | Out-Null

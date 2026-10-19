@@ -1,0 +1,20 @@
+id: TMA-AIX-4.4.1.4
+title: Ensure localhost aliases do not exist in /etc/exports
+description: 'Remove any reference to localhost or localhost aliases from /etc/exports. If the RPC portmapper has proxy forwarding enabled, which is a default setting in many vendor versions. Audit: /etc/exports must not reference localhost aliases (SKIP when there is no /etc/exports).'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.4.1.4 Ensure localhost aliases do not exist in /etc/exports
+audit:
+  type: file_regex
+  file_path: /etc/exports
+  pattern: (?m)^[^#\n]*\blocalhost\b
+  must_not_match: true
+  requires_file:
+  - /etc/exports
+remediation:
+  type: iac_patch
+  command: 'Remove any reference to localhost or localhost aliases in /etc/exports: Review the content of /etc/exports and check for localhost or localhost aliases: cat /etc/exports NOTE: If instances of localhost or localhost aliases are found, edit the file and remove them. Create a copy of /etc/exports: cp -p /etc/exports /etc/exports.pre_cis Edit the file: vi /etc/exports Edit the relevant NFS exports to remove the localhost access, for example: /nfsexport sec=sys,rw,access=localhost:testserver If /etc/exports is updated, as localhost references have been removed, update the current NFS export options: exportfs -a'

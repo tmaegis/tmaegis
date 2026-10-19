@@ -1,0 +1,19 @@
+id: TMA-MARIADB-1.7
+title: Ensure MariaDB is Run Under a Sandbox Environment
+description: Use of the chroot() system call at startup, Systemd with settings to achieve isolation, or docker will put MariaDB in a Sandbox environment.
+target: mariadb
+level: 2
+severity: low
+tags:
+- mariadb
+- database
+- os
+- isolation
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 1.7 Ensure MariaDB is Run Under a Sandbox Environment
+audit:
+  type: manual
+  command: 'Check whether MariaDB is confined: chroot option (grep -r ''^chroot'' /etc/mysql /etc/my.cnf*; must differ from datadir), systemd unit runs as a non-root user (systemctl status mariadb: Main PID not owned by root), or it runs in a container (docker ps / podman ps). None of these is a fail.'
+remediation:
+  type: iac_patch
+  command: Run MariaDB under systemd as the mysql user, in a container, or with chroot=<path> under [mariadbd], and keep SELinux/AppArmor confinement enabled.

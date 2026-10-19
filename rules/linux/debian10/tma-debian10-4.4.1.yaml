@@ -1,0 +1,54 @@
+id: TMA-DEBIAN10-4.4.1
+title: Ensure password creation requirements are configured
+description: 'The pam_pwquality.so module checks the strength of passwords. It performs checks such as making sure a password is not a dictionary word, it is a certain length, contains a mix of characters (e.g. alphabet, numeric, other) and more. The following options are set in the /etc/security/pwquality.conf file: • Password Length: o minlen = 14 - password must be 14 characters or more • Password complexity: o minclass = 4 - The minimum number of required classes of characters for the new password (digits, uppercase, lowercase, others) OR o dcredit = -1 - provide at least one digit o ucredit = -1 - prov'
+target: linux
+os_family:
+- debian-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 10 Benchmark v2.0.0 ARCHIVE - 4.4.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep ''"''"''^\s*minlen\s*''"''"'' /etc/security/pwquality.conf'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''minlen = 14'' || { echo step1: missing ''minlen = 14''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Password complexity'' || { echo step1: missing ''Password complexity''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''grep ''"''"''^\s*minclass\s*''"''"'' /etc/security/pwquality.conf'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''minclass = 4'' || { echo step2: missing ''minclass = 4''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Option 2'' || { echo step2: missing ''Option 2''; return 1; }; command -v
+    grep >/dev/null 2>&1 || { echo "step3: grep not installed"; return 1; }; o=$(bash -c ''grep -E ''"''"''^\s*[duol]credit\s*''"''"'' /etc/security/pwquality.conf'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''dcredit = -1'' || { echo step3: missing ''dcredit = -1''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''ucredit = -1'' || { echo step3: missing ''ucredit = -1''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''lcredit = -1'' || { echo step3: missing ''lcredit = -1''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''ocredit = -1'' || { echo step3: missing ''ocredit = -1''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''pam_pwquality.so enabled'' || { echo step3: missing ''pam_pwquality.so enabled''; return 1; }; }; if alt0; then echo compliant;
+    fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    PAMF="/etc/pam.d/system-auth /etc/pam.d/password-auth /etc/pam.d/system-password /etc/pam.d/common-auth /etc/pam.d/common-password /etc/pam.d/common-account /etc/pam.d/common-session /etc/pam.d/common-session-noninteractive /etc/pam.d/postlogin"
+    # tma_pam_sed EXPR : sed -E on every existing PAM stack file (follows symlinks, backs up once)
+    tma_pam_sed() { for f in $PAMF /usr/share/pam-configs/unix; do
+      [ -e "$f" ] || continue; tma_bak "$f"; sed -i --follow-symlinks -E "$1" "$f"; done; }
+    # tma_conf_set FILE KEY VALUE : "key = value", replacing active or commented key lines
+    tma_conf_set() { f=$1; k=$2; v=$3; mkdir -p "$(dirname "$f")"; [ -e "$f" ] || : > "$f"; tma_bak "$f"
+      sed -i -E "/^[[:space:]]*#?[[:space:]]*$k[[:space:]]*=/d" "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; }
+    tma_conf_del() { for f in $2; do [ -e "$f" ] || continue; tma_bak "$f"; sed -i -E "/^[[:space:]]*$1[[:space:]]*=/d" "$f"; done; }
+    tma_conf_set /etc/security/pwquality.conf minlen 14
+    tma_conf_set /etc/security/pwquality.conf minclass 4
+    for f in $PAMF; do [ -e "$f" ] || continue
+      grep -Eq 'pam_pwquality\.so' "$f" || continue
+      grep -E 'pam_pwquality\.so' "$f" | grep -Eq 'retry=[1-3]\b' || { tma_bak "$f"; sed -i --follow-symlinks -E '/^[[:space:]]*password[[:space:]].*pam_pwquality\.so/ { s/[[:space:]]+retry=[0-9]+//; s/$/ retry=3/ }' "$f"; }
+    done
+    true
+  guidance: "The following setting is a recommend example policy. Alter these values to conform to your own organization's password policies. Run the following command to install the pam_pwquality module: # apt install libpam-pwquality Edit the file /etc/security/pwquality.conf and add or modify the following line for password length to conform to site policy: minlen = 14 Edit the file /etc/security/pwquality.conf and add or modify the following line for password complexity to conform to site policy: Option 1 minclass = 4 Option 2 dcredit = -1 ucredit = -1 ocredit = -1 lcredit = -1 Edit the /etc/pam.d/common-password file to include pam_pwquality.so and to conform to site policy: password requisite pam_p…"

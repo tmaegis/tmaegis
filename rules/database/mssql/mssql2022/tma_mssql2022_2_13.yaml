@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-2.13
+title: Ensure the 'sa' Login Account is set to 'Disabled'
+description: The sa account is a widely known and often widely used SQL Server account with sysadmin privileges. This is the original login created during installation and always has the principal_id=1 and sid=0x01. Enforcing this control reduces the probability of an attacker executing brute force attacks against a well-known principal.
+target: mssql
+level: 1
+severity: high
+tags:
+- logging
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.13 Ensure the 'sa' Login Account is set to 'Disabled'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.server_principals WHERE sid = 0x01 AND is_disabled = 0;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Execute the following T-SQL query: USE [master] GO DECLARE @tsql nvarchar(max) SET @tsql = ''ALTER LOGIN '' + SUSER_NAME(0x01) + '' DISABLE'' EXEC (@tsql) GO'

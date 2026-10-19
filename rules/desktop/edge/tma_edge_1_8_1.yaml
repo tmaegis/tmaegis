@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.8.1
+title: Ensure 'Configure Edge Website Typo Protection' is set to 'Enabled'
+description: 'This policy setting configures whether to turn on Edge TyposquattingChecker. The Edge TyposquattingChecker provides warning messages to help protect users from potential typo squatting sites. Typo squatting is a type of social engineering attack which targets internet users who incorrectly type a URL into their web browser rather than using a search engine. Rationale: The Edge TyposquattingChecker will provide a warning message and can help protect users from potential typo squatting by alerting the user to the potential of accessing a malicious site. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:TyposquattingCheckerEnabled (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.8.1 Ensure 'Configure Edge Website Typo Protection' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''TyposquattingCheckerEnabled'' -ErrorAction SilentlyContinue).''TyposquattingCheckerEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'TyposquattingCheckerEnabled' -Value 1 -PropertyType DWord -Force | Out-Null

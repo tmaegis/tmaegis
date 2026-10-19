@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.2.4
+title: Ensure sshd access is configured
+description: 'Several options are available to limit which users and groups can access the system via SSH. It is recommended that at least one of the following options be leveraged: AllowUsers: The AllowUsers variable allows the system administrator to allow specific users to ssh into the system. The list consists of space-separated user names. Audit: sshd -T must show at least one AllowUsers/AllowGroups/DenyUsers/DenyGroups; review the lists against site policy.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- ssh
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.2.4 Ensure sshd access is configured
+audit:
+  type: command
+  command: 'command -v sshd >/dev/null 2>&1 || exit 1; out=$(sshd -T 2>/dev/null) || exit 1; r=compliant; for p in ''^(allowusers|allowgroups|denyusers|denygroups)[[:blank:]]+[^[:blank:]]''; do printf ''%s\n'' "$out" | grep -Eiq -- "$p" || r="not matched: $p"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/ssh/sshd_config file to set one or more of the parameter above any Include entries as follows: AllowUsers <userlist> -OR- AllowGroups <grouplist> -OR- DenyUsers <userlist> -OR- DenyGroups <grouplist>'

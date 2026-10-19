@@ -1,0 +1,19 @@
+id: TMA-JUNIPER-JUNOS-6.6.1.5
+title: Ensure Lockout-period is set to at least 30 minutes
+description: Users who have been disconnected due to bad login attempts should be locked out for 30 minutes. Remote administration protocols like Telnet and SSH are commonly targeted by Brute Force or Dictionary attacks where a malicious user attempts to guess a valid username/password combination in order to gain control of the router. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.6.1.5 Ensure Lockout-period is set to at least 30 minutes
+audit:
+  type: config_regex
+  pattern: (?m)^set system login retry-options lockout-period (?:[3-9]\d|[1-9]\d{2,})\s*$
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure the time users should be locked out using the following command under the hierarchy:
+    set system login retry-options lockout-period 30

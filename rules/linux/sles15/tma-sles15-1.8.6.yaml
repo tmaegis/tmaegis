@@ -1,0 +1,110 @@
+id: TMA-SLES15-1.8.6
+title: Ensure GDM automatic mounting of removable media is disabled
+description: By default GNOME automatically mounts removable media when inserted as a convenience to the user.
+target: linux
+os_family:
+- sles-15
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 15 Benchmark v2.0.1 - 1.8.6
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_pkgoutput=\"\" l_output=\"\" l_output2=\"\"\n   # Check if GNOME Desktop Manager is installed.  If package isn'\"'\"'t installed, recommendation is Not Applicable\\n\n   # determine system'\"'\"'s package manager\n   if command -v dpkg-query > /dev/null 2>&1; then\n      l_pq=\"dpkg-query -W\"\n   elif command -v rpm > /dev/null 2>&1; then\n      l_pq=\"rpm -q\"\n   fi\n   # Check if GDM is installed\n   l_pcl=\"gdm gdm3\" # Space separated list of packages to check\n   for l_pn in $l_pcl; do\n      $l_pq \"$l_pn\" > /dev/null 2>&1 && l_pkgoutput=\"$l_pkgoutput\\n - Package: \\\"$l_pn\\\" exists on the system\\n - checking configuration\"\n   done\n   # Check configuration (If applicable)\n   if [ -n \"$l_pkgoutput\" ]; then\n      echo -e \"$l_pkgoutput\"\n      # Look for existing settings and set variables if they exist\n      l_kfile=\"$(grep -Prils -- '\"'\"'^\\h*automount\\b'\"'\"' /etc/dconf/db/*.d)\"\n      l_kfile2=\"\
+    $(grep -Prils -- '\"'\"'^\\h*automount-open\\b'\"'\"' /etc/dconf/db/*.d)\"\n      # Set profile name based on dconf db directory ({PROFILE_NAME}.d)\n      if [ -f \"$l_kfile\" ]; then\n         l_gpname=\"$(awk -F\\/ '\"'\"'{split($(NF-1),a,\".\");print a[1]}'\"'\"' <<< \"$l_kfile\")\"\n      elif [ -f \"$l_kfile2\" ]; then\n         l_gpname=\"$(awk -F\\/ '\"'\"'{split($(NF-1),a,\".\");print a[1]}'\"'\"' <<< \"$l_kfile2\")\"\n      fi\n      # If the profile name exist, continue checks\n      if [ -n \"$l_gpname\" ]; then\n         l_gpdir=\"/etc/dconf/db/$l_gpname.d\"\n         # Check if profile file exists\n         if grep -Pq -- \"^\\h*system-db:$l_gpname\\b\" /etc/dconf/profile/*; then\n            l_output=\"$l_output\\n - dconf database profile file \\\"$(grep -Pl -- \"^\\h*system-db:$l_gpname\\b\" /etc/dconf/profile/*)\\\" exists\"\n         else\n            l_output2=\"$l_output2\\n - dconf database profile isn'\"'\"'t set\"\n         fi\n         # Check if the dconf database\
+    \ file exists\n         if [ -f \"/etc/dconf/db/$l_gpname\" ]; then\n            l_output=\"$l_output\\n - The dconf database \\\"$l_gpname\\\" exists\"\n         else\n            l_output2=\"$l_output2\\n - The dconf database \\\"$l_gpname\\\" doesn'\"'\"'t exist\"\n         fi\n         # check if the dconf database directory exists\n         if [ -d \"$l_gpdir\" ]; then\n            l_output=\"$l_output\\n - The dconf directory \\\"$l_gpdir\\\" exist\"\n         else\n            l_output2=\"$l_output2\\n - The dconf directory \\\"$l_gpdir\\\" doesn'\"'\"'t exist\"\n         fi\n         # check automount setting\n         if grep -Pqrs -- '\"'\"'^\\h*automount\\h*=\\h*false\\b'\"'\"' \"$l_kfile\"; then\n            l_output=\"$l_output\\n - \\\"automount\\\" is set to false in: \\\"$l_kfile\\\"\"\n         else\n            l_output2=\"$l_output2\\n - \\\"automount\\\" is not set correctly\"\n         fi\n         # check automount-open setting\n         if grep -Pqs -- '\"'\"'^\\\
+    h*automount-open\\h*=\\h*false\\b'\"'\"' \"$l_kfile2\"; then\n            l_output=\"$l_output\\n - \\\"automount-open\\\" is set to false in: \\\"$l_kfile2\\\"\"\n         else\n            l_output2=\"$l_output2\\n - \\\"automount-open\\\" is not set correctly\"\n         fi\n      else\n         # Setings don'\"'\"'t exist. Nothing further to check\n         l_output2=\"$l_output2\\n - neither \\\"automount\\\" or \\\"automount- open\\\" is set\"\n      fi\n   else\n      l_output=\"$l_output\\n - GNOME Desktop Manager package is not installed on the system\\n  - Recommendation is not applicable\"\n   fi\n   # Report results. If no failures output in l_output2, we pass\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\\n\"\n      [ -n \"$l_output\" ] && echo -e \"\\n- Correctly set:\\n$l_output\\n\"\n   fi\n}' 2>&1); printf\
+    \ '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+  requires_file:
+  - /usr/sbin/gdm3
+  - /usr/sbin/gdm
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; return 0; }
+    tma_ini_set() { # file section key value
+      local f=$1 s=$2 k=$3 v=$4
+      [ -e "$f" ] || { mkdir -p "$(dirname "$f")"; : > "$f"; }
+      tma_bak "$f"
+      awk -v s="$s" -v k="$k" -v v="$v" '
+        function flush() { if (insec && !done) { print k "=" v; done=1 } }
+        /^[[:space:]]*\[/ { flush(); insec = ($0 ~ "^[[:space:]]*\\[" s "\\][[:space:]]*$"); print; next }
+        insec && $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { if (!done) { print k "=" v; done=1 } ; next }
+        { print }
+        END { flush(); if (!done) { print "[" s "]"; print k "=" v } }' "$f" > "$f.tma" && cat "$f.tma" > "$f"; rm -f "$f.tma"
+    }
+    tma_grub_regen() {
+      if command -v update-grub >/dev/null 2>&1; then update-grub
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        if [ -f /boot/grub2/grub.cfg ]; then grub2-mkconfig -o /boot/grub2/grub.cfg
+        else for c in /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c"; done; fi
+      elif command -v grub-mkconfig >/dev/null 2>&1; then
+        [ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg
+      fi; return 0
+    }
+    tma_cmdline_rm() { # names of kernel args (name or name=value) to drop from the grub defaults
+      local a f c k n
+      for a in "$@"; do
+        for f in /etc/default/grub /etc/default/grub.d/*.cfg; do
+          [ -f "$f" ] || continue
+          grep -Eq "^[[:space:]]*GRUB_CMDLINE_LINUX" "$f" || continue
+          tma_bak "$f"
+          sed -i -E "/^[[:space:]]*GRUB_CMDLINE_LINUX/{ :a; s/([\"' ])${a}(=[^\"' ]*)?([ \"'])/\1\3/; ta; s/  +/ /g; s/ ([\"'])\$/\1/ }" "$f"
+        done
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --remove-args="$a" >/dev/null 2>&1
+      done
+      if command -v grub2-editenv >/dev/null 2>&1; then
+        k=$(grub2-editenv - list 2>/dev/null | sed -n 's/^kernelopts=//p')
+        if [ -n "$k" ]; then n=$k; for a in "$@"; do n=$(printf '%s' "$n" | sed -E "s/(^| )${a}(=[^ ]*)?( |\$)/ /g"); done
+          [ "$n" != "$k" ] && grub2-editenv - set "kernelopts=$n"; fi
+      fi
+      for c in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
+        [ -f "$c" ] || continue
+        for a in "$@"; do sed -i -E "/^[[:space:]]*(linux|kernelopts)/ s/(^|[ =])${a}(=[^ ]*)?( |\$)/\1\3/g" "$c"; done
+      done
+      return 0
+    }
+    tma_cmdline_set() { # name=value pairs forced into GRUB_CMDLINE_LINUX
+      local f=/etc/default/grub kv; [ -f "$f" ] || { echo "no $f"; return 0; }
+      for kv in "$@"; do
+        tma_cmdline_rm "${kv%%=*}" "${kv%%=*}=[^ \"']*" 2>/dev/null
+        tma_bak "$f"
+        if grep -Eq '^[[:space:]]*GRUB_CMDLINE_LINUX=' "$f"; then
+          sed -i -E "s/^([[:space:]]*GRUB_CMDLINE_LINUX=[\"'])(.*)([\"'])\$/\1\2 ${kv}\3/; s/=([\"']) /=\1/" "$f"
+        else printf 'GRUB_CMDLINE_LINUX="%s"\n' "$kv" >> "$f"; fi
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --args="$kv" >/dev/null 2>&1
+      done
+      return 0
+    }
+    prof=gdm
+    mkdir -p /etc/dconf/profile /etc/dconf/db/$prof.d/locks
+    pf() { [ -f "$1" ] || : > "$1"; while IFS= read -r l; do grep -qxF "$l" "$1" || printf '%s\n' "$l" >> "$1"; done; }
+    printf '%s\n' 'user-db:user
+    system-db:gdm
+    file-db:/usr/share/gdm/greeter-dconf-defaults' | pf /etc/dconf/profile/$prof
+    cat > /etc/dconf/db/$prof.d/00-media-automount <<'TMAEOF'
+    [org/gnome/desktop/media-handling]
+    automount=false
+    automount-open=false
+    TMAEOF
+    printf '%s\n' /org/gnome/desktop/media-handling/automount /org/gnome/desktop/media-handling/automount-open > /etc/dconf/db/$prof.d/locks/00-media-automount
+    command -v dconf >/dev/null 2>&1 && dconf update
+    true
+  guidance: "Run the following script to disable automatic mounting of media for all GNOME users: #!/usr/bin/env bash { l_pkgoutput=\"\" l_gpname=\"local\" # Set to desired dconf profile name (default is local) # Check if GNOME Desktop Manager is installed. If package isn't installed, recommendation is Not Applicable\\n # determine system's package manager if command -v dpkg-query > /dev/null 2>&1; then l_pq=\"dpkg-query -W\" elif command -v rpm > /dev/null 2>&1; then l_pq=\"rpm -q\" fi # Check if GDM is installed l_pcl=\"gdm gdm3\" # Space separated list of packages to check for l_pn in $l_pcl; do $l_pq \"$l_pn\" > /dev/null 2>&1 && l_pkgoutput=\"$l_pkgoutput\\n - Package: \\\"$l_pn\\\" exists on the system\\n - checking c…"

@@ -1,0 +1,26 @@
+id: TMA-FORTISWITCH-3.1.3.1
+title: Encrypt Log Transmission to Syslog
+description: Enable encryption for logs that are sent to a SIEM, FortiAnalyzer, or FortiManager. PASS requires syslog mode reliable and enc-algorithm high in config log syslogd setting. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: high
+tags:
+- fortiswitch
+- logging
+reference: CIS FortiSwitch Benchmark v1.0.0 - 3.1.3.1 Encrypt Log Transmission to Syslog
+audit:
+  type: config_regex
+  pattern: (?m)^config log syslogd setting\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set mode reliable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set enc-algorithm high[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set enc-algorithm high[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set mode reliable[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config log syslogd setting
+        set mode reliable
+        set enc-algorithm high
+    end
+    # CIS guidance:
+    Secure log transfer settings can only be configured on CLI:
+    config log syslogd setting
+        set mode reliable
+        set enc-algorithm high
+    end

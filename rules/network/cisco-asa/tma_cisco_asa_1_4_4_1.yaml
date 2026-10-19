@@ -1,0 +1,19 @@
+id: TMA-CISCO-ASA-1.4.4.1
+title: Ensure 'aaa command authorization' is configured correctly
+description: Defines the source of authorization for the commands entered by an administrator/user. Requiring authorization for commands enforces separation of duties and provides least privilege access for specific job roles. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: high
+tags:
+- cisco-asa
+- network
+- aaa
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.4.4.1 Ensure 'aaa command authorization' is configured correctly
+audit:
+  type: config_regex
+  pattern: (?m)^aaa authorization command \S
+remediation:
+  type: iac_patch
+  command: |-
+    ! Run the following to determine the remote the TACACS+/RADIUS servers (server_group_name) as source of authorization and the local database (LOCAL) as fallback method if the remote servers are not available.
+    aaa authorization command <server-group_name> LOCAL This implies that locally, each privilege has its sets of commands configured and username associated just in accordance with the privilege and command definition in the remote servers.

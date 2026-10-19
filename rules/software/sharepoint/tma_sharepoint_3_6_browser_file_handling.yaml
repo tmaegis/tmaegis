@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-3.6
+title: Ensure that SharePoint is configured with "Strict" browser file handling settings
+description: SharePoint must prevent the execution of prohibited mobile code. Prints the number of web applications whose BrowserFileHandling is not Strict (expected 0). Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: medium
+tags:
+- sharepoint
+- web-applications
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 3.6 Ensure that SharePoint is configured with "Strict" browser file handling settings
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $bad = @(Get-SPWebApplication -ErrorAction Stop | Where-Object { "$($_.BrowserFileHandling)" -ne 'Strict' }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Central Administration > Manage Web Applications > General Settings > Browser File Handling: Strict (or $wa = Get-SPWebApplication <url>; $wa.BrowserFileHandling = ''Strict''; $wa.Update()).'

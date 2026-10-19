@@ -1,0 +1,26 @@
+id: TMA-ARUBA-CX-1.4.1.1
+title: Non Default Community Names, Access Rights & ACL
+description: The default SNMP community name is public, a common setting for SNMP-capable devices. FAILs if the default 'public' or 'private' SNMP community is configured; also confirm communities are read-only with an access-list. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- management
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.4.1.1 Non Default Community Names, Access Rights & ACL
+audit:
+  type: config_regex
+  pattern: (?m)^snmp-server community (?:public|private)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    no snmp-server community public
+    snmp-server community <non-default-name>
+        access-level ro
+        access-list <mgmt-acl>
+    # CIS guidance:
+    The default access level for SNMP communities is read-only; if read-write support is required, set the access level for the community to rw from the community context. IPv4 and/or IPv6 ACLs may be used to limit access to allowed management stations or subnets; only one ACL (IPv4 or IPv6) may be applied to a community at a time. Apply an IPv4 or IPv6 ACL from the SNMP config-community context -
+    snmp-server community <community-name>
+    access-level <ro | rw>
+    access-list <IPv4 and/or IPv6 ACL>

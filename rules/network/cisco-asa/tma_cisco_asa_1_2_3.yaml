@@ -1,0 +1,37 @@
+id: TMA-CISCO-ASA-1.2.3
+title: Ensure 'Failover' is enabled
+description: Enables failover between the security appliance and another security appliance in order to achieve high availability. Enabling failover helps to meet the availability requirement of the security CIA (Confidentiality - Integrity - Availability) triad, ensuring a physical and logical redundancy of firewalls in order to avoid service disruption should the security appliance or ... Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.2.3 Ensure 'Failover' is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^failover\s*$
+remediation:
+  type: iac_patch
+  command: |-
+    ! Follow the steps below to enable active/standby failover. The commands are run in the system execution space
+    - Step 1: For each appliance, identify the failover link physical interface <failover_interface_physical> and assign it a name <failover_interface_name> and IP address <failover_interface_ip> and subnet mask <failover_interface_mask>. Identify the other device IP address for each appliance as <peer_failover_ip>
+    - Step 2: For each appliance, identify the state link physical interface <state_interface_physical> and assign it a name <state_interface_name> and IP address <state_interface_ip> and subnet mask <state_interface_mask>. Identify the other device IP address for each appliance as <peer_state_ip>
+    - Step 3: Run the following on the Active device to set it as primary node
+    failover lan unit primary
+    - Step 4: Run the following on the Standby device to set it as secondary node
+    failover lan unit secondary
+    - Step 5: Run the following on both security appliances
+    failover lan interface <failover_interface_name> <failover_interface_physical>
+    failover interface ip <failover_interface_name> <failover_interface_ip> <failover_interface_mask> standby <peer_failover_ip>
+    interface <failover_interface_physical>
+    no shutdown
+    failover link <state_interface_name> <state_interface_physical>
+    failover interface ip <state_interface_name> <state_interface_ip> <state_interface_mask> standby <peer_state_ip>
+    interface <state_interface_physical>
+    no shutdown
+    failover
+    write memory
+    - Step 6: Set up IPSEC preshared key
+    failover ipsec pre-shared-key *

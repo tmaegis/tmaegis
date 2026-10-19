@@ -1,0 +1,17 @@
+id: TMA-DB2-6.1.17
+title: Secure SETSESSIONUSER Privilege
+description: The SETSESSIONUSER privilege allows one user to switch the session authorization ID of the connection to another user. This allows one user to run SQL statements as another user. It is recommended that Trusted Context be used as a stronger assertion of user identity where such a feature is required.
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 6.1.17 Secure SETSESSIONUSER Privilege
+audit:
+  type: manual
+  command: '1. Connect to the Db2 database. db2 => connect to <dbname> 2. Run the following command: db2 => select distinct trustedid, trustedidtype, surrogateauthid, surrogateauthidtype from syscat.surrogateauthids where trustedidtype != ''C'' 3. Review the list of users, groups, and roles in the above output to ensure only approved users, groups, and roles are assigned.'
+remediation:
+  type: iac_patch
+  command: 'Revoke this permission from any unauthorized users. 1. Connect to the Db2 database. db2 => connect to <dbname> 2. Run the following command: db2 => REVOKE SETSESSIONUSER ON <authid> FROM <authid>'

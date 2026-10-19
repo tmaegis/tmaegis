@@ -1,0 +1,39 @@
+id: TMA-ESXI9-3.1
+title: Host should deactivate SSH
+description: Secure Shell (SSH) provides remote access to the ESXi shell, enabling direct host console access or remote connectivity. Deactivating SSH is a security measure aimed at minimizing remote access channels to the ESXi host, restricting it to essential connections only through vSphere Client, vCLI/PowerCLI, or published APIs. The audit parses vim-cmd hostsvc/hostconfig for the TSM-SSH service and requires startup policy "off" (start and stop manually) and the service not running. When tmaegis itself connects over SSH this rule reports the running service; scan from the ESXi Shell/DCUI instead. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: high
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 3.1 Host should deactivate SSH
+audit:
+  type: command
+  command: |-
+    out=$(vim-cmd hostsvc/hostconfig 2>/dev/null) || exit 1
+    p=$(printf '%s\n' "$out" | awk '/key = "TSM-SSH"/{f=1} f && $1=="policy" {v=$3; gsub(/[",]/, "", v); print v; exit}')
+    r=$(printf '%s\n' "$out" | awk '/key = "TSM-SSH"/{f=1} f && $1=="running" {v=$3; gsub(/[",]/, "", v); print v; exit}')
+    [ -n "$p" ] || { echo 'TSM-SSH: service not found in hostconfig'; exit 1; }
+    if [ "$p" = off ] && [ "$r" != true ]; then echo compliant; else echo "TSM-SSH: policy=$p running=$r"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v vim-cmd >/dev/null 2>&1 || exit 0
+    vim-cmd hostsvc/disable_ssh; vim-cmd hostsvc/stop_ssh; true
+  guidance: "To disable SSH, perform the following: 1. From the vSphere Web Client, select the host. 2. Select Configure then expand System and select Services. 3. Click on SSH then click Edit Startup Policy. 4. Set the Startup Policy is set to Start and Stop Manually. 5. Click OK. 6. While ESXi Shell is still selected click Stop. Alternately, use the following PowerCLI command: # Set SSH to start manually rather than automatically for all hosts Get-VMHost | Get-VMHostService | Where { $_.key -eq \"TSM-SSH\" } | Set- VMHostService -Policy Off"

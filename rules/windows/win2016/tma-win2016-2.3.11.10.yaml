@@ -1,0 +1,21 @@
+id: TMA-WIN2016-2.3.11.10
+title: 'Ensure ''Network security: Minimum session security for NTLM SSP based (including secure RPC) servers'' is set to ''Require NTLMv2 session security, Require 128-bit encryption'''
+description: 'This policy setting determines which behaviors are allowed by servers for applications using the NTLM Security Support Provider (SSP). The SSP Interface (SSPI) is used by applications that need authentication services. The setting does not modify how the authentication sequence works but instead require certain behaviors in applications that use the SSPI. The recommended state for this setting is: Require NTLMv2 session security, Require 128-bit encryption. Note: These values are dependent on the Network security: LAN Manager Authentication Level (Rule 2.3.11.7) security setting value.'
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 2.3.11.10
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0'' -Name ''NTLMMinServerSec'' -ErrorAction SilentlyContinue).''NTLMMinServerSec''; if (-not ($null -ne $v -and @(537395200) -contains [int64]$v)) { $bad += ''NTLMMinServerSec='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0' -Name 'NTLMMinServerSec' -Value 537395200 -PropertyType DWord -Force | Out-Null

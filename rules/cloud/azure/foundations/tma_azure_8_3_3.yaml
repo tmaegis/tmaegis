@@ -1,0 +1,18 @@
+id: TMA-AZURE-8.3.3
+title: Ensure that the Expiration Date is set for All Secrets in Key Vaults using RBAC
+description: 'Ensure that all Secrets in Azure Key Vaults using Role Based Access Control (RBAC) have an expiration date set. Note: The audit commands require data-plane access to each Key Vault in addition to the management-plane Reader role. Without data-plane access these commands return empty results silently. The Azure Key Vault enables users to store and keep secrets within the Microsoft Azure environment. Secrets in the Azure Key Vault are octet sequences with a maximum size of 25k bytes each. The exp (expiration date) attribute identifies the expiration date on or after which the secret MUST NOT be used. By default, secrets never expire. It is thus recommended to rotate secrets in the key vault and set an explicit expiration date for all secrets. This ensures that the secrets cannot be used beyond their assigned lifetimes.'
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 8.3.3 Ensure that the Expiration Date is set for All Secrets in Key Vaults using RBAC
+audit:
+  type: manual
+  command: 'Requisite RBAC Permissions for Secrets - read section overview! Audit Role = Key Vault Secrets User Audit from Azure Portal 1. Go to Key vaults. 2. For each Key vault, under Objects, select Secrets. 3. In the main pane, ensure that the status of the secret is Enabled. 4. For each enabled secret, ensure that an appropriate Expiration date is set. Audit from Azure CLI Ensure that the output of the below command contains ID (id), enabled status as true and Expiration date (expires) is not empty or null: az keyvault secret list --vault-name <KEYVAULTNAME> --query ''[*].{"kid":kid,"enabled":attributes.enabled,"expires":attributes.expires}'' Audit from PowerShell Retrieve a list of Key Vaults: Get-AzKeyVault For each Key vault, run the following command to determine which vaults are configured to use RBAC: (Get-AzKeyVault -VaultName <Vault Name>).EnableRbacAuthorization For each Key vault with the EnableRbacAuthorization setting set to True, run the following command: Get-AzKeyVaultSecret
+    -VaultName <Vault Name> | Where-Object { $_.Enabled -and -not $_.Expires } This returns secrets where Expires setting is not configured with a value and the Enabled setting is set to True. To audit at...'
+remediation:
+  type: iac_patch
+  command: 'Requisite RBAC Permissions for Secrets - read section overview! Remediation Role = Key Vault Secrets Officer Remediate from Azure Portal 1. Go to Key vaults. 2. For each Key vault, under Objects, select Secrets. 3. In the main pane, ensure that the status of the secret(s) is Enabled. 4. Click on the secret(s) without Expiration date. 5. Click on the current version secret 6. Click the checkbox Set expiration date and set an appropriate Expiration date on the secret. 7. Click Apply. Remediate from Azure CLI Update the Expiration date for the secret using the below command: az keyvault secret set-attributes --name <secret_name> --vault-name <vault_name> --expires Y-m-d''T''H:M:S''Z'' Remediate from PowerShell Set-AzKeyVaultSecretAttribute -VaultName <vault_name> -Name <secret_name> - Expires <date_time>'

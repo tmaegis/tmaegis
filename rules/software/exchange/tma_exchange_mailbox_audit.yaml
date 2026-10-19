@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-MAILBOX-AUDIT
+title: Ensure mailbox auditing is not disabled at the organization level
+description: When AuditDisabled is $true, mailbox audit logging is switched off for every mailbox, removing evidence of mailbox access by owners, delegates and administrators. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- logging
+reference: CIS Microsoft Exchange Server Benchmark - Auditing / Mailbox audit logging (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $o = Get-OrganizationConfig -ErrorAction Stop; if ($o.AuditDisabled -eq $false) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-OrganizationConfig -AuditDisabled $false (Exchange 2019 CU / Exchange 2016 CU with organization-level audit setting).

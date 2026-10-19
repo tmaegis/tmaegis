@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-2.1
+title: Ensure Network Time Protocol (NTP) Service Is Configured for Cluster Clock Synchronization
+description: CockroachDB requires moderate levels of clock synchronization to preserve data consistency. When a node detects that its clock is out of sync with at least half of the other nodes in the cluster by 80% of the maximum offset allowed (500 ms by default), it will spontaneously shut down to avoid consistency anomalies.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- time
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 2.1 Ensure Network Time Protocol (NTP) Service Is Configured for Cluster Clock Synchronization
+audit:
+  type: manual
+  command: On each node confirm exactly one clock-sync service (chronyd, ntpd, or the cloud provider time source) is enabled and running (systemctl status chronyd, timedatectl, chronyc sources -v). All nodes must use compatible leap-smearing sources, and offsets must stay well within --max-offset (default 500ms).
+remediation:
+  type: iac_patch
+  command: 'Key requirements: - Run one clock sync service (NTP/chrony or provider''s built-in time source) on each node. - Use compatible, leap-smearing time sources across all nodes. 1. Install and enable a time sync service (per environment): - AWS EC2: Configure each instance to use Amazon Time Sync Service via 169.254.169.123, verify via chronyc sources -v. - GCE: use GCE''s internal NTP via metadata.google.internal;'

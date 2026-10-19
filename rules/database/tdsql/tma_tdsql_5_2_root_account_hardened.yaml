@@ -1,0 +1,16 @@
+id: TMA-TDSQL-5.2
+title: Ensure the `root` Account Is Disabled or Hardened
+description: MySQL's root superuser account holds all privileges. In the TDSQL architecture, instance management is performed by system accounts (tdsqlsys_*), and root should not be used for daily operations.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- authentication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.2 Ensure the `root` Account Is Disabled or Hardened
+audit:
+  type: manual
+  command: '1. Check whether TDSQL has forbidden root user operations: # Check whether root is forbidden in the OSS configuration grep "forbidden" <oss_config> | grep "root" 2. Check the root account status in the MySQL instance: SELECT User, Host, account_locked FROM mysql.user WHERE User = ''root'';'
+remediation:
+  type: iac_patch
+  command: '1. Ensure the OSS configuration db_user_root.forbidden = true (the TDSQL default). 2. If a root account exists, lock it: ALTER USER ''root''@''localhost'' ACCOUNT LOCK; 3. Or change the root password to a strong random value and store it only in a secure password management system.'

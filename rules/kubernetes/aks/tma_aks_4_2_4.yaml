@@ -1,0 +1,22 @@
+id: TMA-AKS-4.2.4
+title: Minimize the admission of containers wishing to share the host network namespace
+description: Minimize the admission of pods that request spec.hostNetwork=true so that only tightly controlled, explicitly approved platform workloads can share the host network namespace in AKS. As it relates to RBAC and service accounts, this means users, groups, and service accounts with pod or controller deployment rights should not broadly be able to create or update workloads that use host networking, because AKS relies on Kubernetes RBAC to scope who ... Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- pod-security
+- network
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.2.4 Minimize the admission of containers wishing to share the host network namespace
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.hostNetwork}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex && ($3=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add policies to each namespace in the cluster which has user workloads to restrict the admission of hostNetwork containers. Pod Security Policies and Assignments can be found by searching for Policies in the Azure Portal. A detailed step-by-step guide can be found here: https://learn.microsoft.com/en-us/azure/governance/policy/concepts/policy-for-kubernetes'

@@ -1,0 +1,17 @@
+id: TMA-OFFICE-OLE-PACKAGE-ACTIVATION
+title: Ensure OLE Package (Packager) object activation is blocked (Word, Excel, PowerPoint)
+description: Embedded OLE Package objects are used to deliver executables and scripts inside documents. PackagerPrompt 2 = block activation, 1 = prompt, 0 = run without prompt. Audit requires 2 under HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0\<app>\security for word, excel and powerpoint. These Trust Center policies exist only in User Configuration (HKCU\Software\Policies\Microsoft\Office\...); there is no HKLM equivalent, so the audit evaluates the account running the scan. Run it as (or for) each interactive user, and enforce via User Configuration GPO/Intune.
+target: office
+level: 1
+severity: high
+tags:
+- office
+- ole
+reference: 'CIS Microsoft Office Benchmark - Security Settings: Packager object activation (PackagerPrompt)'
+audit:
+  type: registry
+  command: '$bad = @(); foreach ($p in @(''HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0\word\security'', ''HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0\excel\security'', ''HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0\powerpoint\security'')) { $v = (Get-ItemProperty -Path $p -Name ''PackagerPrompt'' -ErrorAction SilentlyContinue).''PackagerPrompt''; if (-not (@(''2'') -contains "$v")) { $bad += "$(($p -split ''\\'')[6])=$v" } }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: foreach ($p in @('HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0\word\security', 'HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0\excel\security', 'HKCU:\SOFTWARE\Policies\Microsoft\Office\16.0\powerpoint\security')) { if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'PackagerPrompt' -Value 2 -Type DWord }

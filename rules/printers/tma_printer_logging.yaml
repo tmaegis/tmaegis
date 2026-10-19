@@ -1,0 +1,17 @@
+id: TMA-PRINTER-LOGGING
+title: Ensure device security events are logged and forwarded to a central syslog/SIEM
+description: Print devices keep only a small internal event log. Forwarding admin logins, configuration and firmware changes and failed authentications to syslog/SIEM lets compromise or misuse be detected and investigated.
+target: printer
+level: 1
+severity: medium
+tags:
+- printer
+- logging
+- monitoring
+reference: CIS Multi-Function Device Benchmark v1.0.0 - Logging and auditing (verify section number for your release)
+audit:
+  type: manual
+  command: 'In the Embedded Web Server (EWS: browse to https://<printer-ip>/ and sign in as administrator; HP: Security / Networking tabs, Xerox: Properties > Security / Connectivity, Ricoh: Device Management > Configuration, Canon: Settings/Registration > Network Settings / Security Settings) > Security / Networking > Syslog or Audit Log (HP: Security > Syslog / Event Log; Xerox: Security > Audit Log; Ricoh: Device Management > Logs): audit logging ON, syslog server set to the central collector (TLS syslog where supported), severity covering security/authentication events; the device NTP/time server is configured so timestamps are correct; confirm in the SIEM that events from the device''s IP were received recently.'
+remediation:
+  type: iac_patch
+  command: 'EWS: enable the audit/security event log, configure the syslog destination (preferably TLS, tcp/6514), set NTP to the organisation time servers, and create a SIEM alert for admin logins, configuration changes and firmware updates.'

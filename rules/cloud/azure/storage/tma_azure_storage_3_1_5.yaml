@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-3.1.5
+title: Ensure 'Cross Region Restore' is set to 'Enabled' on Backup vaults
+description: Cross region restore enables data restoration in a secondary Azure paired region, even when the primary region is fully operational. This allows organizations to conduct drills and validate regional resiliency, thereby ensuring preparedness for potential outages. Enabling cross region restore facilitates proactive resilience testing and disaster recovery planning by allowing data restoration drills in a secondary region without needing a primary region outage. This capability helps organizations validate recovery processes, identify gaps in regional failover, and ensures critical data can be accessed and restored during real disruptions.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- backup
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.1.5 Ensure 'Cross Region Restore' is set to 'Enabled' on Backup vaults
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Under Vault Settings, ensure that Cross Region Restore is set to Enabled. 5. Repeat steps 1-4 for each Backup vault. Audit from Azure CLI Run the following command to list Backup vaults: az dataprotection backup-vault list For each Backup vault, run the following command: az dataprotection backup-vault show --resource-group <resource-group> -- vault-name <backup-vault> Ensure that under properties > featureSettings > crossRegionRestoreSettings, state is set to Enabled. Audit from PowerShell Run the following command to list Backup vaults: Get-AzDataProtectionBackupVault Run the following command to get the Backup vault in a resource group with a given name: $vault = Get-AzDataProtectionBackupVault -ResourceGroupName <resource-group> -VaultName <backup-vault> Run the following command to get the cross region restore setting for the Backup vault: $vault.CrossRegionRestoreState
+    Ensure that the command returns Enabled. Repeat for each Backup vault.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Under Vault Settings, next to Cross Region Restore, click Update. 5. Click the toggle switch under Cross Region Restore to set it to Enable. 6. Click Apply. 7. Repeat steps 1-6 for each Backup vault requiring remediation. Remediate from Azure CLI For each Backup vault requiring remediation, run the following command to enable cross region restore: az dataprotection backup-vault update --resource-group <resource-group> -- vault-name <backup-vault> --cross-region-restore-state Enabled Remediate from PowerShell For each Backup vault requiring remediation, run the following command to enable cross region restore: Update-AzDataProtectionBackupVault -ResourceGroupName <resource-group> - VaultName <backup-vault> -CrossRegionRestoreState Enabled'

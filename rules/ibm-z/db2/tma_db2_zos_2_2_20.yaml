@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.2.20
+title: Ensure that access to SYSIBM.SYSROUTINEAUTH is restricted
+description: The SYSIBM.SYSROUTINEAUTH table records the privileges that are held by users on routines (function or stored procedure). PUBLIC should be restricted from accessing this table. PUBLIC should not have access to the privileges that are held by users. Exposing who has access to routines can enable attackers to gain access to your organization's data.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.2.20 Ensure that access to SYSIBM.SYSROUTINEAUTH is restricted
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check if PUBLIC has access: SELECT GRANTEE FROM SYSIBM.SYSTABAUTH WHERE TCREATOR = ''SYSIBM'' AND TTNAME = ''SYSROUTINEAUTH'' AND GRANTEE = ''PUBLIC''; Output that contains zero rows is considered a successful finding. Otherwise, PUBLIC has SELECT privilege and the remediation steps should be followed. For external security users: Issue the RACF RLIST command to list the profile that controls access to the SYSIBM.SYSROUTINEAUTH table in the MDSNTB class. Examine the universal access (UACC) and ... (full steps: CIS section 2.2.20)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the following SQL statement to revoke access from PUBLIC: REVOKE ALL ON SYSIBM.SYSROUTINEAUTH FROM PUBLIC; For external security users: Issue the RACF RALTER command to update the profile and change the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

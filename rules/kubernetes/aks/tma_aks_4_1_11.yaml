@@ -1,0 +1,17 @@
+id: TMA-AKS-4.1.11
+title: Minimize access to webhook configuration objects
+description: Minimize access to webhook configuration objects so that only tightly controlled cluster-administrative identities can create, update, or delete ValidatingWebhookConfiguration and MutatingWebhookConfiguration resources in AKS. Admission controllers run after authentication and authorization but before an object is persisted, and Microsoft’s AKS documentation shows that webhook configurations define the webhook service endpoint and related trust ... The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.11 Minimize access to webhook configuration objects
+audit:
+  type: manual
+  command: Audit this control by identifying who can modify cluster-scoped webhook configuration resources and confirming that webhook definitions are limited to approved admission use cases in AKS. The review should verify that ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects are present only where operationally required, that their scope is not broader than necessary, and that access to manage them is restricted through least-privilege RBAC.
+remediation:
+  type: iac_patch
+  command: Remediate this control by removing permission to create, update, patch, or delete ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects from broad ClusterRole and Role assignments, and then rebinding that access only to tightly controlled cluster-administrative identities. In AKS, this should be implemented through least-privilege Kubernetes RBAC and, where used, Azure RBAC for Kubernetes Authorization, with access granted through centrally managed identity groups rather than widely distributed individual assignments. Service-account permissions should be reviewed as part of the same effort so workload identities do not inherit cluster-scoped webhook-management capability. Review each webhook configuration and narrow its match criteria to only the required namespaces, resources, and operations.

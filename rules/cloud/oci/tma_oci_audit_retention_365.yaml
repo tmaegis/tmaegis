@@ -1,0 +1,21 @@
+id: TMA-OCI-AUDIT-RETENTION-365
+title: Ensure audit log retention period is set to 365 days
+description: Audit events are needed for investigations long after an incident starts. The tenancy audit configuration retention-period-days must be at least 365. Read-only OCI CLI calls; credentials and region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: medium
+tags:
+- oci
+- logging
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark - Logging and Monitoring - audit log retention 365 days (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    out=$(oci audit config get --compartment-id "$t" --query 'data."retention-period-days"' --raw-output 2>/dev/null) || exit 1
+    [ "$out" -ge 365 ] 2>/dev/null && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: oci audit config update --compartment-id <tenancy-ocid> --retention-period-days 365.

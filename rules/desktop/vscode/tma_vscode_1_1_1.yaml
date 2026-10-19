@@ -1,0 +1,18 @@
+id: TMA-VSCODE-1.1.1
+title: Ensure 'ChatMCP' is set to 'Disabled'
+description: 'This policy setting controls integration with Model Context Protocol (MCP) servers. The recommended state for this setting is: Disabled. Rationale: Integration with third-party MCP servers may result in unintended disclosure of information to the party running the server. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\VSCode:ChatMCP (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: vscode
+level: 2
+severity: medium
+tags:
+- vscode
+- developer-tools
+- cis-l2
+reference: CIS Visual Studio Code GPO Benchmark v1.0.0 - 1.1.1 Ensure 'ChatMCP' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'' -Name ''ChatMCP'' -ErrorAction SilentlyContinue).''ChatMCP''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ChatMCP' -Value 0 -PropertyType DWord -Force | Out-Null

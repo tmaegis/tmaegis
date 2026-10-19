@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-1.6.2
+title: Ensure redundant NTP servers are configured appropriately
+description: 'These settings enable use of primary and secondary NTP servers to provide redundancy in case of a failure involving the primary NTP server. PASS requires both a primary and a secondary NTP server address. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- time
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.6.2 Ensure redundant NTP servers are configured appropriately
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:template \S+ config )?deviceconfig system ntp-servers primary-ntp-server ntp-server-address \S+(?s:.*?)^set (?:template \S+ config )?deviceconfig system ntp-servers secondary-ntp-server ntp-server-address \S+|^set (?:template \S+ config )?deviceconfig system ntp-servers secondary-ntp-server ntp-server-address \S+(?s:.*?)^set (?:template \S+ config )?deviceconfig system ntp-servers primary-ntp-server ntp-server-address \S+)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system ntp-servers primary-ntp-server ntp-server-address ntp1.example.com
+    set deviceconfig system ntp-servers secondary-ntp-server ntp-server-address ntp2.example.com
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Services > Services. Set Primary NTP Server Address appropriately. Set Secondary NTP Server Address appropriately.

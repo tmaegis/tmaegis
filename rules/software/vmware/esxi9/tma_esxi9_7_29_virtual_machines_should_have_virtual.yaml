@@ -1,0 +1,23 @@
+id: TMA-ESXI9-7.29
+title: Virtual machines should have virtual machine hardware version 19 or newer
+description: 'Upgrade to hardware version 19 or newer to access enhanced features and better performance. Test the upgrades and ensure compatibility across all operational landscapes. Expected: virtualHW.version 19 or newer. The audit parses every .vmx file under /vmfs/volumes/ on the host and lists the VMs that do not comply; it passes when none are found (or no VMs exist). Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 2
+severity: low
+tags:
+- vmware
+- esxi
+- virtual-machine
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 7.29 Virtual machines should have virtual machine hardware version 19 or newer
+audit:
+  type: command
+  command: |-
+    out=$(find /vmfs/volumes/ -maxdepth 3 -type f -name '*.vmx' 2>/dev/null | while IFS= read -r f; do
+      v=$(sed -n 's/^ *virtualHW.version *= *"\{0,1\}\([0-9]*\).*/\1/p' "$f" | head -n 1)
+      [ -n "$v" ] && [ "$v" -ge 19 ] || echo "$f: virtualHW.version ${v:-unknown}"
+    done)
+    [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 25
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Before remediation, confirm guest OS and application compatibility, take required backups/snapshots according to policy, then use vSphere Client > Compatibility > Upgrade VM Compatibility or PowerCLI to upgrade to hardware version 19 or later. A VM power cycle may be required.

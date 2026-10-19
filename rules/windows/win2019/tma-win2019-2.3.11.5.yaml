@@ -1,0 +1,21 @@
+id: TMA-WIN2019-2.3.11.5
+title: 'Ensure ''Network security: Do not store LAN Manager hash value on next password change'' is set to ''Enabled'''
+description: 'This policy setting determines whether the LAN Manager (LM) hash value for the new password is stored when the password is changed. The LAN Manager (LM) hash is a legacy 16-byte hash of a user''s password used in older authentication protocols. Tis hash is stored on the local system and is known for its weak security. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 2.3.11.5
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa'' -Name ''NoLMHash'' -ErrorAction SilentlyContinue).''NoLMHash''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''NoLMHash='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'NoLMHash' -Value 1 -PropertyType DWord -Force | Out-Null

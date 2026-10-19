@@ -1,0 +1,27 @@
+id: TMA-ROS1-4.1.8
+title: Ensure session initiation information is collected
+description: Monitor session initiation events. The parameters in this section track changes to the files associated with session events. The file /var/run/utmp tracks all currently logged in users. All audit records will be tagged with the identifier "session." The /var/log/wtmp file tracks logins, logouts, shutdown, and reboot events. The audit inspects the loaded rules (auditctl -l). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.8 Ensure session initiation information is collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)session( |$)' | grep -Fq -- '-w /var/run/utmp ' || { echo 'missing watch: -w /var/run/utmp -k session'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)logins( |$)' | grep -Fq -- '-w /var/log/wtmp ' || { echo 'missing watch: -w /var/log/wtmp -k logins'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)logins( |$)' | grep -Fq -- '-w /var/log/btmp ' || { echo 'missing watch: -w /var/log/btmp -k logins'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/session.rules and add the following lines: -w /var/run/utmp -p wa -k session -w /var/log/wtmp -p wa -k logins -w /var/log/btmp -p wa -k logins'

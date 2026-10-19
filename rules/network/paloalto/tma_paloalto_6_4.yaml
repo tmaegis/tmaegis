@@ -1,0 +1,24 @@
+id: TMA-PALOALTO-6.4
+title: Ensure DNS sinkholing is configured on all anti-spyware profiles in use
+description: 'Configure DNS sinkholing for all anti-spyware profiles in use. All internal requests to the selected sinkhole IP address must traverse the firewall. Any device attempting to communicate with the DNS sinkhole IP address should be considered infected. PASS requires default-paloalto-dns with action sinkhole in an anti-spyware profile; confirm every profile in use and the sinkhole IPv4/IPv6 addresses. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.4 Ensure DNS sinkholing is configured on all anti-spyware profiles in use
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles spyware (?:"[^"\n]*"|\S+) botnet-domains lists default-paloalto-dns action sinkhole[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles spyware <profile> botnet-domains lists default-paloalto-dns action sinkhole
+    set profiles spyware <profile> botnet-domains sinkhole ipv4-address sinkhole.paloaltonetworks.com
+    set profiles spyware <profile> botnet-domains sinkhole ipv6-address ::1
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > Anti-Spyware. Within the each anti-spyware profile, under its DNS Policies tab, set the Signature Source List: default-paloalto-dns should have as its Policy Action set to sinkhole If licensed, the DNS Security should have as its Policy Action set to sinkhole Verify the 'Sinkhole IPv4' IP address is correct. This should be set to sinkhole.paloaltnetworks.com, or if an internal host is set then that host IP or FQDN should be in that field Verify the 'Sinkhole IPv6' IP address is correct. This should be set to IPv6 Loopback IP (::1), or if an internal DNS Sinkhole host is set then that host IP or FQDN should be in that field
+    Navigate to Policies > Security Policies For each outbound security Policy, in the Actions tab, set the Anti-Spyware setting to include the Spyware Profile created, either explicitly or as a Group Profile

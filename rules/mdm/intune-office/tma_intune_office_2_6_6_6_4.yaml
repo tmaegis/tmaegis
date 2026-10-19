@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.6.6.6.4
+title: 'Ensure ''Run Programs'' is set to ''Enabled: disable (don''t run any programs)'''
+description: 'This policy setting controls the prompting and activation behavior for the Run Programs option for action buttons in PowerPoint. By choosing the Disable (don''t run any programs) option, if users click an action button with the Run Programs action assigned to it, nothing will happen. The recommended state for this setting is: Enabled: Disable (don''t run any programs) Audit: reads the registry value(s) runprograms that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.6.6.6.4 Ensure ''Run Programs'' is set to ''Enabled: disable (don''t run any programs)'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\powerpoint\security'') -Name ''runprograms'' -ErrorAction SilentlyContinue).''runprograms''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':runprograms='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: disable (don''t run any programs). Microsoft PowerPoint 2016\PowerPoint Options\Security\Run Programs'

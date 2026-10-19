@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.1.11
+title: Ensure all open comments are resolved before allowing code change merging
+description: Organizations should enforce a "no open comments" policy before allowing code change merging. In an open code change proposal, reviewers can leave comments containing their questions and suggestions. These comments can also include potential bugs and security issues. Requiring all comments on a code change proposal to be resolved before it can be merged ensures that every concern is properly addressed or acknowledged before the new code changes are introduced to the code base.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.11 Ensure all open comments are resolved before allowing code change merging
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: You can prevent merge requests from being merged until all threads are resolved. When this setting is enabled, the Unresolved threads counter in a merge request is shown in orange when at least one thread remains unresolved. 1. On the left sidebar, select Search or go to and find your project. 2. Select Settings > Merge requests. 3. In the Merge checks section, select the All threads must be resolved checkbox. 4. Select Save changes.

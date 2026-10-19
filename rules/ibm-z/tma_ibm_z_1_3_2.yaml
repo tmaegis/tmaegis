@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-1.3.2
+title: Ensure that SYS1.UADS contains only recovery user IDs
+description: SYS1.UADS is a dataset where user IDs are be maintained with applicable password information for whenever RACF is not functional. If an unauthorized user has access to SYS1.UADS they could enter their user ID and password into the SYS1.UADS dataset and could give themselves access to the system.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.3.2 Ensure that SYS1.UADS contains only recovery user IDs
+audit:
+  type: manual
+  command: 'Issue the following TSO command: ACCOUNT Issue the following ACCOUNT sub-command to list all entries in SYS1.UADS: LIST (*) Verify that only recovery IDs are defined in SYS1.UADS. If there are recovery IDs defined in SYS1.UADS, request IRRUT100 cross reference output and reports generated using IRRDBU00 output that will allow you to: Verify that the recovery user IDs defined in SYS1.UADS have a paired RACF user ID with limited privileges: User ID has the PROTECTED attribute User ID has the RESTRICTED attribute User ID has the UAUDIT attribute User ID has ... (full steps: CIS section 1.3.2)'
+remediation:
+  type: iac_patch
+  command: 'To remove a user ID from SYS1.UADS use the TSO ACCOUNT-DELETE subcommand: ACCOUNT DELETE (<user-id>) END Use the RACONVRT command if needed as an aid in converting users from SYS1.UADS to the RACF database: RACONVRT INCLUDE USERID(userid) Notes: If RACF is installed and active, you require RACF SPECIAL authority to issue the command. RACONVRT generates the RACF commands needed to update or create RACF user profiles, and places these commands into members of a partitioned data set. This data set, <prefix>.IKJ.RACONVRT.CLIST, contains the commands necessary to convert to the RACF data base. RACONVRT creates, but does not execute the RACF commands; therefore, you can edit and change the data set''s members to customize the conversion process before issuing the RACF commands. To modify RACF entries for recovery user IDs use the RACF ALTUSER or CONNECT commands: ALTUSER <user-id> + NOPASSWORD + RESTRICTED + UAUDIT + REVOKE + NOSPECIAL + NOAUDIT + NOPERATIONS + NOROAUDIT + NOTSO +
+    NOOMVS + NOCICS CONNECT <user-id> + GROUP(<group>) + AUTHORITY(USE) + NOAUDITOR + NOOPERATIONS + NOSPECIAL To remove a non-compliant access list entries use the RACF PERMIT command ... (see CIS section 1.3.2)'

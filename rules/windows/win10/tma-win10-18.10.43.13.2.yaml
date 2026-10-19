@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.43.13.2
+title: Ensure 'Scan packed executables' is set to 'Enabled'
+description: 'This policy setting manages whether or not Microsoft Defender Antivirus scans packed executables. Packed executables are executable files that contain compressed code. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.43.13.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''DisablePackedExeScanning'' -ErrorAction SilentlyContinue).''DisablePackedExeScanning''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''DisablePackedExeScanning='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan' -Name 'DisablePackedExeScanning' -Value 0 -PropertyType DWord -Force | Out-Null

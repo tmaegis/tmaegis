@@ -1,0 +1,19 @@
+id: TMA-IIS-4.4
+title: Ensure non-ASCII characters in URLs are not allowed
+description: This feature is used to allow or reject all requests to IIS that contain non-ASCII characters. When using this feature, Request Filtering will deny the request if high-bit characters are present in the URL. The UrlScan equivalent is AllowHighBitCharacters. It is recommended that requests containing non-ASCII characters be rejected, where possible. requestFiltering allowHighBitCharacters must be false at server level and for every site. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.4 Ensure non-ASCII characters in URLs are not allowed
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT/APPHOST') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.webServer/security/requestFiltering' -PSPath $_; $c.allowHighBitCharacters -ne $false }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/requestFiltering -Name allowHighBitCharacters -Value False

@@ -1,0 +1,30 @@
+id: TMA-ROS1-1.10
+title: Disable rosmaster listening on all interfaces by default
+description: rosmaster is the handshaking server responsible for connecting publishers to subscribers and vice-versa. By default it listens on all interfaces on a given machine, including external interfaces. This greatly increases attack surface area, and is only required if one is using distributed computing (where multiple machines are running ROS and need to connect to the same master). The audit requires the ROS master port 11311 to listen only on loopback (ss); when rosmaster is not running it requires every running ROS 1 process to have ROS_HOSTNAME (or ROS_IP) set to localhost. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: high
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.10 Disable rosmaster listening on all interfaces by default
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v ss >/dev/null 2>&1 || exit 1
+    l=$(ss -Hltn 'sport = :11311' 2>/dev/null) || exit 1
+    if [ -n "$l" ]; then bad=$(printf '%s\n' "$l" | awk '{print $4}' | grep -Ev '^(127\.[0-9.]+|\[::1\]|::1):11311$')
+      [ -z "$bad" ] && echo compliant || echo "rosmaster listens on: $(printf '%s ' $bad)"; exit 0; fi
+    bad=0; for e in /proc/[0-9]*/environ; do env=$( (tr '\0' '\n' < "$e") 2>/dev/null ) || continue
+      case "$env" in *ROS_DISTRO=melodic*|*ROS_MASTER_URI=*) ;; *) continue ;; esac
+      h=$(printf '%s\n' "$env" | sed -n 's/^ROS_HOSTNAME=//p;s/^ROS_IP=//p' | head -n 1)
+      case "$h" in localhost|127.0.0.1|::1) ;; *) echo "pid ${e#/proc/}: ROS_HOSTNAME/ROS_IP=${h:-unset}"; bad=1 ;; esac
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Ensure the ROS_HOSTNAME environment variable is set to localhost, thereby ensuring rosmaster only listens on loopback and isn''t accessible on the network. One can cover most user session services and applications by adding the following line to /etc/environment: ROS_HOSTNAME="localhost" Note that this will not cover systemd system units. If a unit is being created that runs rosmaster (e.g. roscore or roslaunch), make sure this environment variable is set by utilizing Environment=, EnvironmentFile=, or similar.'

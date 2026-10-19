@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.1.16
+title: Ensure private endpoints are used to access App Service apps
+description: Use private endpoints to allow clients and services to securely access data located over a network via an encrypted Private Link. To do this, the private endpoint uses an IP address from the VNet for each service. Network traffic between disparate services securely traverses encrypted over the VNet. This VNet can also link addressing space, extending your network and accessing resources on it. Similarly, it can be a tunnel through public networks to connect remote infrastructures together. This creates further security through segmenting network traffic and preventing outside sources from accessing it. Securing traffic between services through encryption protects the data from easy interception and reading.
+target: azure
+level: 2
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.1.16 Ensure private endpoints are used to access App Service apps
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Settings, click Networking. 4. Under Inbound traffic configuration, click the link next to Private endpoints. 5. Ensure that at least one private endpoint is listed with a Connection state of Approved. 6. Repeat steps 1-5 for each app. Audit from Azure CLI Run the following command to list apps IDs: az webapp list --query [*].id Run the following command to list private link service IDs and connection states: az network private-endpoint list --query [*].privateLinkServiceConnections[*].[privateLinkServiceId,privateLinkService ConnectionState.status] Ensure that a private endpoint exists for each app with a connection state of Approved. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: 687aa49d-0982-40f8-bf6b-66d1da97a04b - Name: ''App Service apps should use private link'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Settings, click Networking. 4. Under Inbound traffic configuration, click the link next to Private endpoints. 5. Click + Add. 6. From the drop-down menu, select Express or Advanced. 7. If selecting Express: 1. Provide a Name, and select a Subscription, Virtual network, and Subnet. 2. Click OK. 8. If selecting Advanced: 1. Select a Subscription and Resource group, provide an instance Name and Network Interface Name, and select a Region. 2. Click Next : Resource >. 3. Select a Target sub-resource. 4. Click Next : Virtual Network >. 5. Select a Virtual network and a Subnet. 6. Click Next : DNS >. 7. Optionally update the DNS configuration. 8. Click Next : Tags >. 9. Optionally configure tags. 10. Click Next : Review + create >. 11. Click Create. Remediate from Azure CLI For each app requiring remediation, run the following command to create a private endpoint: az network private-endpoint create
+    --resource-group <resource-group-name> -- location <location> --name <private-endpoint-name> --vnet-name <virtual- network-name> --subnet <subnet-name> --private-connection-resource-id <fully- qualified-...'

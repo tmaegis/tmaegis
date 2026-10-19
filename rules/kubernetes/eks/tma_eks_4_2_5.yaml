@@ -1,0 +1,21 @@
+id: TMA-EKS-4.2.5
+title: Minimize the admission of containers with allowPrivilegeEscalation
+description: 'Minimize the admission of containers with securityContext.allowPrivilegeEscalation: true in EKS so that general workload namespaces do not permit processes to gain more privileges than their parent process. In current EKS guidance, AWS recommends applying Pod Security Standards through Pod Security Admission or a policy engine, using at least the baseline profile cluster-wide and the restricted profile for workload namespaces. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Containers that do not explicitly set allowPrivilegeEscalation: false are reported.'
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- pod-security
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.2.5 Minimize the admission of containers with allowPrivilegeEscalation
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($4!="false")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure Pod Security Admission on workload namespaces so containers that do not explicitly set securityContext.allowPrivilegeEscalation=false are denied at admission time. In EKS, use restricted for workload namespaces, or an equivalent policy engine, because AWS shows that restricted requires allowPrivilegeEscalation=false. Use enforce for actual remediation, since warn and audit only report violations and do not block pod creation. • Label each workload namespace to enforce restricted. kubectl label ns NAMESPACE pod-security.kubernetes.io/enforce=restricted --overwrite • Add warn and audit during rollout if you want visibility into violations before or alongside enforcement.

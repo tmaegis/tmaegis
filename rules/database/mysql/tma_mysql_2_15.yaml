@@ -1,0 +1,40 @@
+id: TMA-MYSQL-2.15
+title: Limit Accepted Transport Layer Security (TLS) Versions
+description: 'MySQL supports multiple protocols of TLS. The higher the version the stronger the security and/or better the performance. Also review performance_schema.status_by_thread (Ssl_version) for clients still negotiating old versions. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: high
+tags:
+- mysql
+- database
+- tls
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.15 Limit Accepted Transport Layer Security (TLS) Versions
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(FIND_IN_SET('TLSv1', @@global.tls_version) = 0 AND FIND_IN_SET('TLSv1.1', @@global.tls_version) = 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v mysql >/dev/null 2>&1 || exit 0
+    cli() { mysql -NB "$@"; }
+    dir=; for x in /etc/mysql/mysql.conf.d /etc/mysql/mariadb.conf.d /etc/mysql/conf.d /etc/my.cnf.d; do [ -d "$x" ] && { dir=$x; break; }; done
+    [ -n "$dir" ] || { echo "no mysql conf.d directory found" >&2; exit 1; }
+    setv() { # name option value
+      printf '[mysqld]\n%s=%s\n' "$2" "$3" > "$dir/99-tmaegis-$1.cnf"; chmod 644 "$dir/99-tmaegis-$1.cnf"
+      cli -e "SET GLOBAL $1 = '$3'" 2>/dev/null || true; }
+    setv tls_version tls_version TLSv1.2,TLSv1.3
+  guidance: "Set tls_version=TLSv1.3 (or TLSv1.2,TLSv1.3) under [mysqld] in /etc/my.cnf (or /etc/mysql/mysql.conf.d/mysqld.cnf) (or SET PERSIST tls_version then ALTER INSTANCE RELOAD TLS), then restart MySQL."

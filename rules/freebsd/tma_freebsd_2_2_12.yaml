@@ -1,0 +1,16 @@
+id: TMA-FREEBSD-2.2.12
+title: Ensure only approved services are listening on a network interface
+description: A network port is identified by its number, the associated IP address, and the type of the communication protocol such as TCP or UDP. A listening port is a network port on which an application or process listens on, acting as a communication endpoint. Each listening port can be open or closed (filtered) using a firewall.
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- network
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 2.2.12 Ensure only approved services are listening on a network interface
+audit:
+  type: manual
+  command: 'Run the following command: # sockstat -46L Review the output to ensure: All services listed are required on the system and approved by local site policy. Both the port and interface the service is listening on are approved by local site policy. If a listed service is not required: o Disable the service o Remove the package containing the service o -IF- the service''s package is required for a dependency, stop and disable the service and/or socket'
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to stop the service and remove the package containing the service: # service <service_name> stop # pkg remove <service_name> -OR- If required packages have a dependency: Run the following commands to stop and mask the service and socket: # service <service_name> stop # service <service_name> disable Note: replace <service_name> with the appropriate service name.'

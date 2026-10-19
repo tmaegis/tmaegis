@@ -1,0 +1,37 @@
+id: TMA-ROS1-1.1.22
+title: Disable Automounting
+description: autofs allows automatic mounting of devices, typically including CD/DVDs and USB drives. The audit requires autofs to be not installed or not enabled (systemctl is-enabled autofs). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.1.22 Disable Automounting
+audit:
+  type: command
+  shell: bash
+  command: |-
+    s=$(systemctl is-enabled autofs 2>/dev/null)
+    [ "$s" = enabled ] && echo 'autofs is enabled' || echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    systemctl disable --now autofs 2>/dev/null; chkconfig autofs off 2>/dev/null; systemctl stop autofs 2>/dev/null; true
+  guidance: "Run one of the following commands: Run the following command to disable autofs : # systemctl --now disable autofs OR Run the following command to remove autofs # apt purge autofs"

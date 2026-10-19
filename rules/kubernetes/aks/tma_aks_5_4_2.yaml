@@ -1,0 +1,21 @@
+id: TMA-AKS-5.4.2
+title: Use private AKS clusters and disable public control plane DNS
+description: Provisioning AKS in private cluster mode limits control plane exposure by placing the Kubernetes API server on private addressing and requiring connectivity through Azure Private Link and a private endpoint rather than broad public network access. Requires the az CLI (logged in) with read access to the cluster named by AKS_RG and AKS_NAME. Requires enablePrivateCluster true and enablePublicFqdn false.
+target: aks
+level: 2
+severity: high
+tags:
+- aks
+- managed-services
+- network
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.4.2 Use private AKS clusters and disable public control plane DNS
+audit:
+  type: command
+  command: |-
+    out=$(az aks show --resource-group "${AKS_RG:?set AKS_RG}" --name "${AKS_NAME:?set AKS_NAME}" --query '[apiServerAccessProfile.enablePrivateCluster, apiServerAccessProfile.enablePublicFqdn]' -o tsv) || exit 1
+    set -- $(printf '%s\n' "$out" | tr 'A-Z' 'a-z')
+    if [ "${1:-}" = true ] && [ "${2:-}" = false ]; then echo compliant; else echo "noncompliant: enablePrivateCluster=${1:-} enablePublicFqdn=${2:-}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Use the apiServerAccessProfile results to determine whether the cluster must be moved to private cluster mode and whether the public FQDN must be disabled. Remediation should bring the cluster to enablePrivateCluster: true and, where required by policy, enablePublicFqdn: false; the detailed action depends on whether the cluster is new or existing and whether API Server VNet Integration is already in place. 1. If enablePrivateCluster is false on a new deployment, create the cluster as private by using az aks create --enable-private-cluster add --disable-public-fqdn when the requirement is to prevent publication of a public DNS name for the API server. 2. If enablePrivateCluster is false on an existing cluster, first determine whether the cluster already uses API Server VNet Integration.'

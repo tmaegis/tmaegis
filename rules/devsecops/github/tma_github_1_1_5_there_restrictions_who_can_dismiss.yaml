@@ -1,0 +1,24 @@
+id: TMA-GITHUB-1.1.5
+title: Ensure there are restrictions on who can dismiss code change reviews
+description: 'Only trusted users should be allowed to dismiss code change reviews. Dismissing a code change review permits users to merge new suggested code changes without going through the standard process of approvals. Checks the default branch: review dismissal is restricted (dismissal_restrictions present). Satisfied by classic branch protection. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 1
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.5 Ensure there are restrictions on who can dismiss code change reviews
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    p=$(gh api "repos/$R/branches/$B/protection" --jq '.required_pull_request_reviews != null and .required_pull_request_reviews.dismissal_restrictions != null' 2>/dev/null) || p=false
+    [ "$p" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: enable Restrict who can dismiss pull request reviews and list only trusted users/teams.'

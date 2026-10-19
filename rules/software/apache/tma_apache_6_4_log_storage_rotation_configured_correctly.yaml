@@ -1,0 +1,16 @@
+id: TMA-APACHE-6.4
+title: Ensure Log Storage and Rotation Is Configured Correctly
+description: 'It is important that there is adequate disk space on the partition that will hold all the log files, and that log rotation is configured to retain at least 3 months or 13 weeks if central logging is not used for storage. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- logging
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 6.4 Ensure Log Storage and Rotation Is Configured Correctly
+audit:
+  type: manual
+  command: 'Perform the following steps to determine if the recommended state is implemented: 1. Verify the web log rotation configuration matches the Apache configured log files. 2. Verify the rotation period and number of logs to retain is at least 13 weeks or 3 months. 3. For each virtual host configured with its own log files ensure that those log files are also included in a similar log rotation.'
+remediation:
+  type: iac_patch
+  command: 'To implement the recommended state, do either option ''a'' if using the Linux logrotate utility or option ''b'' if using a piped logging utility such as the Apache rotatelogs: a) File Logging with Logrotate: 1. Add or modify the web log rotation configuration to match your configured log files in /etc/logrotate.d/httpdor ''/etc/logrotate.d/apache2'' to be similar to the following. /var/log/httpd/*log { missingok notifempty sharedscripts postrotate /bin/kill -HUP ''cat /var/run/httpd.pid 2>/dev/null'' 2> /dev/null || true endscript } 2. Modify the rotation period and number of logs to keep so that at least 13 weeks or 3 months of logs are retained. This may be done as the default value for all logs in /etc/logrotate.conf or in the web specific log rotation configuration in /etc/logrotate.d/httpdto be similar to the following.'

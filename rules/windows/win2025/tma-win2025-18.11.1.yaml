@@ -1,0 +1,21 @@
+id: TMA-WIN2025-18.11.1
+title: 'Ensure ''Disable HTTP proxy features: Disable WPAD'' is set to ''Enabled: Checked'''
+description: 'This policy setting determines whether Web Proxy Auto-Discovery protocol (WPAD) is disabled on the system. WPAD is used to discover Proxy Auto-Config (PAC) files from the local network. The recommended state for this setting is: Enabled: Checked. Note: When this recommendation is set as prescribed, applications can still resolve the name WPAD by calling Domain Name System (DNS) directly.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.11.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings\WinHttp'' -Name ''DisableWpad'' -ErrorAction SilentlyContinue).''DisableWpad''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DisableWpad='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings\WinHttp')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings\WinHttp' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings\WinHttp' -Name 'DisableWpad' -Value 1 -PropertyType DWord -Force | Out-Null

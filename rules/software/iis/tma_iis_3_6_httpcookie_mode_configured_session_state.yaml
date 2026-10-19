@@ -1,0 +1,19 @@
+id: TMA-IIS-3.6
+title: Ensure 'httpcookie' mode is configured for session state
+description: A session cookie associates session information with client information for that session, which can be the duration of a user's connection to a site. The cookie is passed in a HTTP header together with all requests between the client and server. Session information can also be stored in the URL. sessionState cookieless must be UseCookies in the root web.config and every site. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- session
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.6 Ensure 'httpcookie' mode is configured for session state
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.web/sessionState' -PSPath $_; [string]$c.cookieless -ne 'UseCookies' }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST/<site>' -Filter system.web/sessionState -Name cookieless -Value UseCookies

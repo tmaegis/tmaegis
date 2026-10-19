@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.9
+title: Ensure that the user account for the z/OS UNIX kernel is defined with compliant attributes
+description: User identifiers (RACF user IDs), groups, and started tasks that use z/OS UNIX facilities are defined to a RACF with attributes including UID and GID. If these attributes are not correctly defined, data access or command privilege controls could be compromised. The z/OS UNIX kernel user ID must be defined with only the required UNIX system services attributes and prevented to access online z/OS facilities (ex. TSO, CICS, etc.).
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.9 Ensure that the user account for the z/OS UNIX kernel is defined with compliant attributes
+audit:
+  type: manual
+  command: 'Request the following DSMON report: FUNCTION SYSTEM RACSPT Use the ASSOCIATED USER column to determine the user ID associated with OMVS started task. Request reports generated using IRRDBU00 output that will allow you to: Verify that the RACF user ID associated with the OMVS started task: Has the PROTECTED attribute Does not appear on any RACF data set or general resource access list Does not have any segments beyond BASE and OMVS Does not have any extra system or group privileges (ex. ROAUDIT, CLAUTH, group-JOIN, etc.) Has the following OMVS segment values ... (full steps: CIS section 9.9)'
+remediation:
+  type: iac_patch
+  command: 'To create a compliant UNIX kernel ID use the RACF ADDGROUP, ADDUSER, and CONNECT commands: ADDGROUP OMVSGRP + OWNER(<group>) + SUPGROUP(<group>) + DATA(''OMVS KERNEL'') + OMVS(AUTOGID) ADDUSER OMVSKERN + OWNER(OMVSGRP) + DFLTGRP(OMVSGRP) + NOPASSWORD + DATA(''OMVS KERNEL'') + OMVS( + UID(0) SHARED + HOME(''/'') + PROGRAM(''/bin/sh'') + ) CONNECT OMVSKERN + GROUP(OMVSGRP) + OWNER(OMVSGRP) Notes: 1. AUTOGID is only available if the site has enabled automatic assignment of unique UNIX identities. 2. The HOME and PROGRAM values are case sensitive.'

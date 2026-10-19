@@ -1,0 +1,44 @@
+id: TMA-ESXI9-6.5.7
+title: Host SSH daemon, if enabled, must display the system login banner before granting access
+description: Implementing a system login banner before granting SSH access ensures that crucial information or notices are conveyed to users attempting to login. The banner text is set through the host's Config.Etc.Issue advanced parameter. The audit reads /etc/ssh/sshd_config and requires a Banner directive pointing to a non-empty file. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- services
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 6.5.7 Host SSH daemon, if enabled, must display the system login banner before granting access
+audit:
+  type: command
+  command: |-
+    f=/etc/ssh/sshd_config; [ -r "$f" ] || exit 1
+    b=$(awk 'tolower($1)=="banner" {print $2; exit}' "$f")
+    case "$b" in ''|none) echo 'no SSH Banner configured'; exit 1 ;; esac
+    [ -s "$b" ] && echo compliant || echo "banner file $b is missing or empty"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -s /etc/issue ] || exit 1
+    f=/etc/ssh/sshd_config
+    [ -f "$f" ] || exit 0
+    k=Banner; v=/etc/issue
+    cp -p "$f" "$f.tmaegis.bak" 2>/dev/null
+    # the audit and sshd both honour the FIRST occurrence, so drop old lines and put ours first
+    { printf '%s %s\n' "$k" "$v"; grep -viE "^[[:space:]]*$k[[:space:]]" "$f.tmaegis.bak"; } > "$f.tma.new" && cat "$f.tma.new" > "$f"
+    rm -f "$f.tma.new"; true
+  guidance: "To remediate this recommendation, configure the approved SSH banner file and Banner directive. Restart SSH only if enabled/authorized and confirm the banner appears before authentication."

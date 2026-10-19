@@ -1,0 +1,25 @@
+id: TMA-ROS1-4.1.13
+title: Ensure system administrator actions (sudolog) are collected
+description: Monitor the sudo log file. If the system has been properly configured to disable the use of the su command and force all administrators to have to log in first and then use sudo to execute privileged commands, then all administrator commands will be logged to /var/log/sudo.log . The audit reads the sudo logfile from sudoers and requires a loaded "-w <logfile> -p wa -k actions" rule (auditctl -l). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.13 Ensure system administrator actions (sudolog) are collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    l=$(grep -rhs 'logfile=' /etc/sudoers /etc/sudoers.d | sed -e 's/.*logfile=//;s/,\? .*//' | tr -d '"' | head -n 1)
+    [ -n "$l" ] || { echo 'sudo logfile is not configured'; exit 1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)actions( |$)' | grep -Fq -- "-w $l " && echo compliant || echo "missing watch: -w $l -p wa -k actions"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules and add the following line: -w <Path to sudo logfile> -p wa -k actions Example: vi /etc/audit/rules.d/actions.rules and add the following line: -w /var/log/sudo.log -p wa -k actions'

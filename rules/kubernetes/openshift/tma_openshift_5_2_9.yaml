@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-5.2.9
+title: Minimize the admission of containers with capabilities assigned
+description: Do not generally permit containers with capabilities. The benchmark marks this recommendation Manual.
+target: openshift
+level: 2
+severity: medium
+tags:
+- openshift
+- policies
+- pod-security
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 5.2.9 Minimize the admission of containers with capabilities assigned
+audit:
+  type: manual
+  command: 'Use the following command to list SCCs that drop all capabilities from containers: oc get scc -A -o json | jq ''.items[] | select(.requiredDropCapabilities[]?|any(. == "ALL"; .)) | .metadata.name'' Verify at least one SCC is returned.'
+remediation:
+  type: iac_patch
+  command: Review the use of capabilities in applications running on your cluster. Where a namespace contains applications which do not require any Linux capabilities to operate, consider adding a SCC which forbids the admission of containers which do not drop all capabilities.

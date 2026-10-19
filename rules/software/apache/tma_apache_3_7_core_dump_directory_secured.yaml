@@ -1,0 +1,16 @@
+id: TMA-APACHE-3.7
+title: Ensure the Core Dump Directory Is Secured
+description: 'The CoreDumpDirectory directive is used to specify the directory Apache attempts to switch to before creating the core dump. Core dumps will be disabled if the directory is not writable by the Apache user. Also, core dumps will be disabled if the server is started as root and switches to a non-root user, as is typical. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- accounts
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 3.7 Ensure the Core Dump Directory Is Secured
+audit:
+  type: manual
+  command: 'Verify that either the CoreDumpDirectory directive is not enabled in any of the Apache configuration files or that the configured directory meets the following requirements: 1. CoreDumpDirectory is not within the Apache web document root ($APACHE_PREFIX/htdocs) 2. Must be owned by root and have a group ownership of the Apache group (as defined via the Group directive) 3. Must have no read-write-search access permission for other users. (e.g. o=rwx)'
+remediation:
+  type: iac_patch
+  command: 'Either remove the CoreDumpDirectory directive from the Apache configuration files or ensure that the configured directory meets the following requirements. 1. CoreDumpDirectory is not to be within the Apache web document root ($APACHE_PREFIX/htdocs) 2. Must be owned by root and have a group ownership of the Apache group (as defined via the Group directive) # chown root:apache /var/log/httpd 3. Must have no read-write-search access permission for other users. # chmod o-rwx /var/log/httpd'

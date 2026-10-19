@@ -1,0 +1,26 @@
+id: TMA-OKE-3.2.3
+title: Ensure the kubelet X.509 client CA file is configured
+description: This setting in OKE is about configuring the kubelet with a trusted X.509 client CA source so the kubelet can validate client certificates presented to its HTTPS endpoint. It is not the same as validating the kubelet’s own serving certificate from the API server side. In OKE, kubelet authentication settings should be evaluated in the effective kubelet configuration applied during managed node initialization. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- worker-node
+- kubelet
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 3.2.3 Ensure the kubelet X.509 client CA file is configured
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"clientCAFile":"[^"]+"'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit shows that the kubelet X.509 client CA file is not configured, the worker node should be treated as noncompliant. If the result is empty, null, or missing, first confirm the inspection reflects the effective node configuration. In OKE, remediation should be performed through the supported managed node initialization, node pool update, or node replacement workflow, because Oracle supports custom cloud-init initialization scripts for managed nodes and updated node pool properties are applied when replacement managed nodes are started. Remediation of new cluster When creating a new OKE cluster or node group, the goal is to ensure each worker node starts with a trusted client CA bundle already present and with the kubelet configured to use it for certificate-based client authentication.

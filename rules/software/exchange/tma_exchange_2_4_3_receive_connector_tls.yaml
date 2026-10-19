@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.4.3
+title: Ensure 'Receive connector' is set to 'TLS'
+description: 'This policy setting configures the advertised and accepted authentication mechanisms for the receive connector. The primary function of receive connectors in the front-end transport service is to accept anonymous and authenticated Simple Mail Transfer Protocol (SMTP) connections in the Exchange environment. Note: Some available values have dependencies and exclusions: • None is not compatible... Manual per the benchmark: which connectors may carry non-TLS mechanisms depends on their role. Run on a Mailbox server (organization-wide objects are read from AD).'
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- transport
+- tls
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.4.3 Ensure 'Receive connector' is set to 'TLS'
+audit:
+  type: manual
+  command: 'On each Mailbox server run: Get-ReceiveConnector | Select Name, Identity, AuthMechanism. Confirm AuthMechanism includes Tls on every Receive connector (a valid certificate must be enabled for SMTP). Review any connector without Tls and document why it is needed.'
+remediation:
+  type: iac_patch
+  command: Set-ReceiveConnector -Identity '<connector>' -AuthMechanism 'Tls' (or Get-ReceiveConnector | Set-ReceiveConnector -AuthMechanism 'Tls'; keep any other mechanisms the connector requires)

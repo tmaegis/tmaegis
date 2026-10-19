@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.3.3
+title: Ensure sudo log file exists
+description: 'The Defaults logfile entry sets the path to the sudo log file. Setting a path turns on logging to a file; negating this option turns it off. By default, sudo logs via syslog. Defining a dedicated log file for sudo simplifies auditing of sudo commands and creation of auditd rules for sudo. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.3.3 Ensure sudo log file exists
+audit:
+  type: command
+  command: c=$(cat /usr/local/etc/sudoers /usr/local/etc/sudoers.d/* 2>/dev/null); [ -n "$c" ] || exit 1; printf '%s\n' "$c" | grep -Eiq "^[[:space:]]*Defaults[[:space:]]+([^#]+,[[:space:]]*)?logfile[[:space:]]*=[[:space:]]*[^[:space:]]+" && echo compliant || echo "no sudo logfile configured"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the file /usr/local/etc/sudoers or a file in /usr/local/etc/sudoers.d/ with visudo or visudo -f <PATH TO FILE> and add the following line: Defaults logfile="<PATH TO CUSTOM LOG FILE>" Example Defaults logfile="/var/log/sudo.log" Note: sudo will read each file in /usr/local/etc/sudoers.d, skipping file names that end in ~ or contain a . character to avoid causing problems with the package manager or editor temporary/backup files. Files are parsed in sorted lexical order. That is, /usr/local/etc/sudoers.d/01_first will be parsed before /usr/local/etc/sudoers.d/10_second. Be aware that because the sorting is lexical, not numeric, /usr/local/etc/sudoers.d/1_whoops would be loaded after /usr/local/etc/sudoers.d/10_second. A consistent number of leading zeroes in the file names can be used to avoid such problems.'

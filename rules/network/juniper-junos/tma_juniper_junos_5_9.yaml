@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-5.9
+title: Ensure SNMP is set to OOB management only
+description: SNMP should only be configured on Out of Band management interfaces. By default the SNMP service will listen for incoming connections on all interfaces which have an IP Address configured, exposing SNMP to users on all networks through which the router is reachable. Fails if SNMP is configured without interface restriction or is bound to a non out-of-band interface (fxp/em/me/jmgmt). Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- snmp
+reference: CIS Juniper OS Benchmark v2.1.0 - 5.9 Ensure SNMP is set to OOB management only
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^f\n]|f(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^ \n])))))))))))))))))))[^\n]*\n)*[ \t]*set snmp (?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^f\n]|f(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^ \n]))))))))))[^\n]*(?:\n(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^f\n]|f(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^ \n])))))))))))))))))))[^\n]*))*\n?\z)|(?:^set snmp interface (?:\[ )?(?:$|[^efjm\n]|e(?:$|[^m\n])|f(?:$|[^x\n]|x(?:$|[^p\n]))|j(?:$|[^m\n]|m(?:$|[^g\n]|g(?:$|[^m\n]|m(?:$|[^t\n]))))|m(?:$|[^e\n]))[^\n]*)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To restrict SNMP to required interfaces issue the following command from the hierarchy;
+    set snmp interface <interface or interface list> To delete an existing interface from the list issue the following command from the hierachy;
+    delete snmp interface <interface>

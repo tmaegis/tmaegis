@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.43.13.1
+title: 'Ensure ''Scan excluded files and directories during quick scans'' is set to ''Enabled: 1'''
+description: 'This policy setting manages whether or not Microsoft Defender Antivirus scans excluded files and directories when running a Quick Scan. The recommended state for this setting is: Enabled: 1.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.43.13.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''QuickScanIncludeExclusions'' -ErrorAction SilentlyContinue).''QuickScanIncludeExclusions''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''QuickScanIncludeExclusions='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan' -Name 'QuickScanIncludeExclusions' -Value 1 -PropertyType DWord -Force | Out-Null

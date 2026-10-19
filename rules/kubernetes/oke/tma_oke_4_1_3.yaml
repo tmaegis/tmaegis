@@ -1,0 +1,17 @@
+id: TMA-OKE-4.1.3
+title: Minimize wildcard use in Roles and ClusterRoles
+description: Verify that Kubernetes Role and ClusterRole objects in Oracle OKE do not use wildcard entries such as * for verbs, resources, or apiGroups unless a documented administrative or platform requirement exists. The review should also include the RoleBinding and ClusterRoleBinding objects that assign those roles to users, groups, or service accounts, because OKE uses OCI IAM to control access to OKE and the cluster control plane, while Kubernetes RBAC ... The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- policies
+- rbac
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.1.3 Minimize wildcard use in Roles and ClusterRoles
+audit:
+  type: manual
+  command: Begin by reviewing custom Kubernetes Role and ClusterRole objects in OKE to identify any use of wildcard entries such as * for verbs, resources, or apiGroups. In OKE, this review should cover native RBAC objects, OCI IAM users and groups mapped through Kubernetes RBAC, service accounts, workload identities, and Oracle managed platform RBAC objects that should be distinguished from customer managed permissions.
+remediation:
+  type: iac_patch
+  command: Start by replacing wildcard permissions in custom Role and ClusterRole objects with explicitly enumerated verbs, resources, and apiGroups that match the approved operational need. In OKE, this remediation should focus on customer managed RBAC objects, the bindings that assign them, OCI IAM users and groups mapped through Kubernetes RBAC, workload identities, and service accounts used by workloads or cluster components. OKE uses OCI IAM for access to OKE and the cluster control plane, and Kubernetes RBAC for authorization inside the cluster, so both access paths should be reviewed when excessive permissions are found. • Replace wildcard values in custom Role and ClusterRole rules with the specific verbs, resources, and apiGroups the function actually requires.

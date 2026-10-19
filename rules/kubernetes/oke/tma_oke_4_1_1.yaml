@@ -1,0 +1,17 @@
+id: TMA-OKE-4.1.1
+title: Ensure that the cluster-admin role is only used where required
+description: Verify that cluster administrative access in Oracle OKE is granted only to identities with a documented need for full cluster administration. In OKE, this review should cover Kubernetes ClusterRoleBinding assignments to the cluster-admin ClusterRole, OCI IAM users or groups mapped through Kubernetes RBAC, and any service accounts bound to cluster administrative permissions. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: critical
+tags:
+- oke
+- policies
+- rbac
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.1.1 Ensure that the cluster-admin role is only used where required
+audit:
+  type: manual
+  command: This audit reviews Kubernetes ClusterRoleBinding objects in the Oracle OKE cluster to identify principals that are directly granted the cluster-admin ClusterRole. It lists each matching binding and its associated users, groups, or service accounts so the reviewer can verify whether full cluster administrative access is justified. Because OKE uses OCI IAM for access to OKE and the cluster control plane, and Kubernetes RBAC for cluster authorization, this check should be used as a partial review of administrative privilege rather than the sole test of cluster-admin exposure.
+remediation:
+  type: iac_patch
+  command: Review each ClusterRoleBinding identified by the audit that grants the Kubernetes cluster-admin ClusterRole, and determine whether the listed user, group, or service account still requires full cluster administrative access. In Oracle OKE, this review should also account for access granted through OCI IAM policies and Kubernetes RBAC mappings, because Oracle documents that IAM and the Kubernetes RBAC Authorizer work together to authorize Kubernetes operations. Where responsibilities are limited to a namespace, workload, or operational function, replace cluster administration with a narrower authorization model. • Review each principal returned by the audit and confirm whether full cluster administrative access is still justified for that identity.

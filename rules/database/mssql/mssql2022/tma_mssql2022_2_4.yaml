@@ -1,0 +1,19 @@
+id: TMA-MSSQL2022-2.4
+title: Ensure 'Database Mail XPs' Server Configuration Option is set to '0'
+description: The Database Mail XPs option controls the ability to generate and transmit email messages from SQL Server. Disabling the Database Mail XPs option reduces the SQL Server surface, eliminates a DOS attack vector and channel to exfiltrate data from the database server to a remote host.
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.4 Ensure 'Database Mail XPs' Server Configuration Option is set to '0'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN CAST(value AS int) = 0 AND CAST(value_in_use AS int) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM sys.configurations WHERE name = 'Database Mail XPs';"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'Database Mail XPs', 0; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"
+  guidance: "Run the following T-SQL command: EXECUTE sp_configure 'show advanced options', 1; RECONFIGURE; EXECUTE sp_configure 'Database Mail XPs', 0; RECONFIGURE; GO EXECUTE sp_configure 'show advanced options', 0; RECONFIGURE;"

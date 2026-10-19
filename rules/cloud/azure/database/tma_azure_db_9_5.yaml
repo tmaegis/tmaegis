@@ -1,0 +1,19 @@
+id: TMA-AZURE-DB-9.5
+title: Ensure that Microsoft Entra authentication is Configured for SQL Servers
+description: Use Microsoft Entra authentication for authentication with SQL Database to manage credentials in a single place. Microsoft Entra authentication is a mechanism to connect to Microsoft Azure SQL Database and SQL Data Warehouse by using identities in the Microsoft Entra ID directory. With Entra ID authentication, identities of database users and other Microsoft services can be managed in one central location. Central ID management provides a single place to manage database users and simplifies permission management. - It provides an alternative to SQL Server authentication. - Helps stop the proliferation of user identities across database servers. - Allows password rotation in a single place. - Customers can manage database permissions using external (Entra ID) groups. - It can eliminate storing passwords by enabling integrated Windows authentication and other forms of authentication sup...
+target: azure
+level: 1
+severity: medium
+tags:
+- auth
+- azure
+- cloud
+- database
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 9.5 Ensure that Microsoft Entra authentication is Configured for SQL Servers
+audit:
+  type: manual
+  command: 'Audit From Azure Portal 1. Go to SQL servers 2. For each SQL server, click on Microsoft Entra admin under the Settings section 3. Ensure that a value has been set for Admin Name under the Microsoft Entra admin section Audit From Azure CLI To list SQL Server Admins on a specific server: az sql server ad-admin list --resource-group <resource-group> --server <server> Audit From PowerShell Print a list of all SQL Servers to find which one you want to audit Get-AzSqlServer Audit a list of Administrators on a Specific Server Get-AzSqlServerActiveDirectoryAdministrator -ResourceGroupName <resource group name> -ServerName <server name> Ensure Output shows DisplayName set to AD account. Audit From Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: 1f314764-cb73-4fc9-b863-8eca98ac36e9 - Name: ''An Azure Active Directory administrator should be provisioned for SQL servers'''
+remediation:
+  type: iac_patch
+  command: Remediate From Azure Portal 1. Go to SQL servers 2. For each SQL server, click on Microsoft Entra admin 3. Click on Set admin 4. Select an admin 5. Click Save Remediate From Azure CLI az ad user show --id For each Server, set AD Admin az sql server ad-admin create --resource-group <resource group name> --server <server name> --display-name <display name> --object-id <object id of user> Remediate From PowerShell For each Server, set Entra ID Admin Set-AzSqlServerActiveDirectoryAdministrator -ResourceGroupName <resource group name> -ServerName <server name> -DisplayName "<Display name of AD account to set as DB administrator>"

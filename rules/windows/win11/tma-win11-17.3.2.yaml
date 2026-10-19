@@ -1,0 +1,20 @@
+id: TMA-WIN11-17.3.2
+title: Ensure 'Audit Process Creation' is set to include 'Success'
+description: 'This subcategory reports the creation of a process and the name of the program or user that created it. Events for this subcategory include: • 4688: A new process has been created. • 4696: A primary token was assigned to process. Refer to Microsoft Knowledge Base article 947226: Description of security events in Windows Vista and in Windows Server 2008 for the most recent information about this setting. The recommended state for this setting is to include: Success.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 17.3.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce922b-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce922b-69ae-11d9-bed3-505054503030}' /success:enable

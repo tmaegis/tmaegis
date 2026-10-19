@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-10.3
+title: Restrict manager application
+description: 'Limit access to the manager application to only those with a justified need. Limiting access to the least privilege will ensure only those people with a justified need will have access to a resource. The manager application should be limited to only administrators. When the manager application is deployed, its context (conf/Catalina/localhost/manager.xml or webapps/manager/META-INF/context.xml) must contain a RemoteAddrValve/RemoteCIDRValve with an allow list. Compliant when manager is not deployed. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored. CIS marks this recommendation Manual; the automated check implements its audit procedure.'
+target: tomcat
+level: 2
+severity: high
+tags:
+- tomcat
+- access-control
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 10.3 Restrict manager application
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; [ -e "$B/webapps/manager" ] || [ -e "$B/conf/Catalina/localhost/manager.xml" ] || { echo compliant; exit 0; }; { x "$B/conf/Catalina/localhost/manager.xml"; x "$B/webapps/manager/META-INF/context.xml"; } 2>/dev/null | grep -E '^Valve[[:space:]].*Remote(Addr|CIDR)Valve' | grep -Eq 'allow[[:space:]]*=' && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Add <Valve className="org.apache.catalina.valves.RemoteAddrValve" allow="127\.0\.0\.1"/> to the manager context descriptor. Restart Tomcat afterwards.

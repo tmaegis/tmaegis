@@ -1,0 +1,25 @@
+id: TMA-GKE-AUTOPILOT-5.4.1
+title: Enable VPC Flow Logs and Intranode Visibility
+description: Enable VPC Flow Logs on the subnet used by GKE Autopilot nodes and enable intranode visibility on the GKE cluster to improve visibility into Pod traffic. This combination allows network flow logging to include traffic between Pods, including traffic between Pods running on the same worker node. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke-autopilot
+level: 1
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+- network
+- logging
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.4.1 Enable VPC Flow Logs and Intranode Visibility
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(networkConfig.enableIntraNodeVisibility,subnetwork)') || exit 1
+    set -- $(printf '%s' "$out" | tr '\t' ' ')
+    [ "${1:-}" = True ] || { echo "noncompliant: intranode visibility disabled"; exit 0; }
+    r=$GKE_LOCATION; case "$r" in *-*-*) r=${r%-*};; esac
+    fl=$(gcloud compute networks subnets describe "${2:?no subnetwork}" --region "$r" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(enableFlowLogs,logConfig.enable)') || exit 1
+    if printf '%s' "$fl" | grep -q True; then echo compliant; else echo "noncompliant: VPC Flow Logs disabled on $2"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable intranode visibility on the GKE Autopilot cluster when the audit shows that networkConfig.enableIntraNodeVisibility is not true. Enabling intranode visibility makes Pod to Pod traffic on the same node visible to the VPC network path so it can be captured by VPC Flow Logs and other VPC features. Plan the change during an approved maintenance window because enabling intranode visibility on an existing cluster can restart components in the control plane and worker nodes. gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-intra-node-visibility After intranode visibility is enabled, review the subnet used by the GKE Autopilot cluster and confirm that VPC Flow Logs are enabled for that subnet.

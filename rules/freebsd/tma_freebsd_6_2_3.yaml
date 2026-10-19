@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.3
+title: Ensure all groups in /etc/passwd exist in /etc/group
+description: 'Over time, system administration errors and changes can lead to groups being defined in /etc/passwd but not in /etc/group . Groups defined in the /etc/passwd file but not in the /etc/group file pose a threat to system security since group permissions are not properly managed. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.3 Ensure all groups in /etc/passwd exist in /etc/group
+audit:
+  type: command
+  command: 'command -v awk >/dev/null 2>&1 || exit 1; out=$( { awk -F: ''{print $4}'' /etc/passwd | sort -u | while read gid; do grep -q -E "^[^:]*:[^:]*:$gid:" /etc/group || echo "Group $gid is referenced by /etc/passwd but does not exist in /etc/group"; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Analyze the output of the Audit step above and perform the appropriate action to correct any discrepancies found.

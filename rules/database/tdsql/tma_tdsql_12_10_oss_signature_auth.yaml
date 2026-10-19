@@ -1,0 +1,17 @@
+id: TMA-TDSQL-12.10
+title: Ensure OSS Interface Signature Authentication Is Hardened
+description: 'TDSQL OSS uses caller + password interface signature authentication (scheduler.xml line 25: <whitelist user_password="DES,...;@osssuper,..."/>). Each caller uses an independent pre-shared credential pair, avoiding lateral movement caused by credential reuse.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- oss
+- authentication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 12.10 Ensure OSS Interface Signature Authentication Is Hardened
+audit:
+  type: manual
+  command: '# 1. Check the allowlist format (should be "caller1,encrypted_password1;caller2,encrypted_password2") grep ''<whitelist'' /path/to/tdsql/conf/scheduler.xml # 2. Confirm each upstream system uses an independent caller # e.g., the CAM gateway uses caller=cam_gw, monitoring uses caller=monitor_svc # 3. Verify caller credentials are encrypted (no cleartext should appear)'
+remediation:
+  type: iac_patch
+  command: '<whitelist ip="10.0.1.0/24;10.0.2.100" user_password="cam_gw,<encrypted_token>;monitor_svc,<encrypted_token>;@osssuper, <encrypted_token>" /> For each upstream system: Must have an independent caller. The password is encrypted via crypt_tool -e or tdsql_encrypt -e (see section 2.6). An IP allowlist restricts source addresses. Credentials are rotated periodically (consistent with the 11.8 OSS super user rotation policy).'

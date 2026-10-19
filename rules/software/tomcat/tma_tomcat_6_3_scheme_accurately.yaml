@@ -1,0 +1,25 @@
+id: TMA-TOMCAT-6.3
+title: Ensure scheme is set accurately
+description: 'The scheme attribute is used to indicate to callers of request.getScheme() which scheme is in use by the Connector. Ensure the scheme attribute is set to http for Connectors operating over HTTP. Ensure the scheme attribute is set to https for Connectors operating over HTTPS. For every Connector: SSLEnabled="true" requires scheme="https"; other connectors must have scheme unset or "http". Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- tls
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 6.3 Ensure scheme is set accurately
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; s=$(x "$B/conf/server.xml") || exit 1; printf '%s\n' "$s" | awk 'function at(n,  r){if(match($0,"[[:space:]]" n "[[:space:]]*=[[:space:]]*[\"\047][^\"\047]*")){r=substr($0,RSTART,RLENGTH); sub(/^[^=]*=[[:space:]]*./,"",r); return r} return "-unset-"} function fin(){ if(!inc) return; inc=0; if(se){ if(sc!="https") bad=1 } else if(sc!="-unset-" && sc!="http") bad=1; } /^Connector[[:space:]]/{fin(); inc=1; se=(at("SSLEnabled")=="true"); sc=at("scheme"); sx=at("secure"); pr=at("sslProtocol"); if(pr=="-unset-") pr=""; if($0~/\/>[[:space:]]*$/) fin(); next} /^SSLHostConfig[[:space:]]/ && inc {v=at("sslProtocol"); if(v=="-unset-") v=at("protocols"); if(v!="-unset-") pr=pr "," v} /^\/Connector>/{fin()} END{fin();
+    print bad?"noncompliant":"compliant"}'
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Set scheme="https" on TLS connectors and scheme="http" (or none) on plain HTTP connectors in server.xml. Restart Tomcat afterwards.

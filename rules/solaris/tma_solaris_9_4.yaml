@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.4
+title: Verify System Account Default Passwords
+description: 'There are a number of accounts provided with the Solaris OS that are used to manage applications and are not intended to provide an interactive shell. These accounts are delivered either in a locked or non-login state. Oracle does not support nor recommend changing the passwords associated with these accounts. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: critical
+tags:
+- solaris
+- password-policy
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.4 Verify System Account Default Passwords
+audit:
+  type: command
+  command: command -v logins >/dev/null 2>&1 || exit 1; command -v passwd >/dev/null 2>&1 || exit 1; out=$( { for user in $(logins -s | awk '{ print $1 }'); do [ "$user" = root ] && continue; stat=$(passwd -s "$user" | awk '{ print $2 }'); if [ "$stat" != LK ] && [ "$stat" != NL ]; then echo "Account $user is not locked or non-login."; fi; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Lock each listed system account with passwd -l <username>, or make it non-login with passwd -N <username>.

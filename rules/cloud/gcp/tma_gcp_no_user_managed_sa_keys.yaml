@@ -1,0 +1,17 @@
+id: TMA-GCP-NO-USER-MANAGED-SA-KEYS
+title: Ensure there are only GCP-managed service account keys for each service account
+description: Downloaded (user-managed) service account keys are long-lived, unrotated credentials that leak easily. No service account may have a USER_MANAGED key. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: high
+tags:
+- gcp
+- iam
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Identity and Access Management - no user-managed service account keys (verify section number for your release)
+audit:
+  type: command
+  command: "sas=$(gcloud iam service-accounts list --format='value(email)' 2>/dev/null) || exit 1\nbad=0\nfor s in $sas; do\n  k=$(gcloud iam service-accounts keys list --iam-account \"$s\" --managed-by=user --format='value(name.basename())' 2>/dev/null) || exit 1\n  [ -z \"$k\" ] || { echo \"user-managed key: $s\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Replace key-based auth with workload identity federation, attached service accounts or impersonation, then gcloud iam service-accounts keys delete <key-id> --iam-account <sa>. Enforce with constraints/iam.disableServiceAccountKeyCreation.

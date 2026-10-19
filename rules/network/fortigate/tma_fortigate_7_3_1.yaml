@@ -1,0 +1,26 @@
+id: TMA-FORTIGATE-7.3.1
+title: Encrypt Log Transmission to FortiAnalyzer / FortiManager
+description: Enable encryption for logs that are sent to FortiAnalyzer or FortiManager. PASS requires FortiAnalyzer logging with reliable enable and enc-algorithm high. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: high
+tags:
+- fortigate
+- logging
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 7.3.1 Encrypt Log Transmission to FortiAnalyzer / FortiManager
+audit:
+  type: config_regex
+  pattern: (?m)^config log fortianalyzer setting\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set reliable enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set enc-algorithm high[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set enc-algorithm high[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set reliable enable[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config log fortianalyzer setting
+        set reliable enable
+        set enc-algorithm high
+    end
+    # CIS guidance:
+    Secure log transfer settings can only be configured on CLI:
+    config log fortianalyzer setting
+        set reliable enable
+        set enc-algorithm high
+    end

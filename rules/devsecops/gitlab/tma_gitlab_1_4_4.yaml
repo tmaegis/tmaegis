@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.4.4
+title: Ensure only secured webhooks are used
+description: Use only secured webhooks in the source code management platform. A webhook is an event listener, attached to critical and sensitive parts of the software delivery process. It is triggered by a list of events (such as a new code being committed), and when triggered, the webhook sends out a notification with some payload to specific internet endpoints. Since the payload of the webhook contains sensitive organization data, it's important all webhooks are directed to an endpoint (URL) protected by SSL verification (HTTPS). This helps ensure that the data sent is delivered to securely without any man-in-the-middle, who could easily access and even alter the payload of the request.
+target: gitlab
+level: 1
+severity: high
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.4.4 Ensure only secured webhooks are used
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to secure all webhooks. For each project and for each group: - Navigate to the project or group - Select Settings > Webhooks on the side menu. - Find any webhooks that start with ''http'' and not ''https'', or which have ''SSL Verification: disabled''. - Click Edit. - Change the payload URL to begin with ''https'' - Select the ''Enable SSL verification'' checkbox - Click Update webhook. As an Administrator: - Navigate to the Admin Area - Select System Hooks on the side menu. - Find any webhooks that start with ''http'' and not ''https'', or which have ''SSL Verification: disabled''. - Click Edit. - Change the payload URL to begin with ''https'' - Select the ''Enable SSL verification'' checkbox - Click Update webhook.'

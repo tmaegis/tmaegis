@@ -1,0 +1,17 @@
+id: TMA-DB2-7.1.3
+title: Ensure Audit Policies are Enabled Within the Database
+description: Creating and applying audit policies is crucial for securing and discovering issues within your databases. Audit policies can help trigger events for changes to data objects, table DML, and user access.
+target: db2
+level: 1
+severity: high
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 7.1.3 Ensure Audit Policies are Enabled Within the Database
+audit:
+  type: manual
+  command: 1. Connect to the Db2 database. db2 => connect to <dbname> 2. Issue the following command to ensure that at least one audit policy exists and has been associated with an object. The SYSCAT.AUDITUSE catalog view shows all of the audit policies that have been associated with auditing an object within the database. db2=> select * from syscat.audituse 3. If there is at least 1 row then it is considered a Pass. If there are zero rows returned then nothing is being audited within the database and the remediation steps should be followed.
+remediation:
+  type: iac_patch
+  command: '1. Connect to the Db2 database. db2 => connect to <dbname> 2. Issue the following command to create an audit policy. This policy audits all categories. An analysis should be performed to determine which categories are required to meet business needs. db2 => create audit policy AUDITDB CATEGORIES ALL STATUS BOTH ERROR TYPE AUDIT 3. Audit the database using the policy just created with the following command: db2 => audit database using policy AUDITDB'

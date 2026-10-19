@@ -1,0 +1,20 @@
+id: TMA-WIN10-5.11
+title: Ensure 'LxssManager (LxssManager)' is set to 'Disabled' or 'Not Installed'
+description: 'The LXSS Manager service supports running native ELF binaries. The service provides the infrastructure necessary for ELF binaries to run on Windows. The recommended state for this setting is: Disabled or Not Installed. Note: This service is not installed by default. It is supplied with Windows, but is installed by enabling an optional Windows feature (Windows Subsystem for Linux).'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 5.11
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LxssManager'' -Name ''Start'' -ErrorAction SilentlyContinue).''Start''; if (-not ($null -eq $v -or @(4) -contains [int64]$v)) { $bad += ''Start='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LxssManager')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LxssManager' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LxssManager' -Name 'Start' -Value 4 -PropertyType DWord -Force | Out-Null

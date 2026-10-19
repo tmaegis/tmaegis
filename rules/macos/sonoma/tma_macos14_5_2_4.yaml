@@ -1,0 +1,19 @@
+id: TMA-MACOS14-5.2.4
+title: Ensure Complex Password Must Contain Numeric Character Is Configured
+description: 'Complex passwords contain one character from each of the following classes: English uppercase letters, English lowercase letters, Westernized Arabic numerals, and non- alphanumeric characters. Ensure that a number or numeric value is part of the password policy on the computer. The more complex a password, the more resistant it will be against persons seeking unauthorized access to a system.'
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: high
+tags:
+- auth
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 5.2.4 Ensure Complex Password Must Contain Numeric Character Is Configured
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to ensure that the passwords must contain at least 1 numeric character: 1. Open System Settings 2. Select Privacy & Security 3. Select Profiles 4. Verify that an installed profile has Requires Alphanumeric set to True Terminal Method: Run the following command to verify that passwords require at least one number: % pref1=$(/usr/bin/sudo /usr/bin/pwpolicy -getaccountpolicies | /usr/bin/grep -e "Contain at least one number and one alphabetic character." | cut -b 13-68) && pref2=$(/usr/bin/sudo /usr/bin/pwpolicy - getaccountpolicies | /usr/bin/grep -A1 minimumNumericCharacters | /usr/bin/tail -1 | /usr/bin/cut -d''>'' -f2 | /usr/bin/cut -d ''<'' -f1) && if [ "$pref1" = "Contain at least one number and one alphabetic character" ]; then echo "true"; elif [[ "$pref2" != "" && pref2 -ge 1 ]]; then echo "true"; else echo "false"; fi true'
+remediation:
+  type: iac_patch
+  command: 'Terminal Method: Run the following command to set passwords to require at least one number: % /usr/bin/sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy - setaccountpolicies "requiresNumeric=<value≥1>" example: % /usr/bin/sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy "requiresNumeric=2" Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.mobiledevice.passwordpolicy 2. The key to include is requireAlphanumeric 3. The key must be set to <true/> Note: This profile sets a requirement of both an alphabetical and a numeric character. Note: The profile method is the preferred method for setting password policy since - setglobalpolicy in pwpolicy is deprecated and will likely be removed in a future macOS release.'

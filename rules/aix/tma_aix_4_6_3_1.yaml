@@ -1,0 +1,17 @@
+id: TMA-AIX-4.6.3.1
+title: Ensure latest version of openssh is installed
+description: 'OpenSSH is the expected program for remote command line access. It provides encrypted protocols such as SSH and SCP/SFTP. The recommended mechanism for remote access is to use encrypted protocols such as OpenSSH that are designed to prevent the interception of communications. OpenSSH is the standard replacement for clear-text protocols, such as Telnet and FTP. Audit: openssh.base.server fileset major version must be 9 or later.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- services
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.6.3.1 Ensure latest version of openssh is installed
+audit:
+  type: command
+  command: 'command -v lslpp >/dev/null 2>&1 || exit 1; v=$(lslpp -Lcq openssh.base.server 2>/dev/null | cut -d: -f3 | cut -d. -f1); [ -n "$v" ] && [ "$v" -ge 9 ] && echo compliant || echo "openssh.base.server major version: $v"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Install OpenSSH version 9.9 (or later), depending on package source. The current version available from IBM via AIX Web Download Pack Programs is 9.9.3015.1000.

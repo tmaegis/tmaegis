@@ -1,0 +1,16 @@
+id: TMA-OCEANBASE-1.1
+title: Place Databases on Non-System Partitions
+description: It is generally accepted that host operating systems should include different filesystem partitions for different purposes. One set of filesystems is typically called system partitions, and these are generally reserved for host system/application operation. The other set of filesystems is typically called "non-system partitions", and such locations are generally reserved for storing data.
+target: oceanbase
+level: 1
+severity: medium
+tags:
+- oceanbase
+- storage
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 1.1 Place Databases on Non-System Partitions
+audit:
+  type: manual
+  command: 'Use the following procedure to assess compliance: 1. Connect to the OceanBase database as an administrative user and run: SELECT svr_ip, name, value FROM oceanbase.GV$OB_PARAMETERS WHERE name = ''data_dir''; 2. For each returned value (e.g., /data/1), determine its filesystem mount point by running: df -h <datadir>/sstable 3. Examine the "Mounted on" column in the output. This recommendation is compliant if the filesystem mounted at the OceanBase data_dir path (and any associated subdirectories such as log or sstable directories) is not the root (/), /var, or /usr filesystem.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following steps to remediate this setting for the datadir: 1. Backup the database. 2. Choose a non-system partition new location for OceanBase data files. 3. Stop observer using a command like: pkill -9 observer. 4. Copy the data using a command like: cp -rp <datadir> <new location>. 5. Delete datadir and create a symlink instead to point to the new location using a command like: ln -s <new location> <datadir> 6. Restart observer.'

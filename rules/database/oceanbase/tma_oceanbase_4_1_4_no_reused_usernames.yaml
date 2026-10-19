@@ -1,0 +1,16 @@
+id: TMA-OCEANBASE-4.1.4
+title: Do Not Reuse Usernames
+description: Each database user account should be assigned a unique purpose (e.g., dedicated to a specific individual or application) and should not be shared among multiple different applications or users.
+target: oceanbase
+level: 2
+severity: medium
+tags:
+- oceanbase
+- authentication
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.1.4 Do Not Reuse Usernames
+audit:
+  type: manual
+  command: 'This recommendation requires a manual review to map database accounts to real-world owners (applications or individuals) and to confirm that accounts are not shared. 1. Obtain a list of non-reserved (non-system) users: SELECT User, Host FROM mysql.user WHERE User NOT IN (''root'',''ORAAUDITOR'',''proxyro''); 2.'
+remediation:
+  type: iac_patch
+  command: '1. List text hereCreate dedicated accounts for each application/user: CREATE USER ''app1_user''@''10.%'' IDENTIFIED BY ''Strong_Password_Here''; CREATE USER ''app2_user''@''10.%'' IDENTIFIED BY ''Strong_Password_Here''; 2. List text hereGrant only the required privileges (examples; adjust to your schema and least-privilege requirements): GRANT SELECT, INSERT, UPDATE, DELETE ON app1_db.* TO ''app1_user''@''10.%''; GRANT SELECT ON app2_db.* TO ''app2_user''@''10.%'';'

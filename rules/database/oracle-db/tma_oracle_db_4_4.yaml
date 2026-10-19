@@ -1,0 +1,29 @@
+id: TMA-ORACLE-DB-4.4
+title: Ensure Old Password Versions Are Not Used
+description: No password versions (hashes) prior to 12c should be allowed for user authentication. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- authentication
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.4 Ensure Old Password Versions Are Not Used
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from cdb_users c
+    where not regexp_like(c.password_versions, '^\s*12C\s*$')
+    and c.username not in ('SYS');
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Follow the process "Finding and Resetting User Passwords That Use the 10G Password Version" as outlined in the Oracle Database Upgrade Guide to reset affected user passwords and enforce 12c password versioning. ; Identify users with old password versions. ; Ensure that SQLNET.ALLOWED_LOGON_VERSION_SERVER is set to 12a. ; Reset their passwords using the ALTER USER command.

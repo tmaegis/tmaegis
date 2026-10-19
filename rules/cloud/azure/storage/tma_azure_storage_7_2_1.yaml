@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-7.2.1
+title: Ensure soft delete for Azure File Shares is Enabled (Classic File Shares)
+description: 'Note: This recommendation applies to Classic File Shares (Azure file shares hosted in a storage account, the Microsoft.Storage provider). Azure Files offers soft delete for file shares, allowing you to recover a file share that is mistakenly deleted by an application or another storage account user. Soft delete is configured at the storage account level, so the setting applies to all file shares in the account. When a file share is deleted, it is retained in a soft-deleted state for the configured retention period before being permanently purged; during this period the share and its snapshots can be restored. Important data could be accidentally deleted or removed by a malicious actor. With soft delete enabled, the data is retained for the defined retention period before permanent deletion, allowing for recovery of the data. Lower values for the number of rention days weakens the cont...'
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 7.2.1 Ensure soft delete for Azure File Shares is Enabled (Classic File Shares)
+audit:
+  type: manual
+  command: 'Soft delete for file shares is a storage account-level setting; verify it on each storage account that hosts classic file shares. Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Data storage, select Classic file shares. 3. Locate the Soft delete setting. A compliant storage account shows Soft delete for all file shares set to Enabled with a retention period between 7 and 365 days; if it is Disabled or Enabled with a retention period less than 7 days, the storage account is non-compliant. Audit from Azure CLI Run the following command to list storage accounts: az storage account list For each storage account, run the following command: az storage account file-service-properties show --resource-group <resource- group> --account-name <storage-account> A compliant result shows shareDeleteRetentionPolicy.enabled set to true with days between 7 and 365, inclusive. If enabled is false, or if enabled is true but days is less than 7, the storage account
+    is non-compliant. Audit from PowerShell Run the following command to list storage accounts: Get-AzStorageAccount -ResourceGroupName <resource-group> For each storage account, run the following command...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage Accounts. 2. For each storage account with file shares, under Data storage, click File shares. 3. Under File share settings, click the value next to Soft delete. 4. Under Soft delete for all file shares, click the toggle to set it to Enabled. 5. Under Retention policies, set an appropriate number of days to retain soft deleted data between 7 and 365, inclusive. 6. Click Save. Remediate from Azure CLI For each storage account requiring remediation, run the following command to enable soft delete for file shares and set an appropriate number of days for deleted data to be retained, between 7 and 365, inclusive: az storage account file-service-properties update --account-name <storage- account> --enable-delete-retention true --delete-retention-days <retention- days> Remediate from PowerShell For each storage account requiring remediation, run the following command to enable soft delete for file shares and set an appropriate number of
+    days for deleted data to be retained, between 7 and 365, inclusive: Update-AzStorageFileServiceProperty -ResourceGroupName <resource-group> - AccountName <storage-account> -EnableShareDeleteRetentionPolicy $...'

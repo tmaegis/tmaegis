@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.3.8
+title: Ensure strict base permissions are set for repositories
+description: Base permissions define the permission level automatically granted to all organization members. Define strict base access permissions for all of the repositories in the organization, including new ones. Defining strict base permissions is the best practice in every role-based access control (RBAC) system. If the base permission is high — for example, "write" permission — every member of the organization will have "write" permission to every repository in the organization. This will apply regardless of the specific permissions a user might need, which generally differ between organization repositories. The higher the permission, the higher the risk for incidents such as bad code commit or data breach. It is therefore recommended to set the base permissions to the strictest level possible.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- access-control
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.3.8 Ensure strict base permissions are set for repositories
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set strict base permissions for the organization groups with the next steps: - On the left sidebar, select Search or go to and find your project. - Select Manage > Members. - At the top of the member list, from the dropdown list, select Max role the members have in the group and descending order. In GitLab, you set the specific role for each new user in your group. Ensure the roles for your users match the least-privilege principle.'

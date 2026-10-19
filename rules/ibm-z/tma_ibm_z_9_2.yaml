@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.2
+title: Ensure that access to superuser resources in the UNIXPRIV class is controlled
+description: Resources in the UNIXPRIV class that start with SUPERUSER protect the various capabilities granted to a user with UID(0). By defining profiles in the UNIXPRIV class, you can avoid assigning UID(0) to users by specifically granting certain superuser privileges with a high degree of granularity. UID(0) generally provides too much authority and presents a separation of duties issue, especially for human users. UNIXPRIV can be used to implement Least Privilege for UNIX superuser authorities.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.2 Ensure that access to superuser resources in the UNIXPRIV class is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that UNIXPRIV appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that UNIXPRIV appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that UNIXPRIV appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the UNIXPRIV entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering SUPERUSER prefixed resources Request reports generated using ... (full steps: CIS section 9.2)'
+remediation:
+  type: iac_patch
+  command: 'To activate the UNIXPRIV class use the RACF SETROPTS command: SETROPTS CLASSACT(UNIXPRIV) To enable generic profile checking for the UNIXPRIV class use the RACF SETROPTS command: SETROPTS GENERIC(UNIXPRIV) To RACLIST the UNIXPRIV class use the RACF SETROPTS command: SETROPTS RACLIST(UNIXPRIV) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER UNIXPRIV SUPERUSER.<qualifiers> + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

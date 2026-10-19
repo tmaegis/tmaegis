@@ -1,0 +1,17 @@
+id: TMA-M365-2.4.2
+title: Ensure Priority accounts have 'Strict protection' presets applied
+description: 'Preset security policies have been established by Microsoft, utilizing observations and experiences within datacenters to strike a balance between the exclusion of malicious content from users and limiting unwarranted disruptions. These policies can apply to all, or select users and encompass recommendations for addressing spam, malware, and phishing threats. The policy parameters are pre-determined and non-adjustable. Strict protection has the most aggressive protection of the 3 presets. - EOP: Anti-spam, Anti-malware and Anti-phishing - Defender: Spoof protection, Impersonation protection and Advanced phishing - Defender: Safe Links and Safe Attachments NOTE: The preset security polices cannot target Priority account TAGS currently, groups should be used instead. Enabling priority account protection for users in Microsoft 365 is necessary to enhance security for accounts with access...'
+target: m365
+level: 1
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.4.2 Ensure Priority accounts have 'Strict protection' presets applied
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com/ 2. Expand E-mail & collaboration > Policies & rules > Threat policies. 3. From here visit each section in turn: Anti-phishing Anti-spam Anti-malware Safe Attachments Safe Links 4. Verify that each contains a policy named Strict Preset Security Policy that includes the organization''s priority accounts and groups. To audit using PowerShell: 1. Connect to Exchange using Connect-ExchangeOnline 2. Retrieve the ATP strict presets rule for Defender: Get-ATPProtectionPolicyRule | Where-Object { $_.Identity -eq ''Strict Preset Security Policy'' } 3. Retrieve the EOP strict preset rule for Defender: Get-EOPProtectionPolicyRule | Where-Object { $_.Identity -eq ''Strict Preset Security Policy'' } 4. Verify the following criteria for both the EOP Rule and ATP Rule: o State is Enabled o At least one recipient target is populated with a VIP, i.e.: ▪ SentTo, SentToMemberOf or RecipientDomainIs is not null
+    5. The control is compliant when both the ATP rule and the EOP rule exist and pass the criteria in step 4.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com/ 2. Expand E-mail & collaboration > Policies & rules > Threat policies. 3. Select Preset security policies. 4. Click to Manage protection settings for Strict protection preset. 5. For Apply Exchange Online Protection select at minimum Specific recipients and include the Accounts/Groups identified as Priority Accounts. 6. For Apply Defender for Office 365 Protection select at minimum Specific recipients and include the Accounts/Groups identified as Priority Accounts. 7. For Impersonation protection click Next and add valid e-mails or priority accounts both internal and external that may be subject to impersonation. 8. For Protected custom domains add the organization''s domain name, along side other key partners. 9. Click Next and finally Confirm'

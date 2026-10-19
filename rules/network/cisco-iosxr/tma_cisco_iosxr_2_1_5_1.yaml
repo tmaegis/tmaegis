@@ -1,0 +1,22 @@
+id: TMA-CISCO-IOSXR-2.1.5.1
+title: Authentication (RIPv2)
+description: Enable authentication for Routing Information Protocol (RIP) Version 2 packets and to specify the set of keys that can be used. This is part of the RIPv2 authentication setup. Passes when RIP is not configured. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 2
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 2.1.5.1 Authentication
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^c\n]|c(?:$|[^h\n]|h(?:$|[^a\n]|a(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^ \n]))))))))))))))))))))))))[^\n]*\n)*[ \t]*router rip[^\n]*(?:\n(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^c\n]|c(?:$|[^h\n]|h(?:$|[^a\n]|a(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^ \n]))))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure the Interface with the RIPv2 key chain.
+    router rip
+    interface {interface}
+    authentication keychain {key_chain_name} mode md5

@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.9.5.6
+title: '(NG) Ensure ''Turn On Virtualization Based Security: Secure Launch Configuration'' is set to ''Enabled'''
+description: 'Secure Launch protects the Virtualization Based Security environment from exploited vulnerabilities in device firmware. The recommended state for this setting is: Enabled. Note: Credential Guard and Device Guard are not currently supported when using Azure IaaS VMs.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.9.5.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard'' -Name ''ConfigureSystemGuardLaunch'' -ErrorAction SilentlyContinue).''ConfigureSystemGuardLaunch''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''ConfigureSystemGuardLaunch='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard' -Name 'ConfigureSystemGuardLaunch' -Value 1 -PropertyType DWord -Force | Out-Null

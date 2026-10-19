@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-1.10
+title: Ensure 'Transport Pickup Directory Path' is not set
+description: The Pickup directory is used by the Transport service on Mailbox servers and Edge Transport servers to insert message files directly into the transport pipeline. When properly formatted email message files are copied to the Pickup directory, they are submitted for delivery automatically. It is a legacy feature that can be used by administrators for mail flow testing, or by applications that must... Prints the number of transport services with a PickupDirectoryPath set (expected 0). Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- transport
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.10 Ensure 'Transport Pickup Directory Path' is not set
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-TransportService -ErrorAction Stop | Where-Object { "$($_.PickupDirectoryPath)" -ne '' }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Get-TransportService | Set-TransportService -PickupDirectoryPath $null

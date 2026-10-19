@@ -1,0 +1,26 @@
+id: TMA-CISCO-NXOS-1.6.1
+title: Configure at least 2 external NTP Servers
+description: 'Accurate time is a critical piece of security infrastructure. Without accurate time on all infrastructure, it is complex or even impossible to correlate events from multiple sources to get an accurate view of a security incident or technical issue. Using multiple sources gives redundancy in time sources. CIS marks this Manual; automated: requires at least two ''ntp server'' lines. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- ntp
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.6.1 Configure at least 2 external NTP Servers
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^ntp server \S.*^ntp server \S)
+remediation:
+  type: iac_patch
+  command: |-
+    ! If the default VRF is used (note that the IP addresses are for demonstrations purposes only, production configurations will likely vary):
+    ntp server 13.86.101.172 use-vrf default
+    ntp server 132.163.97.6 use-vrf default
+    ntp server 132.246.11.231 use-vrf default
+    ntp source-interface loopback1 If a management VRF is used:
+    ntp server 13.86.101.172 use-vrf management
+    ntp server 132.163.97.6 use-vrf management
+    ntp server 132.246.11.231 use-vrf management
+    ntp source-interface loopback1

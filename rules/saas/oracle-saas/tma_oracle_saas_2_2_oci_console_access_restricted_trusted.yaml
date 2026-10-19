@@ -1,0 +1,16 @@
+id: TMA-ORACLE-SAAS-2.2
+title: Ensure OCI Console Access Is Restricted to Trusted Networks
+description: 'Ensure that access to the Oracle Cloud Infrastructure (OCI) Console is restricted to trusted networks (secure VPNs or private network endpoints) by configuring IAM Network Sources The OCI Console provides administrative access. If user credentials are compromised, unrestricted access from any IP address increases the attack surface. Reported as a manual review item: these Fusion/EPM/OCI IAM settings are reviewed in the Oracle SaaS and OCI consoles or reports.'
+target: oracle-saas
+level: 1
+severity: medium
+tags:
+- oracle-saas
+- network
+reference: CIS Oracle SaaS Cloud Applications Benchmark v1.0.0 - 2.2 Ensure OCI Console Access Is Restricted to Trusted Networks
+audit:
+  type: manual
+  command: 1. Navigate to Identity & Security, Domains, Security, Sign-On Policies. Confirm that console login rules reference a defined network source (for example, request.networkSource.name = <TrustedSource>). Verify that there is no policy rule permitting console access from any network. 2. Navigate to Identity & Security, Network Sources. Confirm that the trusted network source contains only approved IP addresses, CIDR blocks, or VCN subnets.
+remediation:
+  type: iac_patch
+  command: '1. Define a Network Source with trusted IP ranges or VCN subnets: Navigate to Identity & Security, Network Sources, Create Network Source. Add approved IPs or CIDRs. 2. Update the Sign-On Policy for the identity domain: Add a rule that allows console login only if request.networkSource.name matches the trusted network source. Add a default deny rule for all other networks. 3. Test access from both inside and outside the trusted network. 4. Maintain a secure break-glass account exempt from the restriction.'

@@ -1,0 +1,23 @@
+id: TMA-CISCO-ASA-1.1.3
+title: Ensure 'Master Key Passphrase' is set
+description: Defines the master key passphrase used to encrypt the application secret-keys contained in the configuration file for software releases from 8.3(1) and above. For ASA software releases from 8.3 and below, the VPN preshared keys, Tacacs+/Radius shared keys or Routing protocols authentication passwords are encrypted in the running-configuration once generated. 'password encryption aes' is only accepted once a master key passphrase is set. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.1.3 Ensure 'Master Key Passphrase' is set
+audit:
+  type: config_regex
+  pattern: (?m)^password encryption aes\s*$
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Set the master key passphrase with the following command:
+    key config-key password-encryption <passphrase> The passphrase is between 8 and 128 characters long
+    - Step 2: Enable the AES encryption of existing keys of the running-configuration
+    password encryption aes
+    - Step 3: Run the following for the encryption of keys in the startup-configuration
+    write memory

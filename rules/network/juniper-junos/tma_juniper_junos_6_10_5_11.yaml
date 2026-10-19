@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.10.5.11
+title: Ensure REST Service Address is Set to OOB Management Only
+description: The REST API Service Address should be set to OOB Management. The REST API service allows remote scripts or users to connect to a JUNOS Device and execute RPC commands to operate and configure the device, potentially granting full control if connecting using a privileged account. Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.5.11 Ensure REST Service Address is Set to OOB Management Only
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. To confirm if the REST API''s Service Address has been limited, enter the following command at the [edit system services rest] hierarchy: [edit system services rest] user@host# show https addresses The command should return a list of one, or more, IP Addresses which if configured on Interfaces will be used for the REST API HTTPS Service. These addresses should only include addresses configured on the device''s Out of Band Management interface. Confirm this by checking the interface configuration.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To restrict the IP Address/es on which the REST API will listen, enter the following command from the hierarchy:
+    set system services rest https addresses <Service IP> Where <Service IP> is a single IP Address configured on the Device's Out of Band Management Interface. To add multiple addresses, enter the following command:
+    set system services rest https addresses [<Service IP 1> <Service IP 2> <Service IP ...> ] To remove a single address from the current list enter the following command:
+    delete system services rest https addresses <Service IP>

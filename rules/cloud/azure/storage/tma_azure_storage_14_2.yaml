@@ -1,0 +1,21 @@
+id: TMA-AZURE-STORAGE-14.2
+title: Ensure customer-managed keys (CMK) are used to encrypt data at rest on Azure Elastic SAN volume groups
+description: 'Azure Elastic SAN volume groups offer two encryption options: Microsoft-managed keys, which provide automatic encryption without user intervention, and customer- managed keys (CMK), which allow organizations to retain full control over their encryption keys for enhanced security and compliance. Using customer-managed keys (CMKs) to encrypt Azure Elastic SAN volume groups enhances security by granting organizations complete control over their encryption keys.'
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 14.2 Ensure customer-managed keys (CMK) are used to encrypt data at rest on Azure Elastic SAN volume groups
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Elastic SANs. 2. Click the name of an Elastic SAN. 3. Under SAN Management, click Volume groups. 4. For each volume group, ensure that the value in the Encryption type column is not Platform-managed key. Audit from Azure CLI Run the following command to list Elastic SANs: az elastic-san list For each Elastic SAN with a volumeGroupCount greater than 0, run the following command to list volume groups: az elastic-san volume-group list --resource-group <resource-group> --elastic- san <elastic-san> Ensure that for each volume group, encryption is set to EncryptionAtRestWithCustomerManagedKey. Audit from PowerShell Run the following command to list Elastic SANs: Get-AzElasticSan For each Elastic SAN with a VolumeGroupCount greater than 0, run the following command to list volume groups: Get-AzElasticSanVolumeGroup -ResourceGroupName <resource-group> - ElasticSanName <elastic-san> Ensure that for each volume group, Encryption is set to EncryptionAtRestWithCustomerManagedKey.
+    Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal It is not currently possible to remediate from Azure Portal. Refer to the Remediate from Azure CLI and Remediate from PowerShell sections for remediation options. Remediate from Azure CLI For each volume group requiring remediation, run the following command to assign an identity: az elastic-san volume-group update --resource-group <resource-group> -- elastic-san <elastic-san> --volume-group <volume-group> --identity "{type:SystemAssigned}" Note: Use --identity ''{type:UserAssigned,user-assigned-identity:"<user- assigned-identity-id>"}'' with the above command to provide a UserAssigned Identity Id. For each volume group requiring remediation, run the following command to assign a customer-managed encryption key: az elastic-san volume-group update --resource-group <resource-group> -- elastic-san <elastic-san> --volume-group <volume-group> --encryption EncryptionAtRestWithCustomerManagedKey --encryption-properties "{key-vault- properties:{key-name:''<key>'',key-vault-uri:''<key-vault-uri>''}}"
+    Remediate from PowerShell For each volume group requiring remediation, run the following command to assign an identity: Update-AzElasticSanVolumeGroup -ResourceGroupNam...'

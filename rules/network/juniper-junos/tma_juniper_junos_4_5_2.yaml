@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-4.5.2
+title: Ensure RIP is set to check for zero values in reserved fields
+description: The router should check that fields that the RFC requires must be 0 are, in fact, 0. Where it is deployed, RIP routing is vital for normal operation of an organization's network infrastructure. Correct route information is required for routers to correctly direct traffic through the network. check-zero is the default; fails if 'no-check-zero' is configured. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- routing
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.5.2 Ensure RIP is set to check for zero values in reserved fields
+audit:
+  type: config_regex
+  pattern: (?m)^set protocols rip [^\n]*\bno-check-zero\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have deployed RIP in your network and disabled zero value checking of reserved fields, you should re-enable it by issuing the following command from the hierarchy:
+    set protocols rip check-zero

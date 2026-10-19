@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-5.2
+title: Ensure PostgreSQL is Bound to an IP Address
+description: By default, listen_addresses is set to localhost which prevents any and all remote TCP connections to the PostgreSQL port. Some Docker images may set listen_addesses to *. * corresponds to all available IP interfaces; thus, the PostgreSQL server then accepts TCP connections on all the server's IPv6 and IPv4 interfaces.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- network
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 5.2 Ensure PostgreSQL is Bound to an IP Address
+audit:
+  type: manual
+  command: Run SHOW listen_addresses; If * or 0.0.0.0 is returned, PostgreSQL listens on every interface and this is a fail.
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET listen_addresses = 'localhost,<specific IP>'; (or set it in postgresql.conf) and restart PostgreSQL.

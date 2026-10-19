@@ -1,0 +1,42 @@
+id: TMA-MACOS15-2.3.3.4
+title: Ensure Remote Login Is Disabled
+description: 'Remote Login allows an interactive terminal connection to a computer. Audit: All three benchmark checks must pass: systemsetup reports Off, sshd is disabled in launchd and not running.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.3.3.4 Ensure Remote Login Is Disabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    a=$(/usr/sbin/systemsetup -getremotelogin 2>/dev/null) || exit 1
+    b=$(/bin/launchctl print-disabled system 2>/dev/null | /usr/bin/grep -c '"com.openssh.sshd" => disabled')
+    c=$(/bin/launchctl list 2>/dev/null | /usr/bin/grep -c "com.openssh.sshd")
+    if printf '%s' "$a" | /usr/bin/grep -q "Remote Login: Off" && [ "$b" -eq 1 ] && [ "$c" -eq 0 ]; then echo compliant; else echo "$a; disabled=$b; running=$c"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    if [ -n "${SSH_CONNECTION:-}${SSH_CLIENT:-}${SSH_TTY:-}" ]; then echo "TMAegis: skipped - running over SSH, this would cut the operator's session" >&2; exit 1; fi
+    /usr/sbin/systemsetup -f -setremotelogin off 2>/dev/null
+    /bin/launchctl disable system/com.openssh.sshd 2>/dev/null
+    /bin/launchctl bootout system/com.openssh.sshd 2>/dev/null
+    /bin/launchctl unload -w /System/Library/LaunchDaemons/ssh.plist 2>/dev/null; true
+  guidance: "Terminal: sudo /usr/sbin/systemsetup -setremotelogin off. GUI: System Settings > General > Sharing > Set Remote Login to disabled."

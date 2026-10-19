@@ -1,0 +1,52 @@
+id: TMA-ROS1-5.2.2
+title: Ensure permissions on SSH private host key files are configured
+description: An SSH private key is one of two files used in SSH public key authentication. In this authentication method, The possession of the private key is proof of identity. Only a private key that corresponds to a public key will be able to authenticate successfully. The private keys need to be stored and handled carefully, and no copies of the private key should be distributed. The audit requires every SSH private host key to be owned by root with no group/other permissions. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.2.2 Ensure permissions on SSH private host key files are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    files=$(find /etc/ssh -xdev -type f -name 'ssh_host_*_key') || exit 1
+    [ -n "$files" ] || { echo 'no SSH private host keys found'; exit 1; }
+    bad=$(for f in $files; do set -- $(stat -Lc '%a %u' "$f"); m=$1; u=$2; if [ $(( 8#$m & 077 )) -ne 0 ] || [ "$u" != 0 ]; then echo "$f mode $m uid $u"; fi; done)
+    [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /etc/ssh/sshd_config
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -d /etc/ssh ] || exit 0
+    grp=root; grep -q '^ssh_keys:' /etc/group && grp_keys=ssh_keys || grp_keys=
+    for f in $(find /etc/ssh -xdev -maxdepth 1 -type f -name 'ssh_host_*'); do
+      case "$f" in
+        *.pub) chown root:root "$f"; m=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$m & 8#0644)))" "$f";;
+        *)
+          g=$(stat -Lc %G "$f"); m=$(stat -Lc %a "$f")
+          if [ -n "$grp_keys" ] && [ "$g" = ssh_keys ]; then chown root:ssh_keys "$f"; chmod "$(printf '%o' $((8#$m & 8#0640)))" "$f"
+          else chown root:root "$f"; chmod "$(printf '%o' $((8#$m & 8#0600)))" "$f"; fi;;
+      esac
+    done
+    exit 0
+  guidance: "Run the following commands to set ownership and permissions on the private SSH host key files # find /etc/ssh -xdev -type f -name 'ssh_host_*_key' -exec chown root:root {} \\; # find /etc/ssh -xdev -type f -name 'ssh_host_*_key' -exec chmod 0600 {} \\;"

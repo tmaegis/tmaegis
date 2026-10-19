@@ -1,0 +1,20 @@
+id: TMA-RHEL9-7.2.7
+title: Ensure no duplicate group names exist
+description: Although the groupadd program will not let you create a duplicate group name, it is possible for an administrator to manually edit the /etc/group file and change the group name.
+target: linux
+os_family:
+- rhel-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 9 Benchmark v3.0.0 - 7.2.7
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   while read -r l_count l_group; do\n      if [ \"$l_count\" -gt 1 ]; then\n         echo -e \"Duplicate Group: \\\"$l_group\\\" Groups: \\\"$(awk -F: '\"'\"'($1 == n) { print $1 }'\"'\"' n=$l_group /etc/group | xargs)\\\"\"\n      fi\n   done < <(cut -f1 -d\":\" /etc/group | sort -n | uniq -c)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Based on the Audit Procedure output, for each duplicated group name, determine which entry is correct and make each group name unique. Use vigr to safely edit the group database and either remove the redundant entry or rename it to a unique group name: # vigr File group ownerships will reflect the change automatically as long as each group has a unique GID.'

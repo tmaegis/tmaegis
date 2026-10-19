@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-2.2
+title: Ensure Each CockroachDB Node Runs as a Dedicated Process on a Separate Host
+description: For all self-hosted VM or bare-metal production deployments (on-premises or on cloud providers like AWS, GCP, Azure), each CockroachDB node must run as a single, dedicated cockroach start process on its own physical or virtual machine (VM). The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when exactly one cockroach start process runs on this host (FAIL when none runs). Also confirm the store directory is not shared with another node.
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- architecture
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 2.2 Ensure Each CockroachDB Node Runs as a Dedicated Process on a Separate Host
+audit:
+  type: command
+  command: 'out=$(ps -eo args= | grep ''[c]ockroach start'') || exit 1; printf ''%s\n'' "$out" | awk ''END {print (NR == 1) ? "compliant" : NR " processes"}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Stop the extra cockroach start processes (systemctl stop ...), provision a dedicated VM/host with its own storage for each additional node and redeploy it there.

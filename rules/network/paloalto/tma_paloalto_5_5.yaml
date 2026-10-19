@@ -1,0 +1,25 @@
+id: TMA-PALOALTO-5.5
+title: Ensure alerts are enabled for malicious files detected by WildFire
+description: 'Configure WildFire to send an alert when a malicious or greyware file is detected. This alert could be sent by whichever means is preferable, including email, SNMP trap, or syslog message. Alternatively, configure the WildFire cloud to generate alerts for malicious files. The cloud can generate alerts in addition to or instead of the local WildFire implementation. Note that the destination email address of alerts configured in the WildFire cloud portal is tied to the logged in account, and cannot be modified. Also, new systems added to the WildFire cloud portal will not be automatically set to email alerts. PASS requires a log forwarding profile with a wildfire log-type match list (filter ''(verdict neq benign)'' with an alert destination). Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- logging
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 5.5 Ensure alerts are enabled for malicious files detected by WildFire
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings profiles (?:"[^"\n]*"|\S+) match-list (?:"[^"\n]*"|\S+) log-type wildfire[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set shared log-settings profiles WF-ALERTS match-list malicious log-type wildfire
+    set shared log-settings profiles WF-ALERTS match-list malicious filter "(verdict neq benign)"
+    set shared log-settings profiles WF-ALERTS match-list malicious send-syslog SYSLOG-PROFILE
+    commit
+    # CIS guidance:
+    From GUI, configure some combination of the following Server Profiles:
+    Configure the Email Server: Select Device > Server Profiles > Email Click Add Enter a name for the Profile. Select the virtual system from the Location drop down menu (if applicable) Click Add Configure the Syslog Server: Select Device > Server Profiles > Syslog > Add Enter Name, Display Name, Syslog Server, Transport, Port, Format, Facility Click OK Click Commit to save the configuration Configure the SMTP Server: Select Device > Server Profiles > Email Select Add, Name, Display Name, From, To, Additional Recipients, Gateway IP or Hostname Click OK Click Commit to save the configuration
+    Navigate to Objects, Log Forwarding Choose Add, set the log type to "wildfire", add the filter "(verdict neq benign)", then add log destinations for SNMP, Syslog, Email or HTTP as required.

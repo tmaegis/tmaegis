@@ -1,0 +1,19 @@
+id: TMA-MYSQL-9.2
+title: Ensure 'SOURCE_SSL_VERIFY_SERVER_CERT' is Set to 'YES' or '1'
+description: 'In the MySQL REPLICA (SLAVE is deprecated as of 8.0.22) context the setting SOURCE_SSL_VERIFY_SERVER_CERT (MASTER_SSL_VERIFY_SERVER_CERT is deprecated as of 8.0.22) indicates whether the REPLICA should verify the SOURCE''s certificate. This configuration item may be set to Yes or No, and unless SSL has been enabled on the REPLICA, the value will be ignored. Counts replication channels that do not verify the source certificate; passes on servers that are not replicas. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- replication
+- tls
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 9.2 Ensure 'SOURCE_SSL_VERIFY_SERVER_CERT' is Set to 'YES' or '1'
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT COUNT(*) FROM mysql.slave_master_info WHERE Ssl_verify_server_cert <> 1" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: STOP REPLICA; CHANGE REPLICATION SOURCE TO SOURCE_SSL_VERIFY_SERVER_CERT = 1; START REPLICA;

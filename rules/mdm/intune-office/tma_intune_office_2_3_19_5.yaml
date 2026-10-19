@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.19.5
+title: Ensure 'Prevent users from changing permissions on rights managed content' is set to 'Disabled'
+description: 'This policy setting controls whether Office users can change permissions for content that is protected with Information Rights Management (IRM). The Information Rights Management feature of Office allows individuals and administrators to specify access permissions to Word documents, Excel workbooks, PowerPoint presentations, InfoPath templates and forms, and Outlook e-mail messages. This functionality helps prevent sensitive information from being printed, forwarded, or copied by unauthorized people. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) disablecreation that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.19.5 Ensure 'Prevent users from changing permissions on rights managed content' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\drm'') -Name ''disablecreation'' -ErrorAction SilentlyContinue).''disablecreation''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':disablecreation='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Office 2016\Manage Restricted Permissions\Prevent Users From Changing Permissions on Rights Managed Content'

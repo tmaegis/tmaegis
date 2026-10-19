@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.9.19.3
+title: 'Ensure ''Configure registry policy processing: Process even if the Group Policy objects have not changed'' is set to ''Enabled: TRUE'''
+description: 'The "Process even if the Group Policy objects have not changed" option updates and reapplies registry policies even if the registry policies have not changed. This setting affects all registry policy settings within the Administrative Templates folder and any other policies that store values in the registry. The recommended state for this setting is: Enabled: TRUE (checked).'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.9.19.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}'' -Name ''NoGPOListChanges'' -ErrorAction SilentlyContinue).''NoGPOListChanges''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''NoGPOListChanges='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}' -Name 'NoGPOListChanges' -Value 0 -PropertyType DWord -Force | Out-Null

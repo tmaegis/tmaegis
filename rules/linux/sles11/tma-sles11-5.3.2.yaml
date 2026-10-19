@@ -1,0 +1,20 @@
+id: TMA-SLES11-5.3.2
+title: Ensure lockout for failed password attempts is configured
+description: Lock out users after n unsuccessful consecutive login attempts. The first sets of changes are made to the PAM configuration files. The second set of changes are applied to the program specific PAM configuration file. The second set of changes must be applied to each program that will lock out users. Check the documentation for each secondary program for instructions on how to configure them to work with PAM. Set the lockout number to the policy in effect at your site.
+target: linux
+os_family:
+- sles-11
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 11 Benchmark v2.1.1 - 5.3.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep pam_tally2\.so /etc/pam.d/common-auth'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''auth required pam_tally2.so onerr=fail audit silent deny=5 unlock_time=900'' || { echo step1: missing ''auth required pam_tally2.so onerr=fail audit silent deny=5 u''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''grep pam_tally2\.so /etc/pam.d/common-account'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''account required pam_tally2.so'' || { echo step2: missing ''account required pam_tally2.so''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/pam.d/common-auth file and add the following pam_tally2.so line: auth required pam_tally2.so onerr=fail audit silent deny=5 unlock_time=900 Edit the /etc/pam.d/common-account file and add the following pam_tally2.so line: account required pam_tally2.so'

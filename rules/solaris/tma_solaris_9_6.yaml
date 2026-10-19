@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.6
+title: Ensure Password Fields are Not Empty
+description: 'An account with an empty password field means that anybody may log in as that user without providing a password at all (assuming that the value PASSREQ=NO is set in /etc/default/login). All accounts must have passwords, be configured as "Non-login," or be locked. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: critical
+tags:
+- solaris
+- password-policy
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.6 Ensure Password Fields are Not Empty
+audit:
+  type: command
+  command: command -v logins >/dev/null 2>&1 || exit 1; out=$( { logins -p ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Use the passwd -l command to lock accounts that are not permitted to execute commands . Use the passwd -N command to set accounts to be non-login.

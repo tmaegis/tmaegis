@@ -1,0 +1,50 @@
+id: TMA-ALMA10-5.3.2.3.2
+title: Ensure password history is enforced for the root user
+description: If the pwhistory enforce_for_root option is enabled, the module will enforce password history for the root user as well
+target: linux
+os_family:
+- almalinux-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS AlmaLinux OS 10 Benchmark v1.0.0 - 5.3.2.3.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -Pi -- ''"''"''^\h*enforce_for_root\b''"''"'' /etc/security/pwhistory.conf'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- enforce_for_root || { echo step1: missing enforce_for_root; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    PAMF="/etc/pam.d/system-auth /etc/pam.d/password-auth /etc/pam.d/system-password /etc/pam.d/common-auth /etc/pam.d/common-password /etc/pam.d/common-account /etc/pam.d/common-session /etc/pam.d/common-session-noninteractive /etc/pam.d/postlogin"
+    # tma_pam_sed EXPR : sed -E on every existing PAM stack file (follows symlinks, backs up once)
+    tma_pam_sed() { for f in $PAMF /usr/share/pam-configs/unix; do
+      [ -e "$f" ] || continue; tma_bak "$f"; sed -i --follow-symlinks -E "$1" "$f"; done; }
+    # tma_conf_set FILE KEY VALUE : "key = value", replacing active or commented key lines
+    tma_conf_set() { f=$1; k=$2; v=$3; mkdir -p "$(dirname "$f")"; [ -e "$f" ] || : > "$f"; tma_bak "$f"
+      sed -i -E "/^[[:space:]]*#?[[:space:]]*$k[[:space:]]*=/d" "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; }
+    tma_conf_del() { for f in $2; do [ -e "$f" ] || continue; tma_bak "$f"; sed -i -E "/^[[:space:]]*$1[[:space:]]*=/d" "$f"; done; }
+    f=/etc/security/pwhistory.conf
+    [ -e "$f" ] || : > "$f"; tma_bak "$f"
+    sed -i -E '/^[[:space:]]*#?[[:space:]]*enforce_for_root\b/d' "$f"; echo enforce_for_root >> "$f"
+    grep -Eq '^[[:space:]]*remember[[:space:]]*=' "$f" || echo 'remember = 24' >> "$f"
+    true
+  guidance: "Edit or add the following line in /etc/security/pwhistory.conf: enforce_for_root"

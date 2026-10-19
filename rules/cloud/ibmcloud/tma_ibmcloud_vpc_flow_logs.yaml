@@ -1,0 +1,17 @@
+id: TMA-IBMCLOUD-VPC-FLOW-LOGS
+title: Ensure Flow Logs are enabled for every VPC
+description: Flow logs capture network traffic metadata for monitoring and investigations. In the targeted region every VPC must be referenced by at least one flow log collector (VPC- or subnet/instance-level). Read-only ibmcloud CLI calls using the current CLI session and targeted region (ibmcloud login, or IBMCLOUD_API_KEY); JSON output is parsed with grep/sed/awk. A missing CLI, plugin or session fails the check.
+target: ibmcloud
+level: 2
+severity: medium
+tags:
+- ibmcloud
+- logging
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - Logging and Monitoring - VPC flow logs enabled (verify section number for your release)
+audit:
+  type: command
+  command: "vpcs=$(ibmcloud is vpcs --output json 2>/dev/null) || exit 1\nfl=$(ibmcloud is flow-logs --output json 2>/dev/null) || exit 1\nbad=0\nfor v in $(printf '%s\\n' \"$vpcs\" | awk '{ o = gsub(/\\{/, \"{\"); c = gsub(/\\}/, \"}\") } d == 1 && /\"id\"[[:space:]]*:/ { s = $0; sub(/^[^:]*:[[:space:]]*\"/, \"\", s); sub(/\".*/, \"\", s); print s } { d += o - c }'); do\n  printf '%s\\n' \"$fl\" | grep -qF \"\\\"$v\\\"\" || { echo \"no flow log: $v\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ibmcloud is flow-log-create --bucket <cos-bucket> --target <vpc-id> --name <name> --active true for each listed VPC (requires a COS service-to-service authorisation).

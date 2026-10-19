@@ -1,0 +1,27 @@
+id: TMA-BIND-9.4
+title: Disable the HTTP Statistics Server
+description: Starting in BIND 9.5.0 there was a new statistics web server included, that is a useful debugging tool in a non-production environment. The HTTP server provides data in XML format about the condition of a BIND 9 server. The statistics server provides the same statistics that are available to the statistics-file dump. This server should be left disabled. The audit fails when a statistics-channels statement is configured. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- operations
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 9.4 Disable the HTTP Statistics Server
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    printf '%s\n' "$flat" | grep -Eq '(^|[ ;}])statistics-channels \{' && echo 'statistics-channels is configured' || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: Remove the statistics-channel option from the configuration file.

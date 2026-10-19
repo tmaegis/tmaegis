@@ -1,0 +1,27 @@
+id: TMA-F5-BIGIP-5.2
+title: Ensure to exclude inode information from ETags HTTP Header
+description: 'To prevent the disclosure of inode information when accessing Configuration utility (GUI). PASS requires the sys httpd include statement to contain "FileETag MTime Size". Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: high
+tags:
+- f5-bigip
+- management
+reference: CIS F5 Networks Benchmark v1.0.0 - 5.2 Ensure to exclude inode information from ETags HTTP Header
+audit:
+  type: config_regex
+  pattern: (?ms)^sys httpd \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+include \"[^\"]*FileETag MTime Size
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys httpd include "FileETag MTime Size"
+    tmsh save sys config
+    tmsh restart sys service httpd
+    # CIS guidance:
+    1-Log in to tmsh by entering the following command: tmsh
+    2-To specify the format to be used for the Etag header, enter the following command:
+    3-modify /sys httpd include "FileETag MTime Size"
+      Save the configuration change by entering the following command:
+     4-save /sys config
+    5-To restart the httpd service, enter the following command:
+    restart /sys service httpd

@@ -1,0 +1,23 @@
+id: TMA-OPENSHIFT-VIRT-1.4
+title: Disable downwardMetrics feature gate
+description: 'The downwardMetrics feature allows users to collect and monitor additional metrics related to host and virtual machine performance. Audit: Passes when .spec.featureGates.downwardMetrics is false or unset (the default is disabled). Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- feature-gates
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.4 Disable downwardMetrics feature gate
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; v=$(oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.spec.featureGates.downwardMetrics}') || exit 1; [ "$v" = true ] && echo noncompliant || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: 'Set downwardMetrics to False $ oc patch hyperconverged kubevirt-hyperconverged - n openshift - cnv --type=''json'' -p=''[ {"op": "replace", "path": "/spec/featureGates/downwardMetrics", "value": false }, ]'''

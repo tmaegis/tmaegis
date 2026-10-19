@@ -1,0 +1,21 @@
+id: TMA-WIN2025-18.10.57.3.3.3
+title: Ensure 'Do not allow drive redirection' is set to 'Enabled'
+description: 'This policy setting prevents users from sharing the local drives on their client computers to Remote Desktop Servers that they access. Mapped drives appear in the session folder tree in Windows Explorer in the following format: \\TSClient\<driveletter>$ If local drives are shared they are left vulnerable to intruders who want to exploit the data that is stored on them. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.10.57.3.3.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'' -Name ''fDisableCdm'' -ErrorAction SilentlyContinue).''fDisableCdm''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''fDisableCdm='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Name 'fDisableCdm' -Value 1 -PropertyType DWord -Force | Out-Null

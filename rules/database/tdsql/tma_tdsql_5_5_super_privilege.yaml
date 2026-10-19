@@ -1,0 +1,16 @@
+id: TMA-TDSQL-5.5
+title: Ensure No Excessive `SUPER` Privilege Grants
+description: The SUPER privilege allows many dangerous operations, including modifying global variables, killing other users' queries, and bypassing read-only restrictions.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- privileges
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.5 Ensure No Excessive `SUPER` Privilege Grants
+audit:
+  type: manual
+  command: SELECT User, Host FROM mysql.user WHERE Super_priv = 'Y'; Confirm only TDSQL system accounts (such as the necessary tdsqlsys_kp_new) hold the SUPER privilege.
+remediation:
+  type: iac_patch
+  command: 'Revoke the SUPER privilege from unnecessary users: REVOKE SUPER ON *.* FROM ''username''@''host''; In MySQL 8.0, use fine-grained dynamic privileges (such as SYSTEM_VARIABLES_ADMIN, CONNECTION_ADMIN) instead of SUPER.'

@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.1.5
+title: Ensure 'FTP State' is set to 'FTPS only' or 'Disabled'
+description: By default, App Service supports deployment over FTP. If FTP is essential for a deployment workflow, FTPS should be enforced for all App Service apps. If FTPS is not explicitly required, the recommended setting is Disabled. FTP is an unencrypted network protocol that transmits data—including passwords—in clear text. The use of this protocol can lead to both data and credential compromise and can present opportunities for exfiltration, persistence, and lateral movement.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.1.5 Ensure 'FTP State' is set to 'FTPS only' or 'Disabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to the Azure Portal 2. Select App Services 3. Click on an app 4. Select Settings and then Configuration 5. Under General Settings, for the Platform Settings, the FTP state should not be set to All allowed Audit from Azure CLI List webapps to obtain the ids. az webapp list List the publish profiles to obtain the username, password, and ftp server url. az webapp deployment list-publishing-profiles --ids <ids> { "publishUrl": <URL_FOR_WEB_APP>, "userName": <USER_NAME>, "userPWD": <USER_PASSWORD>, } Audit from PowerShell List all Web Apps: Get-AzWebApp For each app: Get-AzWebApp -ResourceGroupName <resource group name> -Name <app name> | Select-Object -ExpandProperty SiteConfig In the output, look for the value of FtpsState. If its value is AllAllowed the setting is out of compliance. Any other value is considered in compliance with this check. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link
+    to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions -...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to the Azure Portal 2. Select App Services 3. Click on an app 4. Select Settings and then Configuration 5. Under General Settings, for the Platform Settings, the FTP state should be set to Disabled or FTPS Only Remediate from Azure CLI For each out of compliance application, run the following choosing either ''disabled'' or ''FtpsOnly'' as appropriate: az webapp config set --resource-group <resource group name> --name <app name> --ftps-state [disabled|FtpsOnly] Remediate from PowerShell For each out of compliance application, run the following: Set-AzWebApp -ResourceGroupName <resource group name> -Name <app name> - FtpsState <Disabled or FtpsOnly>'

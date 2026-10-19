@@ -1,0 +1,17 @@
+id: TMA-M365-DKIM-ENABLED
+title: Ensure DKIM signing is enabled for all Exchange Online domains
+description: 'DKIM signatures let receivers verify mail really came from your domains and are a prerequisite for an enforcing DMARC policy. Prints the number of domains whose DKIM signing configuration is not enabled (expected 0). Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- mail-auth
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange Online / DKIM (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $bad = @(Get-DkimSigningConfig -ErrorAction Stop | Where-Object { $_.Enabled -ne $true }); $bad.Count'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Publish the selector1/selector2 CNAME records shown by Get-DkimSigningConfig -Identity <domain> | Format-List Selector*CNAME, then New-DkimSigningConfig -DomainName <domain> -Enabled $true or Set-DkimSigningConfig -Identity <domain> -Enabled $true.

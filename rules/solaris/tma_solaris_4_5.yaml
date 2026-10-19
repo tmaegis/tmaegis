@@ -1,0 +1,18 @@
+id: TMA-SOLARIS-4.5
+title: Configure Solaris Auditing
+description: 'Solaris auditing service keeps a record of how a system is being used. Solaris auditing can be configured to record different classes of events based upon site policy. This recommendation will set and verify a consensus-developed auditing policy. That said, all organizations are encouraged to tailor this policy based upon their specific needs. Audit: checks audit condition, active policies (argv,cnt,zonename), user default flags (ad,ft,lo,ex,cis), non-attributable flags (lo), the audit_binfile plugin and root audit_flags; confirm the audit trail is growing manually.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- audit
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 4.5 Configure Solaris Auditing
+audit:
+  type: command
+  command: command -v auditconfig >/dev/null 2>&1 || exit 1; command -v userattr >/dev/null 2>&1 || exit 1; r=compliant; auditconfig -getcond 2>/dev/null | grep -q "audit condition = auditing" || r="auditing is not active"; p=$(auditconfig -getpolicy 2>/dev/null | grep "^active audit policies"); for x in argv cnt zonename; do printf '%s\n' "$p" | grep -Eq "[=,][[:blank:]]*$x(,|$)" || r="policy $x not active"; done; fl=$(auditconfig -getflags 2>/dev/null | grep "^active user default audit flags"); for x in ad ft lo ex cis; do printf '%s\n' "$fl" | grep -Eq "[=,][[:blank:]]*$x[,(]" || r="audit flag $x not active"; done; auditconfig -getnaflags 2>/dev/null | grep "^active non-attributable audit flags" | grep -Eq "= *lo\(" || r="non-attributable flags are not lo"; auditconfig -getplugin audit_binfile 2>/dev/null | grep -q "audit_binfile (active)" || r="audit_binfile plugin not active"; userattr audit_flags root 2>/dev/null | grep -Eq "^lo,ad,ft,ex,cis:no$" || r="root audit_flags not lo,ad,ft,ex,cis:no";
+    echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enforce this setting, run the following commands: # auditconfig -conf # auditconfig -setflags lo,ad,ft,ex,cis # auditconfig -setnaflags lo # auditconfig -setpolicy cnt,argv,zonename # auditconfig -setplugin audit_binfile active p_minfree=1 # audit -s # rolemod -K audit_flags=lo,ad,ft,ex,cis:no root # EDITOR=ed crontab -e root << END_CRON $ a 0 0 * * * /usr/sbin/audit -n . w q END_CRON # chown root:root /var/share/audit # chmod 750 /var/share/audit'

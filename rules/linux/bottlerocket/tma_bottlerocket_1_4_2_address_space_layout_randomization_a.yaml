@@ -1,0 +1,39 @@
+id: TMA-BOTTLEROCKET-1.4.2
+title: Ensure address space layout randomization (ASLR) is enabled
+description: Address space layout randomization (ASLR) is an exploit mitigation technique which randomly arranges the address space of key data areas of a process. The audit reads /proc/sys/kernel/randomize_va_space and requires 2. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 1
+severity: medium
+tags:
+- bottlerocket
+- system
+reference: CIS Bottlerocket Benchmark v1.0.0 - 1.4.2 Ensure address space layout randomization (ASLR) is enabled
+audit:
+  type: command
+  command: |-
+    bad=0
+    chk() { f=/proc/sys/$(printf %s "$1" | tr . /); v=$(cat "$f" 2>/dev/null) || { echo "$1: not readable"; bad=1; return; }; [ "$v" = "$2" ] || { echo "$1 = $v (expected $2)"; bad=1; }; }
+    chk kernel.randomize_va_space 2
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    apiclient apply <<EOF
+    [settings.kernel.sysctl]
+    "kernel.randomize_va_space" = "2"
+    EOF
+  guidance: "Run the following command to set the active kernel parameter and persist the setting: # apiclient apply <<EOF [settings.kernel.sysctl] \"kernel.randomize_va_space\" = \"2\" EOF"

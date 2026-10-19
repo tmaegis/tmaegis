@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-3.1
+title: Ensure a secondary SharePoint site collection administrator has been defined on each site collection.
+description: A secondary SharePoint site collection administrator must be defined when creating a new site collection. Prints the number of site collections without a secondary site collection administrator (SecondaryContact empty) (expected 0). Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: low
+tags:
+- sharepoint
+- administration
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 3.1 Ensure a secondary SharePoint site collection administrator has been defined on each site collection.
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $bad = @(Get-SPSite -Limit All -ErrorAction Stop | Where-Object { $sc = $_.SecondaryContact; $_.Dispose(); $null -eq $sc } ); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Central Administration > Application Management > Change site collection administrators > select each site collection > set the Secondary site collection administrator (or Set-SPSite <url> -SecondaryOwnerAlias DOMAIN\user).

@@ -1,0 +1,17 @@
+id: TMA-TDSQL-3.14
+title: Ensure Correct Permissions on the Temporary File Directory
+description: The MySQL tmpdir may contain temporary tables, intermediate query results, and sort files. Its effective location must be placed on a controlled filesystem and be accessible only to the operating-system account that runs the database. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Reads the effective tmpdir from the instance and requires each directory to be owned by a non-root (service) account and not writable by group or other (0700, or 0750 with an approved group). Run on the data-node host; also confirm with findmnt -T that it is on an approved filesystem.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- permissions
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.14 Ensure Correct Permissions on the Temporary File Directory
+audit:
+  type: sql_query
+  command: t=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT @@global.tmpdir" 2>/dev/null) || exit 1; bad=0; seen=0; IFS=':'; for d in $t; do seen=1; s=$(stat -Lc '%a %U' "$d" 2>/dev/null) || { bad=1; continue; }; p=${s% *}; o=${s#* }; [ $((0$p & 022)) -eq 0 ] || bad=1; [ "$o" != root ] || bad=1; done; [ $seen -eq 1 ] && [ $bad -eq 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: install -d -m 0700 -o tdsql -g tdsql /data/tdsql_tmp, set tmpdir to it through the TDSQL custom parameter template and restart the instance.

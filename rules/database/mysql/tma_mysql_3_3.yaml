@@ -1,0 +1,20 @@
+id: TMA-MYSQL-3.3
+title: Ensure 'log_error' Has Appropriate Permissions
+description: 'MySQL can operate using a variety of log files, each used for different purposes. These are the binary log (which can be encrypted), error log, slow query log, relay log, general log, and in the enterprise edition, the audit log (which can be encrypted). Expects the error log file (relative paths resolve to datadir) to be -rw------- mysql:mysql; logging to stderr only fails (see 6.1). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- filesystem
+- permissions
+- logging
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 3.3 Ensure 'log_error' Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; f=$(mysql -NBe "SELECT IFNULL(@@global.log_error, '''')" 2>/dev/null) || exit 1; case "$f" in ""|stderr|*stderr.err) echo "no log file"; exit 0 ;; esac; case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; s=$(stat -c ''%a %U %G'' "$f" 2>/dev/null) || exit 1; case "$s" in "600 mysql mysql") echo compliant ;; *) echo "$s" ;; esac'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chmod 600 <log_error> && chown mysql:mysql <log_error>

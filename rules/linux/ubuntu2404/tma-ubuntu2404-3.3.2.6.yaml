@@ -1,0 +1,44 @@
+id: TMA-UBUNTU2404-3.3.2.6
+title: Ensure net.ipv6.conf.default.accept_source_route is configured
+description: The accept_source_route option causes network interfaces to accept packets with the Strict Source Route (SSR) or Loose Source Routing (LSR) option set. net.ipv6.conf.default.accept_source_route controls accepting of all IPv6 packets with the SSR or LSR option set on newly added network interfaces. In networking, source routing allows a sender to partially or fully specify the route packets take through a network. In contrast, non-source routed packets travel a path determined by routers in the network. In some cases, systems may not be routable or reachable from some locations (e.g. private ad
+target: linux
+os_family:
+- ubuntu-24.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- kernel
+- linux
+- sysctl
+reference: CIS Ubuntu Linux 24.04 LTS Benchmark v2.0.0 - 3.3.2.6
+audit:
+  type: command
+  shell: bash
+  command: 'chk() { p=$1; allowed=" $2 "; case $p in net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || return 0;; esac; v=$(sysctl -n "$p" 2>/dev/null) || { echo "$p: not available"; return 1; }; case "$allowed" in *" $v "*) ;; *) echo "$p is $v (running)"; return 1;; esac; sd=$(readlink -e /lib/systemd/systemd-sysctl || readlink -e /usr/lib/systemd/systemd-sysctl); f=$("$sd" --cat-config 2>/dev/null | grep -Po "^\h*${p//./\.}\h*=\h*\K\H+" | tail -n1); [ -n "$f" ] || { echo "$p is not set in any sysctl configuration file"; return 1; }; case "$allowed" in *" $f "*) ;; *) echo "$p is $f in configuration"; return 1;; esac; }; if chk net.ipv6.conf.default.accept_source_route 0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=net.ipv6.conf.default.accept_source_route; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+  guidance: "1. Review all files being used by systemd sysctl and comment out or remove all net.ipv6.conf.default.accept_source_route lines that are not net.ipv6.conf.default.accept_source_route=0. Example script: #!/usr/bin/env bash { l_option=\"net.ipv6.conf.default.accept_source_route\" l_value=\"0\" l_grep=\"${l_option//./(\\\\.|\\\\/)}\" a_files=() l_systemdsysctl=\"$(readlink -e /lib/systemd/systemd-sysctl \\ || readlink -e /usr/lib/systemd/systemd-sysctl)\" l_ufw_file=\"$([ -f /etc/default/ufw ] && \\ awk -F= '/^\\s*IPT_SYSCTL=/ {print $2}' /etc/default/ufw)\" [ -f \"$(readlink -e \"$l_ufw_file\")\" ] && \\ a_files+=(\"$l_ufw_file\"); a_files+=(\"/etc/sysctl.conf\") while IFS= read -r l_fname; do l_file=\"$(readlink -e \"${l…"

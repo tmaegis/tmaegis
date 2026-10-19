@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.36.2.1
+title: 'Ensure ''Online Content Options'' is set to ''Enabled: Do not allow Office to connect to the Internet'''
+description: 'This policy setting controls users'' access to the online features of Office. Policy setting option for user access to online content and services: Do not allow Office to connect to the Internet – Office applications do not connect to the Internet to access online services, or to download the latest online content from Office.com. Connected features of Office 2016 are disabled. NOTE: This does not apply to Office 365 Apps for Enterprise but does apply to Office 2016 and 2019. Office 365 has a separate set of group policies for these controls. The recommended state for this setting is: Enabled: Do not allow Office to connect to the Internet Audit: reads the registry value(s) useonlinecontent that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 2
+severity: low
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.36.2.1 Ensure ''Online Content Options'' is set to ''Enabled: Do not allow Office to connect to the Internet'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\internet'') -Name ''useonlinecontent'' -ErrorAction SilentlyContinue).''useonlinecontent''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':useonlinecontent='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Do not allow Office to connect to the Internet: Microsoft Office 2016\Tools | Options | General | Service Options...\Online Content\Online Content Options'

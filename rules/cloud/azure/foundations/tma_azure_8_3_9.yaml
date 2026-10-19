@@ -1,0 +1,19 @@
+id: TMA-AZURE-8.3.9
+title: Ensure Automatic Key Rotation is Enabled within Azure Key Vault
+description: 'Automated cryptographic key rotation in Key Vault allows users to configure Key Vault to automatically generate a new key version at a specified frequency. A key rotation policy can be defined for each individual key. Automatic key rotation reduces risk by ensuring that keys are rotated without manual intervention. Azure and NIST recommend that keys be rotated every two years or less. Refer to ''Table 1: Suggested cryptoperiods for key types'' on page 46 of the following document for more information: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-57pt1r5.pdf.'
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- crypto
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 8.3.9 Ensure Automatic Key Rotation is Enabled within Azure Key Vault
+audit:
+  type: manual
+  command: 'Requisite Permissions - read section overview! RBAC Role = Key Vault Crypto Officer Access policy permission = Rotation Policy Operations: Get Rotation Policy Audit from Azure Portal 1. Go to Key Vaults. 2. Select a Key Vault. 3. Under Objects, select Keys. 4. Select a key. 5. From the top row, select Rotation policy. 6. Ensure Enable auto rotation is set to Enabled. 7. Ensure the Rotation time is set to an appropriate value. 8. Repeat steps 1-7 for each Key Vault and Key. Audit from Azure CLI Run the following command: az keyvault key rotation-policy show --vault-name <vault-name> --name <key- name> Ensure that the response contains a lifetimeAction of Rotate and that timeAfterCreate is set to an appropriate value. Audit from PowerShell Run the following command: Get-AzKeyVaultKeyRotationPolicy -VaultName <vault-name> -Name <key-name> Ensure that the response contains a LifetimeAction of Rotate and that TimeAfterCreate is set to an appropriate value. Audit from Azure Policy
+    If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: ht...'
+remediation:
+  type: iac_patch
+  command: 'Requisite Permissions - read section overview! RBAC Role = Key Vault Crypto Officer Access policy permission = Rotation Policy Operations: Set Rotation Policy Note: Azure CLI and PowerShell use the ISO8601 duration format for time spans. The format is P<timespanInISO8601Format>(Y,M,D). The leading P is required and is referred to as period. The (Y,M,D) are for the duration of Year, Month, and Day, respectively. A time frame of 2 years, 2 months, 2 days would be P2Y2M2D. For Azure CLI and PowerShell, it is easiest to supply the policy flags in a .json file, for example: { "lifetimeActions": [ { "trigger": { "timeAfterCreate": "P<timespanInISO8601Format>(Y,M,D)", "timeBeforeExpiry" : null }, "action": { "type": "Rotate" } }, { "trigger": { "timeBeforeExpiry" : "P<timespanInISO8601Format>(Y,M,D)" }, "action": { "type": "Notify" } } ], "attributes": { "expiryTime": "P<timespanInISO8601Format>(Y,M,D)" } } Remediate from Azure Portal 1. Go to Key Vaults. 2. Select a Key Vault. 3. Under
+    Objects, select Keys. 4. Select a key. 5. From the top row, select Rotation policy. 6. Select an appropriate Expiry time. 7. Set Enable auto rotation to Enabled. 8. Set an appropriate Rotation option an...'

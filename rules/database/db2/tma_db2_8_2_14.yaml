@@ -1,0 +1,17 @@
+id: TMA-DB2-8.2.14
+title: Key Rotation in HADR Environment
+description: Some additional considerations are needed when working in an HADR environment. A key rotation on the primary database in an HADR environment drives a key rotation automatically on the standby. The change, however, does not occur until other log records are sent to the standby database. If you want to force the rotated key to the standby, the archive log command can be used to generate the log ...
+target: db2
+level: 2
+severity: low
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.2.14 Key Rotation in HADR Environment
+audit:
+  type: manual
+  command: 'You can check what values you have set for these parameters as follows on each HADR member: db2 => get dbm cfg | grep KEYSTORE Keystore type (KEYSTORE_TYPE) = PKCS12 Keystore location (KEYSTORE_LOCATION) = /path/to/file.p12 We recommend you use a centralized key manager for HADR environments.'
+remediation:
+  type: iac_patch
+  command: Retain all Master Keys until you are certain they are not use on any of the hosts in an HADR environment. The same DEK and master key is used on all members in a DPF or pureScale deployment and each member requires access to the keystore to access master keys, which can be a shared file. 9 Additional Considerations This section provides additional considerations on protecting and maintaining the database instance.

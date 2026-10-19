@@ -1,0 +1,36 @@
+id: TMA-FORTIGATE-2.4.3
+title: Ensure admin accounts with different privileges have their correct profiles assigned
+description: Verify that users with access to the Fortinet should only have the minimum privileges required for that particular user.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- authentication
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.4.3 Ensure admin accounts with different privileges have their correct profiles assigned
+audit:
+  type: manual
+  command: 'Run ''show full-configuration system accprofile'' and review each admin profile: privileges (fwgrp, sysgrp, netgrp, loggrp, utmgrp, ...) must match the role, with custom sub-permissions checked. Then ''show full-configuration system admin'' and confirm every administrator''s accprofile matches their role (least privilege, super_admin only where required).'
+remediation:
+  type: iac_patch
+  command: |-
+    In this example, the goal is to provide the profile "tier_1" the ability to view and modify address objects. This sub-privilege is under fwgrp privilege. In CLI:
+    config system accprofile
+        edit "tier_1"
+            set fwgrp custom
+            config fwgrp-permission
+                set address read-write
+            end
+        end
+    For the GUI, go to:
+    1. System > Admin Profiles, select "tier_1" and click "Edit".
+    2. On "Firewall", click on "Custom".
+    3. Click on "Read/Write" option for "Address". In the next example, assign the profile "tier_1" to the account "support1". In the CLI:
+    config system admin
+        edit "support1"
+            set accprofile "tier_1"
+        end
+    For the GUI, go to:
+    1. System > Administrators.
+    2. Select "support1" and click "Edit".
+    3. Under "Administrator Profile", select "tier_1".

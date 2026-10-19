@@ -1,0 +1,36 @@
+id: TMA-DB2-4.1.2
+title: Set Failed Archive Retry Delay (ARCHRETRYDELAY)
+description: 'The ARCHRETRYDELAY parameter specifies the number of seconds the Db2 service will wait before it reattempts to archive log files after a failure. It is recommended that this parameter be set anywhere in the range of 10-30. You do not want the delay to be so short that the database ends up in a denial of service scenario, but you don''t want the delay to be too long if an outside attack happens ... Must be in the range 10-30 seconds. Default: The default value for ARCHRETRYDELAY is 20. Database-level check: set DB2DBDFT to the database name to audit (the rule connects to it with the instance owner''s credentials and fails when DB2DBDFT is unset). Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: low
+tags:
+- db2
+- database
+- logging
+- availability
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 4.1.2 Set Failed Archive Retry Delay (ARCHRETRYDELAY)
+audit:
+  type: command
+  command: 'db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"; out=$(db2 get db cfg for "$db" 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''{ if (match($0, /\([A-Z0-9_]+\) *=/)) { k = substr($0, RSTART + 1, RLENGTH); sub(/\).*/, "", k); v = $0; sub(/^[^=]*=/, "", v); gsub(/[ \t]/, "", v); c[k] = v } } END { if (c["ARCHRETRYDELAY"] != "" && c["ARCHRETRYDELAY"] + 0 >= 10 && c["ARCHRETRYDELAY"] + 0 <= 30) print "compliant"; else print "noncompliant: " c["ARCHRETRYDELAY"] }'''
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v db2 >/dev/null 2>&1 || exit 0
+    db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"
+    db2 update db cfg for "$db" using ARCHRETRYDELAY 20
+  guidance: "1. Connect to the Db2 database db2 => connect to <dbname> 2. To successfully set the ARCHRETRYDELAY within the 10-30 range, run the following command: db2 => update database configuration using archretrydelay *nn* (where *nn* is a range between 10-30)"

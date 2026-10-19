@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.1.1
+title: Ensure that access to JES2 system commands is controlled
+description: JES2 system commands are used to control JES2 resources and the operating system environment. Failure to properly control access to JES2 system commands could result in unauthorized personnel issuing sensitive JES2 commands. If commands are not protected, this may threaten the integrity and availability of the operating system environment and compromise the confidentiality of customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.1.1 Ensure that access to JES2 system commands is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that OPERCMDS appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that OPERCMDS appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that OPERCMDS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the OPERCMDS entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering: o resources prefixed by the JES2 subsystem IDs o resources ... (full steps: CIS section 8.1.1)'
+remediation:
+  type: iac_patch
+  command: 'To activate the OPERCMDS class use the RACF SETROPTS command: SETROPTS CLASSACT(OPERCMDS) To enable generic profile checking for the OPERCMDS class use the RACF SETROPTS command: SETROPTS GENERIC(OPERCMDS) To RACLIST the OPERCMDS class use the RACF SETROPTS command: SETROPTS RACLIST(OPERCMDS) To create an OPERCMDS profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE OPERCMDS <jesx>.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''CATCH-ALL COMMAND PROFILE FOR JES2 SUBSYSTEM NAMED <jesx>'') PERMIT <jesx>.** CLASS(OPERCMDS) + ACCESS(CONTROL) ID(SYSPROG) SETROPTS REFRESH RACLIST(OPERCMDS) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER OPERCMDS <profile> + UACC(NONE) + AUDIT(<audit>) + NOWARNING SETROPTS REFRESH RACLIST(OPERCMDS) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(OPERCMDS) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(OPERCMDS)
+    To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access ... (see CIS section 8.1.1)'

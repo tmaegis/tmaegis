@@ -1,0 +1,41 @@
+id: TMA-ORACLE-DB-5.5
+title: Ensure The Use Of SYS* Privileges Is Audited
+description: 'The usage of the SYS* (SYS, SYSKM, SYSBACKUP, SYSRAC, SYSDG, PUBLICSYS, SYSKM, SYSBACKUP, SYSRAC, SYSDG, PUBLIC) privileges should always be audited. Under Oracle classic auditing, this was the case with the parameter AUDIT_SYS_OPERATIONS = TRUE. To achieve the same behavior with Unified Auditing, it is necessary to audit all users who use SYS* privileges. As the SYS* privileges have the ... PUBLIC stands for SYSOPER in unified audit policies. Default: Empty Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- logging
+- audit
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 5.5 Ensure The Use Of SYS* Privileges Is Audited
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    with cis_audit(con_id, audit_option, entity_name_expected) as (
+      select c.con_id, 'ALL', ll.column_value from v$containers c,
+      table(dbmsoutput_linesarray('SYS','SYSBACKUP','SYSDG','SYSKM','SYSRAC','PUBLIC')) ll where c.open_mode = 'READ WRITE'),
+    audit_enabled as (
+      select distinct aud.con_id, aud.audit_option, e.entity_name
+      from containers(audit_unified_policies) aud, containers(audit_unified_enabled_policies) e
+      where e.con_id = aud.con_id and e.policy_name = aud.policy_name
+      and aud.audit_option in ('ALL') and aud.audit_option_type = 'STANDARD ACTION'
+      and e.success = 'YES' and e.failure = 'YES' and e.enabled_option = 'BY USER'
+      and e.entity_name in ('SYS','SYSBACKUP','SYSDG','SYSKM','SYSRAC','PUBLIC')
+    )
+    select count(*) from cis_audit c
+    where not exists (select 1 from audit_enabled e where e.audit_option = c.audit_option
+      and e.entity_name = c.entity_name_expected and e.con_id = c.con_id);
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Execute the following SQL statement in the CDB and in each PDB to remediate this recommendation: CREATE AUDIT POLICY CIS_CDB_ALL_ACTIONS_BY_PRIVILEGED_USERS ACTIONS ALL WHEN q''! (SYS_CONTEXT(''USERENV'',''CLIENT_PROGRAM_NAME'') NOT IN (''emagent'') AND INSTR(UPPER(SYS_CONTEXT(''USERENV'',''CLIENT_PROGRAM_NAME'')),''PERL'') = 0 AND INSTR(UPPER(SYS_CONTEXT(''USERENV'',''CLIENT_PROGRAM_NAME'')),''RMAN'') = 0 AND INSTR(UPPER(SYS_CONTEXT(''USERENV'',''CLIENT_PROGRAM_NAME'')),''OMS'') = 0)!'' EVALUATE PER SESSION ONLY TOPLEVEL; AUDIT POLICY CIS_CDB_ALL_ACTIONS_BY_PRIVILEGED_USERS BY SYS, SYSKM, SYSBACKUP, SYSRAC, SYSDG, PUBLIC; Note: If you do not have CIS_CDB_ALL_ACTIONS_BY_PRIVILEGED_USERS, please create one using the CREATE AUDIT POLICY statement. Refer to Section 8.5 where a PL/SQL block is provided to help create or modify the audit policy to remediate this item in both container and pluggable database. For ...'

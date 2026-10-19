@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-NO-OPEN-RELAY
+title: Ensure no Receive connector allows anonymous relay
+description: Granting ms-Exch-SMTP-Accept-Any-Recipient to ANONYMOUS LOGON on a Receive connector turns the server into an open relay. Prints the number of connectors granting it (expected 0). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: critical
+tags:
+- exchange
+- transport
+reference: CIS Microsoft Exchange Server Benchmark - Transport / Receive connector permissions (anonymous relay) (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-ReceiveConnector -ErrorAction Stop | Get-ADPermission -User 'NT AUTHORITY\ANONYMOUS LOGON' -ErrorAction Stop | Where-Object { -not $_.Deny -and (($_.ExtendedRights | Out-String) -match 'ms-Exch-SMTP-Accept-Any-Recipient') }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'For each connector reported, remove the right: Get-ReceiveConnector <name> | Remove-ADPermission -User ''NT AUTHORITY\ANONYMOUS LOGON'' -ExtendedRights ms-Exch-SMTP-Accept-Any-Recipient. If an application must relay, use a dedicated connector scoped with RemoteIPRanges to that host and authenticated relay instead.'

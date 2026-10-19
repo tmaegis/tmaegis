@@ -1,0 +1,39 @@
+id: TMA-MACOS14-2.11.1
+title: Ensure Users' Accounts Do Not Have a Password Hint
+description: Password hints help the user recall their passwords for various systems and/or accounts. In most cases, password hints are simple and closely related to the user's password. Password hints that are closely related to the user's password are a security vulnerability, especially in the social media age. Unauthorized users are more likely to guess a user's password if there is a password hint. The password hint is very susceptible to social engineering attacks and information exposure on social media networks.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: medium
+tags:
+- auth
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.11.1 Ensure Users' Accounts Do Not Have a Password Hint
+audit:
+  type: command
+  command: "/usr/bin/osascript -l JavaScript <<'EOS'\nfunction run() {\n  let timeout = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.screensaver').objectForKey('idleTime'))\n  if ( timeout != null && timeout > 0 && timeout <= 900 ) {\n    return(\"true\")\n  } else {\n    return(\"false\")\n  }\n}\nEOS"
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.screensaver" 'idleTime' -int 600
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.screensaver" 'idleTime' -int 600; true
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to remove a user's password hint: 1. Open System Settings 2. Select Touch ID & Passwords (or Login Password on non-Touch ID Macs) 3. Select Change... 4. Change the password and ensure that no text is entered in the Password hint box Note: This will only change the currently logged-in user's password, and not any others that are not compliant on the Mac. Use the terminal method if multiple users are not in compliance. Terminal Method: Run the following command to remove a user's password hint: % /usr/bin/sudo /usr/bin/dscl . -list /Users hint . -delete /Users/<username> hint example: % /usr/bin/sudo /usr/bin/dscl . -list /Users hint . -delete /Users/firstuser hint % /usr/bin/sudo /usr/bin/dscl . -list /Users hint . -delete /Users/seconduser hint"

@@ -1,0 +1,18 @@
+id: TMA-MYSQL-7.3
+title: Ensure Passwords are Set for All MySQL Accounts
+description: 'Blank passwords allow a user to login without using a password. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: critical
+tags:
+- mysql
+- database
+- authentication
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 7.3 Ensure Passwords are Set for All MySQL Accounts
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT COUNT(*) FROM mysql.user WHERE (plugin IN ('sha256_password', 'caching_sha2_password') AND LENGTH(authentication_string) = 0) OR (plugin IN ('mysql_native_password', 'mysql_old_password', '') AND (authentication_string IS NULL OR LENGTH(authentication_string) = 0))" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: ALTER USER <user>@<host> IDENTIFIED BY RANDOM PASSWORD PASSWORD EXPIRE; for each account returned, and hand the temporary password over securely.

@@ -1,0 +1,23 @@
+id: TMA-FORTIGATE-4.3.2
+title: Ensure DNS Filter logs all DNS queries and responses
+description: DNS filter should log all DNS queries and responses. PASS requires a DNS filter profile with log-all-domain enable. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- logging
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.3.2 Ensure DNS Filter logs all DNS queries and responses
+audit:
+  type: config_regex
+  pattern: (?m)^config dnsfilter profile\n(?:[ \t]+[^\n]*\n)*?[ \t]+set log-all-domain enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config dnsfilter profile
+        edit "<profile>"
+            set log-all-domain enable
+        next
+    end
+    # CIS guidance:
+    Review DNS Filter Security Profiles and validate that "Log all DNS queries and responses" is enabled.

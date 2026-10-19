@@ -1,0 +1,23 @@
+id: TMA-PALOALTO-1.1.1.2
+title: SNMPv3 traps should be configured
+description: 'SNMP v3 can be used for remote logging, and is the recommended protocol in higher security situations as it fully supports encryption of logs. PASS requires an SNMP trap server profile using version v3 and System log forwarding to it; also confirm the other log types. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 2
+severity: high
+tags:
+- paloalto
+- snmp
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.1.1.2 SNMPv3 traps should be configured
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings snmptrap (?:"[^"\n]*"|\S+) version v3 server (?:"[^"\n]*"|\S+) manager \S+(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings system match-list (?:"[^"\n]*"|\S+) send-snmptrap \S+|^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings system match-list (?:"[^"\n]*"|\S+) send-snmptrap \S+(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings snmptrap (?:"[^"\n]*"|\S+) version v3 server (?:"[^"\n]*"|\S+) manager \S+)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set shared log-settings snmptrap SNMPV3-PROFILE version v3 server NMS1 manager 10.0.0.60 user snmptrapuser engineid 0x80001f888056
+    set shared log-settings system match-list ALL-SYSTEM filter "All Logs" send-snmptrap SNMPV3-PROFILE
+    commit
+    # CIS guidance:
+    Navigate to Device > Server Profiles > SNMP Trap Choose Add Assign a Name to the Profile, and specify version V3. Choose Add, and assign a server name in the Name field, add an IP address or FQDN in the SNMP Manager field. Edit the Password fields as appropriate for your server. Repeat if multiple Syslog destinations are required.
+    Navigate to Device > Log Settings Under System, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a SNMP Profile in the SNMP section. Ensure that at least one of the Log Settings Configuration entries has its Filter setting at All Logs Under Configuration, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a SNMP Profile in the SNMP section. Ensure that at least one of the Log Settings Configuration entries has its Filter setting at All Logs Under User-ID, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a SNMP Profile in the SNMP section. Ensure that at least one of the Log Settings Configuration entries has its Filter setting at All Logs Under HIP Match (Host Information Profile), add an entry. Define a Name and a Filter setting. Under Forward Methods, add a SNMP Profile in the SNMP section. Ensure that at least one of the Log Settings Configuration entries has its Filter setting at All Logs Under IP-Tag, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a SNMP Profile in the SNMP section. Ensure that at least one of the Log Settings Configuration entries has its Filter setting at All Logs

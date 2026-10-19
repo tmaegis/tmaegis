@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.3.2
+title: Ensure that the SETROPTS GENERIC is enabled for ACTIVE classes
+description: 'SETROPTS GENERIC controls what classes may have generic profiles. Generic profiles are profiles which cover zero or more resources. They substantially simplify security administration. Note: It is possible to have characters that would be considered "wildcards" such as *, %, $, and & in non-generic profiles.'
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.3.2 Ensure that the SETROPTS GENERIC is enabled for ACTIVE classes
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the GENERIC PROFILE CLASSES = section. Verify that active classes appear, with the following exceptions: Any class which is defined with any of the following attributes as documented in the Security Server RACF Macros and Interfaces reference: o GENERIC=DISALLOWED o GROUP o PROFDEF=NO Any class defined as "generics not recommended" in the Security Server RACF Command Language Reference, including but not limited to: o CDT o CFIELD o DIGTCERT o DIGTRING o IDIDMAP o KERBLINK o REALM o ... (full steps: CIS section 2.3.2)'
+remediation:
+  type: iac_patch
+  command: 'To enable GENERIC for a class use the RACF SETROPTS command: SETROPTS GENERIC(<class>) Guidelines: If you have GENERIC turned on for the DIGTCERT class when the certificate is created or added and its Issuer''s Distinguished Name contains any generic characters (*, & and %), a generic certificate profile will be created. This generic feature will cause unexpected behavior when the certificate is being used by other programs. You need to remove it add it back after turning off GENERIC in the DIGTCERT class. If a general resource class already has discrete profiles with names that contain generic characters (*, &, and %), enabling generic profile checking for the class prevents RACF from using those discrete profiles for authorization checking. In general, once you activate generic profile checking for a class and define generic profiles, avoid deactivating it with the NOGENERIC operand. RACF will not use your previously defined generic profiles for authorization checking while
+    NOGENERIC is in effect.'

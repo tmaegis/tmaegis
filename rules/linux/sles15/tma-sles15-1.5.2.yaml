@@ -1,0 +1,47 @@
+id: TMA-SLES15-1.5.2
+title: Ensure core dumps are restricted
+description: A core dump is the memory of an executable program. It is generally used to determine why a program aborted. It can also be used to glean confidential information from a core file. The system provides the ability to set a soft limit for core dumps, but this can be overridden by the user.
+target: linux
+os_family:
+- sles-15
+level: 1
+severity: medium
+tags:
+- cis-converted
+- kernel
+- linux
+- sysctl
+reference: CIS SUSE Linux Enterprise 15 Benchmark v2.0.1 - 1.5.2
+audit:
+  type: command
+  shell: bash
+  command: 'chk() { p=$1; allowed=" $2 "; case $p in net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || return 0;; esac; v=$(sysctl -n "$p" 2>/dev/null) || { echo "$p: not available"; return 1; }; case "$allowed" in *" $v "*) ;; *) echo "$p is $v (running)"; return 1;; esac; sd=$(readlink -e /lib/systemd/systemd-sysctl || readlink -e /usr/lib/systemd/systemd-sysctl); f=$("$sd" --cat-config 2>/dev/null | grep -Po "^\h*${p//./\.}\h*=\h*\K\H+" | tail -n1); [ -n "$f" ] || { echo "$p is not set in any sysctl configuration file"; return 1; }; case "$allowed" in *" $f "*) ;; *) echo "$p is $f in configuration"; return 1;; esac; }; if chk fs.suid_dumpable 0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    mkdir -p /etc/security/limits.d
+    for f in /etc/security/limits.conf /etc/security/limits.d/*.conf; do [ -f "$f" ] && sed -ri '/^\s*[^#[:space:]][^#]*\s+hard\s+core\s+([1-9]|unlimited)/ s/^/# /' "$f"; done
+    grep -qsE '^\s*\*\s+hard\s+core\s+0\b' /etc/security/limits.conf /etc/security/limits.d/*.conf || echo '* hard core 0' > /etc/security/limits.d/60-tmaegis-core.conf
+    p=fs.suid_dumpable; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+  guidance: "Add the following line to /etc/security/limits.conf or a /etc/security/limits.d/* file: * hard core 0 Set the following parameter in /etc/sysctl.conf or a /etc/sysctl.d/* file: fs.suid_dumpable = 0 Run the following command to set the active kernel parameter: # sysctl -w fs.suid_dumpable=0 - IF - systemd-coredump is installed: edit /etc/systemd/coredump.conf and add/modify the following lines: Storage=none ProcessSizeMax=0 Run the command: systemctl daemon-reload"

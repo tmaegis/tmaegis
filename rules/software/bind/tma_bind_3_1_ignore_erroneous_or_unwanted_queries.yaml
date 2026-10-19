@@ -1,0 +1,27 @@
+id: TMA-BIND-3.1
+title: Ignore Erroneous or Unwanted Queries
+description: BIND can be configured to ignore requests originating from specified network segments. This is accomplished by implementing the blackhole option in named.conf. It is recommended that this feature be implemented to ignore requests that originate outside of expected network segments. The audit requires a non-empty blackhole address list in the global options. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- access-control
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 3.1 Ignore Erroneous or Unwanted Queries
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    printf '%s\n' "$opts" | grep -Eq '[{; ]blackhole \{ *[^} ]' && echo compliant || echo 'no blackhole list in options'
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: Add a blackhole option for multicast and link local addresses, and all private RFC 1918 addresses that are not being used. blackhole { // Private RFC 1918 addresses 10/8; 192.168/16; 172.16/12; // Multicast 224/8; // Link Local 169.254/16; };

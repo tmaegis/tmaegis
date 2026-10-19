@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.10.2.1
+title: Ensure Web-Management is not Set to HTTP
+description: Network devices should not be managed using unencrypted HTTP sessions. JWeb can be configured to provide a Web GUI over either HTTP or HTTPS. HTTP transmits all data (including passwords) in clear text over the network and provides no assurance of the identity of the hosts involved. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.2.1 Ensure Web-Management is not Set to HTTP
+audit:
+  type: config_regex
+  pattern: (?m)^set system services web-management http(?:\s|$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To disable HTTP access issue the following command from the hierarchy:
+    delete system services web-management http

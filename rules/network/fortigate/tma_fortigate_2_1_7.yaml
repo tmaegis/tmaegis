@@ -1,0 +1,26 @@
+id: TMA-FORTIGATE-2.1.7
+title: Disable USB Firmware and configuration installation
+description: Disable USB port auto install feature for config and firmware. PASS requires auto-install-config and auto-install-image disabled. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: high
+tags:
+- fortigate
+- updates
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.1.7 Disable USB Firmware and configuration installation
+audit:
+  type: config_regex
+  pattern: (?m)^config system auto-install\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set auto-install-config disable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set auto-install-image disable[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set auto-install-image disable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set auto-install-config disable[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config system auto-install
+        set auto-install-config disable
+        set auto-install-image disable
+    end
+    # CIS guidance:
+    CLI:
+    config system auto-install
+        set auto-install-config disable
+        set auto-install-image disable
+    end

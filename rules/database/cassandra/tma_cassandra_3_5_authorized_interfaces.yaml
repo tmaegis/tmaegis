@@ -1,0 +1,16 @@
+id: TMA-CASSANDRA-3.5
+title: Ensure that Cassandra only listens for network connections on authorized interfaces
+description: When listen_address is blank and listen_interface is commented out, this will be set automatically by InetAddress.getLocalHost(). Presuming the node is configured correctly, e.g. hostname, name resolution, etc., this will configure the node to use the address associated with the hostname. The listen_address must not be set to 0.0.0.0.
+target: cassandra
+level: 1
+severity: medium
+tags:
+- cassandra
+- network
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 3.5 Ensure that Cassandra only listens for network connections on authorized interfaces
+audit:
+  type: manual
+  command: Run grep -nE "^(listen_address|listen_interface|rpc_address|rpc_interface):" /etc/cassandra/cassandra.yaml. Only one of listen_address/listen_interface may be set, it must name an authorised address or interface, and listen_address must not be 0.0.0.0. Any other value is a finding.
+remediation:
+  type: iac_patch
+  command: Set the listen_address or listen_interface, not both, in the cassandra.yaml to an authorized address or interface.

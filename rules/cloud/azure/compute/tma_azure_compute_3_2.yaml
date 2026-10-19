@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-3.2
+title: Ensure a Managed Identity is used for interactions with other Azure services
+description: 'For containers that require access to other resources, or other resources accessing a container, an identity/credential may be required. The Managed Identity prevents needing to store credentials in code within the Container Instance. There are two types of Managed Identities for Container Instances: 1. System Assigned: System Assigned Managed Identities provide an infrastructure integrated identity which is unique to the resource. It assigned to the Container Instance and persists for the lifecycle of the resource. Permissions can be assigned, revoked, and tuned using Azure role-based access control. 2. User Assigned: User Assigned Managed Identities are not unique to the resource, and exist as independent Azure resources with their own lifecycle. If a Container Identity is decommissioned, the User Assigned Managed Identity will need to be decommissioned separately. User Assigned Man...'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 3.2 Ensure a Managed Identity is used for interactions with other Azure services
+audit:
+  type: manual
+  command: 'Audit from Azure Portal For each Container Instance that uses an identity or credential: 1. Open the Container Instances blade. 2. Select a named container instance. 3. Click on Identity under the Settings section. 4. Review the System Assigned and User Assigned tabs for assigned identities: o If using System Assigned identities, ensure status is set to On. o If using User Assigned identities, ensure only necessary user identities are assigned. Audit from Azure CLI Run the following command: az container list For each Container Instance that uses an identity or credential, ensure "identity": is not "null"'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal For each Container Instance that requires an identity or credential: 1. Open the Container Instances blade. 2. Select a named container instance. 3. Click on Identity under the Settings section, then: o For a System Assigned identity, click the System Assigned tab then set status to On. o For User Assigned identities, click the User Assigned tab then click the Add button. Search for the required user managed identity, then click the Add button at the bottom of the window. Remediate from Azure CLI To assign Managed Identities to Container Instances by CLI, the Managed Identity will need to be specified at the time of creation. If a Container Instance requires a Managed Identity, but does not already have one, it will need to be re-created with the Managed Identity specified. System Assigned Identity: az container create -g <MyResourceGroup> --name <MyContainerInstanceName> -- image <MyImage> --assign-identity [system] User Assigned Identities: az container
+    create -g <MyResourceGroup> --name <MyContainerInstanceName> -- image <MyImage> --assign-identity </subscriptions/MySubscriptionID/resourcegroups/MyResourceGroup/providers/Mic rosoft.ManagedIdentity/...'

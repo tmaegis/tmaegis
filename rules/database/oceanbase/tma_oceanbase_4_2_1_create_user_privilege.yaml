@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-4.2.1
+title: Ensure 'CREATE USER' is Not Granted to Non-Administrative Users
+description: The "CREATE USER" privilege controls the ability of a specific user to add or delete users, modify existing usernames, and revoke permissions from existing users. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when no non-root grantee holds CREATE USER.
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- privileges
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.2.1 Ensure 'CREATE USER' is Not Granted to Non-Administrative Users
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT COUNT(*) FROM information_schema.user_privileges WHERE GRANTEE NOT LIKE '''root''%' AND PRIVILEGE_TYPE = 'CREATE USER'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: REVOKE CREATE USER ON *.* FROM '<user>';

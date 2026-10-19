@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.6.8.6
+title: 'Ensure ''Mandate the minimum version of SMB'' is set to ''Enabled: 3.1.1'''
+description: 'This policy settings controls the minimum version of Server Message Block (SMB) protocol that can be used on the system. The recommended state for this setting is: Enabled: 3.1.1. Note: This group policy setting does not prevent the use of SMBv1 if it is installed and enabled on the system. If the following recommendations are configured as prescribed in this benchmark, SMBv1 will be disabled on the system: Configure SMB v1 client driver and Configure SMB v1 server.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.6.8.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation'' -Name ''MinSmb2Dialect'' -ErrorAction SilentlyContinue).''MinSmb2Dialect''; if (-not ($null -ne $v -and @(785) -contains [int64]$v)) { $bad += ''MinSmb2Dialect='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation' -Name 'MinSmb2Dialect' -Value 785 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,19 @@
+id: TMA-MARIADB-7.5
+title: Ensure No Users Have Wildcard Hostnames
+description: 'MariaDB can make use of host wildcards when granting permissions to users on specific databases. For example, you may grant a given privilege to ''<user>''@''%''. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- authentication
+- network
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 7.5 Ensure No Users Have Wildcard Hostnames
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT COUNT(*) FROM mysql.user WHERE host = '%'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'For each SELECT user, host FROM mysql.user WHERE host = ''%'' result: RENAME USER ''<user>''@''%'' TO ''<user>''@''<specific host>''; or DROP USER.'

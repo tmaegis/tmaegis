@@ -1,0 +1,16 @@
+id: TMA-GITLAB-2.3.3
+title: Ensure output is written to a separate, secured storage repository
+description: Write pipeline output artifacts to a secured storage repository. To maintain output artifacts securely and reduce the potential surface for attack, store such artifacts separately in secure storage. This separation enforces the Single Responsibility Principle by ensuring the orchestration platform will not be the same as the artifact storage, which reduces the potential harm of an attack. Using the same security considerations as the input (for example, the source code) will protect artifacts stored and will make it harder for a malicious actor to successfully execute an attack.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 2.3.3 Ensure output is written to a separate, secured storage repository
+audit:
+  type: manual
+  command: 'For each pipeline that produces output artifacts, ensure that they''re written to a secured storage repository. Review where job output artifacts are stored, either locally or in object storage. By default artifacts are stored locally in: - Linux package (Omnibus): /var/opt/gitlab/gitlab-rails/shared/artifacts - Self-compiled (source): /home/git/gitlab/shared/artifacts'
+remediation:
+  type: iac_patch
+  command: 'For each pipeline that produces output artifacts, write them to a secured storage repository. One approach is to activate object storage and use an encrypted S3 bucket (or similar). Once the storage is configured, these are the steps to activate it for job artifacts: Linux package (Omnibus): - Configure the object storage. - Migrate the artifacts: sudo gitlab-rake gitlab:artifacts:migrate - Verify that there are no files on disk in the artifacts directory: sudo find /var/opt/gitlab/gitlab-rails/shared/artifacts -type f | grep -v tmp | wc -l Self-compiled (source): - Configure the object storage. - Migrate the artifacts: sudo -u git -H bundle exec rake gitlab:artifacts:migrate RAILS_ENV=production - Verify that there are no files on disk in the artifacts directory: sudo find /home/git/gitlab/shared/artifacts -type f | grep -v tmp | wc -l'

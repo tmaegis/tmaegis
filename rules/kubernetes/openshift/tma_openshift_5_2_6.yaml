@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-5.2.6
+title: Minimize the admission of root containers
+description: Do not generally permit containers to be run as the root user. The benchmark marks this recommendation Manual.
+target: openshift
+level: 2
+severity: medium
+tags:
+- openshift
+- policies
+- pod-security
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 5.2.6 Minimize the admission of root containers
+audit:
+  type: manual
+  command: 'Use the following command to list all SCCs that restrict the ability to run the container as root: oc get scc -A -o json | jq ''.items[] | select(.runAsUser["type"] == "MustRunAsNonRoot") | .metadata.name'' Verify at least one SCC is returned. You can perform additional validation by using the following command to list the UID range for each SCC: for i in `oc get scc --template ''{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}''`; do echo "$i"; oc describe scc $i | grep "\sUID"; done Verify there is at least one SCC that doesn''t contain 0 in the UID range.'
+remediation:
+  type: iac_patch
+  command: None required. By default, OpenShift includes the nonroot and nonroot-v2 SCCs that restrict the ability to run as nonroot. If additional SCCs are appropriate, follow the OpenShift documentation to create custom SCCs.

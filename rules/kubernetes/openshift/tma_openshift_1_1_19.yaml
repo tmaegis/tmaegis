@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-1.1.19
+title: Ensure that the OpenShift PKI directory and file ownership is set to root:root
+description: Ensure that the OpenShift PKI directory and file ownership is set to root:root. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- control-plane
+- file-permissions
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 1.1.19 Ensure that the OpenShift PKI directory and file ownership is set to root:root
+audit:
+  type: manual
+  command: 'Keys for control plane components deployed as static pods, kube-apiserver, kube-controller-manager, and openshift-kube-scheduler are stored in the directory /etc/kubernetes/static-pod-certs/secrets. The directory and file ownership are set to root:root. Run the following command. # Should return root:root for all files and directories for i in $(oc -n openshift-kube-apiserver get pod -l app=openshift-kube-apiserver -o jsonpath=''{.items[*].metadata.name}'') do echo $i static-pod-certs oc exec -n openshift-kube-apiserver $i -c kube-apiserver -- \ find /etc/kubernetes/static-pod-certs ...'
+remediation:
+  type: iac_patch
+  command: Execute the chown command to remediate ownership and set it file ownership to root:root.

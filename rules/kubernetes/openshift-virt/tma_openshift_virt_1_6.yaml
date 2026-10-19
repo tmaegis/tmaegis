@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-1.6
+title: Restrict patching operations in the annotations for Hyperconverged
+description: The kubevirt - hyperconverged (HCO) object provides a mechanism to customize OpenShift Virtualization components through the control of patching operations. Although this approach itself does not inherently introduce security risks, enabling experimental features may have unintended consequences and might not be officially supported. It is essential to weigh the benefits of using these options against any potential security implications before proceeding. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.6 Restrict patching operations in the annotations for Hyperconverged
+audit:
+  type: manual
+  command: Ensure there are no patching operations for the Openshift Virtualization component $ oc get hyperconverged kubevirt - hyperconverged - n openshift - cnv - o jsonpath='{.metadata.annotations}'| jq '.|has("kubevirt.kubevirt.io/jsonpatch")' $ oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.metadata.annotations}'| jq '.|has("containerizeddataimporter.kubevirt.io/jsonpatch")' $ oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.metadata.annotations}'| jq '.|has("networkaddonsconfigs.kubevirt.io/jsonpatch")' $ oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.metadata.annotations}'| jq ...
+remediation:
+  type: iac_patch
+  command: 'The annotations should be removed from the Hyperconverged. For example, by directly editing the object with oc edit hyperconverged kubevirt - hyperconverged -n openshift-cnv or by removing the annotation with the annotate command. Example: $ oc annotate --overwrite -n openshift-cnv hco kubevirt-hyperconverged ''containerizeddataimporter.kubevirt.io/jsonpatch-'''

@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.3.1
+title: Ensure 'Java version' is currently supported (if in use)
+description: Periodically, older versions of Java may be deprecated and no longer supported. Using a supported version of Java for function apps is recommended to avoid potential unpatched vulnerabilities. Deprecated and unsupported versions of programming and scripting languages can present vulnerabilities which may not be addressed or may not be addressable.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.1 Ensure 'Java version' is currently supported (if in use)
+audit:
+  type: manual
+  command: 'Take note of currently supported versions of Java here: https://www.oracle.com/java/technologies/java-se-support-roadmap.html Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, ensure that for a Stack of Java, the Java Version reflects a currently supported release. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the Java version: az functionapp show --resource-group <resource-group-name> --name <function- app-name> --query siteConfig.[javaContainer,javaContainerVersion,javaVersion,linuxFxVersion] If Java is in use, ensure the version is currently supported. Audit from PowerShell Run the following command to list function apps: Get-AzFunctionApp Run the following command to get the function app in a resource group with
+    a given name: $app = Get-AzFunctionApp -ResourceGroupName <resource-group-name> -Name <function-app-name> Run the following command to get the Java version: $app.SiteConfig | Select-Object JavaContainer, J...'
+remediation:
+  type: iac_patch
+  command: 'Note: No action is required if Java is not in use. Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, for a Stack of Java, set the Java Version to a currently supported release. 5. Click Save. 6. Click Continue. 7. Repeat steps 1-6 for each function app requiring remediation. Remediate from Azure CLI Run the following command to list supported runtimes: az functionapp list-runtimes For each function app requiring remediation, run the following command with the appropriate parameters to update the Java version: az functionapp config set --resource-group <resource-group-name> --name <function-app-name> [--java-container <java-container> --java-container- version <java-container-version> --java-version <java-version>] [--linux-fx- version <java-runtime-version>]'

@@ -1,0 +1,19 @@
+id: TMA-M365-6.1.2
+title: Ensure mailbox audit actions are configured
+description: 'Mailbox audit logging is turned on by default in all organizations. This effort started in January 2019, and means that certain actions performed by mailbox owners, delegates, and admins are automatically logged. The corresponding mailbox audit records are available for admins to search in the mailbox audit log. Mailboxes and shared mailboxes have actions assigned to them individually in order to audit the data the organization determines valuable at the mailbox level. The recommended state per mailbox is AuditEnabled to True including all default audit actions with additional actions outlined below in the audit and remediation sections. Note: Audit (Standard) licensing allows for up to 180 days log retention as of October 2023. Whether it is for regulatory compliance or for tracking unauthorized configuration changes in Microsoft 365, enabling mailbox auditing and ensuring the proper...'
+target: m365
+level: 1
+severity: medium
+tags:
+- logging
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 6.1.2 Ensure mailbox audit actions are configured
+audit:
+  type: manual
+  command: 'Inspect each UserMailbox and ensure AuditEnabled is True and the following audit actions are included in addition to default actions of each sign-in type. - Admin actions: Copy, FolderBind and Move. - Delegate actions: FolderBind and Move. - Owner actions: Create, MailboxLogin and Move. Note: The defaults can be found in the Default Value section and the combined total can be found in the scripts of the Audit/Remediation sections. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell script: $AdminActions = @( "ApplyRecord", "Copy", "Create", "FolderBind", "HardDelete", "MailItemsAccessed", "Move", "MoveToDeletedItems", "SendAs", "SendOnBehalf", "Send", "SoftDelete", "Update", "UpdateCalendarDelegation", "UpdateFolderPermissions", "UpdateInboxRules" ) $DelegateActions = @( "ApplyRecord", "Create", "FolderBind", "HardDelete", "Move", "MailItemsAccessed", "MoveToDeletedItems", "SendAs", "SendOnBehalf", "SoftDelete",
+    "Update", "UpdateFolderPermissions", "UpdateInboxRules" ) $OwnerActions = @( "ApplyRecord", "Create", "HardDelete", "MailboxLogin", "Move", "MailItemsAccessed", "MoveToDeletedItems", "Send", "SoftDelete",...'
+remediation:
+  type: iac_patch
+  command: 'For each UserMailbox ensure AuditEnabled is True and the following audit actions are included in addition to default actions of each sign-in type. - Admin actions: Copy, FolderBind and Move. - Delegate actions: FolderBind and Move. - Owner actions: Create, MailboxLogin and Move. Note: The defaults can be found in the Default Value section and the combined total can be found in the scripts of the Audit/Remediation sections. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell script to remediate every ''UserMailbox'' in the organization: $AuditAdmin = @( "ApplyRecord", "Copy", "Create", "FolderBind", "HardDelete", "MailItemsAccessed", "Move", "MoveToDeletedItems", "SendAs", "SendOnBehalf", "Send", "SoftDelete", "Update", "UpdateCalendarDelegation", "UpdateFolderPermissions", "UpdateInboxRules" ) $AuditDelegate = @( "ApplyRecord", "Create", "FolderBind", "HardDelete", "Move", "MailItemsAccessed", "MoveToDeletedItems",
+    "SendAs", "SendOnBehalf", "SoftDelete", "Update", "UpdateFolderPermissions", "UpdateInboxRules" ) $AuditOwner = @( "ApplyRecord", "Create", "HardDelete", "MailboxLogin", "Move", "MailItemsAccessed",...'

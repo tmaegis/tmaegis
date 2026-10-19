@@ -1,0 +1,16 @@
+id: TMA-M365-2.1.12
+title: Ensure the connection filter IP allow list is not used
+description: In Microsoft 365 organizations with Exchange Online mailboxes or standalone Exchange Online Protection (EOP) organizations without Exchange Online mailboxes, connection filtering and the default connection filter policy identify good or bad source email servers by IP addresses. The key components of the default connection filter policy are IP Allow List, IP Block List and Safe list. The recommended state is IP Allow List empty or undefined. Without additional verification like mail flow rules, email from sources in the IP Allow List skips spam filtering and sender authentication (SPF, DKIM, DMARC) checks. This method creates a high risk of attackers successfully delivering email to the Inbox that would otherwise be filtered. Messages that are determined to be malware or high confidence phishing are filtered.
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.1.12 Ensure the connection filter IP allow list is not used
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules > Threat policies. 3. Under Policies select Anti-spam. 4. Click on the Connection filter policy (Default). 5. Verify that IP Allow list contains no entries. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Get-HostedConnectionFilterPolicy -Identity Default | fl IPAllowList 3. Verify that IPAllowList is empty or {}'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules> Threat policies. 3. Under Policies select Anti-spam. 4. Click on the Connection filter policy (Default). 5. Click Edit connection filter policy. 6. Remove any IP entries from Always allow messages from the following IP addresses or address range:. 7. Click Save. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Set-HostedConnectionFilterPolicy -Identity Default -IPAllowList @{}'

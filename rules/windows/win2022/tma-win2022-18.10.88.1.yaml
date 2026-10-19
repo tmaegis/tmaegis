@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.10.88.1
+title: Ensure 'Turn on PowerShell Script Block Logging' is set to 'Enabled'
+description: 'This policy setting enables logging of all PowerShell script input to the Applications and Services Logs\Microsoft\Windows\PowerShell\Operational Event Log channel. The recommended state for this setting is: Enabled. Note: If logging of Script Block Invocation Start/Stop Events is enabled (option box checked), PowerShell will log additional events when invocation of a command, script block, function, or script starts or stops. Enabling this option generates a high volume of event logs. CIS has intentionally chosen not to make a recommendation for this option, since it generates a large volume '
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.10.88.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging'' -Name ''EnableScriptBlockLogging'' -ErrorAction SilentlyContinue).''EnableScriptBlockLogging''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableScriptBlockLogging='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging' -Name 'EnableScriptBlockLogging' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,24 @@
+id: TMA-ALIBABA-2.1
+title: Ensure that ActionTrail are configured to export copies of all Log entries
+description: ActionTrail is a web service that records API calls for your account and delivers log files to you. The recorded information includes the identity of the API caller, the time of the API call, the source IP address of the API caller, the request parameters, and the response elements returned by the Alibaba Cloud ... The API call history produced by ActionTrail enables security analysis, resource change tracking, and compliance auditing. Moreover, ensuring that a multi-regions trail exists will ensure that any unexpected activities ... At least one trail must have TrailRegion All and Status Enable (logging). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- logging
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 2.1 Ensure that ActionTrail are configured to export copies of all Log entries
+audit:
+  type: command
+  command: |-
+    out=$(aliyun actiontrail DescribeTrails 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | awk '
+    /\{/ { reg = ""; st = "" }
+    /"TrailRegion"/ { reg = $0 }
+    /"Status"/ { st = $0 }
+    /\}/ { if (reg ~ /"All"/ && st ~ /"Enable"/) ok = 1 }
+    END { if (ok) print "compliant" }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun actiontrail CreateTrail --Name <name> --OssBucketName <bucket> --TrailRegion All (optionally --SlsProjectArn), then aliyun actiontrail StartLogging --Name <name>.

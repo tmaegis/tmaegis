@@ -1,0 +1,69 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.2.1
+title: Ensure access to /etc/ssh/sshd_config is configured
+description: The file /etc/ssh/sshd_config, and files ending in .conf in the /etc/ssh/sshd_config.d directory, contain configuration specifications for sshd.
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- cis-converted
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.2.1 Ensure access to /etc/ssh/sshd_config is configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    alt0() { o=$(bash -c '#!/usr/bin/env bash
+
+    {
+       a_output=(); a_output2=()
+       perm_mask='"'"'0177'"'"' && maxperm="$( printf '"'"'%o'"'"' $(( 0777 & ~$perm_mask)) )"
+       f_sshd_files_chk()
+       {
+          while IFS=: read -r l_mode l_user l_group; do
+             a_out2=()
+             [ $(( $l_mode & $perm_mask )) -gt 0 ] && a_out2+=("    Is mode: \"$l_mode\"" \
+             "    should be mode: \"$maxperm\" or more restrictive")
+             [ "$l_user" != "root" ] && a_out2+=("    Is owned by \"$l_user\" should be owned by \"root\"")
+             [ "$l_group" != "root" ] && a_out2+=("    Is group owned by \"$l_user\" should be group owned by \"root\"")
+             if [ "${#a_out2[@]}" -gt "0" ]; then
+                a_output2+=("  - File: \"$l_file\":" "${a_out2[@]}")
+             else
+                a_output+=("  - File: \"$l_file\":" "    Correct: mode ($l_mode), owner ($l_user)" \
+                "    and group owner ($l_group) configured")
+             fi
+          done < <(stat -Lc '"'"'%#a:%U:%G'"'"' "$l_file")
+       }
+       [ -e "/etc/ssh/sshd_config" ] && l_file="/etc/ssh/sshd_config" && f_sshd_files_chk
+       while IFS= read -r -d $'"'"'\0'"'"' l_file; do
+          [ -e "$l_file" ] && f_sshd_files_chk
+       done < <(find /etc/ssh/sshd_config.d -type f -name '"'"'*.conf'"'"' \( -perm /077 -o ! - user root -o ! -group root \) -print0 2>/dev/null)
+       if [ "${#a_output2[@]}" -le 0 ]; then
+          printf '"'"'%s\n'"'"' "" "- Audit Result:" "  ** PASS **" "${a_output[@]}" ""
+       else
+          printf '"'"'%s\n'"'"' "" "- Audit Result:" "  ** FAIL **" " - Reason(s) for audit failure:" "${a_output2[@]}"
+          [ "${#a_output[@]}" -gt 0 ] && printf '"'"'%s\n'"'"' "" "- Correctly set:" "${a_output[@]}" ""
+       fi
+    }' 2>&1); printf '%s\n' "$o" | grep -q '\*\* PASS \*\*' || { echo "step1: script did not report PASS"; return 1; }; }; if alt0; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    for f in /etc/ssh/sshd_config $(find /etc/ssh/sshd_config.d -type f 2>/dev/null); do
+      [ -e "$f" ] || continue
+      chown root:root "$f"; m=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$m & 8#0600)))" "$f"
+    done
+    exit 0
+  guidance: "Run the following script to set ownership and permissions on /etc/ssh/sshd_config and files ending in .conf in the /etc/ssh/sshd_config.d directory: #!/usr/bin/env bash { chmod u-x,og-rwx /etc/ssh/sshd_config chown root:root /etc/ssh/sshd_config while IFS= read -r -d $'\\0' l_file; do if [ -e \"$l_file\" ]; then chmod u-x,og-rwx \"$l_file\" chown root:root \"$l_file\" fi done < <(find /etc/ssh/sshd_config.d -type f -print0 2>/dev/null) } - IF - other locations are listed in an Include statement, *.conf files in these locations access should also be modified."

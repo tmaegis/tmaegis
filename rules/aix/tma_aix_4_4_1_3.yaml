@@ -1,0 +1,17 @@
+id: TMA-AIX-4.4.1.3
+title: Ensure NFS client mounts include nosuid and nodev options
+description: 'When using NFS shares ensure that suid/sgid program execution and/or access to system devices via permissions set on any mounted NFS filesystem are disabled. Setting the nosuid and nodev options means that files on the NFS server cannot be used to gain privileged access on the client. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- network
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.4.1.3 Ensure NFS client mounts include nosuid and nodev options
+audit:
+  type: command
+  command: command -v lsnfsmnt >/dev/null 2>&1 || exit 1; out=$( { lsnfsmnt -l | egrep -v "^Name" | grep -v nosuid; lsnfsmnt -l | egrep -v "^Name" | grep -v nodev ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each NFS mount, disable suid programs and device access. List the current NFS mounts: lsnfsmnt -l | /usr/bin/egrep -v "^Name" | /usr/bin/grep -v "nosuid" | while read remote server mntpnt rest; do chnfsmnt -d ${remote} -f ${mntpnt} -h ${server} -y -z done lsnfsmnt -l | /usr/bin/egrep -v "^Name" | /usr/bin/grep -v "nodev" | while read remote server mntpnt rest; do chnfsmnt -d ${remote} -f ${mntpnt} -h ${server} -y -z done NOTE: The NFS mount needs is re-mounted automatically by chnfsmnt. NOTE: The second loop might not do anything as both loops set both nosuid (-y) and nodev (-z)'

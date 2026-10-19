@@ -1,0 +1,23 @@
+id: TMA-CISCO-NXOS-1.9.3
+title: Configure source interface for SNMP Traps
+description: The administrator can configure SNMP to the interfaces source IP address for notifications. By using a source interface the administrator can ensure that the source IP of SNMP traps does not change as the network topology changes. For instance, if a link fails or is reconfigured, and a different IP address is now topologically "closer" to the SNMP ... CIS marks this Manual; automated as a config-line check. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- snmp
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.9.3 Configure source interface for SNMP Traps
+audit:
+  type: config_regex
+  pattern: (?m)^snmp-server (?:source-interface (?:traps|informs) |host \S+ source-interface )\S
+remediation:
+  type: iac_patch
+  command: |-
+    snmp-server host 1.2.3.4 source-interface mgmt 0 or
+    snmp-server host 1.2.3.4 source-interface loopback 0 SNMP Server traps or informs:
+    snmp-server source-interface traps loopback 0
+    snmp-server source-interface informs loopback 0 or
+    snmp-server source-interface traps mgmt 0
+    snmp-server source-interface informs mgmt 0

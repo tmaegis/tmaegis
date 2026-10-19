@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.26
+title: Ensure 'log_timezone' is set correctly
+description: The log_timezone setting specifies the time zone to use in timestamps within log messages. This value is cluster-wide, so that all sessions will report timestamps consistently. Unless directed otherwise by your organization's logging policy, set this to either GMT or UTC. Expects GMT/UTC; if your policy mandates another zone, accept this finding as an exception. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- logging
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.26 Ensure 'log_timezone' is set correctly
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN current_setting('log_timezone') IN ('GMT','UTC','Etc/UTC','Etc/GMT') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET log_timezone = 'GMT'" -c "SELECT pg_reload_conf()"

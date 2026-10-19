@@ -1,0 +1,18 @@
+id: TMA-CHROME-4.2.2
+title: 'Ensure ''Default Sensors Setting'' is set to ''Enabled: Do not allow any site to access sensors'''
+description: 'This setting controls website access and use of system sensors such as motion and light. - Allow sites to access sensors (1) - Do not allow any site to access sensors (2) The recommended state for this setting is: Do not allow any site to access sensors (2) The recommended state for this setting is: Enabled with a value of Do not allow any site to access sensors NOTE: If more granular control is needed (per website)... Rationale: Preventing access to system sensors may prevent malicious sites from using these sensors for user profiling (OpSec). Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DefaultSensorsSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: low
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 4.2.2 Ensure ''Default Sensors Setting'' is set to ''Enabled: Do not allow any site to access sensors'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultSensorsSetting'' -ErrorAction SilentlyContinue).''DefaultSensorsSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultSensorsSetting' -Value 2 -PropertyType DWord -Force | Out-Null

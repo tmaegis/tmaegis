@@ -1,0 +1,37 @@
+id: TMA-FORTISWITCH-1.6.1.1
+title: Ensure all the login accounts having specific trusted hosts enabled
+description: Configure an administrative account to be accessible only to someone who is using a trusted host. You can set a specific IP address for the trusted host or use a subnet. FAILs if any administrator still has the default trusthost1 0.0.0.0 0.0.0.0. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: high
+tags:
+- fortiswitch
+- authentication
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.6.1.1 Ensure all the login accounts having specific trusted hosts enabled
+audit:
+  type: config_regex
+  pattern: (?m)^config system admin\n(?:[ \t]+[^\n]*\n)*?[ \t]+set trusthost1 0\.0\.0\.0 0\.0\.0\.0[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system admin
+        edit "<admin>"
+            set trusthost1 10.0.0.0 255.255.255.0
+        next
+    end
+    # CIS guidance:
+    To remove a trusted host item from the list in CLI:
+    config system admin
+        edit "test_admin"
+            unset trusthost1
+        end
+    To add a trusted host into the list in CLI:
+    config system admin
+        edit "test_admin"
+            set trusthost6 1.1.1.1 255.255.255.255
+        end
+    Before adding an item, please make sure that it does not already exist. For example, if trusthost3 is already in the list, using it again will override the existing host/network. In the Web GUI:
+    1. System > Admin > Administrators.
+    2. Select the account "test_admin" and click on "Edit".
+    3. In the account setting page, make sure that "Restrict this Admin Login from Trusted Hosts Only" is enabled and all the allowed hosts / subnets are in the list of trusted hosts.

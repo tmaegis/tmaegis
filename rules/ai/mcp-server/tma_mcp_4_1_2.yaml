@@ -1,0 +1,18 @@
+id: TMA-MCP-4.1.2
+title: Ensure project-scoped MCP server definitions are not enabled or executed without explicit user approval
+description: A project-scoped server definition is one declared in configuration carried inside a project or repository, rather than in the user's own global configuration. The MCP client or host does not enable or execute such a definition without an explicit user review and approval of it. A server definition specifies a command the client will launch, so trusting it is equivalent to agreeing to run that command. Auto-trust and auto-approval of project-scoped servers are disabled, so opening a shared or cloned workspace does not enable or launch its declared servers before the user has seen and approved them. Approval is per-project and precedes any launch of, or command execution from, a project-scoped definition. A server definition is not passive data. It names an executable and its arguments, and enabling it runs that command. When a client honors project-scoped definitions automatically, a...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.1.2 Ensure project-scoped MCP server definitions are not enabled or executed without explicit user approval
+audit:
+  type: manual
+  command: 'Confirm by configuration review that the client''s project auto-trust or auto-approval behavior is disabled, so project-scoped server definitions are not enabled automatically. Then perform a behavioral test: in a throwaway workspace, add a benign project- scoped server definition, open the workspace with the client, and confirm the client does not enable or launch that server without presenting an explicit approval, and that declining the approval prevents the launch. For a client that exposes a named auto-trust setting, the following optional command confirms it is not enabled in the located configuration, as a convenience rather than the verdict: FILES="<CLIENT_CONFIG_FILE_LIST>" found=0; enabled="" for f in $FILES; do [ -e "$f" ] || continue found=$((found+1)) grep -Eq ''"(enableAllProjectMcpServers|enabledMcpjsonServers|autoApprove|autoMode)"[[:space:]] *:[[:space:]]*true'' "$f" 2>/dev/null && enabled="${enabled} ${f}" done if [ "$found" -eq 0 ]; then echo "REVIEW: none
+    of the given config paths exist (confirm the client''s config location)" elif [ -n "$enabled" ]; then echo "FAIL: project auto-trust or auto-approval is enabled in:$enabled" else echo "PASS: no known project aut...'
+remediation:
+  type: iac_patch
+  command: These are client configuration settings, with no portable command. Disable the client's project auto-trust or auto-approval of servers, so project-scoped definitions are presented for approval rather than enabled automatically. Where the client supports it, block auto-trust settings from being honored when they originate in project scope. Require an explicit per-project approval before a project's server definitions are enabled or any command from them runs. Keep the client updated to a version that gates project-scoped definitions behind that approval.

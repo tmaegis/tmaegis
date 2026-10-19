@@ -1,0 +1,16 @@
+id: TMA-MONGODB-3.1
+title: Ensure least privilege for database accounts
+description: MongoDB grants access to data and commands through "role-based" approach, MongoDB is shipped with built-in roles that provide the different levels of access commonly needed in a database system. In addition, you can create custom-roles.
+target: mongodb
+level: 1
+severity: high
+tags:
+- mongodb
+- privileges
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 3.1 Ensure least privilege for database accounts
+audit:
+  type: manual
+  command: 'In mongosh run db.getSiblingDB("admin").system.users.find({"roles.role": {$in: ["dbOwner", "userAdmin", "userAdminAnyDatabase"]}, "roles.db": "admin"}, {user: 1, roles: 1}). Any account returned holds a built-in dbOwner/userAdmin/userAdminAnyDatabase role scoped to the admin database and must be justified or dropped.'
+remediation:
+  type: iac_patch
+  command: 'If any accounts were listed with built in-roles: dbOwner userAdmin userAdminAnyDatabase in "admin" database role then drop them.'

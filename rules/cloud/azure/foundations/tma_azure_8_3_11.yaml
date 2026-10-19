@@ -1,0 +1,17 @@
+id: TMA-AZURE-8.3.11
+title: Ensure Certificate 'Validity Period (in months)' is Less Than or Equal to '12'
+description: Restrict the validity period of certificates stored in Azure Key Vault to 12 months or less. Limiting certificate validity reduces the risk of misuse if compromised and helps ensure timely renewal, improving security and reliability.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 8.3.11 Ensure Certificate 'Validity Period (in months)' is Less Than or Equal to '12'
+audit:
+  type: manual
+  command: 'Requisite Permissions - read section overview! RBAC Role = Key Vault Certificates Officer Access policy permissions = Certificates: List, Get Audit from Azure Portal 1. Go to Key vaults. 2. Click the name of a key vault. 3. Under Objects, click Certificates. 4. Click the name of a certificate. 5. Click Issuance Policy. 6. Ensure that Validity Period (in months) is set to 12 or less. 7. Repeat steps 1-6 for each key vault and certificate. Audit from Azure CLI Run the following command to list key vaults: az keyvault list For each key vault, run the following command to list certificates: az keyvault certificate list --vault-name <key-vault-name> For each certificate, run the following command to get the certificate policy''s validityInMonths setting: az keyvault certificate show --id <certificate-id> --query policy.x509CertificateProperties.validityInMonths Ensure that 12 or less is returned. Audit from PowerShell Run the following command to list key vaults: Get-AzKeyVault Run
+    the following command to get the key vault with a given name: $vault = Get-AzKeyVault -Name <key-vault-name> Run the following command to list certificates in the key vault: Get-AzKeyVaultCertificate -Vault...'
+remediation:
+  type: iac_patch
+  command: 'Requisite Permissions - read section overview! RBAC Role = Key Vault Certificates Officer Access policy permissions = Certificates: List, Get, Update Remediate from Azure Portal 1. Go to Key vaults. 2. Click the name of a key vault. 3. Under Objects, click Certificates. 4. Click the name of a certificate. 5. Click Issuance Policy. 6. Set Validity Period (in months) to an integer between 1 and 12, inclusive. 7. Click Save. 8. Repeat steps 1-7 for each key vault and certificate requiring remediation. Remediate from PowerShell For each certificate requiring remediation, run the following command to set ValidityInMonths to an integer between 1 and 12, inclusive: Set-AzKeyVaultCertificatePolicy -VaultName $vault.VaultName -Name <certificate-name> -ValidityInMonths <validity-in-months>'

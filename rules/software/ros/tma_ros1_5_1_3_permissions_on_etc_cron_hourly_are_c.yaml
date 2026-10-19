@@ -1,0 +1,25 @@
+id: TMA-ROS1-5.1.3
+title: Ensure permissions on /etc/cron.hourly are configured
+description: This directory contains system cron jobs that need to run on an hourly basis. The files in this directory cannot be manipulated by the crontab command, but are instead edited by system administrators using a text editor. The commands below restrict read/write and search access to user and group root, preventing regular users from accessing this directory. The audit requires /etc/cron.hourly root:root with no group/other permissions. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.1.3 Ensure permissions on /etc/cron.hourly are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    [ -e /etc/cron.hourly ] || { echo '/etc/cron.hourly not found'; exit 1; }
+    set -- $(stat -Lc '%a %u %g' /etc/cron.hourly) || exit 1
+    m=$((8#$1)); [ $((m & ~8#0700)) -eq 0 ] || { echo "/etc/cron.hourly mode $1 exceeds 0700"; exit 1; }
+    [ "$2" = 0 ] || { echo "/etc/cron.hourly uid $2"; exit 1; }
+    case " 0 " in *" $3 "*) echo compliant ;; *) echo "/etc/cron.hourly gid $3" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to set ownership and permissions on /etc/cron.hourly : # chown root:root /etc/cron.hourly # chmod og-rwx /etc/cron.hourly'

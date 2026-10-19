@@ -1,0 +1,51 @@
+id: TMA-AIX-6.2.1
+title: Ensure at is restricted to authorized users
+description: 'at allows fairly complex time specifications, extending the POSIX.2 standard. It accepts times of the form HH:MM to run a job at a specific time of day. (If that time is already past, the next day is assumed.) You may also specify midnight, noon, or teatime (4pm) and you can have a time-of-day suffixed with AM or PM for running in the morning or the evening. Audit: at.deny must not exist and at.allow must exist (review its users).'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 6.2.1 Ensure at is restricted to authorized users
+audit:
+  type: command
+  command: '[ ! -e /var/adm/cron/at.deny ] && [ -f /var/adm/cron/at.allow ] && echo compliant || echo "at.deny present or at.allow missing"'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    dir=/var/adm/cron
+    rm -f $dir/at.deny
+    [ -f $dir/at.allow ] || { { echo root; true; } | sort -u > $dir/at.allow; chown root:sys $dir/at.allow; chmod 400 $dir/at.allow; }
+  guidance: "Remove /var/adm/cron/at.deny if it exists: # /usr/bin/rm /var/adm/cron/at.deny IF /var/adm/cron/at.allow does not exist, create the file: # print \"root\\nadm\" > /var/adm/cron/at.allow IF /var/adm/cron/at.allow already exists, ensure that it contains at least the root and adm users."

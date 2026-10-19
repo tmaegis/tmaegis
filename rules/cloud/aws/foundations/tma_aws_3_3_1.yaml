@@ -1,0 +1,19 @@
+id: TMA-AWS-3.3.1
+title: Ensure that encryption is enabled for EFS file systems
+description: EFS data should be encrypted at rest using AWS KMS (Key Management Service). Data should be encrypted at rest to reduce the risk of a data breach via direct access to the storage device.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- encryption
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 3.3.1 Ensure that encryption is enabled for EFS file systems
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the AWS Management Console and Navigate to the Elastic File System (EFS) dashboard. 2. Select File Systems from the left navigation panel. 3. Each item on the list has a visible Encrypted field that displays data at rest encryption status. 4. Validate that this field reads Encrypted for all EFS file systems in all AWS regions. From CLI: 1. Run the describe-file-systems command using custom query filters to list the identifiers of all AWS EFS file systems currently available within the selected region: aws efs describe-file-systems --region --output table --query ''FileSystems[*].[FileSystemId,Encrypted]'' --output table 2. The command output should return a table with the requested file system IDs. 3. Run the describe-file-systems command using the ID of the file system that you want to examine as file-system-id and the necessary query filters: aws efs describe-file-systems --region <region> --file-system-id <file- system-id> --query ''FileSystems[*].Encrypted''
+    4. The command output should return the file system encryption status as true or false. If the returned value is false, the selected AWS EFS file system is not encrypted and if the returned value is...'
+remediation:
+  type: iac_patch
+  command: 'It is important to note that EFS file system data-at-rest encryption must be turned on when creating the file system. If an EFS file system has been created without data-at-rest encryption enabled, then you must create another EFS file system with the correct configuration and transfer the data. Steps to create an EFS file system with data encrypted at rest: From Console: 1. Login to the AWS Management Console and Navigate to the Elastic File System (EFS) dashboard. 2. Select File Systems from the left navigation panel. 3. Click the Create File System button from the dashboard top menu to start the file system setup process. 4. On the Configure file system access configuration page, perform the following actions: - Choose an appropriate VPC from the VPC dropdown list. - Within the Create mount targets section, check the boxes for all of the Availability Zones (AZs) within the selected VPC. These will be your mount targets. - Click Next step to continue. 5. Perform the following
+    on the Configure optional settings page: - Create tags to describe your new file system. - Choose performance mode based on your requirements. - Check the Enable encryption box and choose aws/elasticfiles...'

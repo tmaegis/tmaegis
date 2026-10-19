@@ -1,0 +1,25 @@
+id: TMA-CISCO-FTD-2.1.2
+title: Create an outbound SSL Policy
+description: 'As time moves forward, we see more and more traffic that was previously in clear text now being implemented with encryption. This makes inspecting that traffic for malicious activity more and more complex. Decrypting traffic for inspection makes that process much easier, however, privacy and legal factors should be considered before implementing such as process. Decryption is governed by the "SSL Policy". Standard HTTPS traffic is a good target for decryption, as configuring Firepower to decrypt, inspect then re-encrypt traffic is fairly straightforward. In most cases, the following site categories should not be decrypted: - Finance - Government and Law - ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-ftd
+level: 1
+severity: high
+tags:
+- cisco-ftd
+- network
+- hardening
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 2.1.2 Create an outbound SSL Policy
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. - Verify that you have a written policy that permits decryption that has been communicated to the people that are affected by that policy. - Navigate to Policies > SSL - Verify that, at a minimum the site categories: "Finance", "Government and Law", "Health and Medicine" have a "Do not decrypt" action assigned to them - Assess other "Decrypt - Resign" and "Do not Decrypt" assignments for compliance to your policy - Verify that any sites assigned a "Do not decrypt" action for performance or operational reasons (such as pinned ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Verify that you have a written policy that permits decryption that has been communicated to the people that are affected by that policy.
+    - Navigate to Policies > SSL
+    - Create rules to define what is exempted from decryption. At a minimum the site categories: "Finance", "Government and Law", "Health and Medicine" should have a "do not decrypt" action assigned to them
+    - Assess other "Decrypt
+    - Resign" and "Do not Decrypt" assignments for compliance to your policy
+    - Verify that any sites assigned a "Do not decrypt" action for performance or operational reasons still fall within the parameters of your policy
+    - In most rulesets, there will be a "default" rule at the bottom of the list, which will either decrypt all other sites, or exempt all other sites from decryption.
+    - Verify that your SSL Policy is assigned in the Access Policy (Policies > Access Control > <Your Access Policy> > SSL Policy)

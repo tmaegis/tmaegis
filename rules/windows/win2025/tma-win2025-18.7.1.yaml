@@ -1,0 +1,21 @@
+id: TMA-WIN2025-18.7.1
+title: Ensure 'Allow Print Spooler to accept client connections' is set to 'Disabled'
+description: 'This policy setting controls whether the Print Spooler service will accept client connections. The recommended state for this setting is: Disabled. Note: The Print Spooler service must be restarted for changes to this policy to take effect. Warning: An exception to this recommendation must be made for print servers in order for them to function properly. Users will not be able to print to the server when client connections are disabled.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.7.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers'' -Name ''RegisterSpoolerRemoteRpcEndPoint'' -ErrorAction SilentlyContinue).''RegisterSpoolerRemoteRpcEndPoint''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $bad += ''RegisterSpoolerRemoteRpcEndPoint='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers' -Name 'RegisterSpoolerRemoteRpcEndPoint' -Value 2 -PropertyType DWord -Force | Out-Null

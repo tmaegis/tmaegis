@@ -1,0 +1,20 @@
+id: TMA-MARIADB-3.4
+title: Ensure 'slow_query_log' Has Appropriate Permissions
+description: 'MariaDB can operate using a variety of log files, each used for different purposes. These are the binary log (which can be encrypted), error log, slow query log, relay log, general log, and in the enterprise edition, the audit log (which can be encrypted). Passes when the slow query log is off; otherwise the file must not be accessible to other users, executable, or owned by anyone but mysql:mysql. Remove old slow log files manually. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- filesystem
+- permissions
+- logging
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 3.4 Ensure 'slow_query_log' Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mariadb -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; on=$(mariadb -NBe "SELECT IFNULL(@@global.slow_query_log + 0, '''')" 2>/dev/null) || exit 1; [ "$on" = 0 ] && { echo compliant; exit 0; }; f=$(mariadb -NBe "SELECT IFNULL(@@global.slow_query_log_file, '''')" 2>/dev/null) || exit 1; case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; [ -f "$f" ] || exit 1; [ -z "$(find "$f" -maxdepth 0 \( -perm /0117 -o ! -user mysql -o ! -group mysql \))" ] && echo compliant || echo "bad permissions on $f"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Disable the slow query log (SET GLOBAL slow_query_log = OFF and slow_query_log=0 under [mariadbd]); if it must stay on: chmod 660 <slow_query_log_file> && chown mysql:mysql <slow_query_log_file>.'

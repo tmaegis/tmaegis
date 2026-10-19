@@ -1,0 +1,17 @@
+id: TMA-AKS-4.4.1
+title: Ensure latest Azure CNI Overlay is used
+description: Ensure the AKS cluster uses Azure CNI Overlay as the supported overlay networking model and remains on current AKS-managed networking components through cluster and node image upgrades. Azure CNI Overlay is the recommended CNI plugin for most overlay scenarios and the general recommendation for pod networking, while AKS delivers related component, feature, and security updates through its managed upgrade model rather than through a separately ... The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- policies
+- network
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.4.1 Ensure latest Azure CNI Overlay is used
+audit:
+  type: manual
+  command: Verify that the AKS cluster is using Azure CNI Overlay as its networking model and that a supported network policy engine is configured as part of the cluster network profile. In current AKS guidance, Azure CNI Overlay is the recommended plugin for most overlay scenarios, and AKS exposes the relevant audit fields through networkProfile, including the network plugin, overlay mode, network policy, and network data plane.
+remediation:
+  type: iac_patch
+  command: Migrate the cluster to Azure CNI Overlay if it is still using Kubenet or Azure CNI Node Subnet, and complete the change through supported AKS upgrade paths. Microsoft documents a single forward-only migration path to Azure CNI Overlay for existing clusters, and if Azure CNI Powered by Cilium is also required, the IPAM-mode update to Overlay and the data-plane update to Cilium must be performed as separate operations. Configure a supported network policy engine and validate that the cluster network profile to reflect the intended steady state. Microsoft documents Azure CNI Overlay as compatible with supported AKS network policy options, and the remediation should end with confirmation that networkPlugin is Azure, networkPluginMode is Overlay, and the selected policy and data-plane settings match the approved design.

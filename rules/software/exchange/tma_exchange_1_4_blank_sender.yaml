@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-1.4
+title: Ensure 'Blank sender field' is configured
+description: When the Sender Filter Agent takes on messages from blocked senders or domains, the Action parameter is what is used when deciding what to do with these messages. Prints compliant when sender filter Action is Reject and BlankSenderBlockingEnabled is True. Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- antispam
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.4 Ensure 'Blank sender field' is configured
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $c = Get-SenderFilterConfig -ErrorAction Stop; if ("$($c.Action)" -eq 'Reject' -and $c.BlankSenderBlockingEnabled -eq $true) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-SenderFilterConfig -Action Reject -BlankSenderBlockingEnabled $true

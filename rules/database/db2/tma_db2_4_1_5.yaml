@@ -1,0 +1,19 @@
+id: TMA-DB2-4.1.5
+title: Secure Permissions for the Secondary Archive Log Location (LOGARCHMETH2)
+description: 'The LOGARCHMETH2 parameter specifies the type of media and the location used as the secondary destination for archived logs. It is recommended that the directory used for the archived logs be set to full access for Db2 administrator accounts and read and execute only for all other accounts. Automated as: when LOGARCHMETH2 is DISK:<dir>, that directory is not group- or world-writable (755 or stricter); other methods pass. Database-level check: set DB2DBDFT to the database name to audit (the rule connects to it with the instance owner''s credentials and fails when DB2DBDFT is unset). Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- filesystem
+- logging
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 4.1.5 Secure Permissions for the Secondary Archive Log Location (LOGARCHMETH2)
+audit:
+  type: command
+  command: 'db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"; out=$(db2 get db cfg for "$db" 2>/dev/null) || exit 1; p=$(printf ''%s\n'' "$out" | sed -n ''s/.*(LOGARCHMETH2) *= *//p'' | sed ''s/[[:space:]]*$//''); case "$p" in DISK:*) p=${p#DISK:} ;; *) echo compliant; exit 0 ;; esac; [ -n "$p" ] || { echo compliant; exit 0; }; [ -e "$p" ] || { echo "noncompliant: $p does not exist"; exit 0; }; w=$(find "$p" -prune \( -perm -020 -o -perm -002 \) -print); [ -z "$w" ] && echo compliant || echo "noncompliant: $p is group/world writable"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For Windows and Linux: 1. Attach to the Db2 instance. 2. Run the following command to change the secondary archive log directory, if necessary: db2 => update database configuration using logarchmeth2 <valid directory> Additional steps for Windows (assuming that the logarchmeth2 parameter includes DISK): 1. Connect to the Db2 host 2. Right-click on the secondary archive log directory 3. Choose Properties 4. Select the Security tab 5. Grant all Db2 administrator accounts the Full Control authority 6. Grant all other accounts read and execute privileges only (revoke all other privileges) Additional steps for Linux (assuming that the logarchmeth2 parameter includes DISK): 1. Connect to the Db2 host 2. Change to the secondary archive log directory 3. Change the permissions for the directory $ chmod -R 755'

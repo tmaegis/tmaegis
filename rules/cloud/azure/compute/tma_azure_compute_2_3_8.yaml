@@ -1,0 +1,19 @@
+id: TMA-AZURE-COMPUTE-2.3.8
+title: Ensure end-to-end TLS encryption is enabled
+description: 'End-to-end (E2E) TLS encryption ensures that front-end to worker communication within function apps is encrypted using TLS. Without this feature, while incoming HTTPS requests are encrypted to the front ends, the traffic from front ends to workers running the application workloads would travel unencrypted inside Azure’s infrastructure. E2E TLS helps ensure full encryption of traffic between: - Clients and front ends - Front ends and worker processes hosting the application'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+- encryption
+- tls
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.8 Ensure end-to-end TLS encryption is enabled
+audit:
+  type: manual
+  command: 'Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the end-to-end TLS encryption setting: az functionapp show --resource-group <resource-group-name> --name <function- app-name> --query endToEndEncryptionEnabled Ensure that the command returns true. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 387140f1-6da9-4741-bcee-3b5edcdfd9ec - Name: ''Function apps should enable end to end encryption'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure CLI For each function app requiring remediation, run the following command to enable end- to-end TLS encryption: az resource update --resource-group <resource-group-name> --name <function- app-name> --resource-type "Microsoft.Web/sites" --set properties.endToEndEncryptionEnabled=true'

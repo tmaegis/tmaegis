@@ -1,0 +1,27 @@
+id: TMA-ROS1-3.4.3.8
+title: Ensure nftables rules are permanent
+description: 'nftables is a subsystem of the Linux kernel providing filtering and classification of network packets/datagrams/frames. The nftables service reads the /etc/sysconfig/nftables.conf file for a nftables file or files to include in the nftables ruleset. A nftables ruleset containing the input, forward, and output base chains allow network traffic to be filtered. Applies when nftables is installed: the audit requires /etc/nftables.conf (and the files it includes) to define the input, forward and output base chains so they load at boot. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.3.8 Ensure nftables rules are permanent
+audit:
+  type: command
+  shell: bash
+  command: |-
+    f=/etc/nftables.conf; [ -r "$f" ] || exit 1
+    inc=$(awk '$1 ~ /^\s*include/ { gsub("\"","",$2); print $2 }' "$f")
+    all=$(cat "$f" $inc 2>/dev/null)
+    bad=0; for h in input forward output; do printf '%s\n' "$all" | grep -q "hook $h" || { echo "hook $h not in the boot ruleset"; bad=1; }; done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/nftables.conf
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/sysconfig/nftables.conf file and un-comment or add a line with include <Absolute path to nftables rules file> for each nftables file you want included in the nftables ruleset on boot example: # vi /etc/sysconfig/nftables.conf Add the line: include "/etc/nftables/nftables.rules"'

@@ -1,0 +1,16 @@
+id: TMA-DOCKER-4.7
+title: Ensure setuid and setgid permissions are removed
+description: 'Removing setuid and setgid permissions in the images can prevent privilege escalation attacks within containers. setuid and setgid permissions can be used for privilege escalation. Whilst these permissions can on occasion be legitimately needed, you should consider removing them from packages which do not need them. Reported as a manual review item: the audit needs a site-specific judgement.'
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- manual
+reference: CIS Docker Benchmark v1.9.0 - 4.7 Ensure setuid and setgid permissions are removed
+audit:
+  type: manual
+  command: 'You should run the command below against each image to list the executables which have either setuid or setgid permissions: docker export <IMAGE ID> | tar -tv 2>/dev/null | grep -E ''^[-rwx].*(s|S).*\s[0-9]'' You should then review the list and ensure that all executables configured with these permissions actually require them.'
+remediation:
+  type: iac_patch
+  command: 'You should allow setuid and setgid permissions only on executables which require them. You could remove these permissions at build time by adding the following command in your Dockerfile, preferably towards the end of the Dockerfile: RUN find / -perm /6000 -type f -exec chmod a-s {} \; || true'

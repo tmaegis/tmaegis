@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.57.3.2.1
+title: Ensure 'Allow users to connect remotely by using Remote Desktop Services' is set to 'Disabled'
+description: 'This policy setting allows you to configure remote access to computers by using Remote Desktop Services. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.57.3.2.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'' -Name ''fDenyTSConnections'' -ErrorAction SilentlyContinue).''fDenyTSConnections''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''fDenyTSConnections='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Name 'fDenyTSConnections' -Value 1 -PropertyType DWord -Force | Out-Null

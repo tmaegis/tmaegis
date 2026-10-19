@@ -1,0 +1,19 @@
+id: TMA-AZURE-8.3.2
+title: Ensure that the Expiration Date is set for All Keys in Key Vaults using access policies (legacy)
+description: 'Ensure that all Keys in Azure Key Vaults with access policies have an expiration date set. Note: Using access policies is a legacy method. For improved security, use the Role- Based Access Control (RBAC) permission model instead of access policies when managing Azure Key Vault. RBAC restricts permission management to only the Owner and User Access Administrator roles, ensuring a clear separation between security and administrative tasks. With the Access Policy permission model, users with the Contributor, Key Vault Contributor, or any role that includes Microsoft.KeyVault/vaults/write permissions can grant themselves data plane access by configuring a Key Vault access policy. This can result in unauthorized access and management of your key vaults, keys, secrets, and certificates. To reduce this risk, limit Contributor role access to key vaults when using the Access Policy model. Azur...'
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- crypto
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 8.3.2 Ensure that the Expiration Date is set for All Keys in Key Vaults using access policies (legacy)
+audit:
+  type: manual
+  command: 'Requisite Access Policy Permissions for Keys - read section overview! Audit Permissions = Keys: List, Get Audit from Azure Portal 1. Go to Key vaults. 2. For each Key vault, under Objects, select Keys. 3. In the main pane, ensure that the status of the key is Enabled. 4. For each enabled key, ensure that an appropriate Expiration date is set. Audit from Azure CLI Get a list of all the key vaults in your Azure environment by running the following command: az keyvault list For each key vault, ensure that the output of the below command contains Key ID (kid), enabled status as true and Expiration date (expires) is not empty or null: az keyvault key list --vault-name <KEYVAULTNAME> --query ''[*].{"kid":kid,"enabled":attributes.enabled,"expires":attributes.expires}'' Audit from PowerShell Retrieve a list of Azure Key vaults: Get-AzKeyVault For each Key vault, run the following command to determine which vaults are configured to not use RBAC: Get-AzKeyVault -VaultName <Vault Name>
+    For each Key vault with the EnableRbacAuthorization setting set to False or empty, run the following command. Get-AzKeyVaultKey -VaultName <Vault Name> Make sure the Expires setting is configured with a value...'
+remediation:
+  type: iac_patch
+  command: 'Requisite Access Policy Permissions for Keys - read section overview! Remediation Permissions = Keys: List, Get, Update Remediate from Azure Portal 1. Go to Key vaults. 2. For each Key vault, under Objects, select Keys. 3. In the main pane, ensure that the status of the key(s) is Enabled. 4. Click on the secret(s) without Expiration date. 5. Click on the current version key 6. Click the checkbox Set expiration date and set an appropriate Expiration date on the key. 7. Click Apply. Remediate from Azure CLI Update the Expiration date for the key using the below command: az keyvault key set-attributes --name <keyName> --vault-name <vaultName> -- expires Y-m-d''T''H:M:S''Z'' Remediate from PowerShell Set-AzKeyVaultKeyAttribute -VaultName <Vault Name> -Name <Key Name> -Expires <DateTime>'

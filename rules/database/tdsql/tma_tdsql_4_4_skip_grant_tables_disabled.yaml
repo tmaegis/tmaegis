@@ -1,0 +1,17 @@
+id: TMA-TDSQL-4.4
+title: Ensure `skip-grant-tables` Is Disabled
+description: When MySQL is started with --skip-grant-tables, the server does not load the privilege system, and any user can log in without authentication and perform arbitrary operations. Counts mysqld processes started with --skip-grant-tables and my.cnf files (/data/tdsql/mysqld/*/my.cnf, /etc/my.cnf) that enable it.
+target: tdsql
+level: 1
+severity: critical
+tags:
+- tdsql
+- authentication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.4 Ensure `skip-grant-tables` Is Disabled
+audit:
+  type: command
+  command: out=$(ps -eo args= 2>/dev/null) || exit 1; p=$(printf '%s\n' "$out" | grep mysqld | grep -ci '[s]kip.grant.tables' || true); c=$(grep -il '^[[:space:]]*[s]kip.grant.tables' /data/tdsql/mysqld/*/my.cnf /etc/my.cnf 2>/dev/null | wc -l); echo $((p + c))
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove skip-grant-tables from my.cnf and the mysqld command line and restart the MySQL instance.

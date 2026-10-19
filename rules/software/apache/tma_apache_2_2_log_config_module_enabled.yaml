@@ -1,0 +1,23 @@
+id: TMA-APACHE-2.2
+title: Ensure the Log Config Module Is Enabled
+description: The log_config module provides for flexible logging of client requests, and provides for the configuration of the information in each log. Compliant when log_config_module is loaded. Uses the module list from apachectl -M (apache2ctl/httpd; needs root).
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- modules
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 2.2 Ensure the Log Config Module Is Enabled
+audit:
+  type: command
+  shell: bash
+  command: b=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 1; m=$("$b" ${APACHE_CONF:+-f "$APACHE_CONF"} -M 2>/dev/null) || exit 1; printf '%s\n' "$m" | grep -Eiq 'log_config_module' && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Load mod_log_config (LoadModule log_config_module modules/mod_log_config.so; a2enmod log_config is static on Debian). Then run apachectl configtest and reload Apache.

@@ -1,0 +1,17 @@
+id: TMA-TDSQL-12.9
+title: Ensure Access to KMS Configuration Interfaces Is Restricted
+description: 'The KMS configuration interfaces (TDSQL.GetKmsConfig, TDSQL.CreateKmsConfig) involve master key (CMK) management; abuse can defeat the entire cluster''s encryption. OSS should: Include the KMS interfaces in interface_mask so only privileged users can invoke them. Mask the keyring_kms_config field in return values in the audit log (see property_mask in oss.json:230-237).'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- encryption
+- oss
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 12.9 Ensure Access to KMS Configuration Interfaces Is Restricted
+audit:
+  type: manual
+  command: '# 1. Confirm the KMS interfaces are included in the mask grep ''TDSQL.GetKmsConfig\|TDSQL.CreateKmsConfig'' /path/to/tdsql/conf/oss.json # 2. Confirm the KMS configuration field is included in response masking grep ''keyring_kms_config'' /path/to/tdsql/conf/oss.json # 3. Verify KMS service health (via the OSS KMS status query interface)'
+remediation:
+  type: iac_patch
+  command: '{ "name": "interface_mask", "value": "...,TDSQL.GetKmsConfig,TDSQL.CreateKmsConfig" }, { "name": "property_mask", "value": "pwd,password,secretid,secretkey,token,secret_id,secret_key,ca_cert,server_cert,se rver_key,client_cert,client_key,keyring_kms_config" }'

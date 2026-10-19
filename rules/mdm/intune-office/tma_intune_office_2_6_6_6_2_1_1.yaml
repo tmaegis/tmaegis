@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.6.6.6.2.1.1
+title: 'Ensure ''PowerPoint 97-2003 presentations, shows, templates and add-in files'' is set to ''Enabled: Open/Save blocked, use open policy'''
+description: 'This policy setting determines whether users can open, view, edit, or save PowerPoint files with PowerPoint 97-2003 presentations, shows, templates and add-in files. Note: Use Open Policy action is defined by the Set default file block behavior group policy setting which is included in this benchmark. The recommended state for this setting is: Enabled: Open/Save blocked, use open policy. Audit: reads the registry value(s) binaryfiles that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.6.6.6.2.1.1 Ensure ''PowerPoint 97-2003 presentations, shows, templates and add-in files'' is set to ''Enabled: Open/Save blocked, use open policy'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\powerpoint\security\fileblock'') -Name ''binaryfiles'' -ErrorAction SilentlyContinue).''binaryfiles''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $_.PSChildName + '':binaryfiles='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Open/Save blocked, use open policy. Microsoft PowerPoint 2016\PowerPoint Options\Security\Trust Center\File Block Settings\PowerPoint 97-2003 presentations, shows, templates and add-in files'

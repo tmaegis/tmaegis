@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-NTP-TRUSTED-KEY
+title: Ensure an NTP trusted-key is configured
+description: NTP authentication keys must be marked trusted for authenticated time sources to be accepted. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- ntp
+reference: CIS Juniper OS Benchmark - System / NTP Authentication (verify section number for your release)
+audit:
+  type: config_regex
+  pattern: (?m)^set system ntp trusted-key (?:\[ )?\d+
+remediation:
+  type: iac_patch
+  command: |-
+    set system ntp authentication-key <KEY_ID> type sha256 value "<KEY>"
+    set system ntp trusted-key <KEY_ID>
+    commit

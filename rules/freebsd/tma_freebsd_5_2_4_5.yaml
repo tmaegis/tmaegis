@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.2.4.5
+title: Ensure audit configuration files are restrictive
+description: 'Audit configuration files control auditd and what events are audited. Access to the audit configuration files could allow unauthorized personnel to prevent the auditing of critical events. Audit: audit_warn must be 500, audit_event/audit_class 444 and audit_control/audit_user 600, as in the CIS audit.'
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.2.4.5 Ensure audit configuration files are restrictive
+audit:
+  type: command
+  command: command -v stat >/dev/null 2>&1 || exit 1; out=$( { stat -Lf "%N %Lp" /etc/security/audit_warn | grep -Ev -- "^[[:space:]]*[^[:space:]]+[[:space:]]+500[[:space:]]*$"; stat -Lf "%N %Lp" /etc/security/audit_event /etc/security/audit_class | grep -Ev -- "^[[:space:]]*[^[:space:]]+[[:space:]]+444[[:space:]]*$"; stat -Lf "%N %Lp" /etc/security/audit_control /etc/security/audit_user | grep -Ev -- "^[[:space:]]*[^[:space:]]+[[:space:]]+600[[:space:]]*$" ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to remove more permissive mode from the audit configuration files: # chmod 444 /etc/security/audit_event /etc/security/audit_class # chmod 500 /etc/security/audit_warn # chmod 600 /etc/security/audit_control /etc/security/audit_user'

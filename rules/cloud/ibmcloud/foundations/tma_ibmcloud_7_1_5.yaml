@@ -1,0 +1,18 @@
+id: TMA-IBMCLOUD-7.1.5
+title: Ensure IBM Cloud Kubernetes Service clusters have the monitoring service enabled
+description: The following recommendation should be considered optional, as while adhering to it would provide enhanced security, IBM Cloud Monitoring is a costed option. IBM Cloud services, such as IBM Cloud Kubernetes Service, generate platform metrics that you can use to gain operational visibility into the performance and health of the service in your account. Every Kubernetes master is continuously monitored by the IBM Cloud Kubernetes Service; however, you are responsible for monitoring the rest of your cluster components. IBM Cloud Monitoring is a cloud-native, container-intelligence management system that can be included as part of your IBM Cloud architecture. It offers administrators, DevOps teams, and developers full-stack telemetry with advanced features to monitor and troubleshoot, define alerts, and design custom dashboards. With IBM Cloud Monitoring, by deploying a monitoring agent t...
+target: ibmcloud
+level: 2
+severity: low
+tags:
+- cloud
+- ibmcloud
+- monitoring
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 7.1.5 Ensure IBM Cloud Kubernetes Service clusters have the monitoring service enabled
+audit:
+  type: manual
+  command: 'From Console: 1. Log in to the IBM Cloud console. 2. To view a list of your clusters, go to Menu, Containers, Clusters. 3. From the Clusters page, select your cluster. 4. Select the Overview tab 5. Under Integrations, the Monitoring item should have a button to Launch the IBM Cloud Monitoring dashboard. If instead the button is labelled Connect, then Cloud Monitoring is not enabled. From Command Line: 1. Verify the status of the monitoring agent in your cluster. You should see one or more running sysdig-agent pods, with the number of sysdig-agent pods equal to the number of worker nodes in your cluster. kubectl get pods -n ibm-observe'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Log in to the IBM Cloud console. 2. To view a list of your clusters, go to Menu, Containers, Clusters. 3. From the Clusters page, select your cluster. 4. Select the Overview tab 5. Under Integrations, go to the Monitoring item and click Connect. 6. Select the Monitoring checkbox and select the IBM Cloud Monitoring instance that you want to use (or create a new instance). Click Save. From Command Line: 1. If required, provision an IBM Cloud Monitoring instance. 2. Obtain the access key for the monitoring instance. ibmcloud resource service-key APIKEY_NAME 3. Obtain the ingestion URL from the IBM Cloud Monitoring collector endpoints. 4. If the ibm-observe namespace is not available in your cluster, create it with: kubectl create namespace ibm-observe 5. Add the Sysdig helm repository. helm repo add sysdig https://charts.sysdig.com 6. Update the repos to retrieve the latest versions of all Helm charts. helm repo update 7. Verify the Helm chart sysdig/sysdig-deploy
+    is listed when listing the helm charts for the sysdig repo. helm search repo sysdig 8. Define a yaml file and include the values to deploy the IBM Cloud Monitoring agent. The following yaml is a template...'

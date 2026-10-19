@@ -1,0 +1,23 @@
+id: TMA-DOCKER-2.8
+title: Ensure TLS authentication for Docker daemon is configured
+description: When the daemon listens on a TCP socket, anyone who can reach it controls the host unless TLS client verification is enabled. Compliant when no tcp:// host is configured, or when tlsverify, tlscacert, tlscert and tlskey are all set. The audit reads the running dockerd command line (ps) together with /etc/docker/daemon.json.
+target: docker
+level: 1
+severity: critical
+tags:
+- docker
+- daemon
+- tls
+reference: CIS Docker Benchmark v1.9.0 - 2.8 Ensure TLS authentication for Docker daemon is configured
+audit:
+  type: command
+  command: args=$(ps -eo args 2>/dev/null) || exit 1; s=$(printf '%s\n' "$args" | grep '[d]ockerd'; cat /etc/docker/daemon.json 2>/dev/null); if printf '%s\n' "$s" | grep -q 'tcp://'; then for k in tlsverify tlscacert tlscert tlskey; do printf '%s\n' "$s" | grep -Eq -e "--$k|\"$k\"" || { echo "missing $k"; exit 0; }; done; fi; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Configure "tlsverify": true, "tlscacert", "tlscert" and "tlskey" in /etc/docker/daemon.json (or the equivalent dockerd flags) for any tcp:// listener, or remove the TCP listener, then restart the Docker daemon.'

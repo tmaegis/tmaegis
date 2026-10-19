@@ -1,0 +1,16 @@
+id: TMA-CICS-1.2.2
+title: Ensure that only authorized users can access resources
+description: The authority to access CICS resources is determined by a pair of RACF classes for each resource. This is specified in the Xnnn SIT options (where nnn is the type of resource). Resource security ensures that users can only READ or UPDATE data or use resources for which they should have access.
+target: cics
+level: 1
+severity: high
+tags:
+- cics
+- accounts
+reference: CIS IBM CICS Transaction Server 6.1 Benchmark v1.1.0 - 1.2.2 Ensure that only authorized users can access resources
+audit:
+  type: manual
+  command: 'Issue the z/OSMF Compliance data collection REST API to drive collection of compliance evidence in the SMF 1154 record. https://{host}:{port}/zosmf/compliance/rest/v1/facts 1. Wait for the data to be collected; this may take up to a minute in some regions. 2. Customize and run the DFH$54P sample JCL to create a spreadsheet containing data for all of the CICS TS regions. Open the spreadsheet and review the settings each of the Xnnn columns for the regions being audited. 3. Xnnn They should all be set to the suffix of the class name such as CICSnnn. In the ... (full steps: CIS section 1.2.2)'
+remediation:
+  type: iac_patch
+  command: Categorize the resources on the system according to who should have access to them. In the following the file classes will be used as an example Define profiles for these resources either generically or in groups in the classes FCICSFCT or HCICSFCT (or the class names used if the default classes aren't used). Give READ or UPDATE access to the appropriate groups for these profiles. An example of this is as follows RDEFINE HCICSFCT memname OWNER(admin) AUDIT(ALL(READ)) UACC(NONE) RALTER HCICSFCT memname ADDMEM(file1 file2 file3) PERMIT memname CLASS(HCICSFCT) ID(group) ACCESS(READ) SETROPTS RACLIST(FCICSFCT) REFRESH Set XFCT=YES or name Change any transaction definitions with RESSEC(NO) to RESSEC(YES) Restart CICS

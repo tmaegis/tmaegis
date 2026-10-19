@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-OWA-PUBLIC-FILE-ACCESS
+title: Ensure direct file access from public computers is disabled in Outlook on the web
+description: Opening attachments on public/shared computers leaves copies of mailbox content on untrusted devices. Prints the number of OWA mailbox policies allowing it (expected 0). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 2
+severity: medium
+tags:
+- exchange
+- owa
+reference: CIS Microsoft Exchange Server Benchmark - Outlook on the web / Attachment access on public computers (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-OwaMailboxPolicy -ErrorAction Stop | Where-Object { $_.DirectFileAccessOnPublicComputersEnabled -eq $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Get-OwaMailboxPolicy | Set-OwaMailboxPolicy -DirectFileAccessOnPublicComputersEnabled $false

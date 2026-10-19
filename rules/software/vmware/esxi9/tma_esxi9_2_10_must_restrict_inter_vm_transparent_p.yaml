@@ -1,0 +1,38 @@
+id: TMA-ESXI9-2.10
+title: Host must restrict inter-VM transparent page sharing
+description: Transparent Page Sharing (TPS) aids in optimizing memory usage among virtual machines but under certain circumstances can be exploited to access data on adjacent virtual machines unauthorizedly. By configuring the Mem.ShareForceSalting parameter, inter-VM TPS is restricted, enhancing isolation and security. The audit reads Mem.ShareForceSalting with esxcli and requires 2. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 2.10 Host must restrict inter-VM transparent page sharing
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Mem/ShareForceSalting 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/Mem/ShareForceSalting: no integer value'; exit 1 ;; esac
+    if [ "$v" -eq 2 ]; then echo compliant; else echo "/Mem/ShareForceSalting = $v (expected 2)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Mem/ShareForceSalting -i 2
+  guidance: "From the vSphere Web Client: 1. Select a host 2. Click Configure then expand System then select Advanced System settings. 3. Click Edit then Filter for Mem.ShareForceSalting. 4. Set the value to 2. 5. Click OK. Additionally, the following PowerCLI command can be used: Get-VMHost | Get-AdvancedSetting -Name Mem.ShareForceSalting | Set-AdvancedSetting -Value 2"

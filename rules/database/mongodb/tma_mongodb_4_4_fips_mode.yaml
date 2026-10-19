@@ -1,0 +1,21 @@
+id: TMA-MONGODB-4.4
+title: Ensure Federal Information Processing Standard (FIPS) is enabled
+description: The Federal Information Processing Standard (FIPS) is a computer security standard used to certify software modules and libraries that encrypt and decrypt data securely. You can configure MongoDB to run with a FIPS 140-2 certified library for OpenSSL. FIPS is a property of the encryption system and not the access control system. However, the environment requires FIPS compliant encryption and access control. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). FIPS mode requires MongoDB Enterprise and a FIPS-validated OpenSSL.
+target: mongodb
+level: 2
+severity: medium
+tags:
+- mongodb
+- tls
+- encryption
+- fips
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 4.4 Ensure Federal Information Processing Standard (FIPS) is enabled
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*FIPSMode:[ \t]*['\x22]?true\b
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'Use FIPS-compliant certificates, set net.tls.FIPSMode: true in /etc/mongod.conf and restart mongod; confirm ''FIPS 140-2 mode activated'' in the log.'

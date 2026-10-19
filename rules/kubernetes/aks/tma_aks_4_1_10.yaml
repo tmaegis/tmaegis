@@ -1,0 +1,17 @@
+id: TMA-AKS-4.1.10
+title: Minimize access to the approval sub-resource of CertificateSigningRequests objects
+description: Minimize access to the approval sub-resource of CertificateSigningRequests objects so that only tightly controlled administrative identities can approve certificate requests in AKS. AKS uses certificates for component authentication, and each kubelet creates a CSR for communication to the API server that is signed by the cluster CA at the same time, AKS authorization is intentionally granular and is meant to give users, groups, and service ... The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.10 Minimize access to the approval sub-resource of CertificateSigningRequests objects
+audit:
+  type: manual
+  command: Audit this control by reviewing how privileged access is actually granted across the AKS authorization model and then verifying that CSR approval authority is limited to a very small set of approved administrative identities. In AKS, this is not a discrete platform setting it is a least-privilege review across Microsoft Entra-integrated access, Kubernetes RBAC, and, where enabled, Azure RBAC for Kubernetes Authorization.
+remediation:
+  type: iac_patch
+  command: Remediate this control by removing certificatesigningrequests/approval access from any Role or ClusterRole that is not explicitly required for cluster-level certificate administration, then rebind that capability only to tightly controlled AKS administrative identities. In AKS, the preferred model is to use Microsoft Entra integration with least-privilege Kubernetes RBAC and, where enabled, Azure RBAC for Kubernetes Authorization, while keeping cluster-wide permissions narrowly scoped. The remediation should also account for service-account exposure, because Microsoft documents that access to Secrets or the ability to run pods as any service account can become a privilege-escalation path to Kubernetes API access.

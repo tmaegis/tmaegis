@@ -1,0 +1,20 @@
+id: TMA-MONGODB-4.2
+title: Ensure Weak Protocols are Disabled
+description: Servers can be configured to disable specific TLS/SSL protocol versions which may be vulnerable to exploitation and/or lack features which improve the level of security as provided by newer versions of the protocol. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist).
+target: mongodb
+level: 1
+severity: high
+tags:
+- mongodb
+- tls
+- encryption
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 4.2 Ensure Weak Protocols are Disabled
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*(?:disabledProtocols|sslDisabledProtocols):[^\n]*(?:TLS1_0[^\n]*TLS1_1|TLS1_1[^\n]*TLS1_0)
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'Set net.tls.disabledProtocols: TLS1_0,TLS1_1 in /etc/mongod.conf (or start with --tlsDisabledProtocols TLS1_0,TLS1_1) and restart mongod.'

@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.10.5.5
+title: Ensure REST HTTPS Cipher List is Set
+description: The REST API should only be accessed using HTTPS with secure Cipher Suites. The JUNOS REST API can be configured for access using either HTTP or HTTPS for connections. When configured to use HTTPS, the device supports a wide range of Cipher Suites which define the Encryption, Hashing and Key Exchange methods and algorithms. Passes when REST is not configured; fails if no cipher-list is set or it includes RC4/3DES/MD5/SHA-1 suites. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.5.5 Ensure REST HTTPS Cipher List is Set
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))))))))))))))))))))))))))[^\n]*\n)*[ \t]*set system services rest (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n]))))))))))))))))))[^\n]*(?:\n(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^
+    \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))))))))))))))))))))))))))[^\n]*))*\n?\z)|(?:^set system services rest https cipher-list [^\n]*(?:rc4|3des|md5|-sha(?:[ \t\]]|$)))
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To restrict the Cipher Suites used REST over HTTPS, enter the following command from the hierarchy:
+    set system services rest https cipher-list [ rsa-with-aes-128-cbc-SHA256 rsa-with-aes-256-cbc-SHA256 dhe-rsa-with-aes-128-cbc-SHA256 dhe-rsa-with-aes-256-cbc-SHA256 rsa-with-aes-128-gcm-SHA256 rsa-with-aes-256-gcm-SHA384 dhe-rsa-with-aes-128-gcm-SHA256 dhe-rsa-with-aes-256-gcm-SHA384 ecdhe-rsa-with-aes-128-cbc-SHA256 ecdhe-rsa-with-aes-256-cbc-SHA384 ecdhe-rsa-with-aes-128-gcm-SHA256 ecdhe-rsa-with-aes-256-gcm-SHA384 ] No all Cipher Suites are required to meet this recommendation. A shorter list, or individual Cipher Suites, may be configured using the same command. Some JUNOS Devices do not support all of the above Cipher Suite (most notably, AES in Galois Counter Mode support is not universal), unsupported Cipher Suites can be skipped.

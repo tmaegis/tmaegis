@@ -1,0 +1,100 @@
+id: TMA-MACOS14-5.2.7
+title: Ensure Password Age Is Configured
+description: Over time, passwords can be captured by third parties through mistakes, phishing attacks, third-party breaches, or merely brute-force attacks. To reduce the risk of exposure and to decrease the incentives of password reuse (passwords that are not forced to be changed periodically generally are not ever changed), users should reset passwords periodically. This control uses 365 days as the acceptable value. Some organizations may be more or less restrictive. This control mainly exists to mitigate against password reuse of the macOS account password in other realms that may be more prone to compromise. Attackers take advantage of exposed information to attack other accounts. Passwords should be changed periodically to reduce exposure.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- auth
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 5.2.7 Ensure Password Age Is Configured
+audit:
+  type: command
+  command: 'out=$(/usr/bin/pwpolicy -getaccountpolicies 2>/dev/null) || exit 1
+
+    val() { printf ''%s\n'' "$out" | /usr/bin/grep -A1 "$1" | /usr/bin/tail -1 | /usr/bin/cut -d''>'' -f2 | /usr/bin/cut -d''<'' -f1; }
+
+    p1=$(val policyAttributeExpiresEveryNDays)
+
+    p2=$(val policyAttributeDaysUntilExpiration)
+
+    ok=false
+
+    case "$p1" in ''''|*[!0-9]*) ;; *) [ "$p1" -le 365 ] && ok=true;; esac
+
+    case "$p2" in ''''|*[!0-9]*) ;; *) [ "$p2" -le 365 ] && ok=true;; esac
+
+    echo "$ok"'
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    out=$(/usr/bin/pwpolicy -getaccountpolicies 2>/dev/null)
+    if printf '%s\n' "$out" | /usr/bin/grep -q policyCategory; then
+      echo "TMAegis: account policies already present; not overwriting (merge manually)" >&2; exit 1
+    fi
+    t=$(/usr/bin/mktemp /tmp/tma-pwpolicy.XXXXXX) || exit 1
+    /bin/cat > "$t" <<'EOPLIST'
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+    <key>policyCategoryAuthentication</key>
+    <array><dict>
+    <key>policyContent</key>
+    <string>(policyAttributeFailedAuthentications &lt; policyAttributeMaximumFailedAuthentications) OR (policyAttributeCurrentTime &gt; policyAttributeLastFailedAuthenticationTime + autoEnableInSeconds)</string>
+    <key>policyIdentifier</key><string>tmaegis-lockout</string>
+    <key>policyParameters</key>
+    <dict><key>autoEnableInSeconds</key><integer>900</integer>
+    <key>policyAttributeMaximumFailedAuthentications</key><integer>5</integer></dict>
+    </dict></array>
+    <key>policyCategoryPasswordChange</key>
+    <array><dict>
+    <key>policyContent</key>
+    <string>policyAttributeCurrentTime &gt; policyAttributeLastPasswordChangeTime + (policyAttributeExpiresEveryNDays * 24 * 60 * 60)</string>
+    <key>policyIdentifier</key><string>tmaegis-expiry</string>
+    <key>policyParameters</key>
+    <dict><key>policyAttributeExpiresEveryNDays</key><integer>365</integer></dict>
+    </dict></array>
+    <key>policyCategoryPasswordContent</key>
+    <array>
+    <dict>
+    <key>policyContent</key>
+    <string>policyAttributePassword matches '.{15,}'</string>
+    <key>policyIdentifier</key><string>tmaegis-minlength</string>
+    <key>policyParameters</key>
+    <dict><key>minimumLength</key><integer>15</integer></dict>
+    </dict>
+    <dict>
+    <key>policyContent</key>
+    <string>policyAttributePassword in policyAttributePasswordHistory = 0</string>
+    <key>policyIdentifier</key><string>tmaegis-history</string>
+    <key>policyParameters</key>
+    <dict><key>policyAttributePasswordHistoryDepth</key><integer>24</integer></dict>
+    </dict>
+    </array>
+    </dict>
+    </plist>
+    EOPLIST
+    /usr/bin/pwpolicy -getaccountpolicies > "$TMA_BK/pwpolicy.$TMA_TS.bak" 2>/dev/null
+    /usr/bin/pwpolicy -setaccountpolicies "$t"; rc=$?
+    /bin/rm -f "$t"; exit $rc
+  guidance: "Terminal Method: Run the following command to require that passwords expire after at most 365 days: % /usr/bin/sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy \"maxMinutesUntilChangePassword=<value≤525600>\" example: % /usr/bin/sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy \"maxMinutesUntilChangePassword=43200\" Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.mobiledevice.passwordpolicy 2. The key to include is maxPINAgeInDays 3. The key must be set to <integer><value≥365></integer> Note: The profile method is the preferred method for setting password policy since - setglobalpolicy in pwpolicy is deprecated and will likely be removed in a future macOS release."

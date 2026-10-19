@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.13
+title: Ensure password maximum repeated characters is configured
+description: 'maxrepeats defines the maximum number of times a character may appear in a password. Use of a complex password helps to increase the time and resources required to compromise the password. Passwords which consist of too many repeated characters have lower complexity and thus are easier to compromise. Audit: reads `lssec -f /etc/security/user -s default -a maxrepeats`.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.13 Ensure password maximum repeated characters is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a maxrepeats 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*maxrepeats=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 1 ] && [ "$v" -le 4 ]; then echo compliant; else echo "maxrepeats=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a maxrepeats=4

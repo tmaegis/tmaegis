@@ -1,0 +1,19 @@
+id: TMA-M365-5.3.2
+title: Ensure 'Access reviews' for guest users are configured
+description: Access reviews enable administrators to establish an efficient automated process for reviewing group memberships, access to enterprise applications, and role assignments. These reviews can be scheduled to recur regularly, with flexible options for delegating the task of reviewing membership to different members of the organization. When configured for guest users, access reviews can automatically remove access if no reviewer responds within the review period, enforcing a fail-closed posture for external identities. Access to groups and applications for guests can change over time. If a guest user's access to a particular resource goes unnoticed, they may unintentionally gain access to sensitive data if a member adds new files or data to the resource. Access reviews can help reduce the risks associated with outdated assignments by requiring a member of the organization to conduct the r...
+target: m365
+level: 1
+severity: medium
+tags:
+- access-control
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.3.2 Ensure 'Access reviews' for guest users are configured
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/ 2. Expand ID Governance and select Access reviews 3. Inspect the access reviews, and verify an access review is created with the following criteria: o Overview: Scope is set to Guest users only and Review status is Active o Reviewers: At least one reviewer is assigned, and the reviewer is not a guest user. o Settings > General: ▪ Mail notifications is set to Enable ▪ Reminders is set to Enable o Settings > Reviewers: ▪ Require reason on approval is set to Enable o Settings > Scheduling: ▪ Frequency is set to Monthly or more frequent ▪ Duration (in days) does not exceed 14 days ▪ End is set to Never o Settings > When completed: ▪ Auto apply results to resource is set to Enable ▪ If reviewers don''t respond is set to Remove access 4. The control is compliant if there is at least one access review for guests that meets all criteria above. To audit using the Microsoft Graph API: 1. Execute
+    a GET request to the following relative URI: v1.0/identityGovernance/accessReviews/definitions 2. Apply the following filters to identify access reviews targeting guest users: o scope.resourceScopes.quer...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/ 2. Expand ID Governance and select Access reviews 3. Click New access review. 4. In the Resource review box click Select. 5. In Review Type set the following: o Select what to review choose Teams + Groups. o Review Scope to All Microsoft 365 groups with guest users. o Scope to Guest users only then click Next: Reviews. 6. In Reviews set the following: o Select reviewers to Group members or Selected users and groups, ensuring that at least one reviewer is assigned and that the guest is not performing a self-review. o Duration (in days) to 14 days or less. o Review recurrence to Monthly or more frequent. o Start date for the review, ensuring the review becomes active before the next audit date. o End to Never, then click Next: Settings. 7. In Settings set the following: o Auto apply results to resource is checked. o If reviewers don''t respond to Remove access o Justification required
+    is checked. o E-mail notifications is checked. o Reminders is checked. o Click Next: Review + Create 8. Click Create. To remediate using the Microsoft Graph API: To create a new access review, execute a...'

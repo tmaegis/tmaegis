@@ -1,0 +1,23 @@
+id: TMA-EKS-AUTO-4.1.5
+title: Ensure that default service accounts are not actively used
+description: 'Default service accounts in EKS Auto Mode should not be used as the active identity for ordinary application or automation workloads. If a Pod does not specify a service account, Kubernetes automatically assigns the namespace default service account, and that account can authenticate to the Kubernetes API through its mounted token. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Fails when a default service account does not set automountServiceAccountToken: false or is bound to a Role/ClusterRole.'
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.1.5 Ensure that default service accounts are not actively used
+audit:
+  type: command
+  command: |-
+    sa=$(kubectl get serviceaccounts -A -o go-template='{{range .items}}{{if eq .metadata.name "default"}}{{.metadata.namespace}} {{.automountServiceAccountToken}}{{"\n"}}{{end}}{{end}}') || exit 1
+    rb=$(kubectl get rolebindings,clusterrolebindings -A -o go-template='{{range .items}}{{$b:=.metadata.name}}{{$bn:=.metadata.namespace}}{{range .subjects}}{{if eq .kind "ServiceAccount"}}{{if eq .name "default"}}{{if .namespace}}{{.namespace}}{{else}}{{$bn}}{{end}} {{$b}}{{"\n"}}{{end}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$sa" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && $2!="false" {print "automount: " $1}')
+    bad2=$(printf '%s\n' "$rb" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex {print "binding: " $0}')
+    if [ -z "$bad$bad2" ]; then echo compliant; else printf '%s\n%s\n' "$bad" "$bad2" | grep . | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create dedicated service accounts for workloads that need Kubernetes API access, or EKS Pod Identity, and update those workloads to explicitly set serviceAccountName rather than relying on the namespace default service account. For workloads that do not need Kubernetes API access, disable service account token auto mounting and avoid using the default service account as the active workload identity. Also review the default service account in each namespace and ensure it is not bound to unnecessary RBAC permissions. Modify the default service account in each application namespace to set: automountServiceAccountToken: false Then validate workload manifests, because a Pod automountServiceAccountToken setting can override the service account setting, and workloads that actually need Kubernetes API access must use an explicitly assigned service account instead of inheriting default.'

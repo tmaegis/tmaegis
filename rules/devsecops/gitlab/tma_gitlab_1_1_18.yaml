@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.1.18
+title: Ensure any merging of code is automatically scanned for risks
+description: Ensure that every pull request is required to be scanned for risks. Scanning pull requests to detect risks allows for early detection of vulnerable code and/or dependencies and helps mitigate potentially malicious code.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.18 Ensure any merging of code is automatically scanned for risks
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each project in use, ensure that every merge request must be scanned for risks by creating a scan execution policy: 1. On the left sidebar, select Search or go to and search for the “go-example- a” project. 2. Go to Secure > Policies. 3. Select New policy. 4. In the Scan execution policy section, select Select policy. 5. Complete the fields. o Name: Enforce secret detection. o Policy status: Enabled. o Actions: Run a Secret Detection scan. o Conditions: Triggers every time a pipeline runs for all branches. 6. Select Configure with a merge request. The policy project “go-example-a” security project is created, and a merge request is created. 7. Optional. Review the generated policy YAML in the merge request’s Changes tab. 8. Go to the Overview tab and select Merge. 9. On the left sidebar, select Search or go to and search for the “go-example- a” project. 10. Go to Secure > Policies. You now have a scan execution policy that runs a secret detection scan on every MR, for any
+    branch. Test the policy by creating a merge request in project A.'

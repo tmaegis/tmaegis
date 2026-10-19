@@ -1,0 +1,20 @@
+id: TMA-UBUNTU2404-1.2.1.3
+title: Ensure access to gpg key files are configured
+description: GPG key files are cryptographic keys used by APT to verify the authenticity and integrity of software packages. Each key ensures that packages come from a trusted source and have not been tampered with. These keys are typically stored in keyring directories /etc/apt/trusted.gpg.d or /usr/share/keyrings and referenced in repository configuration files using the signed-by option for secure package verification.
+target: linux
+os_family:
+- ubuntu-24.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 24.04 LTS Benchmark v2.0.0 - 1.2.1.3
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_file; do\n      grep -PRiLs -- '\"'\"'^([^#\\n\\r]+)?\\bSigned-By\\b'\"'\"' \"$l_file\" && \\\n      stat -Lc '\"'\"'File: %n Mode: (%#a) User: (%U) Group: (%G)'\"'\"' \"$l_file\"\n   done < <(find -L /etc/apt/sources.list.d/ -mount -xdev -type f \\\n   \\( ! -user root -o ! -group root -o -perm /133 \\) \\\n   \\( -name '\"'\"'*.list'\"'\"' -o -name '\"'\"'*.sources'\"'\"' \\) -print0)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to update the access to any file(s) returned in the audit steps above: # chown root:root "/absolute/path/to/file" # chmod u-x,go-wx "/absolute/path/to/file" Example # chown root:root /usr/share/keyrings/debian-archive-trixie-security- automatic.gpg # chmod u-x,go-wx /usr/share/keyrings/debian-archive-trixie-security- automatic.gpg Note: APT first checks keys specified with the signed-by option in a repository''s .sources or .list files. If no key is specified there, it falls back to administrator- managed keyrings in /etc/apt/trusted.gpg.d, then system-wide keyrings in /usr/share/keyrings.'

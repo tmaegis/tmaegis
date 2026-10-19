@@ -1,0 +1,21 @@
+id: TMA-WIN2025-17.7.4
+title: Ensure 'Audit MPSSVC Rule-Level Policy Change' is set to 'Success and Failure'
+description: 'This subcategory determines whether the operating system generates audit events when changes are made to policy rules for the Microsoft Protection Service (MPSSVC.exe). Events for this subcategory include: • 4944: The following policy was active when the Windows Firewall started. • 4945: A rule was listed when the Windows Firewall started. • 4946: A change has been made to Windows Firewall exception list. A rule was added. • 4947: A change has been made to Windows Firewall exception list. A rule was modified. • 4948: A change has been made to Windows Firewall exception list. A rule was deleted'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 17.7.4
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9232-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9232-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

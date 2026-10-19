@@ -1,0 +1,19 @@
+id: TMA-MYSQL-7.4
+title: Set 'default_password_lifetime' to Require a Yearly Password Change
+description: 'Password expiry provides passwords with a time bounded lifetime. Passes when default_password_lifetime is between 1 and 365 days. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- authentication
+- password
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 7.4 Set 'default_password_lifetime' to Require a Yearly Password Change
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.default_password_lifetime BETWEEN 1 AND 365, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST default_password_lifetime = 365"

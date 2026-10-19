@@ -1,0 +1,19 @@
+id: TMA-MCP-3.1.1
+title: Ensure stdio server credentials are sourced from the environment or OS credential store
+description: Source the stdio server's own credentials from environment variables, an OS keychain or secret store, or injected process credentials, and do not use MCP's HTTP browser- based authorization flow to authenticate the client-to-server stdio connection. This does not prohibit a tool or server from independently using OAuth to access a downstream service. Under the 2026-07-28 specification, implementations using an stdio transport do not follow the HTTP authorization specification and instead retrieve credentials from the environment. Using MCP's interactive HTTP authorization flow for a stdio connection cannot work and creates a credential-exposure risk, because a stdio server has no browser and no redirect URI. Sourcing the server's own secrets from the environment or an OS secret store keeps them out of command lines, process listings, and logs. A stdio server that acts as a client of a...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.1.1 Ensure stdio server credentials are sourced from the environment or OS credential store
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_3_1_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 3.1.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure stdio servers to receive credentials from the environment or an OS secret store, not through an interactive OAuth flow or a command-line argument. The following example uses secret-tool from libsecret, so adapt it to your store. Place the export in the unit''s environment setup (an EnvironmentFile or wrapper script), not on the command line, then exec the server. Run the following command to retrieve the credential and export it before launch: export MCP_API_TOKEN="$(secret-tool lookup app mcp-server)" Remove any interactive OAuth configuration and any credential passed as a command- line argument. This does not affect a downstream OAuth client the server uses to reach a third-party service. Restart the server and re-run the Audit.'

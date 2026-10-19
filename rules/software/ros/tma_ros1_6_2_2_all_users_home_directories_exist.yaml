@@ -1,0 +1,54 @@
+id: TMA-ROS1-6.2.2
+title: Ensure all users' home directories exist
+description: Users can be defined in /etc/passwd without a home directory or with a home directory that does not actually exist. The audit requires the home directory of every interactive user to exist. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.2 Ensure all users' home directories exist
+audit:
+  type: command
+  shell: bash
+  command: |-
+    users=$(awk -F: '($1 !~ /^(halt|sync|shutdown)$/ && $7 !~ /(nologin|false)$/) {print $1":"$6}' /etc/passwd) || exit 1
+    bad=$(printf '%s\n' "$users" | while IFS=: read -r u d; do [ -d "$d" ] || echo "home directory $d of $u does not exist"; done)
+    [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    vs=$(awk -F/ '/^\// && $NF != "nologin"' /etc/shells)
+    # "user home" for interactive users whose home is a plain user directory
+    tma_homes() { while IFS=: read -r u p uid gid c h sh; do
+      case "$u" in +*|-*) continue;; esac
+      printf '%s\n' "$vs" | grep -qxF -- "$sh" || continue
+      case "$h" in /|""|/bin*|/sbin*|/usr*|/etc*|/proc*|/sys*|/dev*|/boot*|/run*|/var/run*) continue;; esac
+      echo "$u $h"; done < /etc/passwd; }
+    tma_homes | while read -r u h; do
+      if [ ! -d "$h" ]; then
+        case "$h" in /home/*|/root) ;; *) continue;; esac
+        mkdir -p "$h" && chown "$u:$(id -gn "$u")" "$h" && chmod 0750 "$h"
+        continue
+      fi
+      [ "$(stat -Lc %U "$h")" = "$u" ] || chown "$u" "$h"
+      mo=$(stat -Lc %a "$h"); chmod "$(printf '%o' $((8#$mo & ~8#027 & 8#7777)))" "$h"
+    done
+    true
+  guidance: "If any users' home directories do not exist, create them and make sure the respective user owns the directory. Users without an assigned home directory should be removed or assigned a home directory as appropriate."

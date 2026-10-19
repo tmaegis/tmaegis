@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.2.34
+title: Ensure that access to SYSIBM.SYSVARIABLEAUTH is restricted
+description: The SYSIBM.SYSVARIABLEAUTH table contains the granted privileges on a global variable for users, groups, or roles. PUBLIC should be restricted from accessing this table. Restricting PUBLIC access to global variable information reduces the risk to your organization's data.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.2.34 Ensure that access to SYSIBM.SYSVARIABLEAUTH is restricted
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check if PUBLIC has access: SELECT GRANTEE FROM SYSIBM.SYSTABAUTH WHERE TCREATOR = ''SYSIBM'' AND TTNAME = ''SYSVARIABLEAUTH'' AND GRANTEE = ''PUBLIC''; Output that contains zero rows is considered a successful finding. Otherwise, PUBLIC has SELECT privilege and the remediation steps should be followed. For external security users: Issue the RACF RLIST command to list the profile that controls access to the SYSIBM.SYSVARIABLEAUTH table in the MDSNTB class. Examine the universal access (UACC) ... (full steps: CIS section 2.2.34)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the following SQL statement to revoke access from PUBLIC. REVOKE ALL ON SYSIBM.SYSVARIABLEAUTH FROM PUBLIC; For external security users: Issue the RACF RALTER command to update the profile and change the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

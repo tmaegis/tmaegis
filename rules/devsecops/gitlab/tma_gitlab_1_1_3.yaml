@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.1.3
+title: Ensure any change to code receives approval of two strongly authenticated users
+description: Ensure that every code change is reviewed and approved by two authorized contributors who are both strongly authenticated - using Multi-Factor Authentication (MFA), from the team relevant to the code change. To prevent malicious or unauthorized code changes, the first layer of protection is the process of code review. This process involves engineer teammates reviewing each other's code for errors, optimizations, and general knowledge-sharing. With proper peer reviews in place, an organization can detect unwanted code changes very early in the process of release. In order to help facilitate code review, companies should employ automation to verify that every code change has been reviewed and approved by at least two team members before it is pushed into the code base. These team members should be from the team that is related to the code change, so it will be a meaningful review.
+target: gitlab
+level: 1
+severity: high
+tags:
+- auth
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.3 Ensure any change to code receives approval of two strongly authenticated users
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For every project in use, perform the next steps to require two approvals from the specific project team in order to push new code to the code base: - On the left sidebar, select Search or go to and find your project. - Select Settings > Merge requests. - In the Merge request approvals section, in the Approval rules section, next to the rule you want to edit, select Edit. - Edit the field In Approvals required to ensure the value is 2 or above. - Select Update approval rule.'

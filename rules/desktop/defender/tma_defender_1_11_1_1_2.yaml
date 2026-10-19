@@ -1,0 +1,19 @@
+id: TMA-DEFENDER-1.11.1.1.2
+title: 'Ensure ''Configure Remote Encryption Protection Mode'' is set to ''Enabled: Audit'' or higher'
+description: 'This policy setting configures the Brute-Force Protection feature in Microsoft Defender Antivirus. Brute-Force Protection can detect and block attempts to forcibly initiate sign- ins and sessions. The recommended state for this setting is: Enabled: Audit. Configuring this setting to Enabled: Block also conforms to the benchmark. Note: Configuring the value to either Default or Off does not conform to this benchmark. Rationale: This feature assists with mitigating brute force attempts by detecting and blocking unauthorized sign-ins and sessions. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Brute Force Protection:BruteForceProtectionConfiguredState (REG_DWORD); compliant when it is 2 or 1. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy
+  does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.11.1.1.2 Ensure ''Configure Remote Encryption Protection Mode'' is set to ''Enabled: Audit'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Brute Force Protection'' -Name ''BruteForceProtectionConfiguredState'' -ErrorAction SilentlyContinue).''BruteForceProtectionConfiguredState''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2,1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Brute Force Protection'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'BruteForceProtectionConfiguredState' -Value 2 -PropertyType DWord -Force | Out-Null

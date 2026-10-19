@@ -1,0 +1,21 @@
+id: TMA-WIN2025-17.9.4
+title: Ensure 'Audit Security System Extension' is set to include 'Success'
+description: 'This subcategory reports the loading of extension code such as authentication packages by the security subsystem. Events for this subcategory include: • 4610: An authentication package has been loaded by the Local Security Authority. • 4611: A trusted logon process has been registered with the Local Security Authority. • 4614: A notification package has been loaded by the Security Account Manager. • 4622: A security package has been loaded by the Local Security Authority. • 4697: A service was installed in the system. The recommended state for this setting is to include: Success.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 17.9.4
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9211-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9211-69ae-11d9-bed3-505054503030}' /success:enable

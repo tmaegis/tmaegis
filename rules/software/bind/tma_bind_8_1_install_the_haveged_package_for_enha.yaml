@@ -1,0 +1,20 @@
+id: TMA-BIND-8.1
+title: Install the Haveged Package for Enhanced Entropy
+description: Install the haveged package to provide enhanced entropy for generating cryptographic keys. Haveged is a user space entropy daemon which is not dependent upon the standard mechanisms for harvesting randomness for the system entropy pool. Haveged uses HAVEGE (HArdware Volatile Entropy Gathering and Expansion) to maintain a pool of 1 million random bytes used to fill /dev/random. The audit requires a running haveged process (pgrep -x haveged).
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 8.1 Install the Haveged Package for Enhanced Entropy
+audit:
+  type: command
+  command: |-
+    command -v pgrep >/dev/null 2>&1 || exit 1
+    pgrep -x haveged >/dev/null 2>&1 && echo compliant || echo 'haveged is not running'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Install the haveged package with the appropriate package manager and configure it to start, as shown below. # yum install haveged # systemctl enable haveged # systemctl start haveged'

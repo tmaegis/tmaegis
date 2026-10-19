@@ -1,0 +1,17 @@
+id: TMA-AZURE-9.2.2
+title: Ensure that Soft Delete for Containers on Azure Blob Storage Storage Accounts is Enabled
+description: Containers in Azure storage accounts may contain sensitive or personal data, such as ePHI or financial information. Data that is erroneously modified or deleted by an application or a user can lead to data loss or unavailability. It is recommended that soft delete for containers be enabled on Azure storage accounts with blob storage to allow for the preservation and recovery of data when containers are deleted. Containers can be deleted incorrectly. An attacker or malicious user may do this deliberately in order to cause disruption. Deleting a container results in immediate data loss. Enabling this configuration for Azure storage accounts ensures that even if containers are deleted from the storage account, the containers are recoverable for a specific period of time, which is defined in the "Retention policies," ranging from 7 to 365 days.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- containers
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 9.2.2 Ensure that Soft Delete for Containers on Azure Blob Storage Storage Accounts is Enabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each Storage Account with blob storage, under Data management, go to Data protection. 3. Ensure that Enable soft delete for containers is checked. 4. Ensure that the retention period is a sufficient length for your organization. Audit from Azure CLI Run the following command to list storage accounts: az storage account list Run the following command to determine if a storage account has containers: az storage container list --account-name <storage-account> For each storage account with containers, run the following command to get the retention settings: az storage account blob-service-properties show --resource-group <resource- group> --account-name <storage-account> --query containerDeleteRetentionPolicy Ensure that enabled is set to true and days is not null.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage accounts. 2. For each Storage Account with blob storage, under Data management, go to Data protection. 3. Check the box next to Enable soft delete for containers. 4. Set the retention period to a sufficient length for your organization. 5. Click Save. Remediate from Azure CLI Run the following command to update container retention: az storage account blob-service-properties update --resource-group <resource- group> --account-name <storage-account> --enable-container-delete-retention true --container-delete-retention-days <retention-days>'

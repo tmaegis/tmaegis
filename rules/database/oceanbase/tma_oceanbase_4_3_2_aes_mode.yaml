@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-4.3.2
+title: Ensure AES Encryption Mode is Configured Correctly
+description: When using AES_ENCRYPT() and AES_DECRYPT() functions for encryption, it is recommended to use block cipher encryption in Cipher Block Chaining (CBC) mode with a 256-bit key length. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when block_encryption_mode is an AES-256 non-ECB mode (aes-256-cbc recommended); the default aes-128-ecb fails.
+target: oceanbase
+level: 2
+severity: medium
+tags:
+- oceanbase
+- encryption
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.3.2 Ensure AES Encryption Mode is Configured Correctly
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN LOWER(@@global.block_encryption_mode) LIKE 'aes-256-%' AND LOWER(@@global.block_encryption_mode) NOT LIKE '%ecb' THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET GLOBAL block_encryption_mode = 'aes-256-cbc';

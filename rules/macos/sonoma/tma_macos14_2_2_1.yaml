@@ -1,0 +1,47 @@
+id: TMA-MACOS14-2.2.1
+title: Ensure Firewall Is Enabled
+description: A firewall is a piece of software that blocks unwanted incoming connections to a system. The socketfilter Firewall is what is used when the Firewall is turned on in the Security & Privacy Preference Pane. Logging is required to appropriately monitor what access is allowed and denied. The logs can be viewed in the macOS Unified Logs. Prior to macOS 15.0 Sequoia, there were additional steps to turn on firewall logging after enabling the firewall. As of macOS 15, logging is turned on automatically without user interaction. The logging recommendation has been removed in the macOS 15 benchmark and will not be included going forward. If your organization is looking for more detailed information about network security, you will need a third-party solution. A firewall minimizes the threat of unauthorized users gaining access to your system while connected to a network or the Internet.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- network
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.2.1 Ensure Firewall Is Enabled
+audit:
+  type: command
+  command: '[ -x /usr/bin/osascript ] || exit 1
+
+    p=$(/usr/bin/osascript -l JavaScript <<''EOS''
+
+    $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.security.firewall'').objectForKey(''EnableFirewall'').js
+
+    EOS
+
+    )
+
+    s=$(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate 2>/dev/null)
+
+    if [ "$p" = true ] || printf ''%s'' "$s" | /usr/bin/grep -qE ''State = [12]''; then echo compliant; else echo "EnableFirewall=${p:-unset}; $s"; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+  guidance: "Graphical Method: Perform the following steps to turn the firewall on: 1. Open System Settings 2. Select Network 3. Select Firewall 4. Set Firewall to enabled Terminal Method: Run the following command to enable the firewall: % /usr/bin/sudo /usr/libexec/ApplicationFirewall/socketfilterfw -- setglobalstate on Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.security.firewall 2. The key to include is EnableFirewall 3. The key must be set to <true/>"

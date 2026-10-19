@@ -1,0 +1,19 @@
+id: TMA-MCP-5.6.1
+title: Ensure idempotency keys are required for side-effecting tool calls and duplicate side effects are prevented
+description: The server requires a client-supplied idempotency key for every side-effecting tool call and uses that key to de-duplicate retries, so a request is not executed twice. In MCP's stateless model, interrupted operations are recovered by re-issuing the request with a new request ID, which makes the idempotency key, rather than request tracking, the mechanism that guarantees safe replay. Duplicate detection is scoped to the authenticated principal, target server or resource, tool name, idempotency key, and a canonical fingerprint of the request arguments. A request with the same key and fingerprint returns the previously stored result instead of re-executing. A request that reuses a key with a different fingerprint is rejected as an idempotency conflict, to prevent payload substitution or cross-principal result exposure. Multi-node deployments require a shared idempotency store because any...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- crypto
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.6.1 Ensure idempotency keys are required for side-effecting tool calls and duplicate side effects are prevented
+audit:
+  type: manual
+  command: 'Identify the tools in the capability baseline that perform writes or trigger external actions, then confirm three properties against a safely reversible or dedicated test tool so the probes cause no real side effect. First, confirm a duplicate key returns a cached result. Run the following command: URL="<MCP_ENDPOINT>" KEY="cis-audit-key-001" TOOL="<SIDE_EFFECTING_OR_TEST_TOOL>" mkbody(){ printf ''{"jsonrpc":"2.0","id":%s,"method":"tools/call","params":{"name":"%s","arguments":{}, "_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07- 28","io.modelcontextprotocol/clientInfo":{"name":"cis-benchmark- audit","version":"1.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'' "$1" "$TOOL"; } extract(){ obj=$(printf ''%s'' "$1" | jq -c ''select(.jsonrpc)'' 2>/dev/null | head -n1); [ -n "$obj" ] || obj=$(printf ''%s\n'' "$1" | sed -n ''s/^data:[[:space:]]*//p'' | head - n1); printf ''%s'' "$obj" | jq -r ''if (.result|type=="object") and (.result|has("cached")) then (.result.cached|tostring)
+    else "absent" end'' 2>/dev/null; } hdrs=(-H ''Content-Type: application/json'' -H ''Accept: application/json, text/event- stream'' -H ''MCP-Protocol-Version: 2026-07-28'' -H "Idempotency-Key: $KEY" -H ''Mcp- Me...'
+remediation:
+  type: iac_patch
+  command: Add server middleware that requires an Idempotency-Key header for side-effecting tools, classified per the tool risk tiers of Recommendation 4.1.5. Key the deduplication store on the authenticated principal, the target server or resource, the tool name, the idempotency key, and a canonical fingerprint of the request arguments, with a time-to- live of at least 24 hours. Return the stored result when the same key arrives with the same fingerprint. Reject a reuse of the same key with a different fingerprint as an idempotency conflict, rather than returning the stored result or executing. For multi-node deployments store keys in a shared distributed cache such as Redis so duplicates are caught regardless of which instance serves the retry. This is server middleware and configuration, and there is no portable command.

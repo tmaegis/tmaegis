@@ -1,0 +1,17 @@
+id: TMA-AZURE-KEYVAULT-RBAC
+title: Ensure Key Vaults use the Azure RBAC permission model
+description: Azure RBAC gives auditable, PIM-capable, scope-inherited access to vault data instead of per-vault access policies. Every vault must have enableRbacAuthorization true. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- keyvault
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Key Vault - role-based access control (verify section number for your release)
+audit:
+  type: command
+  command: "ids=$(az keyvault list --query '[?type==`\"Microsoft.KeyVault/vaults\"`].id' -o tsv 2>/dev/null) || exit 1\nbad=0\nfor id in $ids; do\n  v=$(az resource show --ids \"$id\" --query properties.enableRbacAuthorization -o tsv 2>/dev/null) || exit 1\n  [ \"$v\" = true ] || { echo \"access policies: $id\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create equivalent Key Vault data-plane role assignments (Key Vault Secrets User, Crypto User, Administrator...), then az keyvault update --name <vault> --enable-rbac-authorization true (Terraform: enable_rbac_authorization = true).'

@@ -1,0 +1,19 @@
+id: TMA-IIS-1.6
+title: Ensure 'application pool identity' is configured for anonymous user identity
+description: To achieve isolation in IIS, application pools can be run as separate identities. IIS can be configured to automatically use the application pool identity if no anonymous user account is configured for a web site. This can greatly reduce the number of accounts needed for Web sites and make management of the accounts easier. It is recommended the Application Pool Identity be set as the Anonymous User Identity. Every enabled anonymousAuthentication section (server level and all locations) must have an empty userName so the application pool identity is used. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- authentication
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 1.6 Ensure 'application pool identity' is configured for anonymous user identity
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $bad = @(Get-WebConfiguration -Filter 'system.webServer/security/authentication/anonymousAuthentication' -PSPath 'MACHINE/WEBROOT/APPHOST' -Recurse | Where-Object { $_.enabled -eq $true -and -not [string]::IsNullOrEmpty($_.userName) }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/authentication/anonymousAuthentication -Name userName -Value ''

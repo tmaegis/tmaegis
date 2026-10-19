@@ -1,0 +1,17 @@
+id: TMA-DB2-8.2.9
+title: Rotate the Master Key
+description: Key rotation refers to the process of changing encryption keys and is often required for compliance purposes. Similar to a password change, key rotation is done to reduce the risk that can come from exposure of the key, while it exists. Since the DEK used by Db2 for encryption is never outside of the encrypted database, backup, or transaction log, there is little risk of exposure. The same is ...
+target: db2
+level: 2
+severity: low
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.2.9 Rotate the Master Key
+audit:
+  type: manual
+  command: 'Check the current database is encryption settings: db2 => SELECT * FROM TABLE(SYSPROC.ADMIN_GET_ENCRYPTION_INFO()) You must be connected to the database to run this command. The following information will be shown for the connected database: ; OBJECT_NAME ; OBJECT_TYPE ; ALGORITHM ; ALGORITHM_MODE ; KEY_LENGTH ; MASTER_KEY_LABEL KEYSTORE_NAME KEYSTORE_TYPE ; KEYSTORE_HOST KEYSTORE_IP ; KEYSTORE_IP_TYPE ; PREVIOUS_MASTER_KEY_LABEL AUTH_ID ; APPL_ID ; ROTATION_TIME'
+remediation:
+  type: iac_patch
+  command: 'The SYSPROC.ADMIN_ROTATE_MASTER_KEY procedure can be used to change the database key to comply with key rotation requirement. You must be connected to the database to run this command. db2 => CALL SYSPROC.ADMIN_ROTATE_MASTER_KEY(''newMasterKeyLabel'') Db2 will automatically generate the new MK and label unless you provide a MK label for an existing MK. Key rotation is logged in the db2diag.log file: $ grep -A 3 "Key Rotation" ~/sqllib/db2dump/db2diag.log Key Rotation successful using label: DATA #2 : String, 46 bytes DB2_SYSGEN_db2inst1_SECRET_2021-04-29-11.22.01 The DEK is not externalized and does not need to be rotated. However, if you wish to rotate the DEK you can take an offline backup and restore to a new encrypted database, thus generating a new DEK.'

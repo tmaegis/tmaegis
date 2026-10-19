@@ -1,0 +1,20 @@
+id: TMA-IIS-7.1
+title: Ensure HSTS Header is set
+description: 'HTTP Strict Transport Security (HSTS) allows a site to inform the user agent to communicate with the site only over HTTPS. This header takes two parameters: max- age, "specifies the number of seconds, after the reception of the STS header field, during which the user agent regards the host (from whom the message was received) as a Known HSTS Host [speaks only HTTPS]"; and includeSubDomains. A Strict-Transport-Security custom header with max-age greater than 0 (480 or more recommended) must be set at server level or for every site. PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.'
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- tls
+- headers
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 7.1 Ensure HSTS Header is set
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; function Test-Hsts($p) { @(Get-WebConfiguration -Filter 'system.webServer/httpProtocol/customHeaders/add' -PSPath $p | Where-Object { $_.name -eq 'Strict-Transport-Security' -and $_.value -match 'max-age=([0-9]+)' -and [long]$Matches[1] -gt 0 }).Count -gt 0 }; if (Test-Hsts 'MACHINE/WEBROOT/APPHOST') { 'compliant' } else { $bad = @(Get-Website | Where-Object { -not (Test-Hsts "IIS:\Sites\$($_.Name)") }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' } }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Add-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/httpProtocol/customHeaders -Name . -Value @{name='Strict-Transport-Security';value='max-age=480; includeSubDomains; preload'}

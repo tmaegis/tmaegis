@@ -1,0 +1,27 @@
+id: TMA-ROS-SROS2-ENFORCE
+title: Ensure ROS 2 nodes run with SROS2 security enforced
+description: 'Without SROS2, DDS traffic between ROS 2 nodes is unauthenticated and unencrypted, so anyone on the network can publish commands or read sensor data. Security is switched on per process by ROS_SECURITY_ENABLE=true, ROS_SECURITY_STRATEGY=Enforce (Permissive silently falls back to insecure) and ROS_SECURITY_KEYSTORE. The audit inspects /proc/<pid>/environ of running processes whose environment contains ROS_DISTRO (run as root) and fails if none is found or any lacks these settings. Run tmaegis from a shell that has not sourced the ROS setup script.'
+target: ros
+level: 1
+severity: high
+tags: [ros, ros2, dds, sros2]
+reference: CIS-style ROS 2 hardening guidance - SROS2 DDS security (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: command
+  command: |-
+    found=0; bad=0
+    for e in /proc/[0-9]*/environ; do
+      env=$( (tr '\0' '\n' < "$e") 2>/dev/null ) || continue
+      case "$env" in *ROS_DISTRO=*) ;; *) continue ;; esac
+      found=1
+      pid=${e#/proc/}; pid=${pid%/environ}
+      printf '%s\n' "$env" | grep -qx 'ROS_SECURITY_ENABLE=true' || { echo "pid $pid: ROS_SECURITY_ENABLE not true"; bad=1; continue; }
+      printf '%s\n' "$env" | grep -qx 'ROS_SECURITY_STRATEGY=Enforce' || { echo "pid $pid: ROS_SECURITY_STRATEGY not Enforce"; bad=1; }
+      printf '%s\n' "$env" | grep -q '^ROS_SECURITY_KEYSTORE=.' || { echo "pid $pid: ROS_SECURITY_KEYSTORE unset"; bad=1; }
+    done
+    [ "$found" -eq 1 ] || { echo "no running ROS 2 processes found"; exit 1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create a keystore and enclaves (ros2 security create_keystore /etc/ros/keystore; ros2 security create_enclave /etc/ros/keystore /<ns>/<node>), then set ROS_SECURITY_KEYSTORE=/etc/ros/keystore, ROS_SECURITY_ENABLE=true and ROS_SECURITY_STRATEGY=Enforce in the launch environment (systemd unit Environment= or launch file) of every node and restart them.'

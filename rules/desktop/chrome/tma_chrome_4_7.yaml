@@ -1,0 +1,18 @@
+id: TMA-CHROME-4.7
+title: 'Ensure ''Controls the mode of DNS-over-HTTPS'' is set to ''Enabled: DNS-over-HTTPS without insecure fallback'''
+description: 'This controls the mode of the DNS-over-HTTPS resolver. Please note that this setting will only set the default mode for each query. The mode may be overridden for special types of queries, such as requests to resolve a DNS-over-HTTPS server hostname. Rationale: DNS over HTTPS (DOH) has a couple primary benefits: 1. Encrypting DNS name resolution traffic helps to hide your online activities, since DoH hides the name resolution requests from the ISP and from anyone listening on intermediary networks. 2. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DnsOverHttpsMode (REG_SZ); compliant when it is ''secure'' (whitespace-insensitive). Remediation writes secure locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 4.7 Ensure ''Controls the mode of DNS-over-HTTPS'' is set to ''Enabled: DNS-over-HTTPS without insecure fallback'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DnsOverHttpsMode'' -ErrorAction SilentlyContinue).''DnsOverHttpsMode''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and ("$v" -replace ''\s'','''') -eq ''secure'')) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DnsOverHttpsMode' -Value 'secure' -PropertyType String -Force | Out-Null

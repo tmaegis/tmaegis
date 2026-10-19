@@ -1,0 +1,20 @@
+id: TMA-SLES16-2.4.3.1
+title: Ensure access to systemd timer unit files is configured
+description: 'For each timer file, a matching unit file must exist, describing the unit to activate when the timer elapses. By default, a service by the same name as the timer (except for the suffix) is activated. Example: a timer file foo.timer activates a matching service foo.service.'
+target: linux
+os_family:
+- sles-16
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 16 Benchmark v1.0.0 - 2.4.3.1
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n    dirs=()\n    for d in /run/systemd/system /etc/systemd/system /usr/lib/systemd/system /lib/systemd/system; do\n        [ -d \"$d\" ] && dirs+=(\"$d\")\n    done\n    while IFS= read -r -d $'\"'\"'\\0'\"'\"' file; do\n        stat -Lc '\"'\"'File: %n Mode: (%#a) User: (%U) Group: (%G)'\"'\"' \"$file\"\n    done < <(find -L \"${dirs[@]}\" -mount -xdev -type f -name '\"'\"'*.timer'\"'\"' \\( ! -user root -o ! -group root -o -perm /133 \\) -print0)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to set permissions to mode 0644, owned by the root user, and owned by the root group: # chmod u-x,go-wx # chown root:root </path/to/systemd.timer>'

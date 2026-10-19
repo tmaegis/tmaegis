@@ -1,0 +1,37 @@
+id: TMA-DEBIAN13-1.2.1.14
+title: Ensure AllowDowngradeToInsecureRepositories is configured
+description: The APT configuration option Acquire::AllowDowngradeToInsecureRepositories controls whether APT will silently fall back to an insecure (unsigned or weakly signed) repository when a secure version of the same repository is unavailable. When set to 1, APT permits this downgrade without user confirmation. This option should be explicitly set to 0 to prevent silent downgrade attacks.
+target: linux
+os_family:
+- debian-13
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 13 Benchmark v1.1.0 - 1.2.1.14
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v apt-config >/dev/null 2>&1 || { echo "step1: apt-config not installed"; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''apt-config dump | grep AllowDowngradeToInsecureRepositories'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Acquire::AllowDowngradeToInsecureRepositories "0";'' || { echo step1: missing ''Acquire::AllowDowngradeToInsecureRepositories "0";''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    f=/etc/apt/apt.conf.d/99-no-insecure-repositories; mkdir -p /etc/apt/apt.conf.d
+    grep -qxF 'Acquire::AllowDowngradeToInsecureRepositories "0";' $f 2>/dev/null || echo 'Acquire::AllowDowngradeToInsecureRepositories "0";' >> $f
+    for g in /etc/apt/apt.conf /etc/apt/apt.conf.d/*; do [ "$g" != "$f" ] && [ -f "$g" ] && sed -i -E 's|^(\s*Acquire::AllowDowngradeToInsecureRepositories\s+)|// \1|' "$g"; done; true
+  guidance: "Create or append to a configuration file to explicitly disable insecure repository downgrade: # echo 'Acquire::AllowDowngradeToInsecureRepositories \"0\";' >> /etc/apt/apt.conf.d/99-no-insecure-repositories Verify the setting has taken effect: # apt-config dump | grep AllowDowngradeToInsecureRepositories Note: All configuration files under /etc/apt/apt.conf.d/ are processed in lexicographic order. Where conflicting settings exist, the last one takes precedence."

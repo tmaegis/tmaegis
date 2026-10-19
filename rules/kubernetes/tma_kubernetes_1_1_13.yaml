@@ -1,0 +1,30 @@
+id: TMA-KUBERNETES-1.1.13
+title: Ensure that the default administrative credential file permissions are set to 600
+description: Ensure that the admin.conf file (and super-admin.conf file, where it exists) have permissions of 600.
+target: kubernetes
+level: 1
+severity: critical
+tags:
+- kubernetes
+- control-plane
+- file-permissions
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.1.13 Ensure that the default administrative credential file permissions are set to 600
+audit:
+  type: command
+  command: |-
+    set -f
+    ok=1; n=0
+    for f in /etc/kubernetes/admin.conf /etc/kubernetes/super-admin.conf; do
+      [ -e "$f" ] || continue; n=$((n+1))
+      p=$(stat -Lc %a "$f") || exit 1
+      if [ $((0$p & 0177)) -ne 0 ]; then echo "noncompliant: $f mode $p"; ok=0; fi
+    done
+    [ "$n" -gt 0 ] || exit 1
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/admin.conf
+  - /etc/kubernetes/super-admin.conf
+remediation:
+  type: command
+  command: if [ -e /etc/kubernetes/admin.conf ]; then chmod u-x,go-rwx /etc/kubernetes/admin.conf; fi; if [ -e /etc/kubernetes/super-admin.conf ]; then chmod u-x,go-rwx /etc/kubernetes/super-admin.conf; fi

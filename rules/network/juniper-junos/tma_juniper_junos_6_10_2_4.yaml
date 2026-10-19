@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.10.2.4
+title: Ensure Idle Timeout is Set for Web-Management
+description: Idle JWeb sessions should be timed out after 15 minutes. If JWeb Management sessions are left unattended it may be possible for an attacker to use the session to take control of the JUNOS device. To prevent this, or at least limit the scope of such an attack, an idle timeout should be set to end sessions where no ... Passes when web-management is not configured; fails if idle-timeout is missing or above 15 minutes. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- ntp
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.2.4 Ensure Idle Timeout is Set for Web-Management
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^w\n]|w(?:$|[^e\n]|e(?:$|[^b\n]|b(?:$|[^\-\n]|-(?:$|[^m\n]|m(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^a\n]|a(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^d\n]|d(?:$|[^l\n]|l(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^ \n]))))))))))))))))))))))))))))))))))))))))))))))))))))))))[^\n]*\n)*[ \t]*set system services web-management (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^d\n]|d(?:$|[^l\n]|l(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^
+    \n])))))))))))))))))))))[^\n]*(?:\n(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^w\n]|w(?:$|[^e\n]|e(?:$|[^b\n]|b(?:$|[^\-\n]|-(?:$|[^m\n]|m(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^a\n]|a(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^d\n]|d(?:$|[^l\n]|l(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^ \n]))))))))))))))))))))))))))))))))))))))))))))))))))))))))[^\n]*))*\n?\z)|(?:^set system services web-management session idle-timeout (?:0|1[6-9]|[2-9]\d|\d{3,})\s*$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To enable Idle Timeouts for JWeb issue the following command from the hierarchy:
+    set system services web-management session idle-timeout <Time in Minutes>

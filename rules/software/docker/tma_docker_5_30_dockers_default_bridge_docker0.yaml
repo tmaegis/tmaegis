@@ -1,0 +1,23 @@
+id: TMA-DOCKER-5.30
+title: Ensure that Docker's default bridge "docker0" is not used
+description: Containers on the default bridge (docker0) can reach each other without restriction and are exposed to ARP spoofing; user-defined networks should be used. Flags containers attached to the network named bridge. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 2
+severity: low
+tags:
+- docker
+- runtime
+- network
+reference: CIS Docker Benchmark v1.9.0 - 5.30 Ensure that Docker's default bridge "docker0" is not used
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}}{{range $n, $_ := .NetworkSettings.Networks}} {{$n}}{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '{for(i=2;i<=NF;i++) if($i=="bridge") {print $1; break}}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Create user-defined networks (docker network create ...) and attach containers to them instead of the default bridge.

@@ -1,0 +1,37 @@
+id: TMA-ALIBABA-6.3
+title: Ensure that 'Auditing' is set to 'On' for applicable database instances
+description: Enable SQL auditing on all RDS except SQL Server 2012/2016/2017 and MariaDB TX. The Alibaba Cloud allows MySQL instance to be created as a service. Enabling auditing at the server level ensures that all existing and newly created databases on the MySQL instance are audited. DescribeSQLCollectorPolicy must report SQLCollectorStatus Enable (SQL Explorer / audit) for every instance. Iterates every RDS region and instance (DescribeDBInstances). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 2
+severity: medium
+tags:
+- alibaba
+- rds
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 6.3 Ensure that 'Auditing' is set to 'On' for applicable database instances
+audit:
+  type: command
+  command: |-
+    regs=$(aliyun rds DescribeRegions 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$regs" | sed -n 's/.*"RegionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    [ -n "$regions" ] || exit 1
+    bad=0
+    for r in $regions; do
+      page=1
+      while :; do
+        out=$(aliyun rds DescribeDBInstances --RegionId "$r" --PageSize 100 --PageNumber "$page" 2>/dev/null) || exit 1
+        ids=$(printf '%s\n' "$out" | sed -n 's/.*"DBInstanceId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+        [ -n "$ids" ] || break
+        for i in $ids; do
+          s=$(aliyun rds DescribeSQLCollectorPolicy --DBInstanceId "$i" 2>/dev/null) || exit 1
+          printf '%s\n' "$s" | grep -Eq '"SQLCollectorStatus"[[:space:]]*:[[:space:]]*"Enable"' || { echo "SQL audit off: $r $i"; bad=1; }
+        done
+        set -- $ids
+        [ "$#" -lt 100 ] && break
+        page=$((page + 1))
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun rds ModifySQLCollectorPolicy --DBInstanceId <id> --SQLCollectorStatus Enable (RDS console > SQL Explorer > Enable).

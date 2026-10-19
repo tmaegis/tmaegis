@@ -1,0 +1,24 @@
+id: TMA-GITLAB-3.1.1
+title: Ensure third-party artifacts and open-source libraries are verified
+description: Ensure third-party artifacts and open-source libraries in use are trusted and verified. Verify third-party artifacts used in code are trusted and have not been infected by a malicious actor before use. This can be accomplished, for example, by comparing the checksum of the dependency to its checksum in a trusted source. If a difference arises, this may be a sign that someone interfered and added malicious code. If this dependency is used, it will infect the environment and could end in a massive breach, leaving the organization exposed to data leaks and more.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 3.1.1 Ensure third-party artifacts and open-source libraries are verified
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set third-party artifacts and open-source libraries to be verified.

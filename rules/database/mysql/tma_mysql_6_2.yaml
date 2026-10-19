@@ -1,0 +1,19 @@
+id: TMA-MYSQL-6.2
+title: Ensure Log Files are Stored on a Non-System Partition
+description: 'MySQL log files can be set in the MySQL configuration to exist anywhere on the filesystem. It is common practice to ensure that the system filesystem is left uncluttered by application logs. System filesystems include the root (/), /var, or /usr. Fails when log_bin_basename is under /var or /usr or on the root filesystem; passes when binary logging is off. Run on the database host. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: low
+tags:
+- mysql
+- database
+- logging
+- filesystem
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 6.2 Ensure Log Files are Stored on a Non-System Partition
+audit:
+  type: command
+  command: 'd=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; b=$(mysql -NBe "SELECT IFNULL(@@global.log_bin_basename, '''')" 2>/dev/null) || exit 1; [ -n "$b" ] || { echo compliant; exit 0; }; case "$b" in /*) ;; *) b="$d/${b#./}" ;; esac; case "$b" in /var/*|/usr/*) echo "under /var or /usr: $b"; exit 0 ;; esac; m=$(df -P "$(dirname "$b")" 2>/dev/null | awk ''NR==2{print $6}''); [ -n "$m" ] || exit 1; [ "$m" = / ] && echo "on the root filesystem: $b" || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set log_bin=<path on a dedicated, non-system partition> under [mysqld] in /etc/my.cnf (or /etc/mysql/mysql.conf.d/mysqld.cnf), then restart MySQL.

@@ -1,0 +1,21 @@
+id: TMA-WIN2019-2.3.11.11
+title: 'Ensure ''Network security: Restrict NTLM: Audit Incoming NTLM Traffic'' is set to ''Enable auditing for all accounts'''
+description: 'This policy setting allows the auditing of incoming NTLM traffic. Events for this setting are recorded in the operational event log (e.g. Applications and Services Log\Microsoft\Windows\NTLM). The recommended state for this setting is: Enable auditing for all accounts.'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 2.3.11.11
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0'' -Name ''AuditReceivingNTLMTraffic'' -ErrorAction SilentlyContinue).''AuditReceivingNTLMTraffic''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $bad += ''AuditReceivingNTLMTraffic='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0' -Name 'AuditReceivingNTLMTraffic' -Value 2 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.1.19
+title: Ensure configuration is routed through the virtual network integration
+description: By default, configuration traffic for App Service apps goes directly over the public route. Container image pulls and content sharing can be routed through the virtual network integration. This recommendation should be applied after integrating an App Service app with a virtual network. Route container image pulls and content sharing through a virtual network integration for increased security and control.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- compute
+- network
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.1.19 Ensure configuration is routed through the virtual network integration
+audit:
+  type: manual
+  command: 'Audit from Azure CLI Run the following command to list apps: az webapp list For each app, run the following command to get the container image share and content share settings: az webapp show --resource-group <resource-group-name> --name <app-name> -- query "[vnetImagePullEnabled,vnetContentShareEnabled]" Ensure that [true,true] is returned. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 801543d1-1953-4a90-b8b0-8cf6d41473a5 - Name: ''App Service apps should enable configuration routing to Azure Virtual Network'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure CLI For each app requiring remediation, run the following command to route container image pulls and content sharing through the virtual network integration: az resource update --resource-group <resource-group-name> --name <app-name> - -resource-type "Microsoft.Web/sites" --set properties.vnetImagePullEnabled=true --set properties.vnetContentShareEnabled=true'

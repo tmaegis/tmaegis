@@ -1,0 +1,20 @@
+id: TMA-OL7-4.5.2.4
+title: Ensure root password is set
+description: There are a number of methods to access the root account directly. Without a password set any user would be able to gain access and thus control over the entire system.
+target: linux
+os_family:
+- ol-7
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 7 Benchmark v4.0.0 - 4.5.2.4
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v passwd >/dev/null 2>&1 || { echo "step1: passwd not installed"; return 1; }; o=$(bash -c ''passwd -S root | grep -Poi ''"''"''Password\h+set\b''"''"'' || echo "Password not set"'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Password set'' || { echo step1: missing ''Password set''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set the root password with: # passwd root'

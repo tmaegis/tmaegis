@@ -1,0 +1,17 @@
+id: TMA-OKE-4.3.2
+title: Ensure workload namespaces have required NetworkPolicies defined
+description: Use network policies to isolate traffic in your cluster network. For OKE, ensure workload namespaces have required NetworkPolicies defined and that the selected networking configuration supports NetworkPolicy enforcement. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- policies
+- network
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.3.2 Ensure workload namespaces have required NetworkPolicies defined
+audit:
+  type: manual
+  command: 'Run the below command and review the NetworkPolicy objects created in the cluster. This command will list all namespaces in your OKE cluster that have one or more NetworkPolicy objects defined: echo -e "NAMESPACE\tNETWORKPOLICY_COUNT" && \ for ns in $(kubectl get ns -o jsonpath=''{.items[*].metadata.name}''); do count=$(kubectl get networkpolicy -n "$ns" --no-headers 2>/dev/null | wc -l | tr -d '' '') if [ "$count" -gt 0 ].'
+remediation:
+  type: iac_patch
+  command: Follow the documentation and create NetworkPolicy objects as you need them. For OKE, define NetworkPolicies for workload namespaces based on the required allowed ingress and egress traffic, and confirm that the cluster uses a supported NetworkPolicy enforcement model. Clusters created with OKE use either the OCI CNI plugin or the flannel CNI plugin for pod networking, depending on the cluster network type and creation path. Oracle supports NetworkPolicy enforcement through Calico when using the OCI CNI plugin. Oracle does not support using the Calico network policy engine with the flannel CNI plugin. If the cluster uses the OCI CNI plugin, install and configure Calico network policy enforcement using Oracle’s documented process, then create the required namespace NetworkPolicies.

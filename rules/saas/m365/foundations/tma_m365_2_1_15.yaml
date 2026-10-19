@@ -1,0 +1,18 @@
+id: TMA-M365-2.1.15
+title: Ensure outbound anti-spam message limits are in place
+description: 'The default outbound anti-spam policy in Microsoft Defender automatically applies to all users and is designed to detect and limit suspicious email-sending behavior. The policy enforces limits based on both volume and spam detection. If a user sends too many emails too quickly or if a high percentage of their messages are flagged as spam, their ability to send email can be temporarily restricted. This helps prevent abuse from compromised accounts or inadvertent spam campaigns. When these limits are exceeded, Microsoft routes the messages through a high-risk delivery pool to protect its IP reputation and notifies administrators through built-in alert policies. The recommended state is: - External: Restrict sending to external recipients (per hour) - 500 - Internal: Restrict sending to internal recipients (per hour) - 1000 - Daily: Maximum recipient limit per day - 1000 - Action: Over l...'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.1.15 Ensure outbound anti-spam message limits are in place
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules > Threat policies. 3. Under Policies select Anti-spam and click to open Anti-spam outbound policy (Default). 4. Verify the following settings are configured to the recommended level or a more restrictive value. Message limit values of 0 are not compliant, as it represents the service default: o External: Restrict sending to external recipients (per hour) - 500 o Internal: Restrict sending to internal recipients (per hour) - 1000 o Daily: Maximum recipient limit per day - 1000 o Action: Over limit action - Restrict the user from sending mail 5. Verify that a monitored mailbox is configured as a recipient under Notify these users and groups if a sender is blocked due to sending outbound spam. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following: $params = @( ''RecipientLimitExternalPerHour''
+    ''RecipientLimitInternalPerHour'' ''RecipientLimitPerDay'' ''ActionWhenThresholdReached'' ''NotifyOutboundSpamRecipients'' ) Get-HostedOutboundSpamFilterPolicy -Identity Default | fl $params 3. Verify that each...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules> Threat policies. 3. Under Policies select Anti-spam and click to open Anti-spam outbound policy (Default). 4. Select Edit protection settings. 5. Set the following settings to the recommended values, or more restrictive values. Message limit values of 0 are not compliant, as it represents the service default o External: Set an external message limit - 500 o Internal: Set an internal message limit - 1000 o Daily: Set a daily message limit - 1000 o Action: Restriction placed on users who reach the message limit - Restrict the user from sending mail 6. Verify that Notify these users and groups if a sender is blocked due to sending outbound spam contains a monitored mailbox. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Change the example email addresses below and run the following PowerShell
+    commands: $params = @{ RecipientLimitExternalPerHour = 500 RecipientLimitInternalPerHour = 1000 RecipientLimitPerDay = 1000 ActionWhenThresholdReached = ''BlockUser'' NotifyOutboundSpamRecipients = @(''admin...'

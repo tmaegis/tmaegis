@@ -1,0 +1,17 @@
+id: TMA-AIX-2.2
+title: Ensure Trusted Execution Path is enabled
+description: 'The recommendation is to activate TE to enhance system integrity by specifying authorized locations for applications to hamper attacks from unauthorized locations using Trojan horse style tactics. TE provides a robust system integrity checking process. Hackers utilize any opening they can find to infiltrate a system. One common attack pattern includes getting an unauthorized program (aka Trojan horse) installed anywhere on the target system. Audit: trustchk -p TE TEP must report TE=ON and TEP=ON (review the TEP path list manually).'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 2.2 Ensure Trusted Execution Path is enabled
+audit:
+  type: command
+  command: 'command -v trustchk >/dev/null 2>&1 || exit 1; out=$(trustchk -p TE TEP 2>/dev/null) || exit 1; r=compliant; for p in ''^TE=ON$'' ''^TEP=ON$''; do printf ''%s\n'' "$out" | grep -Eq -- "$p" || r="missing: $p"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'NOTE: Your configuration of TE is dependent on the unique requirements of your environment. To configure TE to enforce a Trusted Execution Path (TEP) you need to know the intended secure path. e.g., SecurePath="/usr/bin:/usr/sbin" Perform the following: # First disable both TE and TEP trustchk -p TE=OFF TEP=OFF # Set the secure TEP variable trustchk -p TEP=${SecurePath} # Enable TE and TEP trustchk -p TE=ON TEP=ON Further details regarding planning and implementation of TE can be found within the IBM AIX 7 Infocentre: https://www.ibm.com/docs/en/aix/7.3?topic=configuration-trusted-execution'

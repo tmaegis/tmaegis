@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.4.11
+title: Ensure that access to system USER catalogs is controlled
+description: System catalogs are the basis for locating all files on the system. A USER catalog stores the name and location of a data set. The MASTER catalog usually stores only a data set high-level qualifier (HLQ) with the name of the user catalog, which contains the location of all data sets prefixed by this HLQ. The HLQ is called an alias.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.4.11 Ensure that access to system USER catalogs is controlled
+audit:
+  type: manual
+  command: 'Request a list of system USER catalogs from the site. Note: General guidance is that any USER catalog that general users should not be able to modify is in scope of this control. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering system USER catalogs Request reports generated using IRRDBU00 output that will allow you to: Verify That system USER catalog data sets are secured by profiles in the DATASET class that: Have UACC of NONE Are not in ... (full steps: CIS section 2.4.11)'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''SYSTEM USER CATALOG'') PERMIT ''<profile>'' GENERIC + ACCESS(READ) ID(*) PERMIT ''<profile>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''<profile>'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class
+    you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

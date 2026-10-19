@@ -1,0 +1,18 @@
+id: TMA-OKE-4.1.2
+title: Ensure access to Secrets is minimized and granted only where required
+description: Verify that access to Kubernetes Secret objects in Oracle OKE is granted only to OCI IAM users or groups, Kubernetes users or groups, and service accounts with a defined operational or workload need. The review should cover OCI IAM access to the cluster, Kubernetes RBAC roles and bindings, OCI IAM groups mapped through Kubernetes RBAC, workload identities, and service account permissions, with particular attention to permissions that allow get, ... The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- policies
+- rbac
+- secrets
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.1.2 Ensure access to Secrets is minimized and granted only where required
+audit:
+  type: manual
+  command: Start by reviewing every path that can grant access to Kubernetes Secret objects in the OKE cluster. Start with OCI IAM access to the cluster and Kubernetes RBAC permissions, because OKE uses OCI IAM to control access to OKE and the cluster control plane, while Kubernetes RBAC controls cluster authorization. Then review Kubernetes RBAC, service account permissions, and workload identities, because OKE can combine cluster access, Kubernetes RBAC, and OCI resource access through service account based workload identity.
+remediation:
+  type: iac_patch
+  command: Start by reducing every access path that allows reading Kubernetes Secret objects in the OKE cluster. Start with OCI IAM access and Kubernetes RBAC permissions, because OCI IAM controls access to OKE and the cluster control plane, while Kubernetes RBAC controls access to Kubernetes resources such as Secrets. Then reduce unnecessary access in Kubernetes RBAC, service accounts, and workload identity policies, and replace broad permissions with the narrowest namespace or workload scope that still supports the required function. • Remove or narrow OCI IAM and Kubernetes RBAC permissions that expose Secrets, and prefer namespace access over cluster scope wherever possible. • Replace broad RBAC permissions on secrets with the smallest practical Role or ClusterRole, and remove unnecessary get, list, or watch access from users, groups, and service accounts.

@@ -1,0 +1,16 @@
+id: TMA-CASSANDRA-3.7
+title: Review User-Defined Roles
+description: The MEMBER_OF column found in the system_auth.roles table shows roles granted to roles.
+target: cassandra
+level: 1
+severity: medium
+tags:
+- cassandra
+- privileges
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 3.7 Review User-Defined Roles
+audit:
+  type: manual
+  command: 'Execute the following SQL statement to audit this setting: select role, can_login, member_of from system_auth.roles; Looking for can_login which tells you that role can log into cassandra and member_of is when roles are granted to roles.'
+remediation:
+  type: iac_patch
+  command: Looking at those users from the query that have member_of that is NOT null, decide if that user truly needs that role, if not, for each user, issue the following SQL statement (replace <is_member> with the value of member_of returned by the query in the audit procedure) revoke <is_member> from role;

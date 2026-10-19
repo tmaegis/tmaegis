@@ -1,0 +1,61 @@
+id: TMA-UBUNTU2604-5.4.3.3
+title: Ensure default user umask is configured
+description: 'The user file-creation mode mask (umask) is used to determine the file permission for newly created directories and files. In Linux, the default permissions for any newly created directory is 0777 (rwxrwxrwx), and for any newly created file it is 0666 (rw-rw- rw-). The umask modifies the default Linux permissions by restricting (masking) these permissions. The umask is not simply subtracted, but is processed bitwise. Bits set in the umask are cleared in the resulting file mode. umask can be set with either Octal or Symbolic values: • Octal (Numeric) Value - Represented by either three or four '
+target: linux
+os_family:
+- ubuntu-26.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 26.04 LTS Benchmark v1.0.0 - 5.4.3.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -PHsi -- ''"''"''^\h*umask\h+(?!0?[02367]7\b)''"''"'' /etc/profile /etc/profile.d/'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''grep -PHsi -- ''"''"''^\h*UMASK\h+(?!0?[02367]7\b)''"''"'' /etc/login.defs'' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # make every umask line in the given files at least 027
+    tma_umask_fix() { for f in "$@"; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      grep -Eqi '^[[:space:]]*umask[[:space:]]' "$f" || continue
+      t=$(mktemp); ch=0
+      while IFS= read -r line || [ -n "$line" ]; do
+        if [[ $line =~ ^([[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+)0*([0-7]{1,4})([[:space:]#].*)?$ ]]; then
+          v=$((8#${BASH_REMATCH[2]})); n=$((v | 8#027))
+          if [ "$n" != "$v" ]; then line="${BASH_REMATCH[1]}$(printf '%03o' $n)${BASH_REMATCH[3]}"; ch=1; fi
+        elif [[ $line =~ ^[[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+[ugoa]*= ]] && [[ $line =~ (g=[rwx]*w|o=[rwx]*[rwx]) ]]; then
+          line="umask 027"; ch=1
+        fi
+        printf '%s\n' "$line" >> "$t"
+      done < "$f"
+      if [ $ch = 1 ]; then tma_bak "$f"; cat "$t" > "$f"; fi
+      rm -f "$t"
+    done; }
+    tma_umask_fix /etc/profile /etc/bashrc /etc/bash.bashrc /etc/profile.d/*.sh /etc/login.defs /etc/default/login
+    if [ -f /etc/login.defs ]; then tma_bak /etc/login.defs
+      sed -i -E '/^[[:space:]]*UMASK[[:space:]]/d' /etc/login.defs; printf 'UMASK\t\t027\n' >> /etc/login.defs; fi
+    mkdir -p /etc/profile.d
+    printf '# CIS: default umask\numask 027\n' > /etc/profile.d/50-tmaegis-umask.sh
+    true
+  guidance: "1. Run the following script to comment out all occurrences of umask that are less restrictive than 027 in files ending in *.sh in the /etc/profile.d/ directory: #!/usr/bin/env bash { while IFS= read -r -d $'\\0' l_file; do sed -ri '/^\\s*umask\\s+0?(0[01][0-7]|0[0-7][^7]|[^0][0-7][0- 7])(\\s*|\\s+.*)$/s/^/# /' \"$l_file\" done < <(find /etc/profile.d/ -type f -name '*.sh' -print0) } 2. Create or edit a file in /etc/profile.d/ ending in *.sh and add or modify the following line: umask 0027 Example: # printf '%s\\n' \"\" \"umask 027\" >> /etc/profile.d/60-default_umask.sh 3. Edit /etc/login.defs and add or update the following line: UMASK 027 Notes: • This method only applies to bash and shell. If other s…"

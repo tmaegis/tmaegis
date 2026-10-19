@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.2.2.13
+title: 'Ensure ''Set default file block behavior'' is set to ''Enabled: Blocked files are not opened'''
+description: 'This policy setting determines if users can open, view, or edit Word files that are by default blocked by Microsoft Office. The recommended state for this setting is: Enabled: Blocked files are not opened. Audit: reads the registry value(s) openinprotectedview that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.2.2.13 Ensure ''Set default file block behavior'' is set to ''Enabled: Blocked files are not opened'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\security\fileblock'') -Name ''openinprotectedview'' -ErrorAction SilentlyContinue).''openinprotectedview''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':openinprotectedview='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Blocked files are not opened. Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Set Default File Block Behavior'

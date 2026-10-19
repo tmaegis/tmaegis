@@ -1,0 +1,23 @@
+id: TMA-PFSENSE-3.2
+title: Ensure Login Protection Threshold is set to 30 or less
+description: The Login Protection Threshold is a score-based system that helps to prevent unauthorized access to the pfSense firewall. This score is based on various criteria, including the number of unsuccessful login attempts from a specific IP address. This control ensures that the Login Protection Threshold is set to a value of 30 or less. PASS requires the Login Protection threshold (<sshguard_threshold>) between 1 and 30. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- hardening
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 3.2 Ensure Login Protection Threshold is set to 30 or less
+audit:
+  type: config_regex
+  pattern: <sshguard_threshold>(?:[1-9]|[12]\d|30)</sshguard_threshold>
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: System > Advanced > Admin Access > Login Protection > Threshold = 30, Save.
+    # CIS guidance:
+    In the GUI:
+    -
+    Navigate to System > Advanced
+    - Set 30 in the 'Login Protection' > 'Threshold' Field
+    - CLIck 'Save'

@@ -1,0 +1,21 @@
+id: TMA-MACOS15-5.10
+title: Ensure XProtect Is Running and Updated
+description: 'XProtect is Apple''s native signature-based antivirus technology. XProtect both finds and blocks the execution of known malware. There are many AV and Endpoint Detection and Response (EDR) tools available for macOS. The native Apple provisioned tool looks for specific known malware and is completely integrated into the OS. No matter what other tools are being used, XProtect should have the latest signatures available. Audit: Checks xprotect status; confirm definitions are current with xprotect check / xprotect update.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 5.10 Ensure XProtect Is Running and Updated
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    out=$(/usr/bin/xprotect status 2>/dev/null) || exit 1
+    if printf '%s\n' "$out" | /usr/bin/grep -q "XProtect launch scans: enabled" && printf '%s\n' "$out" | /usr/bin/grep -q "XProtect background scans: enabled"; then echo compliant; else printf '%s\n' "$out"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Terminal: sudo /bin/launchctl load -w /Library/Apple/System/Library/LaunchDaemons/com.apple.XProtect.daemon.scan.pl ist ; sudo /bin/launchctl load -w /Library/Apple/System/Library/LaunchDaemons/com.apple.XprotectFramework.Plugi nService.plist ; sudo /usr/bin/xprotect update.'

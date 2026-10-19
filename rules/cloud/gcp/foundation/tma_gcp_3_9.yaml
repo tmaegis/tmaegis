@@ -1,0 +1,19 @@
+id: TMA-GCP-3.9
+title: Ensure Private Service Connect is Used for Access to Google APIs
+description: Ensure that VPCs use Private Service Connect endpoints for access to Google APIs such as Cloud Storage, BigQuery, Pub/Sub, Artifact Registry, and other googleapis.com services, so that traffic from workloads to these APIs stays on the Google private network instead of traversing the public internet. Private Service Connect for Google APIs creates a dedicated endpoint in your VPC with firewall rule enforcement, providing more granular control than Private Google Access. Accessing Google APIs over the public internet exposes traffic to network-level threats, requires managing NAT gateways or external IPs, and makes it harder to enforce egress controls. Private Service Connect for Google APIs allows workloads to reach googleapis.com services over Google's private network using a dedicated endpoint in your VPC. Combined with VPC firewall rules, PSC ensures only authorized workloads from s...
+target: gcp
+level: 2
+severity: medium
+tags:
+- access-control
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 3.9 Ensure Private Service Connect is Used for Access to Google APIs
+audit:
+  type: manual
+  command: 'From Google Cloud CLI 1: Identify in-scope VPCs Determine which VPCs host production or sensitive workloads that access Google APIs (Cloud Storage, BigQuery, etc.). These VPCs should use Private Service Connect endpoints instead of public internet routes. List all VPCs in the project: gcloud compute networks list \ --format="table(name)" 2: For each in-scope VPC, check for Private Service Connect endpoint for Google APIs gcloud compute addresses list \ --filter="purpose=PRIVATE_SERVICE_CONNECT" \ --format="table(name,address,purpose,network)" For compliant configuration: - Atleast one PSC endpoint should exist per VPC that needs Google API access - The network field should match the VPC identified in Step 1 - The purpose should be PRIVATE_SERVICE_CONNECT If no PSC endpoints are returned for a VPC that uses Google APIs, workloads are accessing APIs over public internet. 3: Verify PSC endpoint points to Google APIs service attachment by listing global forwarding rules gcloud compute
+    forwarding-rules list \ --global \ --format="table(name,IPAddress,network,target)" For compliant configuration, look for forwarding rules where: - The target references Google''s service attachment (con...'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud CLI 1. Create Private Service Connect endpoint for Google APIs Reserve an internal IP address for the PSC endpoint: gcloud compute addresses create psc-apis-endpoint \ --global \ --purpose=PRIVATE_SERVICE_CONNECT \ --addresses=192.168.1.5 \ --network=projects/PROJECT_ID/global/networks/VPC_NAME - Choose an IP address from RFC 1918 private range that doesn''t conflict with existing subnet ranges in your VPC. Use gcloud compute networks subnets list --network=VPC_NAME to check existing subnet ranges. 2. Create the PSC endpoint forwarding rule targeting Google''s all-apis service attachment: gcloud compute forwarding-rules create pscapis \ --global \ --network=VPC_NAME \ --address=psc-apis-endpoint \ --target-google-apis-bundle=all-apis 3. Configure DNS to resolve googleapis.com to PSC endpoint Create a private DNS zone for googleapis.com: gcloud dns managed-zones create googleapis-private-zone \ --description="Private zone for googleapis.com" \ --dns-name=googleapis.com.
+    \ --networks=VPC_NAME \ --visibility=private Add wildcard A record pointing to the PSC endpoint IP: gcloud dns record-sets create ''*.googleapis.com.'' \ --zone=googleapis-private-zone \ --type=A \ -...'

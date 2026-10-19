@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.17
+title: Check for Duplicate GIDs
+description: 'Although the groupadd program will not let you create a duplicate Group ID (GID), it is possible for an administrator to manually modify group and change the GID field. User groups must be assigned unique GIDs for accountability and to ensure appropriate access protections. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.17 Check for Duplicate GIDs
+audit:
+  type: command
+  command: 'command -v getent >/dev/null 2>&1 || exit 1; out=$( { getent group | cut -f3 -d: | sort -n | uniq -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if there exists any duplicate group identifiers, and work with each respective group owner to remediate this issue and ensure that the group ownership of their files are set to an appropriate value.

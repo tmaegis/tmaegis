@@ -1,0 +1,16 @@
+id: TMA-DOCKER-2.11
+title: Ensure the default cgroup usage has been confirmed
+description: 'The --cgroup-parent option allows you to set the default cgroup parent to use for all containers. If there is no specific usage requirement for this, the setting should be left at its default. System administrators typically define cgroups under which containers are supposed to run. Even if cgroups are not explicitly defined by the system administrators, containers run under docker cgroup by default. Reported as a manual review item: the audit needs a site-specific judgement.'
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- manual
+reference: CIS Docker Benchmark v1.9.0 - 2.11 Ensure the default cgroup usage has been confirmed
+audit:
+  type: manual
+  command: 'In order to confirm this setting, the dockerd start-up options and any settings in /etc/docker/daemon.json should be reviewed. To review the dockerd startup options, use: grep "--cgroup-parent" /etc/docker/daemon.json You should ensure that the --cgroup-parent parameter is either not set or is set as appropriate non-default cgroup. The contents of /etc/docker/daemon.json should also be checked for this setting.'
+remediation:
+  type: iac_patch
+  command: 'The default setting is in line with good security practice and can be left in situ. If you wish to specifically set a non-default cgroup, pass the --cgroup-parent parameter to the Docker daemon when starting it. For example: dockerd --cgroup-parent=/foobar'

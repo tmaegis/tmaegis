@@ -1,0 +1,16 @@
+id: TMA-OPNSENSE-4.1.2
+title: Ensure Least Privilege is Applied to All Permit Rules
+description: 'All allow rules must restrict traffic by: - Source - Destination - Protocol - Port/service Overly broad rules create hidden attack paths.'
+target: opnsense
+level: 1
+severity: high
+tags:
+- opnsense
+reference: CIS OPNsense Benchmark v1.0.0 - 4.1.2 Ensure Least Privilege is Applied to All Permit Rules
+audit:
+  type: config_regex
+  pattern: <rule>(?:[^<]|<[^/<]|</[^r<]|</r[^u<]|</ru[^l<]|</rul[^e<]|</rule[^><])*?<type>pass</type>(?:[^<]|<[^/<]|</[^r<]|</r[^u<]|</ru[^l<]|</rul[^e<]|</rule[^><])*?<source>\s*(?:<any\s*/>|<any>\s*</any>)\s*</source>
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: '1. Navigate to Firewall → Rules 2. Identify allow rules with: - Source = any - Destination = any - Port = any 3. Validate business justification exists. 4. Replace broad rules with alias-driven scoped rules.'

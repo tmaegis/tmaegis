@@ -1,0 +1,29 @@
+id: TMA-ROS1-3.4.4.1.2
+title: Ensure loopback traffic is configured
+description: 'Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network (127.0.0.0/8). Applies when iptables rules are persisted: the audit requires the INPUT lo accept, 127.0.0.0/8 drop and OUTPUT lo accept rules (order not verified). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.4.1.2 Ensure loopback traffic is configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    in=$(iptables -S INPUT 2>/dev/null) || exit 1
+    out=$(iptables -S OUTPUT 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$in" | grep -Eq -- '^-A INPUT -i lo( .*)? -j ACCEPT' || { echo 'missing -A INPUT -i lo -j ACCEPT'; bad=1; }
+    printf '%s\n' "$in" | grep -Eq -- '^-A INPUT -s 127.0.0.0/8( .*)? -j DROP' || { echo 'missing INPUT drop for loopback source'; bad=1; }
+    printf '%s\n' "$out" | grep -Eq -- '^-A OUTPUT -o lo( .*)? -j ACCEPT' || { echo 'missing -A OUTPUT -o lo -j ACCEPT'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/iptables/rules.v4
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # iptables -A INPUT -i lo -j ACCEPT # iptables -A OUTPUT -o lo -j ACCEPT # iptables -A INPUT -s 127.0.0.0/8 -j DROP'

@@ -1,0 +1,24 @@
+id: TMA-APACHE-6.1
+title: Ensure the Error Log Filename and Severity Level Are Configured Correctly
+description: The LogLevel directive is used to configure the severity level for the error logs. While the ErrorLog directive configures the error log file name. The log level values are the standard syslog levels of emerg, alert, crit, error, warn, notice, info and debug. The recommended level is notice for most modules, so that all errors from the emerg level through notice level will be logged. The global LogLevel must be notice or more verbose and the core module info or more verbose (e.g. LogLevel notice core:info; the default warn fails), and a global ErrorLog must be configured. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file.
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- logging
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 6.1 Ensure the Error Log Filename and Severity Level Are Configured Correctly
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk 'BEGIN{split("emerg alert crit error warn notice info debug",L," "); for(i in L) rk[L[i]]=i} {l=tolower($0)} l~/^<virtualhost/{vh=1} l~/^<\/virtualhost>/{vh=0}
+    !vh && $1~/^[Ll]og[Ll]evel$/{m=""; c=""; for(i=2;i<=NF;i++){t=tolower($i); if(t~/^core:/){c=substr(t,6)} else if(t!~/:/){m=t}} if(m!="") main=m; if(c!="") core=c} !vh && tolower($1)=="errorlog"{el=1} function r(x){return (x~/^trace[1-8]$/)?9:((x in rk)?rk[x]:0)} END{if(main=="") main="warn"; if(core=="") core=main; print (el && r(main)>=6 && r(core)>=7)?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Set LogLevel notice core:info and ErrorLog "logs/error_log" (or syslog:local1) in the main configuration. Then run apachectl configtest and reload Apache.

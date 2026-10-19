@@ -1,0 +1,35 @@
+id: TMA-DB2-3.2.1
+title: Specify Secure Remote Shell Command (DB2RSHCMD)
+description: 'The DB2RSHCMD registry varible specifies the remote shell command to use when starting remote database partitions and with the db2_all script to run utilities and commands on all database partitions. It is recommended that a value be used which encrypts the data sent between partitions, such as ssh. Passes when DB2RSHCMD is unset or points to ssh. Default: The default value is ssh. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: high
+tags:
+- db2
+- database
+- registry
+- network
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.2.1 Specify Secure Remote Shell Command (DB2RSHCMD)
+audit:
+  type: command
+  command: 'out=$(db2set -all 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''/^\[[a-zA-Z]\]/ { l = $0; sub(/^\[[a-zA-Z]\] */, "", l); k = l; sub(/=.*/, "", k); v = l; sub(/^[^=]*=/, "", v); gsub(/[ \t]/, "", v); if (!(k in r)) r[k] = v } END { if (!("DB2RSHCMD" in r) || r["DB2RSHCMD"] ~ /(^|\/)ssh$/) print "compliant"; else print "noncompliant: " r["DB2RSHCMD"] }'''
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v db2 >/dev/null 2>&1 || exit 0
+    db2set DB2RSHCMD=/usr/bin/ssh
+  guidance: "1. Follow the guidance on this page to create public and private keys for ssh: https://www.ibm.com/docs/en/db2/12.1?topic=installation-enabling-execution- remote-commands 2. Run the following command to set the DB2_RSHCMD registry variable to ssh: db2set DB2RSHCMD=ssh"

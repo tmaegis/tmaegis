@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-1.1.20
+title: Ensure that the OpenShift PKI certificate file permissions are set to 600 or more restrictive
+description: Ensure that OpenShift PKI certificate files have permissions of 644 or more restrictive. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: high
+tags:
+- openshift
+- control-plane
+- file-permissions
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 1.1.20 Ensure that the OpenShift PKI certificate file permissions are set to 600 or more restrictive
+audit:
+  type: manual
+  command: 'Certificates for control plane components like kube-apiserver, kube-controller-manager, and kube-scheduler are stored in the directory /etc/kubernetes/static-pod-certs/secrets. Certificate files all have permissions 600. Run the following command. # Should 600 or more restrictive for i in $(oc -n openshift-kube-apiserver get pod -l app=openshift-kube-apiserver -o jsonpath=''{.items[*].metadata.name}'') do echo $i static-pod-certs oc exec -n openshift-kube-apiserver $i -c kube-apiserver -- \ find /etc/kubernetes/static-pod-certs -type f -wholename ''*/secrets/*.crt'' -exec stat -c %a {} ...'
+remediation:
+  type: iac_patch
+  command: No remediation required; file permissions are managed by the operator.

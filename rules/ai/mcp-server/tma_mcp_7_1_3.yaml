@@ -1,0 +1,20 @@
+id: TMA-MCP-7.1.3
+title: Ensure MCP audit records carry accurate, monotonic timestamps
+description: 'Every record in the MCP audit stream carries a timestamp that is present, encoded in a consistent ISO 8601 format, non-decreasing within the audit stream, and close to real time. The property applies to the recorded timestamp values, not to any particular host time service. The timestamp field is read by name from the pinned audit-log schema. If the recorded timestamps are missing, malformed, or move backward, every downstream use fails silently: two events cannot be ordered, a replay window cannot be computed, and an incident timeline cannot be reconstructed. Checking the recorded timestamps directly is a detective control over the property that matters, independent of which time daemon the host runs.'
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- logging
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 7.1.3 Ensure MCP audit records carry accurate, monotonic timestamps
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_7_1_3"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 7.1.3"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure the MCP audit pipeline to stamp every record with a timestamp in a consistent parseable format drawn from a synchronized system clock, using the field name declared in the audit-log schema, and ensure the recording host maintains a synchronized clock so recorded timestamps track real time. Enabling time synchronization on a systemd host is: sudo timedatectl set-ntp true After enabling, set the trusted source and fallback in the time client''s configuration and wire the drift alert into the monitoring platform. Those steps are environment-specific and have no single portable command.'

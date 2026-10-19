@@ -1,0 +1,19 @@
+id: TMA-MCP-5.1.2
+title: Ensure resource templates with explicit URI patterns and MIME types are used
+description: The server exposes resources through predictable, well-defined URI template patterns with an explicit MIME type for each resource type. The specification makes mimeType optional on resource definitions and templates, and this Recommendation requires it be set explicitly so the client interprets each resource type unambiguously, which is stricter than the base protocol. The server validates every substituted URI-template value against the expected pattern before constructing the final URI. A read of a non-existent resource is rejected with a JSON-RPC -32602 error, the code the specification defines for that case. Resource templates advertise parameterized resources and are not the exhaustive set a server serves, because a server may also expose individual resources that no template describes. Where a deployment intends the approved templates to be an access-control namespace so that a...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.1.2 Ensure resource templates with explicit URI patterns and MIME types are used
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_5_1_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 5.1.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Define a URI template and an explicit MIME type for every resource type in the server configuration, and validate substituted template values against their expected pattern before building the final URI. Configure the server to reject a read of a non-existent resource with -32602 rather than returning an ambiguous empty result. Where the deployment treats the approved template set as an access-control namespace, deny a read outside that namespace and state the policy explicitly because the base protocol does not require it. Where the deployment also serves resource bytes over HTTP directly to a user agent, configure that HTTP surface, or the reverse proxy fronting it, to set X-Content-Type-Options: nosniff on those responses. The following nginx directive sets the header on a proxied resource surface: add_header X-Content-Type-Options "nosniff" always;'

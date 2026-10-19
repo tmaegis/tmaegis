@@ -1,0 +1,16 @@
+id: TMA-GCP-6.9
+title: Ensure Cloud SQL Database Instances Have Deletion Protection Enabled
+description: Ensure that deletion protection is enabled on all Cloud SQL database instances to prevent accidental or unauthorized deletion. This setting safeguards critical databases by requiring explicit disabling of deletion protection before deletion, reducing the risk of data loss through human error or malicious activity. Cloud SQL instances without deletion protection can be permanently deleted with a single API call or console action, allowing compromised credentials, operational errors, or malicious insiders to cause catastrophic data loss. Deletion protection provides a critical safeguard against inadvertent or malicious deletion of production databases. By requiring deliberate action to disable deletion protection before an instance can be deleted, organizations mitigate risks associated with accidental data deletion and enhance the overall resilience of their data storage platform. This...
+target: gcp
+level: 1
+severity: medium
+tags:
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 6.9 Ensure Cloud SQL Database Instances Have Deletion Protection Enabled
+audit:
+  type: manual
+  command: 'From Google Cloud CLI 1. List all Cloud SQL database instances to identify those without deletion protection: gcloud sql instances list -- format="table(name,settings.deletionProtectionEnabled)" 2. For each instance, verify deletion protection is enabled: gcloud sql instances describe <INSTANCE_NAME> \ --format="value(settings.deletionProtectionEnabled)" The command should return True. If it returns False or empty, deletion protection is not enabled.'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud CLI 1. To enable deletion protection on an existing Cloud SQL instance: gcloud sql instances patch <INSTANCE_NAME> \ --deletion-protection 2. To enable deletion protection when creating a new Cloud SQL instance: gcloud sql instances create <INSTANCE_NAME> \ --deletion-protection \ --database-version=<DATABASE_VERSION> \ --tier=<MACHINE_TYPE> \ --region=<REGION>'

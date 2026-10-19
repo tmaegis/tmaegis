@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-7.3.6
+title: Ensure access to ICSF key data sets is controlled
+description: ICSF has three key data sets (KDS) which are used to store cryptographic keys for application use. The three are the CKDS for CCA symmetric keys (AES, DES, HMAC), the PKDS for CCA asymmetric keys (RSA, ECC, QSA), and the TKDS for PKCS#11 tokens and key objects. These key data sets need to be protected to avoid damage or destruction to critical key material.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.3.6 Ensure access to ICSF key data sets is controlled
+audit:
+  type: manual
+  command: 'Issue the following z/OS console command: DISPLAY ICSF,KDS Note the names of active ICSF Key Data Sets. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entry covering ICSF key data sets Request reports generated using IRRDBU00 output that will allow you to: Verify that ICSF key data sets are secured by RACF profiles in the DATASET class that: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of SUCCESS(READ) and FAILURES(READ) ID(*) is not used to ... (full steps: CIS section 7.3.6)'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''CSF.KDS.**'' GENERIC + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''ICSF KEY DATA SETS'') PERMIT ''CSF.KDS.**'' GENERIC + ACCESS(ALTER) ID(<icsf-id>) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''CSF.KDS.**'' GENERIC + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''CSF.KDS.**'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the
+    associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

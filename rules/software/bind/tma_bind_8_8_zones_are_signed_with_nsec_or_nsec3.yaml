@@ -1,0 +1,17 @@
+id: TMA-BIND-8.8
+title: Ensure Zones are Signed with NSEC or NSEC3
+description: 'The NSEC records are used to prove that a name does not exist, by providing the name before it, and the name after it. NSEC3 records are similar, while using a hash to link records in order to make zone enumeration much more difficult. Either record type will securely validate a negative answer that a name does not exist. Manual review: the check needs remote queries, architecture knowledge or site policy.'
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 8.8 Ensure Zones are Signed with NSEC or NSEC3
+audit:
+  type: manual
+  command: 'To audit the authoritative name server, use the delv command on a independent DNSSEC validating resolver to query a nonexistent name of the authoritative name server. The response should be a "negative response, fully validated" similar to the following example. $ delv @8.8.8.8 nosuch-name.isc.org; resolution failed: ncache nxdomain ; negative response, fully validated ; nosuch-name.isc.org. 3200171710 IN \-ANY ;-$NXDOMAIN ; isc.org. SOA ns-int.isc.org. hostmaster.isc.org. 2020031004 7200 3600 24796800 . . . A non-compliant response will not contain the "fully validated" response.'
+remediation:
+  type: iac_patch
+  command: 'An NSEC record and NSEC signatures are generated automatically by BIND for DNSSEC signed zones. If the audit fails, then verify that the zone has a valid signature and has delegated trust from the parent domain as in the previous recommendations "8.5 Ensure each Zone has a Valid Digital Signature" and "8.6 Ensure Full Digital Chain of Trust can be Validated" The signed zone file, or a zone transfer can also be checked for NSEC signatures. With a command such as: $ dig @127.0.0.1 example.org AXFR | grep -w ''NSEC'' example.org. 86400 IN NSEC www.example.org. A NS SOA RRSIG NSEC DNSKEY TYPE65534 example.org. 86400 IN RRSIG NSEC 8 2 86400 20200325222408 20200224212408 4236 . . .'

@@ -1,0 +1,24 @@
+id: TMA-ROS1-6.1.12
+title: Ensure no ungrouped files or directories exist
+description: Sometimes when administrators delete users or groups from the system they neglect to remove all files owned by those users or groups. The audit searches local filesystems for files without a valid group and requires none. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.1.12 Ensure no ungrouped files or directories exist
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v findmnt >/dev/null 2>&1 || exit 1
+    mps=$(findmnt -rn -l -o TARGET,FSTYPE | awk '$2 !~ /^(nfs|nfs4|cifs|smb3|smbfs|fuse|proc|sysfs|tmpfs|devtmpfs|devpts|cgroup|cgroup2|pstore|securityfs|debugfs|tracefs|configfs|bpf|mqueue|hugetlbfs|autofs|binfmt_misc|efivarfs|overlay|squashfs|nsfs|ramfs|fusectl|rpc_pipefs)$/ {print $1}')
+    out=$(for m in $mps; do find "$m" -xdev -nogroup -print 2>/dev/null; done | sort -u | head -n 50)
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out"; echo 'files without a group'; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Locate files that are owned by users or groups not listed in the system configuration files, and reset the ownership of these files to some active user on the system as appropriate.

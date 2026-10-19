@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.3.2
+title: Ensure 'Enable OOF messages to remote domains' is set to 'None'
+description: This policy setting is used to determine if the server automatically forwards out-of-office messages to remote domains. Prints the number of remote domains where AllowedOOFType is not None (expected 0). Every remote domain (including Default) is checked. Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 2
+severity: low
+tags:
+- exchange
+- remote-domains
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.3.2 Ensure 'Enable OOF messages to remote domains' is set to 'None'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-RemoteDomain -ErrorAction Stop | Where-Object { "$($_.AllowedOOFType)" -ne 'None' }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-RemoteDomain '<RemoteDomain>' -AllowedOOFType None

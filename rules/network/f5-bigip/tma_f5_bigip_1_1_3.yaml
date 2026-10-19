@@ -1,0 +1,42 @@
+id: TMA-F5-BIGIP-1.1.3
+title: Configure Secure Password Policy
+description: 'To assist users in maintaining strong passwords, ensure that passwords are changed at appropriate intervals and new passwords to be used PASS requires every CIS minimum in auth password-policy (tmsh lists properties alphabetically): expiration-warning >= 14, lockout-duration >= 300, max-duration <= 180, max-login-failures 1-3, min-duration >= 90, minimum-length >= 12, password-memory >= 24, policy-enforcement enabled and at least one required lowercase, numeric, special and uppercase character. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'',
+  ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: high
+tags:
+- f5-bigip
+- authentication
+reference: CIS F5 Networks Benchmark v1.0.0 - 1.1.3 Configure Secure Password Policy
+audit:
+  type: config_regex
+  pattern: (?m)^auth password-policy \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+expiration-warning (?:1[4-9]|[2-9]\d|1\d\d|2[0-4]\d|25[0-5])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+lockout-duration (?:[3-9]\d\d|\d{4,})[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+max-duration (?:[1-9]\d?|1[0-7]\d|180)[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+max-login-failures [1-3][ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+min-duration (?:9\d|1\d\d|2[0-4]\d|25[0-5])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+minimum-length (?:1[2-9]|[2-9]\d|1\d\d|2[0-4]\d|25[0-5])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+password-memory (?:2[4-9]|[3-9]\d|1[01]\d|12[0-7])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+policy-enforcement enabled[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+required-lowercase [1-9]\d*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+required-numeric [1-9]\d*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+required-special [1-9]\d*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+required-uppercase [1-9]\d*[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify auth password-policy policy-enforcement enabled minimum-length 12 required-lowercase 1 required-uppercase 1 required-numeric 1 required-special 1 max-duration 180 min-duration 90 expiration-warning 14 password-memory 24 max-login-failures 3 lockout-duration 300
+    tmsh save sys config
+    # CIS guidance:
+    Configuring the password policy using the Configuration utility
+    1. Log in to the Configuration utility.
+    2.
+    Navigate to System > Users > Authentication.
+    3. Under Password Policy, locate the Secure Password Enforcement setting and set it to meet below minimum requirements :
+    Configuring the password policy using tmsh
+    1. Log in to tmsh by typing the following command:
+    tmsh:
+    modify /auth password-policy
+    The minimum requirements :
+    - Secure Password Enforcement : Enabled
+    - Minimum Password Length is 12
+    - Required Lowercase is 1
+    - Required Uppercase is 1
+    - Required Numeric is 1
+    - Required Special Characters is 1
+    - Maximum Duration (in Days): 180
+    - Minimum Duration (in Days): 90
+    - Expiration Warning ( in days):14
+    - EnsurePassword Memory is 24
+    - Ensure Maximum Login Failures is 3
+    - User Lockout :  Automatically enable locked-out users after : 300 seconds others are done through tmsh only.**

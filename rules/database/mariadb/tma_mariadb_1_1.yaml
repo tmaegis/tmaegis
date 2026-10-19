@@ -1,0 +1,18 @@
+id: TMA-MARIADB-1.1
+title: Place Databases on Non-System Partitions
+description: It is generally accepted that host operating systems should include different filesystem partitions for different purposes. One set of filesystems is typically called system partitions, and these are generally reserved for host system/application operation.
+target: mariadb
+level: 1
+severity: low
+tags:
+- mariadb
+- database
+- filesystem
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 1.1 Place Databases on Non-System Partitions
+audit:
+  type: manual
+  command: 'Find the data and log locations: SELECT VARIABLE_NAME, VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE (VARIABLE_NAME LIKE ''%dir'' OR VARIABLE_NAME LIKE ''%file'') AND VARIABLE_NAME NOT LIKE ''%core%''; then run df -h <directory> for datadir and the others. They must not be on the root (/), /var or /usr partitions.'
+remediation:
+  type: iac_patch
+  command: Create a dedicated partition/volume for the data, stop MariaDB, move datadir there (copy preserving ownership mysql:mysql), update datadir in /etc/mysql/mariadb.conf.d/50-server.cnf (or /etc/my.cnf.d/server.cnf) and any SELinux/AppArmor policy, then start MariaDB.

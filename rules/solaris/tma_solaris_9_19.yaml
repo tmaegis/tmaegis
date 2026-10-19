@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.19
+title: Check for Presence of User .netrc Files
+description: 'The .netrc file contains data for logging into a remote host for file transfers via FTP. The .netrc file presents a significant security risk since it stores passwords in unencrypted form. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.19 Check for Presence of User .netrc Files
+audit:
+  type: command
+  command: 'command -v logins >/dev/null 2>&1 || exit 1; out=$( { for dir in $(logins -ox | awk -F: ''($8 == "PS") { print $6 }''); do ls -l "$dir"/.netrc; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if any .netrc files exist, and work with the owner to determine the best course of action in accordance with site policy.

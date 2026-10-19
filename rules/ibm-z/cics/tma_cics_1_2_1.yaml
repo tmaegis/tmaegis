@@ -1,0 +1,16 @@
+id: TMA-CICS-1.2.1
+title: Ensure that only authorized users can run transactions
+description: The authority to run CICS transactions is determined by a pair of RACF classes specified by the XTRAN SIT option. This option can have the following values YES - The resource class name is TCICSTRN and the grouping class name is GCICSTRN. name - The resource class name is Tname and the grouping class name is Gname.
+target: cics
+level: 1
+severity: high
+tags:
+- cics
+- accounts
+reference: CIS IBM CICS Transaction Server 6.1 Benchmark v1.1.0 - 1.2.1 Ensure that only authorized users can run transactions
+audit:
+  type: manual
+  command: 'Issue the z/OSMF Compliance data collection REST API to drive collection of compliance evidence in the SMF 1154 record. https://{host}:{port}/zosmf/compliance/rest/v1/facts 1. Wait for the data to be collected; this may take up to a minute in some regions. 2. Customize and run the DFH$54P sample JCL to create a spreadsheet containing data for all of the CICS TS regions. 3. Open the spreadsheet and review the settings of the XTRAN column. 4. They should all be set to the suffix of the transaction class name. The classes are prefixed by G and T. In the ... (full steps: CIS section 1.2.1)'
+remediation:
+  type: iac_patch
+  command: Categorize the transactions on the system according to who should have access to them. Define profiles for these transactions either generically or in groups in the classes TCICSTRN or GCICSTRN (or the class names used if the default classes aren't used). Give READ access to the appropriate groups for these profiles. An example of this is as follows RDEFINE GCICSTRN memname OWNER(admin) AUDIT(ALL(READ)) UACC(NONE) RALTER GCICSTRN memname ADDMEM(tran1 tran2 tran3) PERMIT memname CLASS(GICICSTRN) ID(group) ACCESS(READ) SETROPTS RACLIST(TCICSTRN) REFRESH 1. Set XTRAN=YES or name. 2. Restart CICS

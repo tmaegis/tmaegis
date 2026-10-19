@@ -1,0 +1,24 @@
+id: TMA-VMWARE-2.7
+title: Host must have time synchronization services enabled and running
+description: Ensure the host has time synchronization services enabled and operational as many functions such as cryptography, audit logging, cluster operations, and incident response/forensics depend on synchronized time. Services like NTP or PTP should be configured to start with the host and remain running to maintain time synchronization. The audit requires NTP enabled with servers (esxcli system ntp get) and the ntpd service running (/etc/init.d/ntpd status). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 2.7 Host must have time synchronization services enabled and running
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system ntp get 2>/dev/null) || exit 1
+    en=$(printf '%s\n' "$out" | sed -n 's/^ *Enabled: *//p' | head -n 1)
+    srv=$(printf '%s\n' "$out" | sed -n 's/^ *Servers\{0,1\}: *//p' | head -n 1)
+    [ "$en" = true ] && [ -n "$srv" ] || { echo "ntp enabled=$en servers=$srv"; exit 1; }
+    st=$(/etc/init.d/ntpd status 2>&1)
+    case "$st" in *'not running'*) echo 'ntpd is not running' ;; *running*) echo compliant ;; *) echo "ntpd status: $st" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: '1. Configure approved NTP servers 2. Enable the NTP client firewall ruleset if required 3. Set the NTP service startup policy to start and stop with the host, and start the service. Example: esxcli system ntp set --enabled true after configuring approved servers. Verify synchronization after remediation.'

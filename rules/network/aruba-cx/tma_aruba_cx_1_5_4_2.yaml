@@ -1,0 +1,21 @@
+id: TMA-ARUBA-CX-1.5.4.2
+title: Remote Accounting
+description: For remote accounting, the information is sent to the first reachable remote server that was configured with this command for remote accounting. If no remote server is reachable, local accounting remains available by default PASS requires remote start-stop accounting to a server group. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 2
+severity: medium
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.5.4.2 Remote Accounting
+audit:
+  type: config_regex
+  pattern: (?m)^aaa accounting all-mgmt (?:console|default|https-server|ssh|telnet) start-stop group (?:[^ln\s]|l[^o\s]|lo[^c\s]|n[^o\s]|no[^n\s])\S*
+remediation:
+  type: iac_patch
+  command: |-
+    aaa accounting all-mgmt default start-stop group tacacs1
+    # CIS guidance:
+    To enable the remote accounting configuration:
+    aaa accounting all-mgmt <console|default|https-
+    server|ssh|telnet> start-stop <group>

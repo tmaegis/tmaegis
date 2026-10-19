@@ -1,0 +1,20 @@
+id: TMA-WIN2025-18.9.26.2
+title: Ensure 'Do not allow password expiration time longer than required by policy' is set to 'Enabled' (MS only)
+description: 'This policy setting configures whether the password age dictated by the Windows LAPS "Password Settings" policy is enforced and cannot be extended manually (only shortened) by an authorized technician. If an expiration is detected, the password is changed immediately, and password expiration is set according to policy. The recommended state for this setting is: Enabled. Note: Organizations that utilize third-party commercial software to manage unique & complex local Administrator passwords on domain members may opt to disregard these LAPS recommendations. Note #2: Windows LAPS does not support'
+target: windows
+os_family:
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.9.26.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS'' -Name ''PasswordExpirationProtectionEnabled'' -ErrorAction SilentlyContinue).''PasswordExpirationProtectionEnabled''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''PasswordExpirationProtectionEnabled='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Name 'PasswordExpirationProtectionEnabled' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-3.2.8
+title: Ensure private endpoints are configured for Recovery Services Vaults
+description: 'Azure Private Link enables connectivity between clients in a virtual network and Azure Recovery Services vaults by routing backup and restore traffic over the Azure backbone network rather than the public internet. A private endpoint for the AzureBackup sub- resource deploys a network interface with a private IP address in the specified virtual network, so backup agents and workload extensions communicate with the vault without traversing the public internet. Note: Private endpoints for Azure Site Recovery operations on the same vault require the AzureSiteRecovery sub-resource and are not in scope for this recommendation. Configure at least one approved private endpoint targeting the AzureBackup sub- resource on each Recovery Services Vault used for backup. A Recovery Services vault whose backup traffic flows over the public internet is accessible from any host with internet connectiv...'
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.2.8 Ensure private endpoints are configured for Recovery Services Vaults
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. In the Azure portal, navigate to Recovery Services vaults and select the vault. 2. Under Settings, select Networking. 3. Select the Private access tab. 4. Review the Private endpoint connections list. Verify that at least one entry is present with a Sub-resource of AzureBackup and a Connection state of Approved. If no such connection exists, the vault is non- compliant. Repeat for each Recovery Services Vault in scope. Audit from Azure CLI For each vault, run: az network private-endpoint-connection list --id /subscriptions/<subscription-id>/resourceGroups/<resource-group- name>/providers/Microsoft.RecoveryServices/vaults/<vault-name> Verify that the output contains at least one object where properties.privateLinkServiceConnectionState.status equals Approved, properties.provisioningState equals Succeeded, and the id field contains .backup. If the output is an empty array or no entry meets all three conditions, the vault is non-compliant. Audit from Azure
+    Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal Note: A primary private endpoint can only be created on a vault with no registered or previously protected items. If the vault already has protected items, provision a new vault and configure a private endpoint before migrating workloads to it. 1. In the Azure portal, navigate to Recovery Services vaults and select the vault. 2. Under Settings, select Networking. 3. On the Private access tab, select + Private endpoint. 4. On the Basics tab, provide a name for the private endpoint and confirm the Region matches the vault''s region. 5. On the Resource tab, set Resource type to Microsoft.RecoveryServices/vaults, set Resource to the vault name, and set Target sub-resource to AzureBackup. 6. On the Virtual network tab, select the virtual network and subnet where the private endpoint will be deployed. 7. On the DNS tab, select Yes for Integrate with private DNS zone to automatically create and link the required DNS zones, or select No and add the required
+    DNS records manually. 8. Select Review + create, then select Create. 9. If the connection is not auto-approved (non-owner scenario), navigate to Private endpoint connections on the vault and select Approve...'

@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.1.1.5
+title: Ensure syslog is configured to send logs to a remote log host
+description: 'Syslog supports the ability to send log events it gathers to a remote log host or to receive messages from remote hosts, thus enabling centralized log management. Storing log data on a remote host protects log integrity from local attacks. If an attacker gains root access on the local system, they could tamper with or remove log data that is stored on the local system. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.1.1.5 Ensure syslog is configured to send logs to a remote log host
+audit:
+  type: command
+  command: n=$(cat /etc/syslog.conf /etc/syslog.d/*.conf /usr/local/etc/syslog.d/*.conf 2>/dev/null | grep -v "^[[:space:]]*#" | grep -c "@"); [ "$n" -gt 0 ] && echo compliant || echo "no remote log host configured"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/syslog.conf and /etc/syslog.d/*.conf files and add the following line (where loghost.example.com is the name of your central log host). The target directive may either be a fully qualified domain name or an IP address. *.* @loghost.example.com Run the following command to reload the syslogd configuration: # service syslogd restart'

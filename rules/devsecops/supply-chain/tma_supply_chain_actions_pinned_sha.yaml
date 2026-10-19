@@ -1,0 +1,18 @@
+id: TMA-SUPPLY-CHAIN-ACTIONS-PINNED-SHA
+title: Ensure GitHub Actions in workflows are pinned to a full commit SHA
+description: 'Tags and branches on third-party actions are mutable: a compromised action repository can repoint v4 to malicious code (as in the tj-actions/changed-files incident). Pinning to the 40-character commit SHA makes the workflow use reviewed code. The audit lists every uses: line in .github/workflows that is not a local action (./), a full commit SHA or a docker:// image pinned by sha256 digest; passes with a note when there are no workflows. Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.'
+target: supply-chain
+level: 1
+severity: high
+tags:
+- supply-chain
+- build-pipeline
+- github-actions
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Build Pipelines - pin pipeline dependencies to immutable references (verify section number for your release)
+audit:
+  type: command
+  command: "top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1\ncd \"$top\" || exit 1\nwf=$(git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml' 2>/dev/null) || exit 1\nif [ -z \"$wf\" ]; then echo compliant; echo \"no GitHub Actions workflows\"; exit 0; fi\nbad=$(printf '%s\\n' \"$wf\" | while IFS= read -r f; do\n  grep -nE '^[[:space:]]*(-[[:space:]]+)?uses:' \"$f\" |\n    grep -vE \"uses:[[:space:]]*[\\\"']?(\\./|[^@[:space:]\\\"']+@[0-9a-f]{40}([^0-9A-Za-z]|$)|docker://[^[:space:]]+@sha256:[0-9a-f]{64})\" |\n    while IFS= read -r l; do echo \"$f:$l\"; done\ndone)\nif [ -z \"$bad\" ]; then echo compliant; else echo \"actions not pinned to a full commit SHA:\"; printf '%s\\n' \"$bad\"; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Replace each ''uses: owner/action@vX'' with ''uses: owner/action@<40-char commit sha> # vX'' (pinact, ratchet or StepSecurity can do this), and let Dependabot (package-ecosystem: github-actions) update the SHAs. Optionally enforce SHA pinning in the organisation Actions policy.'

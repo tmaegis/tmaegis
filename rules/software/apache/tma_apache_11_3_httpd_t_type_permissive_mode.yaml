@@ -1,0 +1,20 @@
+id: TMA-APACHE-11.3
+title: Ensure the httpd_t Type is Not in Permissive Mode
+description: In addition to setting the entire SELinux configuration in permissive mode, it is possible to set individual process types (domains) such as httpd_t into a permissive mode as well. The permissive mode will not prevent any access or actions, instead, any actions that would have been denied are simply logged. semodule -l must not list permissive_httpd_t (httpd_t in permissive mode); expects 0. Not applicable without /etc/selinux/config.
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- selinux
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 11.3 Ensure the httpd_t Type is Not in Permissive Mode
+audit:
+  type: command
+  shell: bash
+  command: out=$(semodule -l 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -c 'permissive_httpd_t' || true
+  expected_output: '0'
+  requires_file:
+  - /etc/selinux/config
+remediation:
+  type: iac_patch
+  command: semanage permissive -d httpd_t

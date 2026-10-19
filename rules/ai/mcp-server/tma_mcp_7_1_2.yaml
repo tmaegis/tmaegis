@@ -1,0 +1,20 @@
+id: TMA-MCP-7.1.2
+title: Ensure non-null JSON-RPC request IDs are enforced and included in audit logs
+description: 'The protocol''s JSON-RPC id rules are enforced, and the request id is recorded in the audit log. A request id must be a string or an integer, must not be null, and must not match the id of another request the sender has issued but not yet received a response for. The uniqueness requirement covers only requests still in flight: once a request completes, its id may be reused, so enforcement applies to ids awaiting a response rather than to every id ever seen. A server that receives a null id, or an id that collides with one of its own outstanding requests, rejects the message as a JSON-RPC Invalid Request with error code -32600 and HTTP 400. The JSON-RPC request id is recorded on each audit-log entry so a logged event can be tied back to the request that produced it. Two kinds of bad request id break the correlation between a request and its response. An id that is null cannot be matched...'
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- logging
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 7.1.2 Ensure non-null JSON-RPC request IDs are enforced and included in audit logs
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_7_1_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 7.1.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure the server to reject a request whose id is null, or whose id matches one still awaiting a response, returning a JSON-RPC Invalid Request with error code -32600 and HTTP 400. For that check, track only the ids of requests still awaiting a response, and release an id for reuse once its response has been sent, rather than retaining every id seen. Record the JSON-RPC request id on every audit-log entry. Id-rule enforcement is typically provided by a conformant SDK, so the remediation is usually a matter of not overriding it and adding the request id to the log schema.

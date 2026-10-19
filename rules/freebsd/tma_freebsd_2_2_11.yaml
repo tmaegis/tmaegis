@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-2.2.11
+title: Ensure mail transfer agents are configured for local-only mode
+description: 'Mail Transfer Agents (MTA), such as sendmail and Postfix, are used to listen for incoming mail and transfer the messages to the appropriate user or mail server. If the system is not intended to be a mail server, it is recommended that the MTA be configured to only process local mail. The software for all Mail Transfer Agents is complex and most have a long history of security issues. Audit: no socket may listen on ports 25/465/587 except on loopback addresses.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- hardening
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 2.2.11 Ensure mail transfer agents are configured for local-only mode
+audit:
+  type: command
+  command: command -v sockstat >/dev/null 2>&1 || exit 1; out=$( { sockstat -46L | awk 'NR>1 {print $6}' | grep -E ":(25|465|587)$" | grep -Ev "^(127\.0\.0\.1|::1|\[::1\]):" ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit /usr/local/etc/postfix/main.cf and add the following line to the RECEIVING MAIL section. If the line already exists, change it to look like the line below: inet_interfaces = localhost Run the following command to restart postfix: # service restart postfix Note: This remediation is designed around the postfix mail server. Depending on your environment you may have an alternative MTA installed such as sendmail. If this is the case consult the documentation for your installed MTA to configure the recommended state.'

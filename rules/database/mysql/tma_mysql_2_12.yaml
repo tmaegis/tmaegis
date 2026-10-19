@@ -1,0 +1,40 @@
+id: TMA-MYSQL-2.12
+title: Ensure AES Encryption Mode for AES_ENCRYPT/AES_DECRYPT is Configured Correctly
+description: 'A block encryption mode with a Cipher Block Chaining (CBC) mode value and key length of 256 is recommended when using the AES_ENCRYPT() and AES_DECRYPT() functions for encryption. Passes for any aes-256-* mode (ecb, cbc, cfb1, cfb8, cfb128, ofb). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: low
+tags:
+- mysql
+- database
+- crypto
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.12 Ensure AES Encryption Mode for AES_ENCRYPT/AES_DECRYPT is Configured Correctly
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.block_encryption_mode LIKE 'aes-256-%', 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v mysql >/dev/null 2>&1 || exit 0
+    cli() { mysql -NB "$@"; }
+    dir=; for x in /etc/mysql/mysql.conf.d /etc/mysql/mariadb.conf.d /etc/mysql/conf.d /etc/my.cnf.d; do [ -d "$x" ] && { dir=$x; break; }; done
+    [ -n "$dir" ] || { echo "no mysql conf.d directory found" >&2; exit 1; }
+    setv() { # name option value
+      printf '[mysqld]\n%s=%s\n' "$2" "$3" > "$dir/99-tmaegis-$1.cnf"; chmod 644 "$dir/99-tmaegis-$1.cnf"
+      cli -e "SET GLOBAL $1 = '$3'" 2>/dev/null || true; }
+    setv block_encryption_mode block_encryption_mode aes-256-cbc
+  guidance: "Set block_encryption_mode=aes-256-cbc under [mysqld] (or SET PERSIST block_encryption_mode = 'aes-256-cbc') after confirming applications that call AES_ENCRYPT/AES_DECRYPT pass the mode they need, then restart."

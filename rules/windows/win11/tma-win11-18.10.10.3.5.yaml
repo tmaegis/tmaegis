@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.10.3.5
+title: 'Ensure ''Choose how BitLocker-protected removable drives can be recovered: Recovery Key'' is set to ''Enabled: Do not allow 256-bit recovery key'''
+description: 'This policy setting allows you to control how BitLocker-protected removable data drives are recovered in the absence of the required credentials. This policy setting is applied when you turn on BitLocker. In "Configure user storage of BitLocker recovery information" select whether users are allowed, required, or not allowed to generate a 48-digit recovery password or a 256-bit recovery key. The recommended state for this setting is: Enabled: Do not allow 256-bit recovery key.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.10.3.5
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE'' -Name ''RDVRecoveryKey'' -ErrorAction SilentlyContinue).''RDVRecoveryKey''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''RDVRecoveryKey='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Name 'RDVRecoveryKey' -Value 0 -PropertyType DWord -Force | Out-Null

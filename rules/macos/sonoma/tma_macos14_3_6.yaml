@@ -1,0 +1,22 @@
+id: TMA-MACOS14-3.6
+title: Ensure Firewall Logging Is Enabled and Configured
+description: The socketfilter Firewall is what is used when the Firewall is turned on in the Security & Privacy Preference Pane. In order to appropriately monitor what access is allowed and denied, logging must be enabled. The logging level must be set to "detailed" to be useful in monitoring connection attempts that the firewall detects. Throttled login is not sufficient for examining Firewall connection attempts. In-depth log monitoring on macOS may require changes to the "Enable-Private-Data" key in SystemLogging.System to ensure more complete logging. Reviewing macOS Unified Logs In order to troubleshoot the successes and failures of a Firewall, detailed logging should be enabled.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: low
+tags:
+- logging
+- macos
+- network
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 3.6 Ensure Firewall Logging Is Enabled and Configured
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to ensure that Firewall updates install automatically: 1. Open System Settings 2. Select Privacy & Security 3. Select Profiles 4. Verify that an installed profile has Firewall set to Enabled 5. Verify that the same installed profile has Logging set to Enabled 6. Verify that the same installed profile has Logging option set to Detailed Terminal Method: Run the following command to verify that the Firewall log is enabled: % /usr/bin/sudo /usr/bin/osascript -l JavaScript << EOS function run() { let pref1 = $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.security.firewall'')\ .objectForKey(''EnableLogging'').js let pref2 = $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.security.firewall'')\ .objectForKey(''LoggingOption'').js let pref3 = $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.alf'')\ .objectForKey(''loggingenabled'').js let pref4 = $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.alf'')\ .objectForKey(''loggingoption'').js
+    if ( ( pref1 == true && pref2 == "detail" ) || ( pref3 == 1 && pref4 == 2 ) ) { return("true") } else { return("false") } } EOS true'
+remediation:
+  type: iac_patch
+  command: 'Terminal Method: Run the following command to enable logging of the firewall: % /usr/bin/sudo /usr/libexec/ApplicationFirewall/socketfilterfw -- setloggingmode on Turning on log mode % /usr/bin/sudo /usr/libexec/ApplicationFirewall/socketfilterfw -- setloggingopt detail Setting detail log option Note: If the Firewall settings are set through a configuration profile, then modifications cannot be done through the command line. If attempted, you will receive the message Firewall settings cannot be modified from command line on managed Mac computers. Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.security.firewall 2. The key to include is EnableFirewall 3. The key must be set to <true/> 4. The key to also include is EnableLogging 5. The key must be set to <true/> 6. The key to also include is LoggingOption 7. The key must be set to <string>detail</string> Note: Firewall Logging must be enabled with this
+    profile. It can either be set with the Firewall and Stealth Mode (2.5.2.2 and 2.5.2.3) or as a separate profile. Setting logging with its own profile will not cause a conflict.'

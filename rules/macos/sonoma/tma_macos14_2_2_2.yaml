@@ -1,0 +1,47 @@
+id: TMA-MACOS14-2.2.2
+title: Ensure Firewall Stealth Mode Is Enabled
+description: While in Stealth mode, the computer will not respond to unsolicited probes, dropping that traffic. Stealth mode on the firewall minimizes the threat of system discovery tools while connected to a network or the Internet.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- network
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.2.2 Ensure Firewall Stealth Mode Is Enabled
+audit:
+  type: command
+  command: '[ -x /usr/bin/osascript ] || exit 1
+
+    p=$(/usr/bin/osascript -l JavaScript <<''EOS''
+
+    $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.security.firewall'').objectForKey(''EnableStealthMode'').js
+
+    EOS
+
+    )
+
+    s=$(/usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode 2>/dev/null)
+
+    if [ "$p" = true ] || printf ''%s'' "$s" | /usr/bin/grep -q ''stealth mode is on''; then echo compliant; else echo "EnableStealthMode=${p:-unset}; $s"; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+  guidance: "Graphical Method: Perform the following steps to enable firewall stealth mode: 1. Open System Settings 2. Select Network 3. Select Firewall 4. Select Options... 5. Set Enabled stealth mode to enabled Terminal Method: Run the following command to enable stealth mode: % /usr/bin/sudo /usr/libexec/ApplicationFirewall/socketfilterfw -- setstealthmode on Stealth mode enabled Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.security.firewall 2. The key to include is EnableStealthMode 3. The key must be set to <true/> Note: This key must be set in the same configuration profile with EnableFirewall set to <true/>. If it is set in its own configuration profile, it will fail."

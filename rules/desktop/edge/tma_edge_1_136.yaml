@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.136
+title: Ensure 'Show an "Always open" checkbox in external protocol dialog' is set to 'Disabled'
+description: 'This policy setting controls if the user is prompted with an "Always open" check box when an external protocol prompt is shown. The recommended state for this setting is: Disabled. Rationale: Allowing a protocol to automatically "always open for webpages" could allow a malicious website to open programs on a device leaving it open to attacks. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:ExternalProtocolDialogShowAlwaysOpenCheckbox (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.136 Ensure 'Show an "Always open" checkbox in external protocol dialog' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''ExternalProtocolDialogShowAlwaysOpenCheckbox'' -ErrorAction SilentlyContinue).''ExternalProtocolDialogShowAlwaysOpenCheckbox''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ExternalProtocolDialogShowAlwaysOpenCheckbox' -Value 0 -PropertyType DWord -Force | Out-Null

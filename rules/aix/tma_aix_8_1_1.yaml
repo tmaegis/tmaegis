@@ -1,0 +1,18 @@
+id: TMA-AIX-8.1.1
+title: Ensure /audit filesystem has been created and configured
+description: 'This recommendation provides guidance for preparing an AIX system to operate with AUDIT active. AIX Audit has been available as part of the kernel since 1995. The historical setup has all of it''s files in the root partition. This presents a risk that / (/dev/hd4) may be (nearly) full and impact system availability. Audit: checks the /audit filesystem, mkuser.default auditclasses, the cronaudit job and the inittab audit entry; review /etc/security/audit/config manually.'
+target: aix
+level: 2
+severity: medium
+tags:
+- aix
+- audit
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 8.1.1 Ensure /audit filesystem has been created and configured
+audit:
+  type: command
+  command: 'command -v lsfs >/dev/null 2>&1 || exit 1; command -v lssec >/dev/null 2>&1 || exit 1; command -v lsitab >/dev/null 2>&1 || exit 1; r=compliant; lsfs /audit >/dev/null 2>&1 || r="Audit Filesystem is missing"; a=$(lssec -f /usr/lib/security/mkuser.default -s user -a auditclasses 2>/dev/null); [ "$a" = "user auditclasses=general,SRC,cron,tcpip" ] || r="mkuser.default: $a"; crontab -l 2>/dev/null | grep -q cronaudit || r="cronaudit cron job missing"; lsitab audit >/dev/null 2>&1 || r="audit inittab entry missing"; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure AIX auditing in-line with the High Level AIX Security Expert policy. Create a /audit filesystem, at least 100 MB in size: mklv -y <LV name> -t jfs2 -u 1 -c 1 rootvg 1 hdisk0 crfs -v jfs2 -d <LV name> -m /audit -A yes -t no mount /audit Reflect the following configuration in the /etc/security/audit/config file: vi /etc/security/audit/config Add in: start: binmode = on streammode = off bin: trail = /audit/trail bin1 = /audit/bin1 bin2 = /audit/bin2 binsize = 10240 cmds = /etc/security/audit/bincmds Add the auditing entries for root and all other users below the pre-defined audit classes: users: root = general,SRC,mail,cron,tcpip,ipsec,lvm <user 1> = general,SRC,cron,tcpip <user 2> = general,SRC,cron,tcpip etc. Update the /usr/lib/security/mkuser.default auditclasses entry to ensure that auditing is set up for any newly created users: chsec -f /usr/lib/security/mkuser.default -s user -a auditclasses=general,SRC,cron,tcpip A cron job is implemented to monitor the free space
+    in /audit, running hourly, to ensure that /audit does not fill up. If /audit is greater than 90% used, /audit/trail is moved to /audit/trailOneLevelBack: crontab -e Add in: 0 * ... (see CIS section 8.1.1)'

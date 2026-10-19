@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.10.3.14
+title: Ensure 'Deny write access to removable drives not protected by BitLocker' is set to 'Enabled'
+description: 'This policy setting configures whether BitLocker protection is required for a computer to be able to write data to a removable data drive. All removable data drives that are not BitLocker-protected will be mounted as read-only. If the drive is protected by BitLocker, it will be mounted with read and write access. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.10.3.14
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies\Microsoft\FVE'' -Name ''RDVDenyWriteAccess'' -ErrorAction SilentlyContinue).''RDVDenyWriteAccess''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RDVDenyWriteAccess='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies\Microsoft\FVE')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies\Microsoft\FVE' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies\Microsoft\FVE' -Name 'RDVDenyWriteAccess' -Value 1 -PropertyType DWord -Force | Out-Null

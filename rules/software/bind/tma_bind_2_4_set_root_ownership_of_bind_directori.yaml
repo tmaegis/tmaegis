@@ -1,0 +1,28 @@
+id: TMA-BIND-2.4
+title: Set root Ownership of BIND Directories
+description: All of the directories under which ISC BIND runs should be owned by root. Of course, any files created at run time by BIND will still be owned by named, and the run time files will need to be in a directory writable by the named group. The audit lists directories under $BIND_HOME and $RUNDIR not owned by root and requires none. $BIND_HOME is taken as the existing ones of /var/named (RHEL, including a chroot), /etc/bind and /var/cache/bind (Debian/Ubuntu) and $RUNDIR as /run/named; the runtime directories (dynamic, slaves, data, run, log, tmp, /var/cache/bind) are excluded where the benchmark excludes them.
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.4 Set root Ownership of BIND Directories
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    out=$(find $BH $RUN -type d \! -user root -print 2>/dev/null) || exit 1
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out" | head -n 20; echo 'directories not owned by root'; }
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: 'To correct the directory ownership, perform the following: find $BIND_HOME $RUNDIR -type d \! -user root | xargs chown root Note: it is important to remember that the run time files will need to be in a directory writable by the named group. Changing the directory ownership to root might cause permissions issues, if the group permissions are not writable.'

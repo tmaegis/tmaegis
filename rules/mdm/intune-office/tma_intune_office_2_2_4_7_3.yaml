@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.3
+title: 'Ensure ''Force file extension to match file type'' is set to ''Enabled: Always match file type'''
+description: 'This policy setting controls how Excel loads file types that do not match their extension. Excel can load files with extensions that do not match the files'' type. For example, if a comma-separated values (CSV) file named example.csv is renamed example.xls (or any other file extension supported by Excel 2003 and earlier only), Excel can properly load it as a CSV file. Policy options for working with files that have non-matching extensions: Always match file type - Excel does not open any files that have non-matching extensions. The recommended state for this setting is: Enabled: Always match file type Audit: reads the registry value(s) extensionhardening that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.3 Ensure ''Force file extension to match file type'' is set to ''Enabled: Always match file type'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\security'') -Name ''extensionhardening'' -ErrorAction SilentlyContinue).''extensionhardening''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $_.PSChildName + '':extensionhardening='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Always match file type. Microsoft Excel 2016\Excel Options\Security\Force File Extension to Match File Type'

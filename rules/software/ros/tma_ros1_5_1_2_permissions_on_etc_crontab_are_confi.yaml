@@ -1,0 +1,25 @@
+id: TMA-ROS1-5.1.2
+title: Ensure permissions on /etc/crontab are configured
+description: The /etc/crontab file is used by cron to control its own jobs. The commands in this item make sure that root is the user and group owner of the file and that only the owner can access the file. The audit requires /etc/crontab root:root with no group/other permissions. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.1.2 Ensure permissions on /etc/crontab are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    [ -e /etc/crontab ] || { echo '/etc/crontab not found'; exit 1; }
+    set -- $(stat -Lc '%a %u %g' /etc/crontab) || exit 1
+    m=$((8#$1)); [ $((m & ~8#0600)) -eq 0 ] || { echo "/etc/crontab mode $1 exceeds 0600"; exit 1; }
+    [ "$2" = 0 ] || { echo "/etc/crontab uid $2"; exit 1; }
+    case " 0 " in *" $3 "*) echo compliant ;; *) echo "/etc/crontab gid $3" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to set ownership and permissions on /etc/crontab : # chown root:root /etc/crontab # chmod og-rwx /etc/crontab'

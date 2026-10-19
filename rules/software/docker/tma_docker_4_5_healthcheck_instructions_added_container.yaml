@@ -1,0 +1,23 @@
+id: TMA-DOCKER-4.5
+title: Ensure that HEALTHCHECK instructions have been added to container images
+description: A HEALTHCHECK lets the engine detect and report unhealthy containers. Flags running containers whose configuration (inherited from the image) has no healthcheck. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: low
+tags:
+- docker
+- image
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 4.5 Ensure that HEALTHCHECK instructions have been added to container images
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}}{{if .Config.Healthcheck}} yes{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk 'NF<2 {print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Add a HEALTHCHECK instruction to the Dockerfile (or --health-cmd at run time) and rebuild the image.

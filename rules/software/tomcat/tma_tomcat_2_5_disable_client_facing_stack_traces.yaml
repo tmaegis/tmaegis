@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-2.5
+title: Disable client facing Stack Traces
+description: 'When a runtime error occurs during request processing, Apache Tomcat will display debugging information to the requestor. It is recommended that such debug information be withheld from the requestor. conf/web.xml must contain an <error-page> with <exception-type>java.lang.Throwable</exception-type> and a <location>. Per-application web.xml files are not checked. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored.'
+target: tomcat
+level: 1
+severity: low
+tags:
+- tomcat
+- information-disclosure
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 2.5 Disable client facing Stack Traces
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; w=$(x "$B/conf/web.xml") || exit 1; printf '%s\n' "$w" | awk '/^error-page>/{e=1; t=0; l=0; next} /^\/error-page>/{if(e&&t&&l) ok=1; e=0; next} e && /^exception-type>[[:space:]]*java\.lang\.Throwable[[:space:]]*$/{t=1} e && /^location>/{l=1} END{print ok?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Add <error-page><exception-type>java.lang.Throwable</exception-type><location>/error.jsp</location></error-page> to conf/web.xml (and each application web.xml). Restart Tomcat afterwards.

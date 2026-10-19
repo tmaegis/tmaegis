@@ -1,0 +1,18 @@
+id: TMA-AZURE-2.1.8
+title: Ensure Critical Data in Azure Databricks is Encrypted with Customer-managed Keys (CMK)
+description: Customer-managed keys introduce additional depth to security by providing a means to manage access control for encryption keys. Where compliance and security frameworks indicate the need, and organizational capacity allows, sensitive data at rest can be encrypted using customer-managed keys (CMK) rather than Microsoft-managed keys. By default in Azure, data at rest tends to be encrypted using Microsoft-managed keys. If your organization wants to control and manage encryption keys for compliance and defense-in-depth, customer-managed keys can be established. While it is possible to automate the assessment of this recommendation, the assessment status for this recommendation remains 'Manual' due to ideally limited scope. The scope of application—which workloads CMK is applied to—should be carefully considered to account for organizational capacity and targeted to workloads with specific...
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+- encryption
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 2.1.8 Ensure Critical Data in Azure Databricks is Encrypted with Customer-managed Keys (CMK)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Azure Portal → Databricks Workspaces. 2. Select a Databricks Workspace and go to Encryption settings. 3. Check if customer-managed keys (CMK) are enabled under "Managed Disk Encryption". 4. If CMK is not enabled, the workspace is non-compliant. Audit from Azure CLI Run the following command to check encryption settings for Databricks workspace: az databricks workspace show --name <databricks-workspace-name> --resource- group <resource-group-name> --query encryption Ensure that keySource is set to Microsoft.KeyVault. Audit from PowerShell Get-AzDatabricksWorkspace -ResourceGroupName "<resource-group-name>" -Name "<databricks-workspace-name>" | Select-Object Encryption Verify that encryption is set to Customer-Managed Keys (CMK). Audit from Databricks CLI databricks workspace get-metadata --workspace-id <workspace-id> Ensure that encryption settings reflect a CMK setup.'
+remediation:
+  type: iac_patch
+  command: 'NOTE: These remediations assume that an Azure KeyVault already exists in the subscription. Remediate from Azure CLI 1. Create a dedicated key: az keyvault key create --vault-name <keyvault-name> --name <key-name> -- protection <"software" or "hsm"> 2. Assign permissions to Databricks: az keyvault set-policy --name <keyvault-name> --resource-group <resource- group-name> --spn <databricks-spn> --key-permissions get wrapKey unwrapKey 3. Enable encryption with CMK: az databricks workspace update --name <databricks-workspace-name> --resource- group <resource-group-name> --key-source "Microsoft.KeyVault" --key-name <key-name> --keyvault-uri <keyvault-uri> Remediate from PowerShell $Key = Add-AzKeyVaultKey -VaultName <keyvault-name> -Name <key-name> - Destination <"software" or "hsm"> Set-AzDatabricksWorkspace -ResourceGroupName "<resource-group-name>" - WorkspaceName "<databricks-workspace-name>" -EncryptionKeySource "Microsoft.KeyVault" -KeyVaultUri $Key.Id'

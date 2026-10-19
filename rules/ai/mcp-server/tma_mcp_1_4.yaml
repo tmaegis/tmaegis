@@ -1,0 +1,20 @@
+id: TMA-MCP-1.4
+title: Ensure MCP client and server identity metadata is captured and validated against the asset inventory
+description: The self-asserted identity metadata that MCP clients and servers exchange is captured and validated against the identities and capability profiles in the enterprise MCP registry. Under the 2026-07-28 revision, a client identifies itself in _meta["io.modelcontextprotocol/clientInfo"] on each request and a server in _meta["io.modelcontextprotocol/serverInfo"] on each response. Both fields carry a name and a version, and both are optional in the schema, so an implementation configured not to send one is still conforming. The specification does not define how a receiver treats a malformed identity value, and handling varies by implementation. This Recommendation therefore never accepts a malformed value as an approved inventory identity and records it as a metadata-validation finding. Server capabilities and supported protocol versions are obtained separately from the server/discover resu...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 1.4 Ensure MCP client and server identity metadata is captured and validated against the asset inventory
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_1_4"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 1.4"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure the MCP server, the host, or an application-layer gateway able to read the JSON body to record clientInfo from each request and serverInfo from each response into the audit log, with a correlation ID on each entry. The identity travels in the JSON body, not in an HTTP header, so a plain reverse proxy cannot capture it. Configure the approved clients and servers to emit these fields. Both are optional, and supported Tier 1 SDKs commonly send them unless configured otherwise, so confirm nothing has disabled them. Export the approved identities from the registry to two newline-delimited files at the paths the Audit reads, one name|version pair per line, servers in one file and clients in the other, using Unix line endings. Generate the export from the registry rather than by hand, and enforce a registry naming policy that excludes the pipe character, carriage returns, and line breaks so no identity can break the one-pair-per-line format. Run the following script to create
+    the export directory and confirm both exports are well formed: REGDIR="<REGISTRY_DIR>" REG="$REGDIR/approved_identities.txt" CREG="$REGDIR/approved_client_identities.txt" mkdir -p "$REGDIR" missing="" [...'

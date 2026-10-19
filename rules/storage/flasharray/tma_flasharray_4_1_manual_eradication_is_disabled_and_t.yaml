@@ -1,0 +1,17 @@
+id: TMA-FLASHARRAY-4.1
+title: Ensure manual eradication is disabled and the eradication delay is at least 8 days for production data
+description: 'FlashArray possesses a variety of configurations, such as realms and pods, that pertain to data protection. These configurations can have their data eradication properties configured. Everpure recommends the following: ; Disable manual eradication for all pods, realms, or arrays that will contain production data. Passes when the Disabled Delay is 8 days or more and Manual Eradication is all-disabled or partially-disabled (SafeMode in effect). The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "purearray eradication-config list --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: high
+tags:
+- flasharray
+- storage
+- data-protection
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 4.1 Ensure manual eradication is disabled and the eradication delay is at least 8 days for production data
+audit:
+  type: config_regex
+  pattern: (?is)(?:disabled[ _-]?delay[ \t]*[=:]?[ \t]*(?:[89]|[1-9][0-9]+)d.*manual[ _-]?eradication[ \t]*[=:]?[ \t]*(?:all-disabled|partially-disabled)|manual[ _-]?eradication[ \t]*[=:]?[ \t]*(?:all-disabled|partially-disabled).*disabled[ _-]?delay[ \t]*[=:]?[ \t]*(?:[89]|[1-9][0-9]+)d)
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, extend the disabled eradication delay to at least 8 days and engage SafeMode retention locks to disable manual eradication. From the GUI: ; Navigate to Settings > System. ; In the Eradication Configuration panel, click the edit icon in the upper right corner. ; Set the Disabled Delay to at least 8 days (14 days is mathematically recommended to provide a 2-week buffer). ; Click Save. ; To actively disable manual eradication, you must enable SafeMode retention locks on your data.'

@@ -1,0 +1,18 @@
+id: TMA-MARIADB-4.7
+title: Ensure the 'secure_file_priv' is Configured Correctly
+description: 'The secure_file_priv option restricts to paths used by LOAD DATA INFILE or SELECT local_file. It is recommended that this option be set to a file system location that contains only resources expected to be loaded by MariaDB. Fails only when secure_file_priv is an empty string (import/export allowed everywhere). Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- configuration
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 4.7 Ensure the 'secure_file_priv' is Configured Correctly
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF(@@global.secure_file_priv IS NULL OR @@global.secure_file_priv <> '', 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set secure_file_priv=<path_to_load_directory> (or remove the empty setting) under [mariadbd] in /etc/mysql/mariadb.conf.d/50-server.cnf (or /etc/my.cnf.d/server.cnf), then restart MariaDB.

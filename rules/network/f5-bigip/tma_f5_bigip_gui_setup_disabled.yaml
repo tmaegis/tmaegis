@@ -1,0 +1,18 @@
+id: TMA-F5-BIGIP-GUI-SETUP-DISABLED
+title: Ensure the Setup Utility is disabled
+description: 'The Setup Utility wizard can reconfigure licensing and network settings. PASS requires gui-setup disabled in sys global-settings. Audited against tmsh output: save the concatenated output of ''tmsh list sys sshd'', ''tmsh list sys httpd'', ''tmsh list sys ntp'', ''tmsh list sys syslog'', ''tmsh list sys global-settings'', ''tmsh list sys snmp'' and ''tmsh list auth password-policy'' (add ''all-properties'' to show defaults). Patterns are scoped to the named block.'
+target: f5-bigip
+level: 1
+severity: low
+tags:
+- f5-bigip
+- management
+reference: CIS F5 Networks Benchmark - Ensure the Setup Utility is disabled (verify section number for your BIG-IP release)
+audit:
+  type: config_regex
+  pattern: (?m)^sys global-settings \{\n(?:[ \t]+.*\n)*?[ \t]+gui-setup disabled[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys global-settings gui-setup disabled
+    tmsh save sys config

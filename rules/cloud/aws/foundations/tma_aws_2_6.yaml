@@ -1,0 +1,17 @@
+id: TMA-AWS-2.6
+title: Ensure hardware MFA is enabled for the 'root' user account
+description: 'The ''root'' user account is the most privileged user in an AWS account. MFA adds an extra layer of protection on top of a username and password. With MFA enabled, when a user signs in to an AWS website, they are prompted for their username and password as well as an authentication code from their MFA device. For Level 2, it is recommended that the ''root'' user account be protected with a hardware MFA device. Where an AWS Organization is using centralized root access, root credentials can be removed from member accounts. In that case, it is neither possible nor necessary to configure root MFA in the member account. A hardware MFA device has a smaller attack surface than a virtual MFA. For example, a hardware MFA device does not inherit the risks associated with mobile devices on which virtual MFA applications reside. Note: Using hardware MFA for numerous AWS accounts may create logistica...'
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- cloud
+- mfa
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.6 Ensure hardware MFA is enabled for the 'root' user account
+audit:
+  type: manual
+  command: 'Perform the following to determine if the ''root'' user account has a hardware MFA setup: 1. Run the following commands to determine if the ''root'' account has MFA enabled: aws iam get-account-summary | grep "AccountMFAEnabled" aws iam get-account-summary | grep "AccountPasswordPresent" 2. Verify: - AccountMFAEnabled is set to 1 (MFA enabled) - AccountPasswordPresent is set to 1 (console access exists) or 0 (console access removed) 3. If AccountMFAEnabled is set to 1 (MFA enabled), determine whether the MFA device is hardware: aws iam list-virtual-mfa-devices 4. If the output contains a serial number similar to: "SerialNumber": "arn:aws:iam::_<aws_account_number>_:mfa/root-account- mfa-device" then the MFA device is virtual, not hardware, and the account is not compliant with this recommendation.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to configure hardware MFA for the ''root'' user account: From Console: 1. Sign in to the AWS Management Console using the root account 2. Click on <root_account> at the top right and select Security Credentials from the drop-down list 3. Under Multi-Factor Authentication (MFA), locate the root user 4. If a virtual MFA device is already assigned, remove it before proceeding 5. Click Assign MFA device (or Manage MFA, depending on UI version) 6. Select Security key or hardware MFA device 7. Enter the required device details (e.g., serial number or follow prompts for security key) 8. Enter authentication codes if required 9. Click Assign MFA'

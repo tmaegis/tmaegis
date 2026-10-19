@@ -1,0 +1,21 @@
+id: TMA-ESXI9-5.9
+title: Host must restrict access to a default or native VLAN on standard virtual switches
+description: ESXi does not use the concept of native VLAN, so do not configure port groups to use the native VLAN ID. If the default value of 1 for the native VLAN is being used, the ESXi Server virtual switch port groups should be configured with any value between 2 and 4094. Otherwise, ensure that the port group is not configured to use whatever value is set for the native VLAN. The audit lists standard port groups (esxcli --formatter=csv network vswitch standard portgroup list) and fails any using VLAN ID 1, the usual default/native VLAN; adjust if your physical switches use another native VLAN. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- network
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 5.9 Host must restrict access to a default or native VLAN on standard virtual switches
+audit:
+  type: command
+  command: |-
+    out=$(esxcli --formatter=csv network vswitch standard portgroup list 2>/dev/null) || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F, 'NR==1 {for (i = 1; i <= NF; i++) {if ($i == "Name") n = i; if ($i == "VLANID") l = i}; next} n && l && $l == "1" {print $n}')
+    [ -z "$bad" ] && echo compliant || { echo 'port groups on native VLAN 1:'; printf '%s\n' "$bad"; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To stop using the native VLAN ID for port groups, perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand Networking. 3. Select Virtual switches. 4. Expand the Standard vSwitch. 5. View the topology diagram of the switch, which shows the various port groups associated with that switch. 6. For each port group on the vSwitch, verify and record the VLAN IDs used. 7. If a VLAN ID change is needed, click the name of the port group in the topology diagram of the virtual switch. 8. Click the Edit settings option. 9. In the Properties section, enter an appropriate name in the Network label field. 10. In the VLAN ID dropdown select or type a new VLAN.'

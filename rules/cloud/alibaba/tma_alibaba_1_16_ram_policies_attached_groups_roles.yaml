@@ -1,0 +1,25 @@
+id: TMA-ALIBABA-1.16
+title: Ensure RAM policies are attached only to groups or roles
+description: By default, RAM users, groups, and roles have no access to Alibaba Cloud resources. RAM policies are the means by which privileges are granted to users, groups, or roles. It is recommended that RAM policies be applied directly to groups and roles but not users. Assigning privileges at the group or role level reduces the complexity of access management as the number of users grows. Reducing access management complexity may in-turn reduce opportunity for a principal to ... No RAM user may have a policy attached directly (ListPoliciesForUser must be empty). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- ram
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 1.16 Ensure RAM policies are attached only to groups or roles
+audit:
+  type: command
+  command: |-
+    out=$(aliyun ram ListUsers --MaxItems 1000 2>/dev/null) || exit 1
+    users=$(printf '%s\n' "$out" | sed -n 's/.*"UserName"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    bad=0
+    for u in $users; do
+      pp=$(aliyun ram ListPoliciesForUser --UserName "$u" 2>/dev/null) || exit 1
+      printf '%s\n' "$pp" | grep -q '"PolicyName"' && { echo "policy attached directly: $u"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add the users to RAM groups that carry the required policies, then aliyun ram DetachPolicyFromUser --PolicyType <type> --PolicyName <p> --UserName <u> for every directly attached policy.

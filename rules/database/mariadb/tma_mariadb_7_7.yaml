@@ -1,0 +1,19 @@
+id: TMA-MARIADB-7.7
+title: Prevent Password Reuse
+description: Users should be prevented from reusing past passwords when performing mandatory password changes.
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- authentication
+- password
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 7.7 Prevent Password Reuse
+audit:
+  type: manual
+  command: Run SELECT plugin_status, load_option FROM information_schema.plugins WHERE PLUGIN_NAME = 'password_reuse_check'; It fails if empty, PLUGIN_STATUS is not ACTIVE or LOAD_OPTION is not FORCE_PLUS_PERMANENT. Then SHOW VARIABLES WHERE Variable_name = 'strict_password_validation'; must be ON (hash passwords would bypass the check).
+remediation:
+  type: iac_patch
+  command: Under [mariadbd] add plugin_load_add = password_reuse_check, password_reuse_check = FORCE_PLUS_PERMANENT, password_reuse_check_interval = <days> and strict_password_validation = ON, then restart MariaDB.

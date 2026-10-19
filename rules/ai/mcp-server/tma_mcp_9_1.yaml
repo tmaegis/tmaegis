@@ -1,0 +1,20 @@
+id: TMA-MCP-9.1
+title: Ensure remote MCP servers run in containers or VMs with least privilege and gateway ingress controls applied
+description: Streamable HTTP MCP servers run in containers or VMs with non-root user identities and read-only root filesystems. All Linux capabilities are dropped, with only an approved set added back, and the process cannot regain privileges through setuid or file capabilities (no-new-privileges). Kernel-enforced confinement (seccomp and AppArmor, or an equivalent mandatory access control profile) is left enabled rather than disabled. Servers sit behind a gateway that enforces ingress policy. Authorization enforcement, rate limiting, anomaly detection, and a kill switch are centralized at the gateway rather than implemented separately in each server. An ingress gateway does not mediate the server's outbound connections, so egress confinement is enforced at the host or network layer. A containerized server running as root with a writable filesystem and full capabilities offers an attacker who comp...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- containers
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 9.1 Ensure remote MCP servers run in containers or VMs with least privilege and gateway ingress controls applied
+audit:
+  type: manual
+  command: 'Confirm the container or containers running the server are hardened. Pass one or more container names or ids in CONTAINER, for example a single name or $(docker compose ps -q) for a multi-container deployment. A container that exists but is not running returns ERROR, because inspecting a stopped object does not prove the running workload is confined. CONTAINER="<CONTAINER_NAME_OR_ID>" EXPECTED_CAPS="${EXPECTED_CAPS:-}" insp=$(docker inspect $CONTAINER 2>/dev/null) if [ -z "$insp" ] || [ "$(printf ''%s'' "$insp" | jq -r ''length'' 2>/dev/null)" = "0" ]; then echo "ERROR: no container found for $CONTAINER; confirm the server container is running, or if the server runs in a VM or directly on a host, audit it with the systemd command below" else printf ''%s'' "$insp" | jq -r --arg expected_caps "$EXPECTED_CAPS" '' def isnum: test("^[0-9]+(:[0-9]+)?$"); ($expected_caps | ascii_downcase | [splits("[ ,]+")] | map(ltrimstr("cap_")) | map(select(. != "")) | sort) as $expcaps | ([ .[]
+    | select((.State.Running // false) != true) | (.Name // "container") ]) as $stopped | if ($stopped | length) > 0 then "ERROR: container(s) exist but are not running (" + ($stopped | join(", ")) + "); runtime confin...'
+remediation:
+  type: iac_patch
+  command: 'Configure the container for a non-root user, a read-only root filesystem, all capabilities dropped with only strictly required capabilities added back, and no-new-privileges. Leave Docker''s default seccomp and AppArmor profiles in place rather than disabling them. Under Docker, run the server with the following hardened configuration, omitting --cap-add when no capability is approved: docker run --user <UID>:<GID> --read-only --cap-drop=ALL --cap-add=<APPROVED_CAP> -- security-opt no-new-privileges <IMAGE> Do not use --privileged, --security-opt seccomp=unconfined, or -- security-opt apparmor=unconfined. Managed container platforms and Kubernetes set the same properties through the container security context. Apply the following, omitting add when no capability is approved, and attach an AppArmor or SELinux profile through the platform''s mechanism: securityContext: runAsNonRoot: true runAsUser: <UID> readOnlyRootFilesystem: true allowPrivilegeEscalation: false capabilities:
+    drop: ["ALL"] add: ["<APPROVED_CAP>"] seccompProfile: type: RuntimeDefault For a server deployed in a VM or directly on a host rather than a container, configure the equivalent properties on the service manag...'

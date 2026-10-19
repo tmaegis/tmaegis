@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-16.2.3
+title: Ensure Default Network Access Rule for Storage Accounts is Set to Deny
+description: Restricting default network access helps to provide a new layer of security, since storage accounts accept connections from clients on any network. To limit access to selected networks, the default action must be changed. Storage accounts should be configured to deny access to traffic from all networks (including internet traffic). Access can be granted to traffic from specific Azure Virtual networks, allowing a secure network boundary for specific applications to be built. Access can also be granted to public internet IP address ranges to enable connections from specific internet or on-premises clients. When network rules are configured, only applications from allowed networks can access a storage account. When calling from an allowed network, applications continue to require proper authorization (a valid access key or SAS token) to access the storage account.
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- network
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.2.3 Ensure Default Network Access Rule for Storage Accounts is Set to Deny
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Security + networking, select Networking. 3. On the Firewalls and virtual networks tab, confirm Public network access is set to Enabled from selected virtual networks and IP addresses (or Disabled) - i.e. the default network rule denies access and only explicitly allowed networks/IP addresses are permitted. Enabled from all networks is non-compliant. Audit from Azure CLI For each storage account, verify the default network action is Deny: az storage account show \ --name <storage-account> \ --resource-group <resource-group> \ --query "networkAcls.defaultAction" \ --output tsv A result of Deny is compliant; Allow is non-compliant. Audit from PowerShell (Get-AzStorageAccountNetworkRuleset -ResourceGroupName <resource-group> -Name <storage-account>).DefaultAction Deny is compliant; Allow is non-compliant. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy
+    ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlad...'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Security + networking, select Networking. 3. On the Firewalls and virtual networks tab, set Public network access to Enabled from selected virtual networks and IP addresses. 4. Add rules to allow traffic only from specific networks and IP addresses. 5. Select Save. Remediate from Azure CLI az storage account update --name <storage-account> --resource-group <resource-group> --default-action Deny Remediate from PowerShell Update-AzStorageAccountNetworkRuleSet -ResourceGroupName <resource-group> - Name <storage-account> -DefaultAction Deny

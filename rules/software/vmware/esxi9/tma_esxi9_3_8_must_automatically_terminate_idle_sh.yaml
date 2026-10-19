@@ -1,0 +1,38 @@
+id: TMA-ESXI9-3.8
+title: Host must automatically terminate idle shells
+description: The host should be configured to automatically terminate idle shell sessions to prevent potential unauthorized access due to forgotten logouts. Setting a timeout for idle SSH connections ensures that any unattended sessions are closed, thereby reducing the security risk. The parameter governing this behavior is UserVars. The audit reads UserVars.ESXiShellInteractiveTimeOut with esxcli and requires 300 seconds or less (0 disables it and fails). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 3.8 Host must automatically terminate idle shells
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /UserVars/ESXiShellInteractiveTimeOut 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/UserVars/ESXiShellInteractiveTimeOut: no integer value'; exit 1 ;; esac
+    if [ "$v" -gt 0 ] && [ "$v" -le 300 ]; then echo compliant; else echo "/UserVars/ESXiShellInteractiveTimeOut = $v (expected 1-300)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /UserVars/ESXiShellInteractiveTimeOut -i 300
+  guidance: "To set the timeout to the desired value, perform the following from the vSphere web client: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand System. 3. Select Advanced System Settings then click Edit. 4. Enter ESXiShellInteractiveTimeOut in the filter. 5. Set the value for this parameter is set to the appropriate value (300 seconds or less). 6. Click OK. Note: A value of 0 disables the ESXi ShellInteractiveTimeOut. Alternately, use the following PowerCLI command: # Set Remove UserVars.ESXiShellInteractiveTimeOut to 300 on all hosts Get-VMHost | Get-AdvancedSetting -Name 'UserVars.ESXiShellInteractiveTimeOut' | Set-AdvancedSetting -Value \"300\""

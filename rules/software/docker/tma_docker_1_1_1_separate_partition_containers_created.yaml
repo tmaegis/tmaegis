@@ -1,0 +1,23 @@
+id: TMA-DOCKER-1.1.1
+title: Ensure a separate partition for containers has been created
+description: Docker stores images and container data under its root directory (default /var/lib/docker); a separate partition stops containers filling the host root filesystem. The audit reads DockerRootDir from docker info and checks it is a mount point (mountpoint -q).
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- host
+- storage
+reference: CIS Docker Benchmark v1.9.0 - 1.1.1 Ensure a separate partition for containers has been created
+audit:
+  type: command
+  command: 'd=$(docker info --format ''{{ .DockerRootDir }}'') || exit 1; [ -n "$d" ] || exit 1; if mountpoint -q -- "$d"; then echo compliant; else echo "not a separate mount: $d"; fi'
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: For new installations, you should create a separate partition for the /var/lib/docker mount point. For systems which have already been installed, you should use the Logical Volume Manager (LVM) within Linux to create a new partition.

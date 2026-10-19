@@ -1,0 +1,20 @@
+id: TMA-WIN11-5.14
+title: Ensure 'Peer Networking Grouping (p2psvc)' is set to 'Disabled' or 'Not Installed'
+description: 'Enables multi-party communication using Peer-to-Peer Grouping. The recommended state for this setting is: Disabled or Not Installed.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 5.14
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\p2psvc'' -Name ''Start'' -ErrorAction SilentlyContinue).''Start''; if (-not ($null -eq $v -or @(4) -contains [int64]$v)) { $bad += ''Start='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\p2psvc')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\p2psvc' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\p2psvc' -Name 'Start' -Value 4 -PropertyType DWord -Force | Out-Null

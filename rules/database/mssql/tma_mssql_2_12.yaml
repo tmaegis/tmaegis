@@ -1,0 +1,18 @@
+id: TMA-MSSQL-2.12
+title: Ensure 'Hide Instance' option is set to 'Yes' for Production SQL Server instances
+description: 'Non-clustered SQL Server instances within production environments should be designated as hidden to prevent advertisement by the SQL Server Browser service. Applies to production instances; reads HideInstance through xp_instance_regread (1 = hidden). Default: By default, this option is disabled (0). Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: low
+tags:
+- mssql
+- database
+- network
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 2.12 Ensure 'Hide Instance' option is set to 'Yes' for Production SQL Server instances
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; DECLARE @v int; EXEC master.sys.xp_instance_regread @rootkey = N'HKEY_LOCAL_MACHINE', @key = N'SOFTWARE\Microsoft\Microsoft SQL Server\MSSQLServer\SuperSocketNetLib', @value_name = N'HideInstance', @value = @v OUTPUT; SELECT ISNULL(@v, 0);"
+  expected_output: '1'
+remediation:
+  type: iac_patch
+  command: 'Perform either the GUI or T-SQL method shown: GUI Method 1. In SQL Server Configuration Manager, expand SQL Server Network Configuration, right-click Protocols for <InstanceName>, and then select Properties. 2. On the Flags tab, in the Hide Instance box, select Yes, and then click OK to close the dialog box. The change takes effect immediately for new connections. T-SQL Method Execute the following T-SQL to remediate: EXEC master.sys.xp_instance_regwrite @rootkey = N''HKEY_LOCAL_MACHINE'', @key = N''SOFTWARE\Microsoft\Microsoft SQL Server\MSSQLServer\SuperSocketNetLib'', @value_name = N''HideInstance'', @type = N''REG_DWORD'', @value = 1;'

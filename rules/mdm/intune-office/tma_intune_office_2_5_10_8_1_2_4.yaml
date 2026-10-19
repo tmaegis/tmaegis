@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.10.8.1.2.4
+title: 'Ensure ''Restrict level of calendar details users can publish'' is set to ''Enabled: Disables Full details and Limited details'''
+description: 'This policy setting controls the level of calendar details that Outlook users can publish to the Microsoft Outlook Calendar Sharing Service. The recommended state for this setting is: Enabled: Disables ''Full details'' and ''Limited details''. Audit: reads the registry value(s) publishcalendardetailspolicy that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.10.8.1.2.4 Ensure ''Restrict level of calendar details users can publish'' is set to ''Enabled: Disables Full details and Limited details'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\Office\16.0\Outlook\options\pubcal'') -Name ''publishcalendardetailspolicy'' -ErrorAction SilentlyContinue).''publishcalendardetailspolicy''; if (-not ($null -ne $v -and @(16384) -contains [int64]$v)) { $_.PSChildName + '':publishcalendardetailspolicy='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Disables ''Full details'' and ''Limited details'': Microsoft Outlook 2016\Outlook Options\Preferences\Calendar Options\Office.com Sharing Service\Restrict level of calendar details users can publish'

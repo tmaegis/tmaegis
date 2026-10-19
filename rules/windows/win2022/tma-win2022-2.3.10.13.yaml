@@ -1,0 +1,21 @@
+id: TMA-WIN2022-2.3.10.13
+title: 'Ensure ''Network access: Sharing and security model for local accounts'' is set to ''Classic - local users authenticate as themselves'''
+description: 'This policy setting determines how network logons that use local accounts are authenticated. The Classic option allows precise control over access to resources, including the ability to assign different types of access to different users for the same resource. The Guest only option allows you to treat all users equally. In this context, all users authenticate as Guest only to receive the same access level to a given resource. The recommended state for this setting is: Classic - local users authenticate as themselves. Note: This setting does not affect interactive logons that are performed remo'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 2.3.10.13
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa'' -Name ''ForceGuest'' -ErrorAction SilentlyContinue).''ForceGuest''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''ForceGuest='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'ForceGuest' -Value 0 -PropertyType DWord -Force | Out-Null

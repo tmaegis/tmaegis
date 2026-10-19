@@ -1,0 +1,24 @@
+id: TMA-GITHUB-1.1.15
+title: Ensure pushing or merging of new code is restricted to specific individuals or teams
+description: 'Ensure that only trusted users can push or merge new code to protected branches. Requiring that only trusted users may push or merge new changes reduces the risk of unverified code, especially malicious code, to a protected branch by reducing the number of trusted users who are capable of doing such. Checks the default branch: push access is restricted to specific users/teams/apps. Satisfied by classic branch protection. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.15 Ensure pushing or merging of new code is restricted to specific individuals or teams
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    p=$(gh api "repos/$R/branches/$B/protection" --jq '.restrictions != null' 2>/dev/null) || p=false
+    [ "$p" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: enable Restrict who can push to matching branches and select only trusted users, teams or apps.'

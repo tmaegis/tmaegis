@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-3.1
+title: Restrict access to cross datavolumes cloning
+description: Datavolume cross-namespace cloning allows cloning a datavolume from one namespace to another, breaking the namespace isolation. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 3.1 Restrict access to cross datavolumes cloning
+audit:
+  type: manual
+  command: 'To check which role bindings have the ability to clone across namespaces, use the following command where to list all the rolebinding and verify which one has a ClusterRole which enables it to operate on data volumes and have bound a service account in another namespace . Ensure that the destination namespace is a desired one. $ oc get rolebinding - n <source - namespace> <allow - clone - to - user> - oyaml Output will be in the following format: apiVersion: rbac.authorization.k8s.io/v1 kind: RoleBinding metadata: name: <role - binding - name> namespace: <source namespace> subjects: - kind: ServiceAccount name: default namespace: <destination namespace> roleRef: kind: ClusterRole name: ...'
+remediation:
+  type: iac_patch
+  command: Remove any rolebinding resources that grant unintended access across namespaces. Please refer to the latest OpenShift documentation for details on this process.

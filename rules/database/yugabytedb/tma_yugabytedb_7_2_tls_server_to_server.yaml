@@ -1,0 +1,18 @@
+id: TMA-YUGABYTEDB-7.2
+title: 'Ensure TLS is enabled and configured correctly: server to server'
+description: YugabyteDB clusters can be configured to use server-to-server encryption to protect data in transit between YugabyteDB servers. When enabled, Transport Layer Security (TLS), the successor to the deprecated Secure Sockets Layer (SSL), is used to ensure data protection for YSQL and YCQL only. Note that there is no planned support for YEDIS. Reads the YB-TServer GFlags from the web UI at ${YB_TSERVER_WEB:-127.0.0.1:9000}/varz; run it against every TServer. Passes when use_node_to_node_encryption=true and allow_insecure_connections=false (the flags the benchmark remediation sets); check the YB-Master web UI (port 7000) the same way. The benchmark audit also expects SHOW ssl to return on.
+target: yugabytedb
+level: 1
+severity: high
+tags:
+- yugabytedb
+- tls
+- encryption
+reference: 'CIS YugabyteDB Benchmark v2.0.0 - 7.2 Ensure TLS is enabled and configured correctly: server to server'
+audit:
+  type: command
+  command: out=$(curl -sf "http://${YB_TSERVER_WEB:-127.0.0.1:9000}/varz?raw=1" 2>/dev/null) || exit 1; if printf '%s\n' "$out" | grep -qE -- '--use_node_to_node_encryption=(true)([^[:alnum:]_]|$)' && printf '%s\n' "$out" | grep -qE -- '--allow_insecure_connections=(false)([^[:alnum:]_]|$)'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create node certificates, then start every YB-Master and YB-TServer with --use_node_to_node_encryption=true --allow_insecure_connections=false --certs_dir=<dir> and perform a rolling restart.

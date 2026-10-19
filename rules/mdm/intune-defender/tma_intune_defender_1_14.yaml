@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-1.14
+title: Ensure 'Turn off routine remediation' is set to 'Disabled'
+description: 'This policy setting configures whether Microsoft Defender Antivirus automatically takes action on all detected threats. The action to be taken on a particular threat is determined by the combination of the policy-defined action, user-defined action, and the signature- defined action. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 1.14 Ensure 'Turn off routine remediation' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender'' -Name ''DisableRoutinelyTakingAction'' -ErrorAction SilentlyContinue).''DisableRoutinelyTakingAction''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''DisableRoutinelyTakingAction='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Disabled: Administrative Templates\Windows Components\Microsoft Defender Antivirus\Turn off routine remediation'

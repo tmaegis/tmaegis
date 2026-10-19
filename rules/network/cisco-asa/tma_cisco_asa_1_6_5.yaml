@@ -1,0 +1,20 @@
+id: TMA-CISCO-ASA-1.6.5
+title: Ensure 'Telnet' is disabled
+description: Disables the telnet access to the security appliance in the case it has been configured. Telnet is an unsecure protocol as username and password are conveyed in clear text during the administrator authentication and can be retrieved through network sniffing. Fails if any 'telnet <source> <mask> <ifname>' access line is configured. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: high
+tags:
+- cisco-asa
+- network
+- management-plane
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.6.5 Ensure 'Telnet' is disabled
+audit:
+  type: config_regex
+  pattern: (?m)^telnet (?:\d|[0-9a-fA-F]*:)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Run the following to remove the telnet access
+    no telnet 0.0.0.0 0.0.0.0 <interface_name>

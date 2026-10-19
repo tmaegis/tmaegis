@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.43.13.3
+title: Ensure 'Scan removable drives' is set to 'Enabled'
+description: 'This policy setting manages whether or not to scan for malicious software and unwanted software in the contents of removable drives, such as USB flash drives, when running a full scan. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.43.13.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''DisableRemovableDriveScanning'' -ErrorAction SilentlyContinue).''DisableRemovableDriveScanning''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''DisableRemovableDriveScanning='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan' -Name 'DisableRemovableDriveScanning' -Value 0 -PropertyType DWord -Force | Out-Null

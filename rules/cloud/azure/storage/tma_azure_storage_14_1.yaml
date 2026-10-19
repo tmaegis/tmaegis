@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-14.1
+title: Ensure 'Public network access' is set to 'Disabled' on Azure Elastic SAN
+description: Azure Elastic SAN is a scalable, high-performance cloud-based storage solution. Disabling public network access at the SAN level ensures that Elastic SAN resources are accessible only through private networks. Disabling public network access for Azure Elastic SAN at the SAN level enhances security by preventing unauthorized external access to sensitive storage resources.
+target: azure
+level: 2
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- network
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 14.1 Ensure 'Public network access' is set to 'Disabled' on Azure Elastic SAN
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Elastic SANs. 2. Click the name of an Elastic SAN. 3. Under Settings, click Networking. 4. Ensure that Public network access is set to Disabled. 5. Repeat steps 1-4 for each Elastic SAN. Audit from Azure CLI Run the following command to list Elastic SANs: az elastic-san list For each Elastic SAN, run the following command: az elastic-san show --resource-group <resource-group> --name <elastic-san> Ensure that publicNetworkAccess is set to Disabled. Audit from PowerShell Run the following command to list Elastic SANs: Get-AzElasticSan Run the following command to get the Elastic SAN in a resource group with a given name: $elasticsan = Get-AzElasticSan -ResourceGroupName <resource-group> -Name <elastic-san> Run the following command to get the public network access setting for the Elastic SAN: $elasticsan.PublicNetworkAccess Ensure that the command returns Disabled.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Elastic SANs. 2. Click the name of an Elastic SAN. 3. Under Settings, click Networking. 4. Under Public network access, click the radio button next to Disabled. 5. Click Apply. 6. Repeat steps 1-5 for each Elastic SAN. Remediate from Azure CLI For each Elastic SAN requiring remediation, run the following command to disable public network access: az elastic-san update --resource-group <resource-group> --name <elastic-san> --public-network-access Disabled Remediate from PowerShell For each Elastic SAN requiring remediation, run the following command to disable public network access: Update-AzElasticSan -ResourceGroupName <resource-group> -Name <elastic-san> - PublicNetworkAccess Disabled'

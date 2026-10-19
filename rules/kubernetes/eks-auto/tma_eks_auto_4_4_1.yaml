@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-4.4.1
+title: Mount secrets as files instead of environment variables
+description: Secrets for EKS workloads are better exposed as mounted files than as environment variables. Kubernetes Secrets can be consumed either way, and AWS supports file delivery from AWS Secrets Manager and Parameter Store through the AWS Secrets and Configuration Provider with the Secrets Store CSI Driver. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.4.1 Mount secrets as files instead of environment variables
+audit:
+  type: manual
+  command: Review workload manifests and identify any Pod, Deployment, DaemonSet, StatefulSet, Job, or CronJob that exposes secrets through environment variables instead of mounted files. Check for both direct secret references through env[].valueFrom.secretKeyRef and bulk secret imports through envFrom[].secretRef, because either pattern exposes secret data as environment variables. Prefer workloads that consume secrets through mounted Secret volumes or file delivery from AWS secrets integrations instead.
+remediation:
+  type: iac_patch
+  command: Update workloads to consume secrets as mounted files instead of environment variables. Replace env[].valueFrom.secretKeyRef and envFrom[].secretRef usage with Kubernetes Secret volumes or the AWS Secrets and Configuration Provider with the Secrets Store CSI Driver, and then update the application to read the secret from the mounted file path. This reduces the chance of secret values appearing in logs and aligns with the recommended file delivery pattern for EKS workloads. For Kubernetes Secrets, mount the Secret as a volume and update the application configuration to read from the mounted path rather than from environment variables.

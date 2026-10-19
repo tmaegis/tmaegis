@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.15.2
+title: Ensure 'Guided Switch Enabled' is set to 'Disabled'
+description: 'This policy setting allows Microsoft Edge to prompt the user to switch to the appropriate profile when Microsoft Edge detects that a link is a personal or work link. The recommended state for this setting is: Disabled. Rationale: Linking personal Microsoft Accounts to a company device could inadvertently lead to data being transferred from the environment to a personal device. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:GuidedSwitchEnabled (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.15.2 Ensure 'Guided Switch Enabled' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''GuidedSwitchEnabled'' -ErrorAction SilentlyContinue).''GuidedSwitchEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'GuidedSwitchEnabled' -Value 0 -PropertyType DWord -Force | Out-Null

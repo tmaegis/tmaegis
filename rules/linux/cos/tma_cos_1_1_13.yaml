@@ -1,0 +1,33 @@
+id: TMA-COS-1.1.13
+title: Disable Automounting
+description: autofs allows automatic mounting of devices, typically including CD/DVDs and USB drives. With automounting enabled anyone with physical access could attach a USB drive or disc and have its contents available in system even if they lacked permissions to mount it themselves.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 1.1.13 Disable Automounting
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled autofs'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- disabled || { echo step1: missing disabled; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    systemctl disable --now autofs 2>/dev/null; chkconfig autofs off 2>/dev/null; systemctl stop autofs 2>/dev/null; true
+  guidance: "Run the following command to disable autofs: # systemctl disable autofs"

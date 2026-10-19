@@ -1,0 +1,56 @@
+id: TMA-CHROME-1.27
+title: Ensure 'Suppress lookalike domain warnings on domains' is set to 'Disabled'
+description: "This setting prevents the display of lookalike URL warnings on the sites listed. These warnings are typically shown on sites that Google Chrome believes might be trying to spoof another site with which the user is familiar. - Disabled (0) or set to an empty list: Warnings may appear on any site the user visits. Rationale: Look-alike domains are intentionally misleading to give users the false impression that they\u2019re interacting with trusted brands, leading to significant reputation damage, financial losses, and data compromise for established enterprises. The policy is Disabled when it is not present: the audit prints 'absent' when the list key HKLM\\SOFTWARE\\Policies\\Google\\Chrome\\LookalikeWarningAllowlistDomains is missing or empty, otherwise the configured entries."
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 1.27 Ensure 'Suppress lookalike domain warnings on domains' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$l = @((Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\LookalikeWarningAllowlistDomains'' -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike ''PS*'' } | ForEach-Object { "$($_.Value)" }); if ($l.Count -eq 0) { ''absent'' } else { ''configured: '' + ($l -join '', '') }'
+  expected_output: absent
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    $tmaBk = Join-Path $env:ProgramData 'TMAegis\backup'
+    function Backup-TmaKey([string]$p) {
+      try {
+        if (Test-Path -LiteralPath $p) {
+          $k = $p -replace '^Registry::', ''
+          New-Item -ItemType Directory -Force -Path $tmaBk | Out-Null
+          $f = Join-Path $tmaBk (($k -replace '[\\/:*?"<>|]', '_') + '.reg')
+          if (-not (Test-Path -LiteralPath $f)) { & reg.exe export $k $f | Out-Null }
+        }
+      } catch { }
+    }
+    function Set-TmaReg([string]$p, [string]$n, $v, [string]$t) {
+      Backup-TmaKey $p
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      New-ItemProperty -LiteralPath $p -Name $n -Value $v -PropertyType $t -Force | Out-Null
+    }
+    function Remove-TmaValue([string]$p, [string]$n) {
+      if ((Test-Path -LiteralPath $p) -and ($null -ne (Get-ItemProperty -LiteralPath $p -Name $n -ErrorAction SilentlyContinue))) {
+        Backup-TmaKey $p
+        Remove-ItemProperty -LiteralPath $p -Name $n -Force
+      }
+    }
+    function Remove-TmaKey([string]$p) {
+      if (Test-Path -LiteralPath $p) { Backup-TmaKey $p; Remove-Item -LiteralPath $p -Recurse -Force }
+    }
+    function Set-TmaList([string]$p, [string[]]$items, [bool]$replace) {
+      Backup-TmaKey $p
+      if ($replace) { Remove-TmaKey $p }
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      $have = @((Get-ItemProperty -LiteralPath $p -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Value)" })
+      $n = [int](@((Get-Item -LiteralPath $p).GetValueNames()) | ForEach-Object { $x = 0; if ([int]::TryParse($_, [ref]$x)) { $x } else { 0 } } | Measure-Object -Maximum).Maximum
+      foreach ($i in $items) {
+        if ($have -notcontains $i) { $n++; New-ItemProperty -LiteralPath $p -Name "$n" -Value $i -PropertyType String -Force | Out-Null }
+      }
+    }
+    Remove-TmaKey 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\LookalikeWarningAllowlistDomains'
+  guidance: "Configure through Group Policy: Computer Configuration\\Policies\\Administrative Templates\\Google\\Google Chrome\\Suppress lookalike domain warnings on domains = Disabled. Locally, remove the policy entries at HKLM\\SOFTWARE\\Policies\\Google\\Chrome\\LookalikeWarningAllowlistDomains after reviewing them."

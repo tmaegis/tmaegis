@@ -1,0 +1,22 @@
+id: TMA-ROS1-6.2.13
+title: Ensure no duplicate UIDs exist
+description: Although the useradd program will not let you create a duplicate User ID (UID), it is possible for an administrator to manually edit the /etc/passwd file and change the UID field. The audit requires no duplicate UIDs in /etc/passwd. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.13 Ensure no duplicate UIDs exist
+audit:
+  type: command
+  shell: bash
+  command: |-
+    d=$(cut -d: -f3 /etc/passwd | sort | uniq -d) || exit 1
+    [ -z "$d" ] && echo compliant || { echo 'duplicate UIDs:'; printf '%s\n' "$d"; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique UIDs and review all files owned by the shared UIDs to determine which UID they are supposed to belong to.

@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.8.4.2
+title: 'Ensure ''Publisher Automation Security Level'' is set to ''Enabled: By UI (prompted)'''
+description: 'This policy setting controls whether macros opened programmatically by another application can run in Publisher and how those macros will run. The recommended state for this setting is: By UI (prompted). Note: With the above macro functionality configuration selected, macro behavior will be determined by the setting VBA Macro Notification Settings in the Trust Center. Audit: reads the registry value(s) automationsecuritypublisher that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.8.4.2 Ensure ''Publisher Automation Security Level'' is set to ''Enabled: By UI (prompted)'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\common\security'') -Name ''automationsecuritypublisher'' -ErrorAction SilentlyContinue).''automationsecuritypublisher''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $_.PSChildName + '':automationsecuritypublisher='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: By UI (prompted): Microsoft Publisher 2016\Security\Publisher Automation Security Level'

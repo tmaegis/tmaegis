@@ -1,0 +1,17 @@
+id: TMA-AWS-SG-NO-ADMIN-FROM-IPV4-ANY
+title: Ensure no security groups allow ingress from 0.0.0.0/0 to remote server administration ports
+description: SSH (22) and RDP (3389) open to the whole IPv4 Internet are brute-forced continuously. No security group in any enabled region may allow 0.0.0.0/0 to a rule covering 22 or 3389 (or all protocols). Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- network
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Networking - no security group ingress from 0.0.0.0/0 to remote administration ports (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  out=$(aws ec2 describe-security-groups --region \"$r\" --query 'SecurityGroups[?IpPermissions[?(IpProtocol==`\"-1\"` || (IpProtocol!=`\"icmp\"` && IpProtocol!=`\"icmpv6\"` && ((FromPort<=`22` && ToPort>=`22`) || (FromPort<=`3389` && ToPort>=`3389`)))) && IpRanges[?CidrIp==`\"0.0.0.0/0\"`]]].GroupId' --output text 2>/dev/null) || exit 1\n  [ -z \"$out\" ] || { echo \"open admin port: $r $out\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove the 0.0.0.0/0 ingress rules for 22/3389 (aws ec2 revoke-security-group-ingress) and allow only specific administrative CIDRs, or use SSM Session Manager / EC2 Instance Connect Endpoint instead of open ports.

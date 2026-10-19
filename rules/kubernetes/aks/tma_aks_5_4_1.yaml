@@ -1,0 +1,22 @@
+id: TMA-AKS-5.4.1
+title: Restrict Access to the Control Plane Endpoint
+description: The AKS control plane endpoint should be exposed only through approved network paths rather than being broadly reachable. In AKS, the control plane is the Kubernetes API server. For public clusters, API server authorized IP ranges can be used to limit access to specific public IP addresses or CIDR blocks and deny all other sources. Requires the az CLI (logged in) with read access to the cluster named by AKS_RG and AKS_NAME. Passes for a private cluster or a public API server limited by authorized IP ranges (not 0.0.0.0/0).
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- managed-services
+- network
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.4.1 Restrict Access to the Control Plane Endpoint
+audit:
+  type: command
+  command: |-
+    priv=$(az aks show --resource-group "${AKS_RG:?set AKS_RG}" --name "${AKS_NAME:?set AKS_NAME}" --query apiServerAccessProfile.enablePrivateCluster -o tsv) || exit 1
+    ranges=$(az aks show --resource-group "${AKS_RG:?set AKS_RG}" --name "${AKS_NAME:?set AKS_NAME}" --query 'apiServerAccessProfile.authorizedIpRanges' -o tsv) || exit 1
+    case "$priv" in [Tt]rue) echo compliant; exit 0;; esac
+    if [ -n "$ranges" ] && ! printf '%s\n' "$ranges" | grep -q '0\.0\.0\.0/0'; then echo compliant; else echo "noncompliant: public API server without authorized IP ranges"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the cluster is intended to expose the Kubernetes API server only over private network paths, use a private AKS cluster; if the cluster is already private but a public DNS name is still published, disable the public FQDN. If the cluster must keep a public API server endpoint, configure authorized IP ranges so only approved administrator and egress CIDR ranges can reach it. Microsoft notes that authorized IP ranges apply only to the public API server endpoint, recommends including both the cluster egress IP and the networks used to administer the cluster, and states that rule updates can take up to two minutes to propagate. 1. If enablePrivateCluster is false and the cluster should be managed only over private connectivity, move to private cluster mode using the Microsoft-supported private-cluster workflow for that cluster type.

@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-7.1
+title: Ensure security-relevant runtime GFlags are configured correctly
+description: 'YugabyteDB exposes runtime parameters across five context levels: backend, postmaster, sighup, superuser, and user. Unauthorized or misconfigured settings at these levels can enable denial of service, information disclosure, audit evasion, or privilege escalation.'
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- hardening
+reference: CIS YugabyteDB Benchmark v2.0.0 - 7.1 Ensure security-relevant runtime GFlags are configured correctly
+audit:
+  type: manual
+  command: Run SELECT name, setting, context FROM pg_settings WHERE name IN ('ignore_system_indexes','jit_debugging_support','jit_profiling_support','log_connections','log_disconnections','allow_system_table_mods','logging_collector','shared_preload_libraries','password_encryption','ssl','log_hostname','log_line_prefix','log_statement','log_error_verbosity','session_preload_libraries','local_preload_libraries') ORDER BY name; and compare each value with the benchmark reference table.
+remediation:
+  type: iac_patch
+  command: Set all required parameters in a single --ysql_pg_conf_csv GFlag on every YB-TServer. The flag may be specified only once per process; if it is repeated, only the last occurrence takes effect. Entries whose values contain commas (such as log_line_prefix) must be enclosed in double quotes per the flag's CSV format.

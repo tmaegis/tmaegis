@@ -1,0 +1,21 @@
+id: TMA-CISCO-IOS-1.2.3
+title: Set 'no exec' for 'line aux 0'
+description: The 'no exec' command restricts a line to outgoing connections only. Unused ports should be disabled, if not required, since they provide a potential access path for attackers. Some devices include both an auxiliary and console port that can be used to locally connect to and configure the device. Fails if a 'line aux 0' block exists without 'no exec'; passes on platforms without an AUX line. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all' or 'show startup-config').
+target: cisco-ios
+level: 1
+severity: medium
+tags:
+- cisco-ios
+- network
+- management-plane
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.2.3 Set 'no exec' for 'line aux 0'
+audit:
+  type: config_regex
+  pattern: (?m)^line aux 0[^\n]*\n(?:[ \t]+(?:$|[^n \t\n]|n(?:$|[^o\n]|o(?:$|[^ \n]| (?:$|[^e\n]|e(?:$|[^x\n]|x(?:$|[^e\n]|e(?:$|[^c\n])))))))[^\n]*\n)*(?:[^ \t]|\z)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Disable the EXEC process on the auxiliary port.
+    line aux 0
+    no exec

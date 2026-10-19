@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.1
+title: Ensure histsize is configured
+description: 'Defines the number of previous passwords that a user may not reuse. In setting the histsize attribute, it enforces a minimum number of previous passwords a user cannot reuse. Audit: reads `lssec -f /etc/security/user -s default -a histsize`.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.1 Ensure histsize is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a histsize 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*histsize=\([^ ]*\).*/\1/p'); if { [ -z "$v" ] || [ "$v" = 0 ]; }; then echo compliant; else echo "histsize=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a histsize=0

@@ -1,0 +1,21 @@
+id: TMA-WIN2019-2.3.7.5
+title: 'Configure ''Interactive logon: Message title for users attempting to log on'''
+description: This policy setting specifies the text displayed in the title bar of the window that is displayed to users when they log on to the system. Configure this setting in a manner that is consistent with the security and operational requirements of the organization.
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 2.3.7.5
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''LegalNoticeCaption'' -ErrorAction SilentlyContinue).''LegalNoticeCaption''; if (-not ($null -ne $v -and (($v -replace ''\s'','''') -eq ''text''))) { $bad += ''LegalNoticeCaption='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'LegalNoticeCaption' -Value 'text' -PropertyType String -Force | Out-Null

@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-1.3.1
+title: Ensure 'Minimum Password Complexity' is enabled
+description: 'This checks all new passwords to ensure that they meet basic requirements for strong passwords. PASS requires mgt-config password-complexity enabled yes (also set block-username-inclusion yes). Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- authentication
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.3.1 Ensure 'Minimum Password Complexity' is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^set mgt-config password-complexity enabled yes[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set mgt-config password-complexity enabled yes
+    set mgt-config password-complexity block-username-inclusion yes
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Management > Minimum Password Complexity. Set Enabled to be checked Set that the various password settings to values that are appropriate to your organization. It is suggested that there at least be some special characters enforced, and that a minimum length be set. Ensure that non-zero values are set for Minimum Uppercase, Lowercase and Special Characters. "Block Username Inclusion" should be enabled. Operationally, dictionary words should be avoided for all passwords - passphrases are a much better alternative.

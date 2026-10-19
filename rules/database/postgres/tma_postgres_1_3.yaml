@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-1.3
+title: Ensure systemd Service Files Are Enabled
+description: Confirm, and correct if necessary, the PostgreSQL systemd service is enabled. Passes when at least one postgresql* systemd service unit is enabled.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- service
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 1.3 Ensure systemd Service Files Are Enabled
+audit:
+  type: command
+  command: out=$(systemctl list-unit-files --type=service --no-legend 'postgresql*' 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '$2=="enabled"{e=1} END{print e?"enabled":"not-enabled"}'
+  expected_output: enabled
+remediation:
+  type: iac_patch
+  command: Enable the PostgreSQL unit for the default target, e.g. systemctl enable postgresql-18 (PGDG) or systemctl enable postgresql (Debian/Ubuntu), then confirm with systemctl is-enabled.

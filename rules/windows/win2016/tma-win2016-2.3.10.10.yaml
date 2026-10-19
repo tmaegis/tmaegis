@@ -1,0 +1,21 @@
+id: TMA-WIN2016-2.3.10.10
+title: 'Ensure ''Network access: Restrict anonymous access to Named Pipes and Shares'' is set to ''Enabled'''
+description: 'When enabled, this policy setting restricts anonymous access to only those shares and pipes that are named in the Network access: Named pipes that can be accessed anonymously and Network access: Shares that can be accessed anonymously settings. This policy setting controls null session access to shares on your computers by adding RestrictNullSessAccess with the value 1 in the HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Para meters registry key. This registry value toggles null session shares on or off to control whether the server service restricts unauthenticated clients'
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 2.3.10.10
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters'' -Name ''RestrictNullSessAccess'' -ErrorAction SilentlyContinue).''RestrictNullSessAccess''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RestrictNullSessAccess='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters' -Name 'RestrictNullSessAccess' -Value 1 -PropertyType DWord -Force | Out-Null

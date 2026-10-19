@@ -1,0 +1,16 @@
+id: TMA-TDSQL-5.6
+title: Ensure No Excessive `FILE` Privilege Grants
+description: The FILE privilege allows users to read and write server filesystem files via LOAD DATA INFILE, SELECT ... INTO OUTFILE, LOAD_FILE(), and similar.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- privileges
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.6 Ensure No Excessive `FILE` Privilege Grants
+audit:
+  type: manual
+  command: SELECT User, Host FROM mysql.user WHERE File_priv = 'Y'; Confirm only accounts that genuinely require it hold this privilege.
+remediation:
+  type: iac_patch
+  command: REVOKE FILE ON *.* FROM 'username'@'host';

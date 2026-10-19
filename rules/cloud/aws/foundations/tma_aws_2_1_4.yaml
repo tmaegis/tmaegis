@@ -1,0 +1,17 @@
+id: TMA-AWS-2.1.4
+title: Ensure Organizational Units are structured by environment and sensitivity
+description: Ensure that AWS Organizations Organizational Units (OUs) are structured primarily by environment (for example, production, non-production, sandbox) and sensitivity (for example, security, logging, shared services, regulated workloads), rather than mirroring the corporate org chart. OUs should group accounts that share similar security requirements and controls so that appropriate authorization policies and other guardrails can be applied consistently at the OU level. A clear OU structure based on environment and sensitivity makes it easier to apply consistent guardrails and centralized security controls to accounts that have similar risk profiles and compliance needs. Poorly defined or ad-hoc OU structures complicate policy management, increase the chance of misapplied controls, and can lead to mixing workloads with different data sensitivities under the same set of controls.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.1.4 Ensure Organizational Units are structured by environment and sensitivity
+audit:
+  type: manual
+  command: '1. From the management account, use AWS Organizations console to obtain: - The full OU hierarchy (root, top-level and child OUs). - The list of accounts in each OU. 2. Review top-level and key OUs and determine whether they are clearly aligned to: - Environment (for example, production, non-production, sandbox). - Sensitivity/function (for example, security, logging, shared services, regulated). - Note any OUs whose purpose is unclear or that appear to be organized mainly by department or owner rather than environment/sensitivity. 3. For each environment/sensitivity OU, select a sample of accounts and verify that their primary workloads match the OU’s stated purpose. - Note any accounts that mix production and non-production workloads in the same OU when separate OUs are defined. - Note any accounts that place highly sensitive or regulated workloads in OUs that are intended for lower-sensitivity use.'
+remediation:
+  type: iac_patch
+  command: '1. Work with security, platform, and application teams to agree on a small set of top-level OUs such as: - Security / Management - Shared Services / Infrastructure - Prod - Non-Prod (dev, test, staging) - You may also define dedicated OUs for highly regulated workloads. 2. In the AWS Organizations console (management account), navigate to AWS Accounts. Under the root, create the agreed top-level OUs. If needed, create child OUs under these. 3. Export or list all existing accounts and their current OUs. Create a simple mapping from each account to its target OU based on environment and sensitivity. 4. In the AWS Organizations console (management account), navigate to AWS Accounts. Move accounts into the new environment/sensitivity-based OUs according to your mapping. - Start with low-risk accounts (for example, sandbox and non-production) to validate effects of inherited policies and guardrails before moving production and high-sensitivity accounts. 5. After accounts have been
+    moved, remove old OUs that no longer reflect the target structure. - Ensure no active accounts remain directly under the root unless explicitly justified and documented. 6. Update architecture docs, onboard...'

@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.4
+title: Ensure passwords are controlled by password attributes
+description: 'Ensure passwords are required to pass password attribute controls. If password restrictions are not enforced for some accounts, those accounts represent a much greater risk of being compromised by an attacker as they may have weaker passwords vulnerable to brute force attack or provide an indefinite window of opportunity ... Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.4 Ensure passwords are controlled by password attributes
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; [ -r /etc/security/passwd ] || exit 1; out=$( { grep NOCHECK /etc/security/passwd ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'In the file /etc/security/passwd clear the NOCHECK attribute from all users: #!/usr/bin/ksh -e # Copyright AIXTools, 2022 /usr/bin/grep -p NOCHECK /etc/security/passwd | /usr/bin/egrep ":$" | sed -e ''s/://'' | while read USER; do /usr/bin/pwdadm -c $USER /usr/bin/pwdadm -f ADMCHG $USER done'

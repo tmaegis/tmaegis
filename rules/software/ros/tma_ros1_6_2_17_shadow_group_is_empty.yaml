@@ -1,0 +1,46 @@
+id: TMA-ROS1-6.2.17
+title: Ensure shadow group is empty
+description: The shadow group allows system programs which require access the ability to read the /etc/shadow file. No users should be assigned to the shadow group. The audit requires the shadow group to have no members and no user to have it as primary group. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.17 Ensure shadow group is empty
+audit:
+  type: command
+  shell: bash
+  command: |-
+    g=$(awk -F: '$1 == "shadow" {print $3":"$4}' /etc/group) || exit 1
+    [ -n "$g" ] || { echo compliant; exit 0; }
+    gid=${g%%:*}; mem=${g#*:}
+    [ -z "$mem" ] || { echo "shadow group members: $mem"; exit 0; }
+    p=$(awk -F: -v g="$gid" '$4 == g {print $1}' /etc/passwd)
+    [ -z "$p" ] && echo compliant || echo "users with primary group shadow: $p"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    tma_bak /etc/group
+    sed -i -E 's/^(shadow:[^:]*:[^:]*:).*/\1/' /etc/group
+    true
+  guidance: "Remove all users from the shadow group, and change the primary group of any users with shadow as their primary group."

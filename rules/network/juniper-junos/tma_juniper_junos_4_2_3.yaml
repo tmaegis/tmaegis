@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-4.2.3
+title: Ensure authentication check is not suppressed
+description: IS-IS Neighbors should be authenticated. Where it is deployed, IS-IS routing is vital for normal operation of an organization's network infrastructure. Correct route information is required for routers to correctly direct traffic through the network. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.2.3 Ensure authentication check is not suppressed
+audit:
+  type: config_regex
+  pattern: (?m)^set protocols isis [^\n]*\bno-authentication-check\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have deployed IS-IS in your network and have disabled authentication checking, re-enable it by issuing the following command from the hierarchy for each level at which it had been set:
+    delete protocols isis level <level> no-authentication-check

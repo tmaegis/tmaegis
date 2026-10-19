@@ -1,0 +1,17 @@
+id: TMA-M365-AUTO-FORWARD-BLOCKED
+title: Ensure automatic forwarding to external domains is blocked in outbound spam policies
+description: 'Attackers who compromise a mailbox commonly add forwarding rules to exfiltrate mail. Prints the number of outbound spam filter policies whose AutoForwardingMode is not Off (expected 0). Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- mail-flow
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange Online Protection / Outbound spam policy - automatic forwarding (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $bad = @(Get-HostedOutboundSpamFilterPolicy -ErrorAction Stop | Where-Object { "$($_.AutoForwardingMode)" -ne ''Off'' }); $bad.Count'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-HostedOutboundSpamFilterPolicy -Identity Default -AutoForwardingMode Off (and for each custom policy). Allow approved exceptions with a dedicated policy scoped to specific senders.

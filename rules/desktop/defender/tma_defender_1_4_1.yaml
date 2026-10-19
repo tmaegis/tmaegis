@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.4.1
+title: Ensure 'Enable EDR in block mode' is set to 'Enabled'
+description: 'This policy setting controls whether Microsoft Defender Antivirus Endpoint Detection and Response (EDR) is enabled in block mode (passive remediation). The recommended state for this setting is: Enabled. Note: This setting is available with Microsoft Defender Antivirus platform release v4.18.2202.X and newer. Rationale: When Microsoft Defender Antivirus is not the primary antivirus product and is running in passive mode, EDR in block mode provides added protection against malicious artifacts. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Features:PassiveRemediation (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.4.1 Ensure 'Enable EDR in block mode' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Features'' -Name ''PassiveRemediation'' -ErrorAction SilentlyContinue).''PassiveRemediation''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Features'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'PassiveRemediation' -Value 1 -PropertyType DWord -Force | Out-Null

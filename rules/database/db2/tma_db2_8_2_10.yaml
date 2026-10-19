@@ -1,0 +1,17 @@
+id: TMA-DB2-8.2.10
+title: Turn Off ALLOW_KEY_INSERT_WITHOUT_KEYSTORE_BACKUP
+description: The ALLOW_KEY_INSERT_WITHOUT_KEYSTORE_BACKUP setting in ekeystore.cfg file for external key managers (KMIP or PKCS11) allows writing to the keystore. The setting is false by default. Check that the setting has not been turned on.
+target: db2
+level: 2
+severity: low
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.2.10 Turn Off ALLOW_KEY_INSERT_WITHOUT_KEYSTORE_BACKUP
+audit:
+  type: manual
+  command: Check that ekeystore.cfg file that's being used has the setting turned OFF. ALLOW_KEY_INSERT_WITHOUT_KEYSTORE_BACKUP=false
+remediation:
+  type: iac_patch
+  command: $ cat ekeystore.cfg VERSION=1 PRODUCT_NAME=Luna ALLOW_KEY_INSERT_WITHOUT_KEYSTORE_BACKUP=false LIBRARY=/usr/safenet/lunaclient/luna6.1/lib/libCryptoki2_64.so SLOT_LABEL=DB2Partition NEW_OBJECT_TYPE=PRIVATE KEYSTORE_STASH=/home/db2inst1/sqllib/security/pkcs11.sth For maximum security, turn the setting off and create the keys outside of Db2. This way you will also be able to manage the labeling scheme across the Db2 instances and prevent name collision between different databases.

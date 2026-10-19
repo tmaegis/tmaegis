@@ -1,0 +1,56 @@
+id: TMA-DEFENDER-1.6.1.7
+title: 'Ensure ''Configure Attack Surface Reduction rules: Set the state for each ASR rule'' is set to ''01443614-cd74-433a-b99e- 2ecdc07bfc25:2'' or higher'
+description: 'This rule blocks executable files, such as .exe, .dll, or .scr, from launching. Rule ID and name: - 01443614-cd74-433a-b99e-2ecdc07bfc25 (Block executable files from running unless they meet a prevalence, age, or trusted list criterion) The recommended state for this setting is: 01443614-cd74-433a-b99e- 2ecdc07bfc25:2 (Audit) or higher. Rationale: Attack surface reduction helps prevent actions and apps that are typically used by exploit-seeking malware to infect machines. Launching untrusted or unknown executable files can be risky, as it might not be initially clear if the files are malicious. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\ASR\Rules:01443614-cd74-433a-b99e-2ecdc07bfc25 (REG_SZ); compliant when it is 2 or 1.'
+target: defender
+level: 1
+severity: high
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.6.1.7 Ensure ''Configure Attack Surface Reduction rules: Set the state for each ASR rule'' is set to ''01443614-cd74-433a-b99e- 2ecdc07bfc25:2'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\ASR\Rules'' -Name ''01443614-cd74-433a-b99e-2ecdc07bfc25'' -ErrorAction SilentlyContinue).''01443614-cd74-433a-b99e-2ecdc07bfc25''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(''2'',''1'') -contains "$v")) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    $tmaBk = Join-Path $env:ProgramData 'TMAegis\backup'
+    function Backup-TmaKey([string]$p) {
+      try {
+        if (Test-Path -LiteralPath $p) {
+          $k = $p -replace '^Registry::', ''
+          New-Item -ItemType Directory -Force -Path $tmaBk | Out-Null
+          $f = Join-Path $tmaBk (($k -replace '[\\/:*?"<>|]', '_') + '.reg')
+          if (-not (Test-Path -LiteralPath $f)) { & reg.exe export $k $f | Out-Null }
+        }
+      } catch { }
+    }
+    function Set-TmaReg([string]$p, [string]$n, $v, [string]$t) {
+      Backup-TmaKey $p
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      New-ItemProperty -LiteralPath $p -Name $n -Value $v -PropertyType $t -Force | Out-Null
+    }
+    function Remove-TmaValue([string]$p, [string]$n) {
+      if ((Test-Path -LiteralPath $p) -and ($null -ne (Get-ItemProperty -LiteralPath $p -Name $n -ErrorAction SilentlyContinue))) {
+        Backup-TmaKey $p
+        Remove-ItemProperty -LiteralPath $p -Name $n -Force
+      }
+    }
+    function Remove-TmaKey([string]$p) {
+      if (Test-Path -LiteralPath $p) { Backup-TmaKey $p; Remove-Item -LiteralPath $p -Recurse -Force }
+    }
+    function Set-TmaList([string]$p, [string[]]$items, [bool]$replace) {
+      Backup-TmaKey $p
+      if ($replace) { Remove-TmaKey $p }
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      $have = @((Get-ItemProperty -LiteralPath $p -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Value)" })
+      $n = [int](@((Get-Item -LiteralPath $p).GetValueNames()) | ForEach-Object { $x = 0; if ([int]::TryParse($_, [ref]$x)) { $x } else { 0 } } | Measure-Object -Maximum).Maximum
+      foreach ($i in $items) {
+        if ($have -notcontains $i) { $n++; New-ItemProperty -LiteralPath $p -Name "$n" -Value $i -PropertyType String -Force | Out-Null }
+      }
+    }
+    Set-TmaReg 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\ASR\Rules' '01443614-cd74-433a-b99e-2ecdc07bfc25' '2' 'String'
+  guidance: "Configure through Group Policy: Computer Configuration\\Policies\\Administrative Templates\\Windows Components\\Microsoft Defender Antivirus\\Microsoft Defender Exploit Guard\\Attack Surface Reduction\\Configure Attack Surface Reduction rules: Set the state for each ASR rule = 01443614-cd74-433a-b99e-2ecdc07bfc25 with a value of 2 or 1. Test in audit mode (2) first. Local alternative (writes Defender preferences, not the Group Policy value this audit reads): Add-MpPreference -AttackSurfaceReductionRules_Ids 01443614-cd74-433a-b99e-2ecdc07bfc25 -AttackSurfaceReductionRules_Actions 2"

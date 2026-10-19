@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.4.1.1.2
+title: Ensure password quality is enforced for the root user
+description: 'If the pam_passwdqc enforce=everyone option is enabled, the module will return an error on the failed check, even if the user changing the password is the root. This option is off by default, meaning only the message about the failed check is printed, but root can change the password anyway. Use of a complex password helps to increase the time and resources required to compromise the password. Password complexity, or strength, is a measure of the effectiveness of a password in resisting attempts at guessing and brute-force attacks. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- password-policy
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.4.1.1.2 Ensure password quality is enforced for the root user
+audit:
+  type: command
+  command: grep -Eq "pam_passwdqc\.so.*[[:space:]]enforce=everyone([[:space:]]|$)" /etc/pam.d/* 2>/dev/null && echo compliant || echo "pam_passwdqc enforce=everyone not set"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create or modify the file /etc/pam.d/passwd and add or modify the following line to ensure that password quality is enforced for everyone including root user: Example: password requisite pam_passwdqc.so enforce=everyone minlen=disabled,14,12,8,6'

@@ -1,0 +1,42 @@
+id: TMA-MACOS14-2.6.1.2
+title: Ensure 'Show Location Icon in Control Center when System Services Request Your Location' Is Enabled
+description: This setting provides the user an understanding of the current status of Location Services and which applications are using it. Apple has fully integrated location services into macOS. When user applications access location, an arrow is displayed next to the Control Center in the menu bar to give users an indication when their location is being accessed. By default, system services like time zones, weather, travel times, geolocation, "Find my Mac," and advertising services do not indicate the location is accessed. Enabling the “Show location icon in the menu bar when System Services request your location” setting will show an arrow in the control center when a system service accesses the location. Although an indication that location was accessed, Control Center will only say that it was accessed by "System Services" and not the individual service. Looking in System Settings > Locatio...
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.6.1.2 Ensure 'Show Location Icon in Control Center when System Services Request Your Location' Is Enabled
+audit:
+  type: command
+  command: '/usr/bin/osascript -l JavaScript <<''EOS''
+
+    $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.locationmenu'').objectForKey(''ShowSystemServices'').js
+
+    EOS'
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.locationmenu" 'ShowSystemServices' -bool true
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.locationmenu" 'ShowSystemServices' -bool true; true
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to set whether the location services icon is in the menu bar: 1. Open System Settings 2. Select Privacy & Security 3. Select Location Services 4. Select Details... 5. Set Show location icon in menu bar when System Services request your location to enabled Terminal Method: Run the following commands to set the option of the location services icon being in the menu bar: % /usr/bin/sudo /usr/bin/defaults write /Library/Preferences/com.apple.locationmenu.plist ShowSystemServices -bool true"

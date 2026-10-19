@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.2.4.9
+title: Ensure audit tools are owned by root
+description: 'Audit tools include, but are not limited to, vendor-provided and open source audit tools needed to successfully view and manipulate audit information system activity and records. Audit tools include custom queries and report generators. Protecting audit information includes identifying and protecting the tools used to view and manipulate log data. Protecting audit tools is necessary to prevent unauthorized operation on audit information. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 2
+severity: high
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.2.4.9 Ensure audit tools are owned by root
+audit:
+  type: command
+  command: command -v stat >/dev/null 2>&1 || exit 1; out=$( { stat -Lf "%N %Su" /usr/sbin/*audit* | grep -Ev -- "^[[:space:]]*[^[:space:]]+[[:space:]]+root[[:space:]]*$" ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to change the owner of the audit tools to the root user: # chown root /usr/sbin/*audit*'

@@ -1,0 +1,21 @@
+id: TMA-ALIBABA-8.2
+title: Ensure that all assets are installed with security agent
+description: Enable protection on all endpoints. The endpoint protection of Security requires an agent to be installed on the endpoint to work. Such an agent-based approach allows the security center to provide a set of more comprehensive endpoint intrusion detection ... aliyun sas DescribeFieldStatistics UnprotectedInstanceCount must be 0. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 2
+severity: medium
+tags:
+- alibaba
+- security-center
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 8.2 Ensure that all assets are installed with security agent
+audit:
+  type: command
+  command: |-
+    out=$(aliyun sas DescribeFieldStatistics 2>/dev/null) || exit 1
+    n=$(printf '%s\n' "$out" | sed -n 's/.*"UnprotectedInstanceCount"[[:space:]]*:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -n 1)
+    [ -n "$n" ] || exit 1
+    [ "$n" -eq 0 ] && echo compliant || echo "unprotected assets: $n"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Install the Security Center agent on every listed asset (Security Center console > Assets > Unprotected > Install Client, or the one-click install command).

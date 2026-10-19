@@ -1,0 +1,27 @@
+id: TMA-ORACLE-DB-4.5
+title: Ensure The Latest Version of The Password File Is Used
+description: 'The database password file is used to authenticate users with administrative privileges (SYSDBA, SYSOPER, etc.) from a remote machine. It enables secure remote database management and contains a list of privileged users with their corresponding encrypted passwords. Starting with Oracle 12.2, Oracle enforces stronger password hashing algorithms in password files to improve security. It is ... Default: 12.2 Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- authentication
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.5 Ensure The Latest Version of The Password File Is Used
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from gv$passwordfile_info where format != '12.2';
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'To update the password file to the latest format (12.2), follow these steps: ; Ensure that all users in the password file have passwords meeting 12.2 complexity requirements. ; Use the orapwd utility to create a new password file in 12.2 format: orapwd file=orapwd122 FORMAT=12.2 ; If the password file name or location has recently changed and the changes are not reflected, refresh the metadata cache: ALTER SYSTEM FLUSH PASSWORDFILE_METADATA_CACHE; ; Validate the password file format using the audit query again.'

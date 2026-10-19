@@ -1,0 +1,17 @@
+id: TMA-AIX-4.7.5
+title: Ensure TMOUT is configured
+description: 'TMOUT and TIMEOUT are environmental setting that activate the timeout of a shell. The value is in seconds. TMOUT=n - Sets the shell timeout to n seconds. A setting of TMOUT=0, or unset TMOUT disables the automatic session timeout. readonly TMOUT- Both export and lock TMOUT environmental variable to it''s present value, preventing unwanted modification during run-time. Audit: /etc/profile must set TMOUT and TIMEOUT to 1-900 seconds and export them (the CIS `readonly` check needs a login shell).'
+target: aix
+level: 2
+severity: medium
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.7.5 Ensure TMOUT is configured
+audit:
+  type: command
+  command: '[ -r /etc/profile ] || exit 1; t=$(sed -n "s/^[[:blank:]]*TMOUT=\([0-9][0-9]*\).*/\1/p" /etc/profile | tail -n 1); u=$(sed -n "s/^[[:blank:]]*TIMEOUT=\([0-9][0-9]*\).*/\1/p" /etc/profile | tail -n 1); if [ -n "$t" ] && [ "$t" -ge 1 ] && [ "$t" -le 900 ] && [ -n "$u" ] && [ "$u" -ge 1 ] && [ "$u" -le 900 ] && grep -Eq "^[[:blank:]]*(export|readonly)[[:blank:]].*TMOUT" /etc/profile; then echo compliant; else echo "TMOUT=$t TIMEOUT=$u"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Review /etc/profile to verify that TMOUT and TIMEOUT are configured to: include a timeout of no more than 900 seconds to be readonly verify readonly statement is the last statement /usr/bin/egrep -e "TMOUT|TIMEOUT" /etc/profile This should return something similar to: # TMOUT=120 TMOUT=900 TIMEOUT=900 readonly TMOUT TIMEOUT If either setting is missing, and/or the readonly statement, add these to /etc/profile.'

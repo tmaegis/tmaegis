@@ -1,0 +1,18 @@
+id: TMA-AKS-AUTOMATIC-4.1.2
+title: Ensure access to Secrets is minimized and granted only where required
+description: Verify that access to Kubernetes Secret objects in AKS is granted only to identities with a defined purpose. The review should include Azure role assignments used by Microsoft Entra ID authorization for the Kubernetes API, Kubernetes RBAC roles and bindings, and service account permissions, with particular attention to permissions that allow get, list, or watch access to secrets, because those permissions expose sensitive namespace data. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: high
+tags:
+- aks-automatic
+- policies
+- rbac
+- secrets
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.2 Ensure access to Secrets is minimized and granted only where required
+audit:
+  type: manual
+  command: Review the users, groups, and service accounts that have get, list, or watch access to Secret objects in the Kubernetes API. Identify these permissions in Kubernetes Role and ClusterRole rules, then trace the associated RoleBinding and ClusterRoleBinding objects to the affected identities. Because Microsoft Entra ID authorization for the Kubernetes API is preconfigured in AKS Automatic, also review Azure role assignments to users, groups, service principals, and managed identities that allow access to Secrets.
+remediation:
+  type: iac_patch
+  command: Where access is not required, remove get, list, and watch access to Secret objects in the cluster. For Kubernetes RBAC, remove the unnecessary verbs from the applicable Role or ClusterRole, or remove the binding that grants the role to the identity. For Microsoft Entra ID authorization, replace broad assignments with a role that does not permit Secret access, such as Azure Kubernetes Service RBAC Reader when read access to other resources is sufficient. Confirm that workloads, controllers, and administrative processes continue to function with the replacement permissions before removing the existing access.

@@ -1,0 +1,19 @@
+id: TMA-IIS-1.3
+title: Ensure 'Directory browsing' is set to Disabled
+description: 'Directory browsing allows the contents of a directory to be displayed upon request from a web client. If directory browsing is enabled for a directory in Internet Information Services, users receive a page that lists the contents of the directory when the following two conditions are met: 1. No specific file is requested in the URL 2. directoryBrowse enabled must be false at server level and for every site. PowerShell 5.1 with the WebAdministration module; run elevated.'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- information-disclosure
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 1.3 Ensure 'Directory browsing' is set to Disabled
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT/APPHOST') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.webServer/directoryBrowse' -PSPath $_; $c.enabled -ne $false }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/directoryBrowse -Name enabled -Value False (and remove site-level overrides).

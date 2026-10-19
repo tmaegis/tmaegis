@@ -1,0 +1,21 @@
+id: TMA-MACOS14-2.1.1.1
+title: Audit iCloud Passwords & Keychain
+description: The iCloud Passwords & Keychain is Apple's synchronization service that works with Apple Accounts to synchronize password, passkey, and credit card information across macOS, iOS, iPadOS. The capability allows users to use synced password, passkey, and credit card information in either macOS, iOS, or iPadOS for use in Safari and other applications. The password, passkey, and credit card information stored in a macOS keychain on an Enterprise-managed computer is stored in Apple's cloud. When using personal Apple Accounts, credentials and payment information may include both enterprise-related and personal data, depending on user behavior and account usage patterns. Ensure that iCloud Passwords and Keychain usage aligns with organizational requirements, taking into account whether personal or managed Apple Accounts are being utilized.
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- auth
+- crypto
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.1.1.1 Audit iCloud Passwords & Keychain
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to verify a profile is installed for the iCloud Passwords & Keychain sync service: 1. Open System Settings 2. Select General 3. Select Device Management 4. Verify that an installed profile has Disallow iCloud Keychain Sync set to your organization''s requirements Terminal Method: Run the following command to verify that a profile is installed that sets iCloud Passwords & Keychain sync to your organization''s settings: % /usr/bin/sudo /usr/bin/osascript -l JavaScript << EOS $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.applicationaccess'')\ .objectForKey(''allowCloudKeychainSync'').js EOS If the output is false, iCloud Passwords & Keychain Sync is disabled. If the output is true, iCloud Passwords & Keychain sync is enabled.'
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.applicationaccess 2. The key to include is allowCloudKeychainSync 3. The key should be set <true/>, to allow iCloud Passwords & Keychain syncing, or <false/>, to disable it, based on your organization''s requirements'

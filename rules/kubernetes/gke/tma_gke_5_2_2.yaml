@@ -1,0 +1,17 @@
+id: TMA-GKE-5.2.2
+title: Use dedicated Kubernetes service accounts with Workload Identity Federation for GKE
+description: Use Workload Identity Federation for GKE to give GKE workloads distinct, least privilege identities when they need access to Google Cloud APIs. Workloads should use dedicated Kubernetes service accounts and IAM allow policies instead of relying on node service account permissions or long lived IAM service account keys. The benchmark marks this recommendation Manual.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.2.2 Use dedicated Kubernetes service accounts with Workload Identity Federation for GKE
+audit:
+  type: manual
+  command: 'Review the GKE Standard cluster and verify that Workload Identity Federation for GKE is enabled at the cluster level. The cluster should have a workload pool configured in the format $PROJECT_ID.svc.id.goog. gcloud container clusters describe $CLUSTER_NAME \ --location=$LOCATION \ --project=$PROJECT_ID \ --format=''value(workloadIdentityConfig.workloadPool)'' • Expected ouput: $PROJECT_ID.svc.id.goog Review each node pool and verify that it is configured to use the GKE metadata server.'
+remediation:
+  type: iac_patch
+  command: This remediation is important when GKE Standard workloads rely on node service account permissions, mounted IAM service account keys, or shared Kubernetes service accounts to access Google Cloud APIs. Enabling Workload Identity Federation for GKE and using dedicated Kubernetes service accounts allows each workload to receive only the Google Cloud permissions it needs, reducing reliance on broad node level permissions and improving workload level identity separation. Enable Workload Identity Federation for GKE on the GKE Standard cluster if the workload pool is not configured. gcloud container clusters update $CLUSTER_NAME \ --location=$LOCATION \ --project=$PROJECT_ID \ --workload-pool=$PROJECT_ID.svc.id.goog Enable the GKE metadata server on existing node pools that run workloads requiring Google Cloud API access.

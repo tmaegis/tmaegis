@@ -1,0 +1,19 @@
+id: TMA-CISCO-NXOS-1.2.2
+title: Configure IP Blocking on Failed Logins
+description: After a configured number of failed logins in a set window, offending IP addresses should be blocked from login for a configured amount of time. This effectively makes brute force attacks much less practical, slowing automated processes from a rate of multiple attempts per second to per minute ranges. CIS marks this Manual; automated as a config-line check. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- logging
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.2.2 Configure IP Blocking on Failed Logins
+audit:
+  type: config_regex
+  pattern: (?m)^login block-for \d+ attempts \d+ within \d+
+remediation:
+  type: iac_patch
+  command: |-
+    ! This configuration consists of:
+    - A "watch" time window (in seconds) - the number of failed attempts to trigger on - the amount of time (in seconds) to block further login attempts from that IP address For NX-OS 7.x: login block-for <block time window> attempts <fail count> within <detect time window> for instance: login block-for 120 attempts 5 within 120 For NX-OS 9.x: system login block-for <block time window> attempts <fail count> within <detect time window> for instance: system login block-for 120 attempts 5 within 120 Any values at all will thwart most brute force or dictionary attacks.

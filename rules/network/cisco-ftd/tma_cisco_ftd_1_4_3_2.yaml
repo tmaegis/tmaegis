@@ -1,0 +1,36 @@
+id: TMA-CISCO-FTD-1.4.3.2
+title: If SNMP is configured, ensure that SNMP v3 only is used to Manage your Firepower Managed Devices
+description: 'Ensure that if SNMP is configured, that only SNMPv3 is enabled. SNMP is commonly used to manage an alert on common device metrics such as CPU Utilization, Link Utilization and Temperature. Older versions of SNMP (1,2,2c) were all unencrypted, and often used default "string" values to authenticate, allowing disclosure of ... Checks the LINA config: fails if any SNMPv1/v2c community or host is configured. Automated checks run against the FTD LINA configuration from ''show running-config'' on the FTD CLI (configuration is pushed by the FMC); FMC GUI settings are manual checks.'
+target: cisco-ftd
+level: 1
+severity: medium
+tags:
+- cisco-ftd
+- network
+- snmp
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 1.4.3.2 If SNMP is configured, ensure that SNMP v3 only is used to Manage your Firepower Managed Devices
+audit:
+  type: config_regex
+  pattern: (?m)^snmp-server (?:community\b|host [^\n]*\bcommunity\b|host [^\n]*\bversion (?:1|2c)\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Navigate to devices / platform settings
+    - Edit or create a Platform Settings Policy
+    - Under "SNMP", ensure that "Enable SNMP Servers" is enabled
+    - Ensure that the "Read Community String" field is empty
+    - Under "Users" configure the Username
+    - If applicable, set the "Encryption Password Type" is set to "Encrypted"
+    - If applicable, set the "Auth Algorithm Type" to SHA or SHA256
+    - If applicable, set the "Encryption Type" to AES256
+    - Under the "Hosts" tab:
+    - Set the IP address of your SNMP Server
+    - Set the SNMP Version to 3
+    - Set the Username that was configured above
+    - Set polling hosts with a permission of "Poll"
+    - Set logging hosts with a permission of "Trap"
+    - Set the interface that will be allowed to send or receive SNMPv3 requests
+    - Under "Policy Assignments" (upper right of this display), ensure that the "Selected Devices" column contains all applicable devices for this policy.
+    - Ensure that all managed devices are governed by a Platform Settings Policy as described above.
+    - Save your changes

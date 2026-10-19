@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-8.3
+title: Ensure miscellaneous configuration settings are correct
+description: This recommendation covers non-regular, special files, and dynamic libraries. PostgreSQL permits local logins via the UNIX DOMAIN SOCKET and, for the most part, anyone with a legitimate Unix login account can make the attempt. Limiting PostgreSQL login attempts can be made by relocating the UNIX DOMAIN SOCKET to a subdirectory with restricted permissions.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- configuration
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 8.3 Ensure miscellaneous configuration settings are correct
+audit:
+  type: manual
+  command: Run SELECT name, setting FROM pg_settings WHERE name IN ('external_pid_file','unix_socket_directories','shared_preload_libraries','dynamic_library_path','local_preload_libraries','session_preload_libraries'); and confirm each value is expected and the referenced files/directories are writable only by postgres/root.
+remediation:
+  type: iac_patch
+  command: Correct unexpected values in postgresql.conf, restrict permissions on the referenced paths, and restart PostgreSQL.

@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.4.5
+title: Secure DATAACCESS authority access
+description: The DATAACCESS authority defines the data access authority. It allows its holder to access and update data in user tables, views, and materialized query tables in a Db2 subsystem. It also allows its holder to execute plans, packages, functions, and procedures. It is recommended that the DATAACCESS authority be granted to an authorized ID or a role.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.4.5 Secure DATAACCESS authority access
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check DATAACCESS authority access: SELECT GRANTEE, GRANTEETYPE FROM SYSIBM.SYSUSERAUTH WHERE DATAACCESSAUTH = ''Y''; Review the access list to ensure that the grants are aligned with your organization''s access policies. For external security users: Issue the RACF RLIST command to list the profile that controls access to the DATAACCESS authority in the DSNADM class. Examine the universal access (UACC) and user (USER) settings for the profile. If the UACC setting is READ or the USER setting ... (full steps: CIS section 2.4.5)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the SQL REVOKE statement to revoke DATAACCESS access from any unauthorized ID or role. For external security users: Issue the RACF RALTER command to update the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

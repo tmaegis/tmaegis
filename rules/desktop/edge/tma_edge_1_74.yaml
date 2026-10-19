@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.74
+title: 'Ensure ''Configure browser process code integrity guard setting'' is set to ''Enabled: Enable code integrity guard enforcement in the browser process.'''
+description: 'This policy setting controls the use of code integrity guard in the browser process, which only allows Microsoft signed binaries to load. The recommended state for this setting is: Enabled: Enable code integrity guard enforcement in the browser process.. Rationale: Code Integrity Guard ensures Microsoft''s digital signature is present when loading binaries into a process. Binaries without Microsoft''s digital signature are blocked to protect the system from unknown binaries and prevent the injection of untrustworthy binaries into a process. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:browserCodeIntegritySetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.74 Ensure ''Configure browser process code integrity guard setting'' is set to ''Enabled: Enable code integrity guard enforcement in the browser process.'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''browserCodeIntegritySetting'' -ErrorAction SilentlyContinue).''browserCodeIntegritySetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'browserCodeIntegritySetting' -Value 2 -PropertyType DWord -Force | Out-Null

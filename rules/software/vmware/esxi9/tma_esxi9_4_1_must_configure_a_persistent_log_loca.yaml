@@ -1,0 +1,21 @@
+id: TMA-ESXI9-4.1
+title: Host must configure a persistent log location for all locally stored system logs
+description: 'Configure the Syslog.global.logDir parameter to specify a persistent directory for system logs, ensuring they are retained across reboots. This can be set to a directory on mounted NFS or VMFS volumes, other than the default which is an in-memory filesystem that retains only a single day''s worth of logs. The audit runs esxcli system syslog config get and requires "Local Log Output Is Persistent: true". Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 4.1 Host must configure a persistent log location for all locally stored system logs
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system syslog config get 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk -F': *' 'tolower($1) ~ /^ *local log output is persistent$/ {print $2; exit}' | tr 'A-Z' 'a-z' | sed 's/ *$//')
+    if [ "$v" = true ]; then echo compliant; else echo "Local Log Output Is Persistent: ${v:-not reported}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To configure persistent logging properly, perform the following from the vSphere web client: 1. Select the host 2. Click Configure then expand System then select Advanced System Settings. 3. Select Edit then enter Syslog.global.LogDir in the filter. 4. Set Syslog.global.logDir to a persistent location specified as [datastorename] path_to_file where the path is relative to the datastore. For example, [datastore1] /systemlogs. 5. Click OK. Alternatively, run the following PowerCLI command: # Set Syslog.global.logDir for each host Get-VMHost | Foreach { Set-AdvancedConfiguration -VMHost $_ -Name Syslog.global.logDir -Value "<NewLocation>" }'

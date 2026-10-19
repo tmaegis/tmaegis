@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-5.4
+title: Ensure there are no unnecessary roles or excessive privileges
+description: Verify each role is required and has only the privileges needed to do its job.
+target: yugabytedb
+level: 2
+severity: medium
+tags:
+- yugabytedb
+- privileges
+reference: CIS YugabyteDB Benchmark v2.0.0 - 5.4 Ensure there are no unnecessary roles or excessive privileges
+audit:
+  type: manual
+  command: As a YCQL superuser run SELECT role, can_login, is_superuser, member_of FROM system_auth.roles; and SELECT * FROM system_auth.role_permissions; Any role that is not needed, or any role holding more permissions than its function requires, is a finding (DROP ROLE / REVOKE ... FROM ...).
+remediation:
+  type: iac_patch
+  command: 'Remove any unnecessary roles and/or permissions in accordance with organizational needs. Drop unnecessary roles by issuing the following command: cassandra@ycqlsh> DROP ROLE IF EXISTS developer Alternatively, you can revoke permissions. For example, you can revoke the engineering role from the user john as follows: cassandra@ycqlsh> REVOKE engineering FROM john;'

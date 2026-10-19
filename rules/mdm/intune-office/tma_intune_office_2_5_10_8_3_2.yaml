@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.10.8.3.2
+title: Ensure 'Read signed e-mail as plain text' is set to 'Enabled'
+description: 'This policy setting determines whether Outlook renders all digitally signed e-mail in plain text format for reading. Outlook can display e-mail messages and other items in three formats: plain text, Rich Text Format (RTF), and HTML. If you enable this policy setting, the "Read all standard mail in plain text" check box option is selected in the "E-mail Security" section of the Trust Center and users cannot change it. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) readsignedasplain that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 2
+severity: low
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.10.8.3.2 Ensure 'Read signed e-mail as plain text' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\options\mail'') -Name ''readsignedasplain'' -ErrorAction SilentlyContinue).''readsignedasplain''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':readsignedasplain='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Outlook 2016\Outlook Options\Preferences\E-mail Options\Read signed e-mail as plain text'

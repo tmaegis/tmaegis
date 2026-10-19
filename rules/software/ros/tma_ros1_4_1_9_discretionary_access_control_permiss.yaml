@@ -1,0 +1,37 @@
+id: TMA-ROS1-4.1.9
+title: Ensure discretionary access control permission modification events are collected
+description: Monitor changes to file permissions, attributes, ownership and group. The parameters in this section track changes for system calls that affect file permissions and attributes. The chmod , fchmod and fchmodat system calls affect the permissions associated with a file. The chown , fchown , fchownat and lchown system calls affect owner and group attributes on a file. The audit inspects the loaded rules (auditctl -l, 64-bit syscalls). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.9 Ensure discretionary access control permission modification events are collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?chmod(,| |$)' || { echo 'missing b64 syscall rule: chmod -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?fchmod(,| |$)' || { echo 'missing b64 syscall rule: fchmod -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?fchmodat(,| |$)' || { echo 'missing b64 syscall rule: fchmodat -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?chown(,| |$)' || { echo 'missing b64 syscall rule: chown -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?fchown(,| |$)' || { echo 'missing b64 syscall rule: fchown -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?fchownat(,| |$)' || { echo 'missing b64 syscall rule: fchownat -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?lchown(,| |$)' || { echo 'missing b64 syscall rule: lchown -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?setxattr(,| |$)' || { echo 'missing b64 syscall rule: setxattr -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?lsetxattr(,| |$)' || { echo 'missing b64 syscall rule: lsetxattr -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?fsetxattr(,| |$)' || { echo 'missing b64 syscall rule: fsetxattr -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?removexattr(,| |$)' || { echo 'missing b64 syscall rule: removexattr -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?lremovexattr(,| |$)' || { echo 'missing b64 syscall rule: lremovexattr -k perm_mod'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)perm_mod( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?fremovexattr(,| |$)' || { echo 'missing b64 syscall rule: fremovexattr -k perm_mod'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For 32 bit systems Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/perm_mod.rules and add the following lines: -a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod -a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod -a always,exit -F arch=b32 -S setxattr -S lsetxattr -S fsetxattr -S removexattr -S lremovexattr -S fremovexattr -F auid>=1000 -F auid!=4294967295 -k perm_mod For 64 bit systems Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/perm_mod.rules and add the ...'

@@ -1,0 +1,22 @@
+id: TMA-ROS1-6.2.16
+title: Ensure no duplicate group names exist
+description: Although the groupadd program will not let you create a duplicate group name, it is possible for an administrator to manually edit the /etc/group file and change the group name. The audit requires no duplicate group names in /etc/group. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.16 Ensure no duplicate group names exist
+audit:
+  type: command
+  shell: bash
+  command: |-
+    d=$(cut -d: -f1 /etc/group | sort | uniq -d) || exit 1
+    [ -z "$d" ] && echo compliant || { echo 'duplicate group names:'; printf '%s\n' "$d"; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique names for the user groups. File group ownerships will automatically reflect the change as long as the groups have unique GIDs.

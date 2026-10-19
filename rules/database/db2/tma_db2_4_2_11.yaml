@@ -1,0 +1,38 @@
+id: TMA-DB2-4.2.11
+title: Restrict Access to SYSCAT.DBAUTH
+description: 'The SYSCAT.DBAUTH view contains information on authorities granted to users or groups of users. It is recommended that the PUBLIC role be restricted from accessing this view. Counts grants to PUBLIC on SYSCAT.DBAUTH (SYSCAT.TABAUTH); 0 is required. Database-level check: set DB2DBDFT to the database name to audit (the rule connects to it with the instance owner''s credentials and fails when DB2DBDFT is unset). Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- privileges
+- catalog
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 4.2.11 Restrict Access to SYSCAT.DBAUTH
+audit:
+  type: sql_query
+  command: db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"; db2 connect to "$db" >/dev/null || exit 1; db2 -x "select count(*) from syscat.tabauth where tabschema = 'SYSCAT' and tabname = 'DBAUTH' and grantee = 'PUBLIC'"; rc=$?; db2 connect reset >/dev/null 2>&1; db2 terminate >/dev/null 2>&1; exit $rc
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v db2 >/dev/null 2>&1 || exit 0
+    db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"
+    db2 connect to "$db" >/dev/null || exit 1
+    db2 "REVOKE ALL PRIVILEGES ON TABLE SYSCAT.DBAUTH FROM PUBLIC"
+    rc=$?; db2 connect reset >/dev/null 2>&1; db2 terminate >/dev/null 2>&1; exit $rc
+  guidance: "Perform the following to revoke access from PUBLIC. 1. Connect to the Db2 database. db2 => connect to <dbname> 2. Run the following command: db2 => REVOKE SELECT ON SYSCAT.DBAUTH FROM PUBLIC"

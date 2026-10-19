@@ -1,0 +1,18 @@
+id: TMA-COCKROACHDB-1.4
+title: Do Not Use the --insecure Flag in Production Environments Under Any Circumstances
+description: CockroachDB supports an --insecure startup option that disables all node-to-node and client-to-node encryption, authentication, and certificate validation. When started in this mode, the cluster operates entirely without Transport Layer Security (TLS), allowing unauthenticated and unencrypted connections. This option exists only for initial testing or ephemeral local development. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when no running cockroach start process uses --insecure (FAIL when no node process is running). Also grep the node log for "RUNNING IN INSECURE MODE".
+target: cockroachdb
+level: 1
+severity: critical
+tags:
+- cockroachdb
+- tls
+- authentication
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 1.4 Do Not Use the --insecure Flag in Production Environments Under Any Circumstances
+audit:
+  type: command
+  command: out=$(ps -eo args= | grep '[c]ockroach start') || exit 1; printf '%s\n' "$out" | grep -c -- '--insecure' || true
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Stop the insecure nodes, create a CA and node/client certificates (cockroach cert create-ca / create-node / create-client), replace --insecure with --certs-dir=<certs> in the systemd unit and restart the nodes.

@@ -1,0 +1,21 @@
+id: TMA-CISCO-NXOS-3.1.1.3
+title: Configure EIGRP log-adjacency-changes
+description: 'Logging changes to the EIGRP peering relationships is recommended. This setting is enabled by default. Any logged changes in a routing peer relationship will in the best case indicate a service issue due to standard operational issues (connectivity issues and so on) or in the worst case, could indicate malicious activity attempting to subvert the peering ... CIS marks this Manual; automated: fails if an EIGRP process disables adjacency logging. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- logging
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.1.3 Configure EIGRP log-adjacency-changes
+audit:
+  type: config_regex
+  pattern: (?m)^router eigrp[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+no log-adjacency-changes\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! By default EIGRP adjacency changes are logged, and this does not show in the configuration. If however it is disabled, it can be re-enabled as shown below.
+    router eigrp <eigrp process tag>
+    log-adjacency-changes

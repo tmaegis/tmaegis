@@ -1,0 +1,17 @@
+id: TMA-AIX-4.1.2.8
+title: Ensure access on /var/spool/cron/crontabs is configured
+description: 'The /var/spool/cron/crontabs directory contains all of the crontabs for the users on the system. The /var/spool/cron/crontabs directory contains all of the crontabs for the users on the system. Crontab files present a security problem because they are run by the cron daemon, which runs with super user rights. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.2.8 Ensure access on /var/spool/cron/crontabs is configured
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; [ -d /var/spool/cron/crontabs ] || exit 1; out=$( { find /var/spool/cron/crontabs -type d -prune \( -perm -4 -o -perm -2 -o -perm -1 -o -perm -200000000 \) -o ! -user bin -o ! -group cron; find /var/spool/cron/crontabs \( -perm -4 -o -perm -2 -o -perm -1 -o -perm -200000000 \) -o ! -group cron; trustchk -n /var/spool/cron/crontabs >/dev/null 2>&1 || echo trustchk failed ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Use the following script to apply settings to /var/spool/cron/crontabs: #!/usr/bin/ksh -e #; remove any extended ACL information echo | aclput /var/spool/cron/crontabs #; remove other access from all chmod -R o= /var/spool/cron/crontabs #; set UID:GID to bin:cron to `/var/spool/cron/crontabs` and correct modes on directory and files within directory chown bin:cron /var/spool/cron/crontabs chgrp -R cron /var/spool/cron/crontabs #; set modes on directory and files within directory chmod ug=rwx,o= /var/spool/cron/crontabs chmod a-w /var/spool/cron/crontabs #; add or update entry in TCB trustchk -a /var/spool/cron/crontabs size=VOLATILE >/dev/null 2>&1 || trustchk -u /var/spool/cron/crontabs owner=bin group=cron mode=770'

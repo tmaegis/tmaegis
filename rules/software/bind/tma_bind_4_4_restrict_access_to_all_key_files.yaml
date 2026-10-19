@@ -1,0 +1,30 @@
+id: TMA-BIND-4.4
+title: Restrict Access to All Key Files
+description: The TSIG keys should be readable only by the named and root accounts. No other user accounts or groups should have read access. Note that BIND often creates a session key on startup for usage by nsupdate -l. Both the $BIND_HOME and $RUNDIR are included since the session key should also have the recommended permissions. The audit finds files containing "secret" under $BIND_HOME and $RUNDIR and requires owner root/named, group root/named (bind on Debian) and no group/other write. $BIND_HOME is taken as the existing ones of /var/named (RHEL, including a chroot), /etc/bind and /var/cache/bind (Debian/Ubuntu) and $RUNDIR as /run/named; the runtime directories (dynamic, slaves, data, run, log, tmp, /var/cache/bind) are excluded where the benchmark excludes them.
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- tsig
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 4.4 Restrict Access to All Key Files
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    files=$(find $BH $RUN -type f 2>/dev/null | xargs -r grep -l secret 2>/dev/null | sort -u)
+    [ -n "$files" ] || { echo compliant; exit 0; }
+    bad=$(for f in $files; do find "$f" \( \! \( $U \) -o \! \( $G \) -o -perm /022 \) -print; done)
+    [ -z "$bad" ] && echo compliant || { echo 'key files with wrong owner/group or group/other write:'; printf '%s\n' "$bad"; }
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: 'Perform the following for remediation: ; Use the command below to find secret key files. Review the list of key files, and delete any unused or unnecessary key files. Recreate the file list, after deleting any unused files. # find $BIND_HOME $RUNDIR -type f | xargs fgrep -l secret | sort -u > $TMPDIR/key_files.txt ; Change the ownership, group and permissions on the key files. # xargs -a $TMPDIR/key_files.txt chown -R root # xargs -a $TMPDIR/key_files.txt chgrp -R named # xargs -a $TMPDIR/key_files.txt chmod o-r ; Remove the temporary file, rm $TMPDIR/key_files.txt'

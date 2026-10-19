@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.2.1
+title: Ensure all public repositories contain a SECURITY.md file
+description: A SECURITY.md file is a security policy file that offers instruction on reporting security vulnerabilities in a project. When someone creates an issue within a specific project, a link to the SECURITY.md file will subsequently be shown. A SECURITY.md file provides users with crucial security information. It can also serve an important role in project maintenance, encouraging users to think ahead about how to properly handle potential security issues, updates, and general security practices.
+target: gitlab
+level: 1
+severity: high
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.2.1 Ensure all public repositories contain a SECURITY.md file
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Ensure that each public repository has a SECURITY.md file by performing the following: - Navigate to the main page of a repository without a SECURITY.md file in GitLab. - Create a SECURITY.md file (in the web UI or locally) with security information like supported versions of your project and how to report a vulnerability. - Commit this file to the repository and push your changes. - If you open a merge request to add the SECURITY.md file, make sure this change is merged to your repository''s default branch.'

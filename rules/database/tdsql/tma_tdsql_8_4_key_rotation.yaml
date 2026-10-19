@@ -1,0 +1,16 @@
+id: TMA-TDSQL-8.4
+title: Ensure Encryption Key Rotation Is Configured
+description: 'Encryption master keys should be rotated periodically. TDSQL supports master key rotation via ALTER INSTANCE ROTATE INNODB MASTER KEY, which generates a new key version and re-wraps all data encryption keys (DEKs) using the envelope encryption model-without requiring data re-encryption. Assessed manually here: the benchmark check is environment-specific and cannot be evaluated reliably by a single command.'
+target: tdsql
+level: 2
+severity: medium
+tags:
+- tdsql
+- encryption
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 8.4 Ensure Encryption Key Rotation Is Configured
+audit:
+  type: manual
+  command: Run SELECT * FROM performance_schema.keyring_keys ORDER BY KEY_ID DESC LIMIT 5; and SHOW GLOBAL STATUS LIKE 'Innodb_encryption_master_key_id'; then review KMS audit logs. The master key must have been rotated within the policy period (e.g. within the last 365 days); no rotation within the period is a finding.
+remediation:
+  type: iac_patch
+  command: '1. Perform immediate key rotation: ALTER INSTANCE ROTATE INNODB MASTER KEY; 2. Verify rotation success: SHOW GLOBAL STATUS LIKE ''Innodb_encryption_master_key_id''; -- The key ID should increment after rotation 3. Establish a periodic rotation schedule (recommended: every 90-365 days) via operational procedures or automation.'

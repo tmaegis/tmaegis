@@ -1,0 +1,23 @@
+id: TMA-APACHE-2.6
+title: Ensure the Proxy Modules Are Disabled if not in use
+description: The Apache proxy modules allow the server to act as a proxy (either forward or reverse proxy) of HTTP and other protocols with additional proxy modules loaded. If the Apache installation is not intended to proxy requests to or from another network then the proxy module should not be loaded. Counts loaded modules matching any proxy_* module; expects 0. Uses the module list from apachectl -M (apache2ctl/httpd; needs root).
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- modules
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 2.6 Ensure the Proxy Modules Are Disabled if not in use
+audit:
+  type: command
+  shell: bash
+  command: b=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 1; m=$("$b" ${APACHE_CONF:+-f "$APACHE_CONF"} -M 2>/dev/null) || exit 1; printf '%s\n' "$m" | grep -Eic '^[[:space:]]*proxy_' || true
+  expected_output: '0'
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: 'If Apache is not used as a proxy, comment out all proxy_* LoadModule lines (RHEL: conf.modules.d/00-proxy.conf) or a2dismod proxy. Then run apachectl configtest and reload Apache.'

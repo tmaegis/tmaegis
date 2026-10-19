@@ -1,0 +1,17 @@
+id: TMA-M365-SPO-EXTERNAL-SHARING
+title: Ensure SharePoint and OneDrive external sharing does not allow 'Anyone' links
+description: 'SharingCapability ExternalUserAndGuestSharing allows unauthenticated ''Anyone'' links, so content can leave the tenant with no identity attached. Requires an already-connected SharePoint Online session: Install-Module Microsoft.Online.SharePoint.PowerShell; Connect-SPOService -Url https://<tenant>-admin.sharepoint.com (Windows PowerShell 5.1). The audit throws if the module or session is missing.'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- sharing
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - SharePoint admin center / External sharing (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-SPOTenant -ErrorAction SilentlyContinue)) { throw ''Microsoft.Online.SharePoint.PowerShell is not loaded: run Connect-SPOService first'' }; $t = Get-SPOTenant -ErrorAction Stop; if (@(''Disabled'',''ExistingExternalUserSharingOnly'',''ExternalUserSharingOnly'') -contains "$($t.SharingCapability)") { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-SPOTenant -SharingCapability ExternalUserSharingOnly (New and existing guests) or more restrictive; or SharePoint admin center > Policies > Sharing.

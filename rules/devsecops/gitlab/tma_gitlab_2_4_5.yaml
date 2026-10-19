@@ -1,0 +1,19 @@
+id: TMA-GITLAB-2.4.5
+title: Ensure pipeline steps produce a Software Bill of Materials (SBOM)
+description: SBOM (Software Bill of Materials) is a file that specifies each component of software or a build process. Generate an SBOM after each run of a pipeline. Generating a Software Bill of Materials after each run of a pipeline will validate the integrity and security of that pipeline. Recording every step or component role in the pipeline ensures that no malicious acts have been committed during the pipeline's run.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- ci-cd
+- devsecops
+- gitlab
+- sbom
+reference: CIS GitLab Benchmark v1.0.1 - 2.4.5 Ensure pipeline steps produce a Software Bill of Materials (SBOM)
+audit:
+  type: manual
+  command: 'For each pipeline, ensure it produces a Software Bill of Materials on every run. - Check if your gitlab-ci.yml file contains the following: include: - template: Jobs/Dependency-Scanning.gitlab-ci.yml If your project has the following structure: . ├── ruby-project/ │ └── Gemfile.lock ├── ruby-project-2/ │ └── Gemfile.lock ├── php-project/ │ └── composer.lock └── go-project/ └── go.sum Then the Gemnasium scanner generates the following CycloneDX SBOMs: . ├── ruby-project/ │ ├── Gemfile.lock │ └── gl-sbom-gem-bundler.cdx.json ├── ruby-project-2/ │ ├── Gemfile.lock │ └── gl-sbom-gem-bundler.cdx.json ├── php-project/ │ ├── composer.lock │ └── gl-sbom-packagist-composer.cdx.json └── go-project/ ├── go.sum └── gl-sbom-go-go.cdx.json - Review if these files exists in your environment'
+remediation:
+  type: iac_patch
+  command: 'For each pipeline, configure it to produce a Software Bill of Materials on every run. - On the left sidebar, select Search or go to and find your project. - Select Build > Pipeline editor. - If no .gitlab-ci.yml file exists, select Configure pipeline, then delete the example content. - Copy and paste the following to the bottom of the .gitlab-ci.yml file. If an include line already exists, add only the template line below it. include: - template: Jobs/Dependency-Scanning.gitlab-ci.yml - Select the Validate tab, then select Validate pipeline. The message Simulation completed successfully confirms the file is valid. - Select the Edit tab. - Complete the fields. Do not use the default branch for the Branch field. - Select the Start a new merge request with these changes checkbox, then select Commit changes. - Complete the fields according to your standard workflow, then select Create merge request. - Review and edit the merge request according to your standard workflow, then select
+    Merge. The CycloneDX SBOMs are: - Named gl-sbom--.cdx.json. - Available as job artifacts of the dependency scanning job. - Saved in the same directory as the detected lock or build files.'

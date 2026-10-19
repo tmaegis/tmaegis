@@ -1,0 +1,52 @@
+id: TMA-WIN10-2.2.36
+title: Ensure 'Replace a process level token' is set to 'LOCAL SERVICE, NETWORK SERVICE'
+description: 'This policy setting allows one process or service to start another service or process with a different security access token, which can be used to modify the security access token of that sub-process and result in the escalation of privileges. The recommended state for this setting is: LOCAL SERVICE, NETWORK SERVICE. Note: This user right is considered a "sensitive privilege" for the purposes of auditing.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- secedit
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 2.2.36
+audit:
+  type: command
+  command: '$f = Join-Path $env:TEMP (''tmaegis-'' + [guid]::NewGuid().ToString() + ''.inf''); secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null; $c = Get-Content $f -ErrorAction SilentlyContinue; Remove-Item $f -Force -ErrorAction SilentlyContinue; $line = $c | Where-Object { $_ -match ''^\s*SeAssignPrimaryTokenPrivilege\s*='' } | Select-Object -First 1; $v = if ($line) { ($line -split ''='', 2)[1].Trim().Trim(''"'') } else { $null }; $have = @(if ($v) { $v -split '','' | ForEach-Object { $_.Trim().TrimStart(''*'') } | Where-Object { $_ } }); if ((($have | Sort-Object -Unique) -join '','') -eq ''S-1-5-19,S-1-5-20'') { ''compliant'' } else { ''non-compliant: '' + ($have -join '','') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    function Get-TmaSec([string]$Key) {
+      $f = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $c = Get-Content $f -ErrorAction SilentlyContinue
+      Remove-Item $f -Force -ErrorAction SilentlyContinue
+      $line = $c | Where-Object { $_ -match ('^\s*' + $Key + '\s*=') } | Select-Object -First 1
+      if ($line) { ($line -split '=', 2)[1].Trim().Trim('"') } else { $null }
+    }
+    function Backup-TmaSec {
+      $bk = Join-Path $env:ProgramData 'TMAegis\backup'
+      New-Item -ItemType Directory -Force -Path $bk | Out-Null
+      secedit /export /cfg (Join-Path $bk ('secedit-' + (Get-Date -Format 'yyyyMMddHHmmss') + '.inf')) /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+    }
+    function Set-TmaSec([string]$Section, [string]$Line) {
+      $inf = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      $db = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.sdb')
+      $txt = @('[Unicode]', 'Unicode=yes', '[Version]', 'signature="$CHICAGO$"', 'Revision=1', ('[' + $Section + ']'), $Line) -join "`r`n"
+      Set-Content -Path $inf -Value $txt -Encoding Unicode
+      secedit /configure /db $db /cfg $inf /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $rc = $LASTEXITCODE
+      Remove-Item $inf, $db -Force -ErrorAction SilentlyContinue
+      if ($rc -ne 0) { throw ('secedit /configure failed: ' + $rc) }
+    }
+    $key = 'SeAssignPrimaryTokenPrivilege'
+    $cur = Get-TmaSec $key
+    $have = @(if ($cur) { $cur -split ',' | ForEach-Object { $_.Trim().TrimStart('*') } | Where-Object { $_ } })
+    if ((($have | Sort-Object -Unique) -join ',') -ne 'S-1-5-19,S-1-5-20') {
+      Backup-TmaSec
+      Set-TmaSec 'Privilege Rights' ($key + ' = ' + '*S-1-5-19,*S-1-5-20')
+    }
+  guidance: "Set through Group Policy (domain policy for domain members): Computer Configuration\\Policies\\Windows Settings\\Security Settings\\Local Policies\\User Rights Assignment\\Replace a process level token"

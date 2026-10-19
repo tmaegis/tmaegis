@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-1.1.1.3
+title: Ensure zfs kernel module is not available
+description: 'The zfs filesystem is a highly scalable filesystem used in FreeBSD for larger systems with huge disk spaces. Removing support for unneeded filesystem types reduces the local attack surface of the system. This module is only required when ZFS storage systems are used, or FreeBSD has been installed in ZFS partitions. Audit: `kldstat -q -m zfs` must report the module is not loaded.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- hardening
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.1.1.3 Ensure zfs kernel module is not available
+audit:
+  type: command
+  command: command -v kldstat >/dev/null 2>&1 || exit 1; kldstat -q -m zfs && echo "zfs kernel module is loaded" || echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: kldunload -f zfs; printf 'zfs_load="NO"\n' >> /boot/loader.conf   (remove any zfs_load="YES" and kld_list entry)

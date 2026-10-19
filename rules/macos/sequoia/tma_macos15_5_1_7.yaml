@@ -1,0 +1,36 @@
+id: TMA-MACOS15-5.1.7
+title: Ensure No World Writable Folders Exist in the Library Folder
+description: Software sometimes insists on being installed in the /System/Volumes/Data/Library directory and has inappropriate world-writable permissions. This software could be compromised with the folder(s) being world-writable by unauthorized actions.
+target: macos
+level: 2
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 5.1.7 Ensure No World Writable Folders Exist in the Library Folder
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    [ -d /System/Volumes/Data ] || exit 1
+    /usr/bin/find /Library -type d -perm -002 ! -perm -1000 ! -xattrname com.apple.rootless 2>/dev/null | /usr/bin/grep -vE "/Library/AppStore" | /usr/bin/wc -l | /usr/bin/xargs
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/find /Library -type d -perm -002 ! -perm -1000 ! -xattrname com.apple.rootless 2>/dev/null | /usr/bin/grep -vE '/Library/AppStore' | while IFS= read -r p; do /bin/chmod o-w "$p"; done; true
+  guidance: "Terminal: sudo IFS=$'\\n' for libPermissions in $(/usr/bin/find /Library -type d -perm -002 ! -perm -1000 ! -xattrname com.apple.rootless 2>/dev/null); do /bin/chmod -R o-w \"$libPermissions\" done."

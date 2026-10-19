@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-HTTPS-ONLY
+title: Ensure all web applications use HTTPS
+description: Web applications served over HTTP expose credentials and authentication cookies. Prints the number of web applications whose URL is not HTTPS (expected 0). Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: high
+tags:
+- sharepoint
+- transport
+reference: CIS Microsoft SharePoint Server Benchmark - Web applications / SSL (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $bad = @(Get-SPWebApplication -ErrorAction Stop | Where-Object { $_.Url -notlike 'https://*' }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Extend or reconfigure each web application with an HTTPS binding and alternate access mapping (New-SPAlternateURL / Set-SPAlternateURL), bind a trusted certificate in IIS, then remove the HTTP zone.

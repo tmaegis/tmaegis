@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.1.16
+title: Ensure force push code to branches is denied
+description: The "Force Push" option allows users with "Push" permissions to force their changes directly to the branch without a pull request, and thus should be disabled. The "Force Push" option allows users to override the existing code with their own code. This can lead to both intentional and unintentional data loss, as well as data infection with malicious code. Disabling the "Force Push" option prohibits users from forcing their changes to the master branch, which ultimately prevents malicious code from entering source code.
+target: gitlab
+level: 1
+severity: high
+tags:
+- branch-protection
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.16 Ensure force push code to branches is denied
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each repository in use, block the option to "Force Push" code by performing the following: - On GitLab, navigate to the main page of the repository. - Navigate to Settings > Repository . - Click Expand next to the Protected Branches section. - Ensure your project''s default branch is protected. - Toggle "Allowed to force push" off.'

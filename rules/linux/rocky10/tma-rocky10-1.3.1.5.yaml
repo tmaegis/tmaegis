@@ -1,0 +1,103 @@
+id: TMA-ROCKY10-1.3.1.5
+title: Ensure the SELinux mode is enforcing
+description: 'SELinux can run in one of three modes: disabled, permissive, or enforcing: • Enforcing - Is the default, and recommended, mode of operation; in enforcing mode SELinux operates normally, enforcing the loaded security policy on the entire system. • Permissive - The system acts as if SELinux is enforcing the loaded security policy, including labeling objects and emitting access denial entries in the logs, but it does not actually deny any operations. While not recommended for production systems, permissive mode can be helpful for SELinux policy development. • Disabled - Is strongly discouraged; n'
+target: linux
+os_family:
+- rocky-10
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 10 Benchmark v1.0.0 - 1.3.1.5
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -Pi -- ''"''"''^\h*SELINUX=enforcing\b''"''"'' /etc/selinux/config'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- SELINUX=enforcing || { echo step1: missing SELINUX=enforcing; return 1; }; command -v getenforce >/dev/null 2>&1 || { echo "step2: getenforce not installed"; return 1; }; o=$(bash -c getenforce 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- Enforcing || { echo step2: missing Enforcing; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; return 0; }
+    tma_ini_set() { # file section key value
+      local f=$1 s=$2 k=$3 v=$4
+      [ -e "$f" ] || { mkdir -p "$(dirname "$f")"; : > "$f"; }
+      tma_bak "$f"
+      awk -v s="$s" -v k="$k" -v v="$v" '
+        function flush() { if (insec && !done) { print k "=" v; done=1 } }
+        /^[[:space:]]*\[/ { flush(); insec = ($0 ~ "^[[:space:]]*\\[" s "\\][[:space:]]*$"); print; next }
+        insec && $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { if (!done) { print k "=" v; done=1 } ; next }
+        { print }
+        END { flush(); if (!done) { print "[" s "]"; print k "=" v } }' "$f" > "$f.tma" && cat "$f.tma" > "$f"; rm -f "$f.tma"
+    }
+    tma_grub_regen() {
+      if command -v update-grub >/dev/null 2>&1; then update-grub
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        if [ -f /boot/grub2/grub.cfg ]; then grub2-mkconfig -o /boot/grub2/grub.cfg
+        else for c in /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c"; done; fi
+      elif command -v grub-mkconfig >/dev/null 2>&1; then
+        [ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg
+      fi; return 0
+    }
+    tma_cmdline_rm() { # names of kernel args (name or name=value) to drop from the grub defaults
+      local a f c k n
+      for a in "$@"; do
+        for f in /etc/default/grub /etc/default/grub.d/*.cfg; do
+          [ -f "$f" ] || continue
+          grep -Eq "^[[:space:]]*GRUB_CMDLINE_LINUX" "$f" || continue
+          tma_bak "$f"
+          sed -i -E "/^[[:space:]]*GRUB_CMDLINE_LINUX/{ :a; s/([\"' ])${a}(=[^\"' ]*)?([ \"'])/\1\3/; ta; s/  +/ /g; s/ ([\"'])\$/\1/ }" "$f"
+        done
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --remove-args="$a" >/dev/null 2>&1
+      done
+      if command -v grub2-editenv >/dev/null 2>&1; then
+        k=$(grub2-editenv - list 2>/dev/null | sed -n 's/^kernelopts=//p')
+        if [ -n "$k" ]; then n=$k; for a in "$@"; do n=$(printf '%s' "$n" | sed -E "s/(^| )${a}(=[^ ]*)?( |\$)/ /g"); done
+          [ "$n" != "$k" ] && grub2-editenv - set "kernelopts=$n"; fi
+      fi
+      for c in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
+        [ -f "$c" ] || continue
+        for a in "$@"; do sed -i -E "/^[[:space:]]*(linux|kernelopts)/ s/(^|[ =])${a}(=[^ ]*)?( |\$)/\1\3/g" "$c"; done
+      done
+      return 0
+    }
+    tma_cmdline_set() { # name=value pairs forced into GRUB_CMDLINE_LINUX
+      local f=/etc/default/grub kv; [ -f "$f" ] || { echo "no $f"; return 0; }
+      for kv in "$@"; do
+        tma_cmdline_rm "${kv%%=*}" "${kv%%=*}=[^ \"']*" 2>/dev/null
+        tma_bak "$f"
+        if grep -Eq '^[[:space:]]*GRUB_CMDLINE_LINUX=' "$f"; then
+          sed -i -E "s/^([[:space:]]*GRUB_CMDLINE_LINUX=[\"'])(.*)([\"'])\$/\1\2 ${kv}\3/; s/=([\"']) /=\1/" "$f"
+        else printf 'GRUB_CMDLINE_LINUX="%s"\n' "$kv" >> "$f"; fi
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --args="$kv" >/dev/null 2>&1
+      done
+      return 0
+    }
+    f=/etc/selinux/config
+    [ -f "$f" ] || { echo "SELinux not installed; install selinux-policy first"; exit 0; }
+    ty=$(sed -n 's/^[[:space:]]*SELINUXTYPE=//p' "$f" | tail -1)
+    [ "$ty" = mls ] && [ targeted = targeted ] || ty=targeted
+    [ -d /etc/selinux/$ty ] || { echo "no SELinux policy /etc/selinux/$ty installed; refusing to enable (would break boot)"; exit 0; }
+    tma_bak "$f"
+    setk() { grep -qE "^[[:space:]]*$1=" "$f" && sed -i -E "s/^[[:space:]]*$1=.*/$1=$2/" "$f" || echo "$1=$2" >> "$f"; }
+    setk SELINUX enforcing
+    setk SELINUXTYPE $ty
+    case "$(getenforce 2>/dev/null)" in
+      Permissive) setenforce 1 ;;
+      Disabled) touch /.autorelabel; echo "SELinux disabled at runtime: full relabel + reboot required" ;;
+    esac
+    true
+  guidance: "1. Edit /etc/selinux/config and update the SELINUX parameter to SELINUX=enforcing Example: SELINUX=enforcing 2. Update the SELinux running state to enforcing: • If SELinux is currently disabled: Run the following command to create /.autorelabel: # touch /.autorelabel Run the following command to reboot the system: # reboot WARNING: The autorelabel may be a long running process and require significant downtime. This should be planed for before executing the reboot! • If SELinux is not currently disabled: Run the following commands to set SELinux's running mode to Enforcing: # setenforce 1"

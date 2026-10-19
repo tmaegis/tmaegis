@@ -1,0 +1,48 @@
+id: TMA-ALIBABA-4.4
+title: Ensure no security groups allow ingress from 0.0.0.0/0 to port 3389
+description: Security groups provide filtering of ingress/egress network traffic to Aliyun resources. It is recommended that no security group allows unrestricted ingress access to port 3389. Removing unfettered connectivity to remote console services, such as RDP, reduces a server's exposure to risk. In every ECS region no Accept ingress rule from 0.0.0.0/0 or ::/0 may cover port 3389 (TCP/UDP/ALL, including ranges and -1/-1). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- ecs
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 4.4 Ensure no security groups allow ingress from 0.0.0.0/0 to port 3389
+audit:
+  type: command
+  command: |-
+    regs=$(aliyun ecs DescribeRegions 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$regs" | sed -n 's/.*"RegionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    [ -n "$regions" ] || exit 1
+    bad=0
+    for r in $regions; do
+      page=1
+      while :; do
+        sgs=$(aliyun ecs DescribeSecurityGroups --RegionId "$r" --PageSize 50 --PageNumber "$page" 2>/dev/null) || exit 1
+        ids=$(printf '%s\n' "$sgs" | sed -n 's/.*"SecurityGroupId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+        [ -n "$ids" ] || break
+        for g in $ids; do
+          rules=$(aliyun ecs DescribeSecurityGroupAttribute --RegionId "$r" --SecurityGroupId "$g" --Direction ingress 2>/dev/null) || exit 1
+          n=$(printf '%s\n' "$rules" | awk -v port=3389 '
+    function v(s) { sub(/^[^:]*:[[:space:]]*"?/, "", s); sub(/"?,?[[:space:]]*$/, "", s); return s }
+    function open(s,   a) { if (split(s, a, "/") != 2) return 0; if (a[1] + 0 == -1) return 1; return a[1] + 0 <= port && a[2] + 0 >= port }
+    /\{/ { pr = ""; pt = ""; src = ""; src6 = ""; pol = "" }
+    /"IpProtocol"/ { pr = toupper(v($0)) }
+    /"PortRange"/ { pt = v($0) }
+    /"SourceCidrIp"/ { src = v($0) }
+    /"Ipv6SourceCidrIp"/ { src6 = v($0) }
+    /"Policy"/ { pol = tolower(v($0)) }
+    /\}/ { if ((src == "0.0.0.0/0" || src6 == "::/0") && pol != "drop" && (pr == "ALL" || pr == "TCP" || pr == "UDP") && open(pt)) n++ }
+    END { print n + 0 }')
+          [ "$n" -eq 0 ] || { echo "port 3389 open to the Internet: $r $g"; bad=1; }
+        done
+        set -- $ids
+        [ "$#" -lt 50 ] && break
+        page=$((page + 1))
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun ecs RevokeSecurityGroup --RegionId <r> --SecurityGroupId <sg> --IpProtocol TCP --PortRange 3389/3389 --SourceCidrIp 0.0.0.0/0, then authorise only administrative CIDRs or use a bastion host / Cloud Assistant.

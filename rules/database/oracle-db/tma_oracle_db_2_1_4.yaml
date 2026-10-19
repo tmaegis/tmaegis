@@ -1,0 +1,20 @@
+id: TMA-ORACLE-DB-2.1.4
+title: Ensure 'ALLOWED_WEAK_CERT_ALGORITHMS' Is NOT Set.
+description: 'The ALLOWED_WEAK_CERT_ALGORITHMS setting determines whether Oracle accepts certificates signed with the SHA1 or MD5 or both algorithms. As in the benchmark audit, only an explicit ALLOWED_WEAK_CERT_ALGORITHMS = (NONE) in listener.ora passes. Default: SHA1 Reads the file from $TNS_ADMIN, or $ORACLE_HOME/network/admin when TNS_ADMIN is unset (Linux/UNIX hosts); fails when neither directory exists.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- network
+- tls
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.1.4 Ensure 'ALLOWED_WEAK_CERT_ALGORITHMS' Is NOT Set.
+audit:
+  type: command
+  command: 'd="${TNS_ADMIN:-${ORACLE_HOME:?ORACLE_HOME not set}/network/admin}"; [ -d "$d" ] || { echo "missing $d"; exit 1; }; f="$d/listener.ora"; [ -f "$f" ] || { echo "noncompliant: $f not found"; exit 0; }; v=$(grep -Ei ''^[[:space:]]*ALLOWED_WEAK_CERT_ALGORITHMS[[:space:]]*='' "$f" | tail -n 1 | sed ''s/^[^=]*=//'' | tr -d '' \t\r'' | tr ''[:lower:]'' ''[:upper:]''); [ "$v" = "(NONE)" ] && echo compliant || echo "noncompliant: ${v:-not set}"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, set the ALLOWED_WEAK_CERT_ALGORITHMS parameter to NONE.

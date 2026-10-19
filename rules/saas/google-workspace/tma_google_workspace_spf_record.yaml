@@ -1,0 +1,17 @@
+id: TMA-GWS-SPF-RECORD
+title: Ensure an SPF record authorising Google is published for the domain
+description: 'SPF lists the hosts allowed to send mail for the domain; Google Workspace senders need include:_spf.google.com with a fail (-all) or softfail (~all) default. Checked from any POSIX shell with dig: set DOMAIN to the mail domain (e.g. DOMAIN=example.com). Fails if DOMAIN is unset or dig is missing.'
+target: google-workspace
+level: 1
+severity: medium
+tags:
+- google-workspace
+- mail-auth
+reference: CIS Google Workspace Foundations Benchmark v1.4.0 - Gmail / SPF record (verify section number for your release)
+audit:
+  type: command
+  command: command -v dig >/dev/null 2>&1 || exit 1; [ -n "$DOMAIN" ] || exit 1; out=$(dig +short TXT "$DOMAIN" 2>/dev/null) || exit 1; spf=$(printf '%s\n' "$out" | tr -d '"' | grep -i '^v=spf1'); if printf '%s\n' "$spf" | grep -qi 'include:_spf\.google\.com' && printf '%s\n' "$spf" | grep -qE '[~-]all'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Publish a single TXT record at the domain apex such as: v=spf1 include:_spf.google.com ~all (add other legitimate senders; move to -all once verified).'

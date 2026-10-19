@@ -1,0 +1,18 @@
+id: TMA-SUPPLY-CHAIN-BASE-IMAGE-DIGEST
+title: Ensure container base images are pinned by digest
+description: FROM image:tag resolves to whatever the registry serves at build time, so a re-tagged or compromised upstream image changes the build silently. Pinning to @sha256:<digest> makes builds reproducible and reviewable. The audit checks every tracked Dockerfile/Containerfile; scratch, earlier build-stage aliases and images given through build ARGs (FROM $VAR) are skipped. Passes when no Dockerfile is tracked. Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.
+target: supply-chain
+level: 2
+severity: medium
+tags:
+- supply-chain
+- dependencies
+- containers
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Dependencies - pin container base images to immutable digests (verify section number for your release)
+audit:
+  type: command
+  command: "top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1\ncd \"$top\" || exit 1\nfiles=$(git ls-files 2>/dev/null) || exit 1\ndfs=$(printf '%s\\n' \"$files\" | grep -E '(^|/)(Dockerfile|Containerfile)([.-][^/]*)?$|\\.[Dd]ockerfile$')\nbad=$(printf '%s\\n' \"$dfs\" | while IFS= read -r f; do\n  [ -n \"$f\" ] || continue\n  awk -v f=\"$f\" 'toupper($1) == \"FROM\" {\n      img = \"\"\n      for (i = 2; i <= NF; i++) { if ($i !~ /^--/) { img = $i; break } }\n      ok = (img == \"\" || tolower(img) == \"scratch\" || (tolower(img) in alias) || img ~ /^\\$/)\n      if (!ok && match(img, /@sha256:[0-9a-f]+$/) && RLENGTH == 72) ok = 1\n      if (!ok) print f \": \" img\n      if (NF >= 4 && tolower($(NF - 1)) == \"as\") alias[tolower($NF)] = 1\n    }' \"$f\"\ndone)\nif [ -z \"$bad\" ]; then echo compliant; else echo \"base images not pinned by digest:\"; printf '%s\\n' \"$bad\"; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Rewrite each FROM as 'FROM image:tag@sha256:<digest>' (digest from docker buildx imagetools inspect image:tag or crane digest) and let Dependabot/Renovate (docker ecosystem) keep digests current.

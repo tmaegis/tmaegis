@@ -1,0 +1,30 @@
+id: TMA-KUBERNETES-1.2.24
+title: Ensure that the --tls-cert-file and --tls-private-key-file arguments are set as appropriate
+description: Setup TLS connection on the API server. Audited on control-plane nodes from the running process arguments (falls back to the kubeadm static pod manifest); SKIPs on nodes without that manifest.
+target: kubernetes
+level: 1
+severity: high
+tags:
+- kubernetes
+- api-server
+- network
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.2.24 Ensure that the --tls-cert-file and --tls-private-key-file arguments are set as appropriate
+audit:
+  type: command
+  command: |-
+    set -f
+    a=$(ps -eo args 2>/dev/null | grep -E '^([^ ]*/)?kube-apiserver( |$)' | head -n 1)
+    [ -n "$a" ] || a=$(sed -n 's/^[[:space:]]*-[[:space:]]*"\{0,1\}\(--[^"]*\)"\{0,1\}[[:space:]]*$/\1/p' /etc/kubernetes/manifests/kube-apiserver.yaml | tr '\n' ' ')
+    [ -n "$a" ] || exit 1
+    g() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    has() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++) if($i==k||index($i,k"=")==1) f=1} END{exit !f}'; }
+    ok=1
+    v=$(g tls-cert-file); [ -n "$v" ] || { echo "noncompliant: --tls-cert-file not set"; ok=0; }
+    v=$(g tls-private-key-file); [ -n "$v" ] || { echo "noncompliant: --tls-private-key-file not set"; ok=0; }
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/manifests/kube-apiserver.yaml
+remediation:
+  type: iac_patch
+  command: Follow the Kubernetes documentation and set up the TLS connection on the apiserver. Then, edit the API server pod specification file /etc/kubernetes/manifests/kube-apiserver.yaml on the master node and set the TLS certificate and private key file parameters. --tls-cert-file=<path/to/tls-certificate-file> --tls-private-key-file=<path/to/tls-key-file>

@@ -1,0 +1,29 @@
+id: TMA-FORTIGATE-2.1.5
+title: Ensure hostname is set
+description: Changes the device default hostname. FAILs if the hostname is still the factory default (model name or serial number). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: low
+tags:
+- fortigate
+- hardening
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.1.5 Ensure hostname is set
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set hostname "?(?:FortiGate[- ]?\w*|FG[A-Z0-9]{2,6}[A-Z]{2}\d{6,})"?[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set hostname "FGT-HQ-EDGE01"
+    end
+    # CIS guidance:
+    In CLI, set the hostname to 'New_FGT1' as follows:
+    config system global
+        set hostname "New_FGT1"
+    end
+    In GUI
+    1) Go to 'System' > 'Settings'
+    2) Update the field 'Hostname' with the new hostname
+    3) click 'Apply'

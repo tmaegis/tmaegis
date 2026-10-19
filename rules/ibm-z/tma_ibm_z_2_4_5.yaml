@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-2.4.5
+title: Ensure that started tasks defined with the PRIVILEGED attribute is justified
+description: Some started tasks require access to a broad set of resources, making it impractical to permit the started task to each of these resources individually. In these cases, the security administrator can choose between assigning the TRUSTED attribute and the PRIVILEGED attribute. A lack of logging can result in loss of visibility as to what protected resources a started task is accessing.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.4.5 Ensure that started tasks defined with the PRIVILEGED attribute is justified
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that STARTED appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that STARTED appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that STARTED appears. Request the following DSMON report: FUNCTION SYSTEM RACSPT Review the report and for any profiles that have YES in the PRIVILEGED column: Verify that the PRIVILEGED attribute assignment is justified. Note: Examples of PRIVILEGED ... (full steps: CIS section 2.4.5)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(STARTED) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(STARTED) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(STARTED) To replace PRIVILEGED with TRUSTED on a STARTED profile use the RACF RALTER and SETROPTS commands: RALTER STARTED <profile> + STDATA(TRUSTED) SETROPTS REFRESH RACLIST(STARTED)'

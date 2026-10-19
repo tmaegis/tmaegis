@@ -1,0 +1,55 @@
+id: TMA-ZOOM-AUTO-UPDATE
+title: Ensure Zoom client automatic updates are enabled by policy
+description: Zoom clients have a long history of exploitable vulnerabilities; updates must not depend on users. Audit reads HKLM:\SOFTWARE\Policies\Zoom\Zoom Meetings\General and is compliant when AU2_EnableAutoUpdate (current auto-update v2 policy) or the legacy EnableClientAutoUpdate is 1. Zoom states that setting any AU2_ key disables the legacy update keys.
+target: zoom
+level: 1
+severity: high
+tags:
+- zoom
+- updates
+reference: CIS Zoom Benchmark v1.0.0 - Client automatic updates
+audit:
+  type: registry
+  command: $k = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Zoom\Zoom Meetings\General' -ErrorAction SilentlyContinue; if ($null -eq $k) { 'unset' } elseif ("$($k.AU2_EnableAutoUpdate)" -eq '1' -or (("$($k.AU2_EnableAutoUpdate)" -eq '') -and "$($k.EnableClientAutoUpdate)" -eq '1')) { 'compliant' } else { 'non-compliant' }
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    $tmaBk = Join-Path $env:ProgramData 'TMAegis\backup'
+    function Backup-TmaKey([string]$p) {
+      try {
+        if (Test-Path -LiteralPath $p) {
+          $k = $p -replace '^Registry::', ''
+          New-Item -ItemType Directory -Force -Path $tmaBk | Out-Null
+          $f = Join-Path $tmaBk (($k -replace '[\\/:*?"<>|]', '_') + '.reg')
+          if (-not (Test-Path -LiteralPath $f)) { & reg.exe export $k $f | Out-Null }
+        }
+      } catch { }
+    }
+    function Set-TmaReg([string]$p, [string]$n, $v, [string]$t) {
+      Backup-TmaKey $p
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      New-ItemProperty -LiteralPath $p -Name $n -Value $v -PropertyType $t -Force | Out-Null
+    }
+    function Remove-TmaValue([string]$p, [string]$n) {
+      if ((Test-Path -LiteralPath $p) -and ($null -ne (Get-ItemProperty -LiteralPath $p -Name $n -ErrorAction SilentlyContinue))) {
+        Backup-TmaKey $p
+        Remove-ItemProperty -LiteralPath $p -Name $n -Force
+      }
+    }
+    function Remove-TmaKey([string]$p) {
+      if (Test-Path -LiteralPath $p) { Backup-TmaKey $p; Remove-Item -LiteralPath $p -Recurse -Force }
+    }
+    function Set-TmaList([string]$p, [string[]]$items, [bool]$replace) {
+      Backup-TmaKey $p
+      if ($replace) { Remove-TmaKey $p }
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      $have = @((Get-ItemProperty -LiteralPath $p -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Value)" })
+      $n = [int](@((Get-Item -LiteralPath $p).GetValueNames()) | ForEach-Object { $x = 0; if ([int]::TryParse($_, [ref]$x)) { $x } else { 0 } } | Measure-Object -Maximum).Maximum
+      foreach ($i in $items) {
+        if ($have -notcontains $i) { $n++; New-ItemProperty -LiteralPath $p -Name "$n" -Value $i -PropertyType String -Force | Out-Null }
+      }
+    }
+    Set-TmaReg 'HKLM:\SOFTWARE\Policies\Zoom\Zoom Meetings\General' 'AU2_EnableAutoUpdate' 1 'DWord'
+  guidance: "Deploy the Zoom ZoomMeetings_HKLM.admx template and enable the automatic update policy (AU2_EnableAutoUpdate = 1, optionally AU2_SetUpdateChannel), or install with the MSI property AU2_EnableAutoUpdate=true. Policy values live under HKLM:\\SOFTWARE\\Policies\\Zoom\\Zoom Meetings\\General."

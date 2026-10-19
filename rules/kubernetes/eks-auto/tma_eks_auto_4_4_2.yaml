@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-4.4.2
+title: Use external secret storage for sensitive values
+description: Use external secret storage to manage sensitive application values in AWS Secrets Manager or Systems Manager Parameter Store instead of relying only on native Kubernetes Secret objects. This approach lets EKS workloads consume secrets through integrations such as the AWS Secrets and Configuration Provider with the Secrets Store CSI Driver, while keeping secret lifecycle functions outside the cluster. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.4.2 Use external secret storage for sensitive values
+audit:
+  type: manual
+  command: Audit the EKS Auto Mode cluster’s secrets architecture and verify that required workloads use an external secrets store such as AWS Secrets Manager or Systems Manager Parameter Store instead of relying only on Kubernetes Secret objects. The audit should confirm both the integration path and the workload access model, because external secret storage in EKS commonly uses the AWS Secrets and Configuration Provider with the Secrets Store CSI Driver, plus pod IAM through EKS Pod Identity or IRSA.
+remediation:
+  type: iac_patch
+  command: Use AWS Secrets Manager or Systems Manager Parameter Store as the primary store for application secrets. Update EKS workloads to retrieve those values through the AWS Secrets and Configuration Provider with the Secrets Store CSI Driver, using IAM through EKS Pod Identity or IRSA. This shifts encryption, access control, rotation, and auditing to AWS rather than leaving those functions primarily in cluster Secret objects. • Create the required secrets in AWS Secrets Manager or Parameter Store, and define least privilege IAM permissions so each workload identity can read only the specific secrets it requires. • Install and configure the Secrets Store CSI Driver and AWS Secrets and Configuration Provider if they are not already present.

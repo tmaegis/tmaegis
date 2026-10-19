@@ -1,0 +1,31 @@
+id: TMA-EXTREME-SLX-2.2.2
+title: Ensure Password complexity is configured
+description: It is prudent to use a minimum length to 14 characters. Maximum length should be as long as possible based on system constraints PASS requires password-attributes min-length >= 8, max-retry <= 4 and character-restriction upper >= 1, lower >= 2, numeric >= 1 and special-char >= 1 (the CIS values), matched in the order SLX-OS prints them. Audited against SLX-OS 'show running-config' output (saved in full).
+target: extreme-slx
+level: 1
+severity: high
+tags:
+- extreme-slx
+- authentication
+reference: CIS ExtremeNetworks SLX-OS 20.X.X Benchmark v1.0.1 - 2.2.2 Ensure Password complexity is configured
+audit:
+  type: config_regex
+  pattern: (?ms)^password-attributes\b(?s:.*?)\bmin-length (?:[89]|[1-9]\d)\b(?s:.*?)\bmax-retry [1-4]\b(?s:.*?)\bupper [1-9]\d*\b(?s:.*?)\blower (?:[2-9]|[1-9]\d)\b(?s:.*?)\bnumeric [1-9]\d*\b(?s:.*?)\bspecial-char [1-9]\d*\b
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+    password-attributes min-length 8
+    password-attributes max-retry 4
+    password-attributes character-restriction upper 1
+    password-attributes character-restriction lower 2
+    password-attributes character-restriction numeric 1
+    password-attributes character-restriction special-char 1
+    end
+    # CIS guidance:
+    password-attributes min-length 8
+    password-attributes max-retry 4
+    password-attributes character-restriction upper 1
+    password-attributes character-restriction lower 2
+    password-attributes character-restriction numeric 1
+    password-attributes character-restriction special-char 1

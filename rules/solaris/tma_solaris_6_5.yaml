@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-6.5
+title: Remove Autologin Capabilities from the GNOME desktop
+description: 'The GNOME Display Manager is used for login session management. See the manual page gdm(1) for more information. By default, GNOME automatic login is defined in /etc/pam.d/gdm-autologin to allow users to access the system without a password. As automatic logins are a known security risk for other than "kiosk" types of systems, GNOME automatic login should be disabled in /etc/pam.d/gdm-autologin. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.5 Remove Autologin Capabilities from the GNOME desktop
+audit:
+  type: command
+  command: f=/etc/pam.d/gdm-autologin; [ -f "$f" ] || { echo 0; exit 0; }; n=$(egrep "auth|account" "$f" | grep -vc "^#"); echo "$n"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Comment out or remove all lines from /etc/pam.d/gdm-autologin: # cp /etc/pam.d/gdm-autologin /etc/pam.d/gdm-autologin.orig # awk ''{ if ( $1 ~ /auth/ || $1 ~ /account/) $1 = "#"$1 } { print };'' /etc/pam.d/gdm-autologin > /etc/pam.d/gdm-autologin.CIS # cp /etc/pam.d/gdm-autologin.CIS /etc/pam.d/gdm-autologin'

@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.2.1
+title: Ensure that access to the catalog tables in the communications database (CDB) is restricted
+description: The communications database (CDB) is a set of Db2 catalog tables that can be configured to control aspects of outbound and inbound connection requests. The SYSIBM.LOCATIONS table and SYSIBM.USERNAMES table are configured for using TCP/IP or SNA protocol. PUBLIC access to these tables exposes connection information for remote Db2 access, which can compromise the security of the server.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.2.1 Ensure that access to the catalog tables in the communications database (CDB) is restricted
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check if PUBLIC has access: SELECT GRANTEE, TCREATOR, TTNAME FROM SYSIBM.SYSTABAUTH WHERE TCREATOR = ''SYSIBM'' AND TTNAME IN (''LOCATIONS'', ''IPNAMES'', ''IPLIST'', ''LUNAMES'', ''LULIST'', ''LUMODES'', ''MODESELECT'', ''USERNAMES'') AND GRANTEE = ''PUBLIC''; Output that contains zero rows is considered a successful finding. Otherwise, PUBLIC has SELECT, INSERT, UPDATE, or DELETE privilege and the remediation steps should be followed. For external security users: Issue the RACF RLIST command to list the ... (full steps: CIS section 2.2.1)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the SQL REVOKE statement to revoke access from PUBLIC. For external security users: Issue the RACF RALTER command to update the profiles and change the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

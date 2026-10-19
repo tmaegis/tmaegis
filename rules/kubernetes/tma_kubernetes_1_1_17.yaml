@@ -1,0 +1,25 @@
+id: TMA-KUBERNETES-1.1.17
+title: Ensure that the controller-manager.conf file permissions are set to 600 or more restrictive
+description: Ensure that the controller-manager.conf file has permissions of 600 or more restrictive.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- control-plane
+- file-permissions
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.1.17 Ensure that the controller-manager.conf file permissions are set to 600 or more restrictive
+audit:
+  type: command
+  command: |-
+    set -f
+    f=""; for x in /etc/kubernetes/controller-manager.conf; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    p=$(stat -Lc %a "$f") || exit 1
+    if [ $((0$p & 0177)) -eq 0 ]; then echo compliant; else echo "noncompliant: $f mode $p"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/controller-manager.conf
+remediation:
+  type: command
+  command: chmod u-x,go-rwx /etc/kubernetes/controller-manager.conf

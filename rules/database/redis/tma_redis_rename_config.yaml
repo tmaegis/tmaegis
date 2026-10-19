@@ -1,0 +1,38 @@
+id: TMA-REDIS-RENAME-CONFIG
+title: Ensure the CONFIG command is renamed or blocked
+description: CONFIG lets a client rewrite dir/dbfilename and write arbitrary files (a classic Redis-to-RCE path). Compliant when rename-command CONFIG is set or the default ACL user has -@dangerous / -@admin / -config. Checks /etc/redis/redis.conf (SKIP when it does not exist; RHEL uses /etc/redis.conf).
+target: redis
+level: 1
+severity: high
+tags:
+- redis
+- database
+- surface-reduction
+reference: CIS Redis Benchmark - Command Hardening / Dangerous Commands (verify section number for your release)
+audit:
+  type: file_regex
+  file_path: /etc/redis/redis.conf
+  pattern: (?mi)^[ \t]*(?:rename-command[ \t]+['\x22]?config['\x22]?[ \t]+\S+|user[ \t]+default[ \t][^\n]*(?:-@dangerous|-@admin|-config)\b)
+  requires_file:
+  - /etc/redis/redis.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    f=/etc/redis/redis.conf
+    [ -f "$f" ] || exit 0
+    grep -qxF 'rename-command CONFIG ""' "$f" || echo 'rename-command CONFIG ""' >> "$f"
+    echo "restart redis for the change to take effect"; true
+  guidance: "Add 'rename-command CONFIG \"\"' (or a secret name) to redis.conf, or restrict the default ACL user with -@dangerous, then restart Redis"

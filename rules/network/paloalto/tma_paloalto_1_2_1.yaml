@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-1.2.1
+title: Ensure 'Permitted IP Addresses' is set to those necessary for device management
+description: 'Permit only the necessary IP addresses to be used to manage the device. PASS requires at least one deviceconfig system permitted-ip entry; confirm the list contains only management networks. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- management
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.2.1 Ensure 'Permitted IP Addresses' is set to those necessary for device management
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig system permitted-ip \S
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system permitted-ip 10.0.0.0/24
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Interfaces > Management. Set Permitted IP Addresses to only those necessary for device management for the SSH and HTTPS protocols. If no profile exists, create one that has these addresses set.

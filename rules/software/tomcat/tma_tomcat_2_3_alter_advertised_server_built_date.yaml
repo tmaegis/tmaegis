@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-2.3
+title: Alter the Advertised server.built Date
+description: 'The server.built date represents the date which Tomcat was compiled and packaged. This value is presented to Tomcat clients when clients connect to the server. server.built must not contain a build date (default e.g. "Jul 8 2025 11:40:35 UTC"). Reads ServerInfo.properties from $CATALINA_HOME/lib/org/apache/catalina/util/ (override) or else from lib/catalina.jar (needs unzip or python3). Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored. CIS marks this recommendation Manual; the automated check implements its audit procedure.'
+target: tomcat
+level: 2
+severity: low
+tags:
+- tomcat
+- information-disclosure
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 2.3 Alter the Advertised server.built Date
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; j="$H/lib/catalina.jar"; [ -r "$j" ] || exit 1; rd(){ unzip -p "$j" "$1" 2>/dev/null || python3 -c 'import sys,zipfile; sys.stdout.write(zipfile.ZipFile(sys.argv[1]).read(sys.argv[2]).decode())' "$j" "$1"; }; p="$H/lib/org/apache/catalina/util/ServerInfo.properties"; if [ -r "$p" ]; then si=$(cat "$p"); else si=$(rd org/apache/catalina/util/ServerInfo.properties) || exit 1; fi; val(){ printf '%s\n' "$si" | tr -d '\r' | sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" | tail -n1; }; v=$(val server.built); printf '%s\n' "$v" | grep -Eq '[A-Z][a-z]{2} [0-9]{1,2} [0-9]{4}' && echo noncompliant || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Set server.built= (empty) in ServerInfo.properties and update catalina.jar. Restart Tomcat afterwards.

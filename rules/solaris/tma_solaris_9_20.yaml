@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.20
+title: Check for Presence of User .forward Files
+description: 'The .forward file specifies an email address to which a user''s mail is forwarded. Use of the .forward file poses a security risk in that sensitive data may be inadvertently transferred outside the organization. The .forward file also poses a secondary risk as it can be used to execute commands that may perform unintended actions. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.20 Check for Presence of User .forward Files
+audit:
+  type: command
+  command: 'command -v logins >/dev/null 2>&1 || exit 1; out=$( { for dir in $(logins -ox | awk -F: ''($8 == "PS") { print $6 }''); do ls -l "$dir"/.forward; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if any .forward files exist, and work with the owner to determine the best course of action in accordance with site policy.

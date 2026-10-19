@@ -1,0 +1,28 @@
+id: TMA-CISCO-IOSXR-1.8.3
+title: Configure a Password Policy
+description: 'Because passwords are stored only in revertible type 7 format, please consider not applying this recommendation and using secrets instead. This only applies if you absolutely need to configure "password" instead of "secret" for local users. Cisco IOS XR Software introduces advanced AAA password strengthening policy and security mechanism to store, retrieve and provide rules or policy to specify user passwords. Strong passwords are important because they help prevent unauthorized access to devices and the network. Even if a central authentication source is used, if that service is not available the fall-back authentication is often to local credentials. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-iosxr
+level: 2
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.8.3 Configure a Password Policy
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. IOSXR#sh run aaa aaa password-policy {password_policy} lifetime months 3 max-length 25 min-length 18 lockout-time days 1 min-char-change 5 authen-max-attempts 3 ! username {local_username} group root-lr group cisco-support secret {local_password} The policy is only in effect when it is also applied under a "username" section.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Use the following configuration to enable a password policy. Choose values according to established guidelines of your organization.
+    configure
+    aaa password-policy {password_policy}
+    min-length 8
+    max-length 25
+    lifetime months 3
+    min-char-change 5
+    authen-max-attempts 3
+    lockout-time days 1
+    username {local_username} password-policy {password_policy} password 0 {local_password}
+    commit

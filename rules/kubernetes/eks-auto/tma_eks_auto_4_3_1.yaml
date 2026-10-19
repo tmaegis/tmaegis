@@ -1,0 +1,20 @@
+id: TMA-EKS-AUTO-4.3.1
+title: Enable Network Policy enforcement for EKS Auto Mode
+description: 'EKS Auto Mode provides AWS managed VPC pod networking with built-in support for pod network policies. For this control, enable Network Policy enforcement by configuring the EKS Auto Mode Network Policy Controller, which is done by applying the amazon-vpc-cni ConfigMap with enable-network-policy-controller: true in the kube-system namespace. Requires kubectl read access to kube-system; checks the amazon-vpc-cni ConfigMap enables the Network Policy Controller.'
+target: eks-auto
+level: 1
+severity: medium
+tags:
+- eks-auto
+- policies
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.3.1 Enable Network Policy enforcement for EKS Auto Mode
+audit:
+  type: command
+  command: |-
+    v=$(kubectl get configmap amazon-vpc-cni -n kube-system -o jsonpath='{.data.enable-network-policy-controller}') || exit 1
+    if [ "$v" = true ]; then echo compliant; else echo "noncompliant: enable-network-policy-controller=${v:-not-set}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable Network Policy enforcement for EKS Auto Mode by applying or updating the amazon-vpc-cni ConfigMap in the kube-system namespace with enable-network-policy-controller: true. There is no separate EKS cluster update command for this setting in Auto Mode. Create a file named enable-network-policy.yaml: apiVersion: v1 kind: ConfigMap metadata: name: amazon-vpc-cni namespace: kube-system data: enable-network-policy-controller: "true" Apply the ConfigMap: kubectl apply -f enable-network-policy.yaml Validate the setting: kubectl get configmap amazon-vpc-cni -n kube-system -o jsonpath=''{.data.enable-network-policy-controller}{"\n"}'' • After the controller is enabled, apply the required Kubernetes NetworkPolicy resources or supported EKS network policy resources for the workloads that need traffic restrictions.'

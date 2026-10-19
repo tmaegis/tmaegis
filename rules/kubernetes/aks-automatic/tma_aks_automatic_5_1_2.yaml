@@ -1,0 +1,18 @@
+id: TMA-AKS-AUTOMATIC-5.1.2
+title: Minimize and scope access to Azure Container Registry (ACR)
+description: Limit ACR access for AKS Automatic and related users to only the permissions required for their function. AKS to ACR integration grants the cluster’s kubelet managed identity the AcrPull role so nodes can pull images without broader registry rights. For ABAC enabled registries, --attach-acr is not supported, and the Container Registry Repository Reader role must be assigned manually instead. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: medium
+tags:
+- aks-automatic
+- managed-services
+- rbac
+- registry
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 5.1.2 Minimize and scope access to Azure Container Registry (ACR)
+audit:
+  type: manual
+  command: Review ACR access for AKS Automatic to confirm the registry uses least privilege, identity based access. Verify the ACR admin account is disabled, determine whether the registry is using RBAC only or RBAC + ABAC, confirm the AKS kubelet identity has only image pull rights, and review other principals for unnecessary push, delete, or broader registry permissions. • Confirm that adminUserEnabled is false, since the local admin account provides broad registry access and is not the preferred authentication method for integrated AKS and ACR use.
+remediation:
+  type: iac_patch
+  command: 'Disable the ACR local admin account and use identity based, least privilege access for registry authentication and authorization. For AKS Automatic, use the kubelet managed identity for required image pull access, and assign only the minimum registry role required by the registry authorization model: AcrPull for registries using RBAC only or Container Registry Repository Reader for ABAC enabled registries. Do not use --attach-acr with an ABAC enabled registry. Assign Container Registry Repository Reader manually to the kubelet managed identity and add repository conditions where required. Human users should use Microsoft Entra identities, while pipelines and workloads should use managed identities or service principals with only the required registry roles and repository conditions, rather than shared local registry credentials.'

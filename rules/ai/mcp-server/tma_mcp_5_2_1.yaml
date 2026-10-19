@@ -1,0 +1,19 @@
+id: TMA-MCP-5.2.1
+title: Ensure listChanged notifications are rate-limited to prevent client flooding
+description: The server applies rate limiting or debouncing per notification type to list_changed notifications and other server-to-client event emissions, to prevent client floods and denial-of-service conditions. Under the 2026-07-28 revision, these notifications flow on the subscriptions/listen stream to clients that opted into the corresponding type through toolsListChanged, promptsListChanged, or resourcesListChanged. Each type is an independent subscription, so the throttle applies per type on that stream. The server enforces a minimum interval between two successive list_changed notifications of the same type, and batches or applies cool- down logic to high-frequency change events. The server logs the rate of its notification emissions so anomalous spikes can be detected. A server that emits list_changed notifications without throttling can flood a client that has opened a subscriptions/lis...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.2.1 Ensure listChanged notifications are rate-limited to prevent client flooding
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_5_2_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 5.2.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure a minimum interval between two successive list_changed notifications of the same type on the subscriptions/listen stream, and batch or debounce rapid change events of a type into consolidated notifications rather than one per change. Configure the audit log to record notification emissions with a timestamp and the notification method so anomalous per-type rates can be detected. This is server configuration, and there is no portable command.

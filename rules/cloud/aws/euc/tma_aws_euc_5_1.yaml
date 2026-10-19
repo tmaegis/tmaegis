@@ -1,0 +1,20 @@
+id: TMA-AWS-EUC-5.1
+title: Ensure AppStream is utilizing its own virtual private cloud (VPC)
+description: AppStream 2.0 should be configured using a VPC with Private subnets and a NAT Gateway. For AppStream 2.0 the public subnet will have direct access to the internet through the NAT gateway. This setup allows the streaming instances in your private subnets to connect to the internet or other AWS services.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- euc
+- network
+reference: CIS AWS End User Compute Services Benchmark v1.2.0 - 5.1 Ensure AppStream is utilizing its own virtual private cloud (VPC)
+audit:
+  type: manual
+  command: 'Perform the following to determine if a VPC is setup for AppStream 2.0 correctly. From Console: 1. Login to the VPC console at https://console.aws.amazon.com/vpc/ 2. In the left pane, click Your VPCs 3. Select the VPC for AppStream 2.0 and take note of the name and the VPC ID 4. In the left pane, click Subnets 5. Confirm you have 3 subnets labeled and associated with the VPC 1 AppStream Public Subnet and 2 AppStream Private Subnets 6. Confirm the AppStream Public Subnet is configured correctly. o Select AppStream Public subnet Description tab - VPC matches `AppStream ID and name` Route Table tab - verify contains rules `-Example` - Destination - 10.0.0.0/20, Target - local `-Example` - Destination - 0.0.0.0/0, Target - internet_gateway_ID 7. Confirm the 2 AppStream Private Subnets are configured correctly. o Select AppStream Private subnet 1 Description Tab - VPC matches `AppStream ID and name` and note Availability zone Route Table tab - verify contains routes `-Example` - Destination
+    - 10.0.0.0/20, Target - local `-Example` - Destination - 0.0.0.0/0, Target - nat_gateway_ID `-Example- optional` - Destination - S3bucket_enpoint_ID, Target - storage_vpce_ID - Select AppStream Pr...'
+remediation:
+  type: iac_patch
+  command: 'Perform the steps below to create a VPC, subnets and routing table for AppStream 2.0 From the Console Allocate an Elastic IP address 1. Login in to the Amazon VPC console at https://console.aws.amazon.com/vpc/ 2. In the left pane, click Elastic IPs. 3. Click Allocate new address. 4. Then click on Allocate. 5. Make a note of the Elastic IP address. 6. Click Close. Create a New VPC with one public subnet and two private subnet''s. 1. Login to the VPC console at https://console.aws.amazon.com/vpc/ 2. Click Launch VPC Wizard. 3. Choose VPC with Public and Private Subnet''sand then clickSelect`. 4. Configure the VPC as follows: - `IPv4 CIDR block` - enter a CIDR block from the private (non-publicly routable) IP address range - example. 10.0.0.0/16. - `IPv6 CIDR block` - Accept the default value - No IPv6 CIDR Block - `VPC name` enter a name for the VPC (example, AppStream VPC). - `Public subnet''s IPv4 CIDR` - enter a CIDR block from the private (non-publicly routable) IP address
+    range - ie. 10.0.0.0/24. - `Availability Zone` - Accept the default value - No Preference - `Public subnet name` - enter a name for the subnet (example, AppStream Public Subnet) - `Private subnet''s IPv4 CIDR` -...'

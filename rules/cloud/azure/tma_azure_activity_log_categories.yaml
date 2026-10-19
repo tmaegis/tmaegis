@@ -1,0 +1,17 @@
+id: TMA-AZURE-ACTIVITY-LOG-CATEGORIES
+title: Ensure the activity log diagnostic setting captures Administrative, Alert, Policy and Security categories
+description: Exporting only some categories leaves gaps (e.g. no Security or Policy events). Across the subscription diagnostic settings, the Administrative, Alert, Policy and Security categories must all be enabled. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- logging
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Logging and Monitoring - diagnostic setting captures appropriate categories (verify section number for your release)
+audit:
+  type: command
+  command: "out=$(az monitor diagnostic-settings subscription list --query '(value || @)[].logs[?enabled==`true`].category' -o tsv 2>/dev/null) || exit 1\ncats=$(printf '%s\\n' \"$out\" | tr '\\t' '\\n')\nbad=0\nfor c in Administrative Alert Policy Security; do\n  printf '%s\\n' \"$cats\" | grep -qx \"$c\" || { echo \"missing: $c\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Update the subscription diagnostic setting to enable at least the Administrative, Alert, Policy and Security categories (az monitor diagnostic-settings subscription update --name <setting> --logs ...).

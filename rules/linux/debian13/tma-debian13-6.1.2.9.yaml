@@ -1,0 +1,21 @@
+id: TMA-DEBIAN13-6.1.2.9
+title: Ensure rsyslog forwarding uses gtls
+description: 'Network stream drivers are a layer between various parts of rsyslogd (e.g. the imtcp module) and the transport layer. They provide sequenced delivery, authentication and confidentiality to the upper layers. Drivers implement different capabilities. Note: While gtls (GnuTLS) is used in this recommendation, ossl (OpenSSL via rsyslog- openssl) is an acceptable alternative stream driver. Replace DefaultNetstreamDriver gtls with DefaultNetstreamDriver ossl and ensure rsyslog-openssl is installed if using the OpenSSL driver.'
+target: linux
+os_family:
+- debian-13
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 13 Benchmark v1.1.0 - 6.1.2.9
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -Psi -- ''"''"''^[^#]*StreamDriver\s*=\s*"?gtls"?''"''"'' /etc/rsyslog.conf /etc/rsyslog.d/*.conf 2>/dev/null'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''A match indicates gtls is in use (pass). The pattern uses ^[^#]* to allow'' || { echo step1: missing ''A match indicates gtls is in use (pass). The pattern uses ^[''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''StreamDriver to appear anywhere on a non-commented line, whether it is set on its'' || { echo step1: missing ''StreamDriver to appear anywhere on a non-commented line, whe''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''own line, inside an action(...) block, or in a global(...) directive, and whether or'' || { echo step1: missing ''own line, inside an action(...)
+    block, or in a global(...) d''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''not the value is quoted.'' || { echo step1: missing ''not the value is quoted.''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit rsyslog.conf or a .conf file in /etc/rsyslog.d/ to use gtls: Example /etc/rsyslog.d/40-forward.conf # certificate files - just CA for a client global(DefaultNetstreamDriverCAFile="/path/to/contrib/gnutls/ca.pem") # set up the action for all messages action(type="omfwd" protocol="tcp" target="s.example.net" port="6514" StreamDriver="gtls" StreamDriverMode="1" StreamDriverAuthMode="anon")'

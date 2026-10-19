@@ -1,0 +1,18 @@
+id: TMA-MACOS15-2.10.1.1
+title: Ensure the OS Is Not Active When Resuming from Standby (Intel)
+description: In order to use a computer with Full Disk Encryption (FDE), macOS must keep encryption keys in memory to allow the use of the disk that has been FileVault protected. The storage volume has been unlocked and acts as if it were not encrypted. When the system is not in use, the volume is protected through encryption.
+target: macos
+level: 2
+severity: medium
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.10.1.1 Ensure the OS Is Not Active When Resuming from Standby (Intel)
+os_family:
+- macos-15
+audit:
+  type: manual
+  command: 'Terminal: sudo /usr/sbin/system_profiler SPHardwareDataType | /usr/bin/grep -e MacBook ; sudo /usr/bin/pmset -b -g | /usr/bin/grep -e standby If there is an output, run the following: % /usr/bin/sudo /usr/bin/pmset -b -g | /usr/bin/grep -e standby The output should include a standbydelaylow value ≤ 900, a standbydelayhigh value ≤ 900, and a highstandbythreshol'
+remediation:
+  type: iac_patch
+  command: 'Terminal: sudo /usr/bin/pmset -a standbydelaylow <value≤900> ; sudo /usr/bin/pmset -a standbydelayhigh <value≤900> ; sudo /usr/bin/pmset -a highstandbythreshold <value≥90>.'

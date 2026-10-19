@@ -1,0 +1,19 @@
+id: TMA-CISCO-ASA-1.11.2
+title: Ensure 'snmp-server user' is set to 'v3 auth SHA'
+description: Sets the SNMP v3 user with SHA authentication and AES-256 encryption. SNMP users have a specified username, a group to which the user belongs, authentication password, encryption password, and authentication and encryption algorithms to use. The authentication algorithm options are MD5 and SHA. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- snmp
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.11.2 Ensure 'snmp-server user' is set to 'v3 auth SHA'
+audit:
+  type: config_regex
+  pattern: (?m)(?i)^snmp-server user \S+ \S+ v3 (?:[^\n]* )?auth sha
+remediation:
+  type: iac_patch
+  command: |-
+    ! Run the following:
+    snmp-server user <snmp_username> <group-name> v3 auth SHA <authentication_password> priv AES 256 <encryption_password>

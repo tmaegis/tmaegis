@@ -1,0 +1,99 @@
+: Saved
+: Synthetic sample: Cisco ASA running-config (hardened). Not a secure template.
+ASA Version 9.18(3)
+!
+hostname fw-edge-01
+domain-name example.com
+enable password REDACTEDFAKEHASH pbkdf2
+passwd REDACTEDFAKEHASH encrypted
+password encryption aes
+no service password-recovery
+password-policy minimum-length 14
+password-policy lifetime 90
+password-policy minimum-changes 14
+password-policy minimum-uppercase 1
+password-policy minimum-lowercase 1
+password-policy minimum-numeric 1
+password-policy minimum-special 1
+password-policy authenticate enable
+clock timezone UTC 0
+failover
+!
+interface GigabitEthernet0/0
+ nameif outside
+ security-level 0
+ ip address 203.0.113.2 255.255.255.248
+!
+interface GigabitEthernet0/1
+ nameif inside
+ security-level 100
+ ip address 192.0.2.1 255.255.255.0
+!
+dns domain-lookup inside
+dns server-group DefaultDNS
+ name-server 192.0.2.53
+ domain-name example.com
+!
+access-list OUTSIDE_IN extended permit tcp any host 192.0.2.10 eq 443
+access-list OUTSIDE_IN extended deny ip any any log
+access-group OUTSIDE_IN in interface outside
+!
+ntp authenticate
+ntp authentication-key 1 md5 REDACTED
+ntp trusted-key 1
+ntp server 192.0.2.123 key 1
+!
+logging enable
+logging timestamp
+logging buffer-size 1048576
+logging buffered informational
+logging trap informational
+logging history informational
+logging device-id hostname
+logging host inside 192.0.2.50
+logging mail critical
+no logging monitor
+!
+snmp-server group NMS v3 priv
+snmp-server user nmsuser NMS v3 auth sha REDACTED priv aes 128 REDACTED
+snmp-server host inside 192.0.2.51 version 3 nmsuser
+snmp-server enable traps snmp authentication linkup linkdown coldstart
+!
+username emergency password REDACTEDFAKEHASH pbkdf2 privilege 15
+aaa-server TACACS protocol tacacs+
+aaa-server TACACS (inside) host 192.0.2.60
+ key REDACTED
+aaa authentication enable console TACACS LOCAL
+aaa authentication http console TACACS LOCAL
+aaa authentication ssh console TACACS LOCAL
+aaa authentication secure-http-client
+aaa authorization command TACACS LOCAL
+aaa authorization exec authentication-server
+aaa accounting command privilege 15 TACACS
+aaa accounting ssh console TACACS
+aaa accounting enable console TACACS
+aaa local authentication attempts max-fail 3
+!
+banner exec Authorized access only
+banner login Authorized access only
+banner motd Authorized access only
+banner asdm Authorized access only
+!
+ssh 192.0.2.0 255.255.255.0 inside
+ssh version 2
+ssh timeout 5
+console timeout 5
+http server enable
+http 192.0.2.0 255.255.255.0 inside
+http server idle-timeout 5
+ssl server-version tlsv1.2
+ssl cipher tlsv1.2 custom "AES256-SHA:DHE-RSA-AES256-SHA"
+!
+icmp deny any outside
+fragment chain 1 outside
+ip verify reverse-path interface outside
+threat-detection statistics tcp-intercept
+ip audit name ATTACK attack action alarm drop reset
+ip audit interface outside ATTACK
+!
+: end

@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-3.1
+title: Ensure CockroachDB Logging Is Enabled and Logs Are Securely Stored
+description: CockroachDB's built-in logging must remain enabled to capture database events, and log files should be stored in a secure location with appropriate access restrictions. Misconfiguration (for example an empty or invalid --log-dir) can prevent logs from being retained.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- logging
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 3.1 Ensure CockroachDB Logging Is Enabled and Logs Are Securely Stored
+audit:
+  type: manual
+  command: 'Run systemctl cat cockroach.service | grep ExecStart: it should set --log-dir=<path>, --log-config-file or --log={yaml} (otherwise logs go to <store>/logs). In that directory confirm cockroach.log, cockroach-security.log, cockroach-sql-audit.log and cockroach-sql-auth.log exist with recent timestamps, the directory is owned by cockroach with mode 700 or stricter, and log files are 640 or stricter.'
+remediation:
+  type: iac_patch
+  command: mkdir -p /var/lib/cockroach/logs; chown -R cockroach:cockroach /var/lib/cockroach/logs; chmod 700 /var/lib/cockroach/logs; add --log-dir=/var/lib/cockroach/logs (or --log-config-file=<yaml>) to ExecStart in cockroach.service, then systemctl daemon-reload and perform a rolling restart.

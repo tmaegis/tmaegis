@@ -1,0 +1,35 @@
+id: TMA-GITHUB-1.2.1
+title: Ensure all public repositories contain a SECURITY.md file
+description: 'A SECURITY.md file is a security policy file that offers instruction on reporting security vulnerabilities in a project. When someone creates an issue within a specific project, a link to the SECURITY.md file will subsequently be shown. A SECURITY.md file provides users with crucial security information. It can also serve an important role in project maintenance, encouraging users to think ahead about how to properly handle potential security issues ... Every non-archived public repository of the organization must have SECURITY.md in the root, .github/ or docs/, unless the organization .github repository provides a default one. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings
+  and branch protection need an owner/admin token.'
+target: github
+level: 1
+severity: high
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.2.1 Ensure all public repositories contain a SECURITY.md file
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    O=${GH_ORG:-$(gh api 'repos/{owner}/{repo}' --jq .owner.login 2>/dev/null)}
+    [ -n "$O" ] || exit 1
+    rs=$(gh api --paginate "orgs/$O/repos?type=public&per_page=100" --jq '.[] | select(.archived | not) | .full_name' 2>/dev/null) || exit 1
+    for f in SECURITY.md .github/SECURITY.md docs/SECURITY.md; do
+      gh api "repos/$O/.github/contents/$f" --silent >/dev/null 2>&1 && { echo compliant; exit 0; }
+    done
+    bad=0
+    for r in $rs; do
+      ok=0
+      for f in SECURITY.md .github/SECURITY.md docs/SECURITY.md; do
+        gh api "repos/$r/contents/$f" --silent >/dev/null 2>&1 && { ok=1; break; }
+      done
+      [ "$ok" -eq 1 ] || { echo "no SECURITY.md: $r"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add a SECURITY.md (root, .github/ or docs/) describing how to report vulnerabilities to each listed public repository, or once to the organization .github repository.

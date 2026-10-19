@@ -1,0 +1,18 @@
+id: TMA-YUGABYTEDB-5.3
+title: Ensure the cassandra and superuser roles are separate
+description: The default installation of YugabyteDB includes a superuser role named cassandra. This necessitates the creation of a separate role to be the superuser role. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Runs ycqlsh against ${YCQL_HOST:-127.0.0.1}:${YCQL_PORT:-9042} with credentials from ~/.cassandra/cqlshrc; passes when the default cassandra role is not a superuser. Also confirm every remaining superuser role is approved.
+target: yugabytedb
+level: 2
+severity: high
+tags:
+- yugabytedb
+- authentication
+- privileges
+reference: CIS YugabyteDB Benchmark v2.0.0 - 5.3 Ensure the cassandra and superuser roles are separate
+audit:
+  type: sql_query
+  command: out=$(ycqlsh -e 'SELECT role FROM system_auth.roles WHERE is_superuser = True;' "${YCQL_HOST:-127.0.0.1}" "${YCQL_PORT:-9042}" 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -cE '^[[:space:]]*cassandra[[:space:]]*$' || true
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: CREATE ROLE <admin> WITH PASSWORD = '<strong>' AND LOGIN = true AND SUPERUSER = true; log in as it and run ALTER ROLE cassandra WITH SUPERUSER = false AND LOGIN = false;

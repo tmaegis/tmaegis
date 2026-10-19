@@ -1,0 +1,20 @@
+id: TMA-WIN11-2.3.9.2
+title: 'Ensure ''Microsoft network server: Digitally sign communications (always)'' is set to ''Enabled'''
+description: 'This policy setting determines whether packet signing is required by the SMB server component. This setting should be enabled in a mixed environment to prevent downstream clients from using the workstation as a network server. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 2.3.9.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters'' -Name ''RequireSecuritySignature'' -ErrorAction SilentlyContinue).''RequireSecuritySignature''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RequireSecuritySignature='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters' -Name 'RequireSecuritySignature' -Value 1 -PropertyType DWord -Force | Out-Null

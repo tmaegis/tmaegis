@@ -1,0 +1,35 @@
+id: TMA-FORTIGATE-2.2.1
+title: Ensure 'Password Policy' is enabled
+description: It is important to use secure and complex passwords for preventing unauthorized access to the FortiGate device. PASS requires the password policy enabled, applied to admin-password and minimum-length 14 or more. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: high
+tags:
+- fortigate
+- authentication
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.2.1 Ensure 'Password Policy' is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^config system password-policy\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[
+    \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config system password-policy
+        set status enable
+        set apply-to admin-password ipsec-preshared-key
+        set minimum-length 14
+    end
+    # CIS guidance:
+    Can be modified from CLI or GUI. From CLI, do the following:
+    config system password-policy
+        set status enable
+        set apply-to admin-password ipsec-preshared-key
+        set minimum-length 14
+    end
+    Or from GUI, do the following:
+    1) Log in to FortiGate as Super Admin
+    2) Go to 'System' > 'Settings'
+    3) Find the 'Password Policy' section
+    4) Default 'Password scope' is 'Off', change it to 'Both'
+    5) set 'Minimum length' to '14'

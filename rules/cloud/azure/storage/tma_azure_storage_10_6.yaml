@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-10.6
+title: Ensure locked immutability policies are used for containers storing business-critical blob data
+description: Require locked immutability policies for all containers that store business-critical blob data. This measure protects the data from modifications or deletions, ensuring that critical information remains intact and unaltered, regardless of user actions or access permissions. Implementing a locked immutability policy creates a Write Once, Read Many (WORM) storage model that safeguards critical data from accidental or malicious changes and deletions. Enforcing immutability minimizes data loss and tampering risks, enhancing data security and supporting regulatory requirements for data retention and integrity.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- containers
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 10.6 Ensure locked immutability policies are used for containers storing business-critical blob data
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. Click the name of a storage account. 3. Under Data storage, click Containers. 4. Click the three dots next to a container. 5. Click Access policy. 6. Ensure a locked policy is listed under Immutable blob storage. 7. Repeat steps 1-6 for each blob container with business-critical blob data. Audit from Azure CLI Run the following command to list storage accounts: az storage account list Run the following command to determine if a storage account has containers: az storage container list --account-name <storage-account> For each container, run the following command to view immutability policies: az storage container immutability-policy show --account-name <storage- account> --container <blob-container> Ensure that an immutability policy is listed with "state": "Locked" for each blob container with business-critical blob data.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage accounts. 2. Click the name of a storage account. 3. Under Data storage, click Containers. 4. Click the three dots next to a container. 5. Click Access policy. 6. Under Immutable blob storage, click + Add policy. 7. From the Policy type drop-down, select Legal hold or Time-based retention. 8. If selecting legal hold: 1. Provide at least one tag for the policy. 2. Under Allow protected append writes to, select None or Block and append blobs. 9. If selecting time-based retention: 1. Under Set retention period for, enter a number of days for retention. 2. Check the box next to Enable version-level immutability if appropriate. Versioning must be enabled for this option to be available. 3. Under Allow protected append writes to, select None, Append blobs, or Block and append blobs. 10. Click Save. 11. Click the three dots next to the policy. 12. Click Lock policy. 13. Enter yes to confirm. 14. Click OK. 15. Repeat steps 1-14 for each blob
+    container requiring remediation. Remediate from Azure CLI For each blob container requiring remediation, run the following command to create an immutability policy: az storage container immutability-polic...'

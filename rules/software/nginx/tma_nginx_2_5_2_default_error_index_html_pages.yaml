@@ -1,0 +1,16 @@
+id: TMA-NGINX-2.5.2
+title: Ensure default error and index.html pages do not reference NGINX
+description: 'Default error pages (e.g., 404, 500) and the default welcome page often contain NGINX branding or signatures. These pages should be removed or replaced with generic or custom-branded pages that do not disclose the underlying server technology. Manual review: the benchmark gives no reliable automated check for this control.'
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- configuration
+reference: CIS NGINX Benchmark v3.0.0 - 2.5.2 Ensure default error and index.html pages do not reference NGINX
+audit:
+  type: manual
+  command: '1. Verify Config: Check if error_page directives are active: nginx -T 2>/dev/null | grep -i "error_page" 2. Verify Content (Functional Test): Trigger an error (e.g., request a non-existent page) and inspect the body: curl -k https://127.0.0.1/non-existent-page | grep -i "nginx" Evaluation: PASS: The output does not contain "nginx" (or grep returns nothing). FAIL: The HTML body contains "nginx".'
+remediation:
+  type: iac_patch
+  command: 'Instead of editing the default files (which may be overwritten by package updates), configure NGINX to use custom error pages. 1. Create Custom Error Pages: Create a directory (e.g., /var/www/html/errors) and place generic HTML files there (e.g., 404.html, 50x.html) without NGINX branding. 2. Configure NGINX: Add the error_page directive to your http or server blocks: error_page 404 /404.html; error_page 500 502 503 504 /50x.html; location = /50x.html { root /var/www/html/errors; internal; }'

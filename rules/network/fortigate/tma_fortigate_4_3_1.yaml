@@ -1,0 +1,26 @@
+id: TMA-FORTIGATE-4.3.1
+title: Enable Botnet C&C Domain Blocking DNS Filter
+description: Enable Botnet C&C domain blocking to block botnet access at the DNS name resolving stage. PASS requires a DNS filter profile with block-botnet enable; confirm it is applied to policies carrying DNS. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: high
+tags:
+- fortigate
+- threat-prevention
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.3.1 Enable Botnet C&C Domain Blocking DNS Filter
+audit:
+  type: config_regex
+  pattern: (?m)^config dnsfilter profile\n(?:[ \t]+[^\n]*\n)*?[ \t]+set block-botnet enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config dnsfilter profile
+        edit "<profile>"
+            set block-botnet enable
+        next
+    end
+    # CIS guidance:
+    On GUI:
+    1. Go to Security Profiles > DNS Filter.
+    2. On the relevant security profile name, double click. Enable "Redirect botnet C&C requests to Block Portal".
+    2. Ensure that firewall policies that have DNS traffic have a DNS Filter security profile applied with that option enabled.

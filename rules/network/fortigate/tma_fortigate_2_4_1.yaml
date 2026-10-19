@@ -1,0 +1,46 @@
+id: TMA-FORTIGATE-2.4.1
+title: Remove default admin user and create one with other name
+description: Before deploying any new FortiGate, it is important to change the password of the default admin account. It is also recommended that you change even the user name of the default admin account, However, since you cannot change the user name of an account that is currently in use, a second administrator account must be created in order to do this. FAILs if the default 'admin' account still exists. Logging in as admin with a blank password (the CIS audit) is also worth trying. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: critical
+tags:
+- fortigate
+- authentication
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.4.1 Remove default admin user and create one with other name
+audit:
+  type: config_regex
+  pattern: (?m)^config system admin\n(?:[ \t]+[^\n]*\n)*?[ \t]+edit "admin"[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system admin
+        edit "mycompanyadmin"
+            set accprofile "super_admin"
+            set password <password>
+        next
+    end
+    (log in as mycompanyadmin, then)
+    config system admin
+        delete "admin"
+    end
+    # CIS guidance:
+    First create an other local admin account, for example mycompanyadmin.
+    #if VDOM enabled
+    config global
+    #configure new admin
+    config system admin
+        edit "mycompanyadmin"
+            set password
+            set accprofile "super_admin"
+        next
+    end
+    Verify if the newly created login works by opening another CLI session, do not logout of your current session. Once validated, logout with the default local admin account and use the CLI session with mycompanyadmin to delete the default local admin account. Please make sure there are no references in the configuration to the account (groups, etc.)
+    #if VDOM enabled
+    config global
+        config system admin
+            delete "admin"
+        end
+    To change the default password in the GUI:
+    Global (if VDOM enabled) > System > Administrators Create New admin account (mycompanyadmin) Verify if you can login with that account via another browser session (eg. incognito mode). Remove default admin System > Administrators menu

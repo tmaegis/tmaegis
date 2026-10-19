@@ -1,0 +1,17 @@
+id: TMA-PRINTER-UNUSED-PROTOCOLS
+title: Ensure unused and insecure network protocols are disabled (Telnet, FTP, SNMPv1/v2c, legacy print services)
+description: Print devices enable many services by default. Telnet and FTP send credentials in clear text, SNMPv1/v2c use guessable community strings, and legacy services (LPD, raw 9100 with PJL file system access, WS-Discovery, AppleTalk/Bonjour, IPX, TFTP) widen the attack surface.
+target: printer
+level: 1
+severity: high
+tags:
+- printer
+- network
+- attack-surface
+reference: CIS Multi-Function Device Benchmark v1.0.0 - Disable unused protocols and services (verify section number for your release)
+audit:
+  type: manual
+  command: 'In the Embedded Web Server (EWS: browse to https://<printer-ip>/ and sign in as administrator; HP: Security / Networking tabs, Xerox: Properties > Security / Connectivity, Ricoh: Device Management > Configuration, Canon: Settings/Registration > Network Settings / Security Settings) > Networking / Network Settings > Protocols (HP: Networking > Other Settings / Mgmt. Protocols; Xerox: Connectivity > Setup): Telnet, FTP (printing and firmware), TFTP, SNMPv1/v2c, LPD, AppleTalk, IPX/SPX, WS-Discovery/WSD Print, SLP and other unused services must be OFF. Keep only the required print path (IPPS preferred). Confirm externally from an admin host with a port listing of the device (tcp/21, 23, 69, 515, 9100 closed unless justified; udp/161 v1/v2c rejected).'
+remediation:
+  type: iac_patch
+  command: 'EWS: disable Telnet, FTP, TFTP, SNMPv1/v2c, LPD, WSD, SLP, AppleTalk/IPX and any unused print protocol; restrict raw port 9100 or disable PJL file system/device-control commands. Apply via fleet configuration templates.'

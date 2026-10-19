@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.4
+title: Ensure 'log_truncate_on_rotation' is enabled
+description: 'Enabling the log_truncate_on_rotation setting when logging_collector is enabled causes YugabyteDB to truncate (overwrite) existing log files with the same name during log rotation instead of appending to them. Note: Truncation will occur only when a new file is being opened due to time-based rotation, not during server startup or size-based rotation (see later in this benchmark for size-based rotation details). Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass.'
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.4 Ensure 'log_truncate_on_rotation' is enabled
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SHOW log_truncate_on_rotation" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'on'
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_truncate_on_rotation='on'" on every YB-TServer and restart it.

@@ -1,0 +1,24 @@
+id: TMA-CHECKPOINT-2.1.7
+title: Ensure IPv6 is disabled if not used
+description: Although IPv6 has many advantages over IPv4, not all organizations have IPv6 or dual stack configurations implemented FAILs if IPv6 is enabled (set ipv6-state on); if IPv6 is used, document the exception. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: medium
+tags:
+- checkpoint
+- hardening
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 2.1.7 Ensure IPv6 is disabled if not used
+audit:
+  type: config_regex
+  pattern: (?m)^set ipv6-state on[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    set ipv6-state off
+    save config
+    (a restart of the gateway is required for the change to take effect)
+    # CIS guidance:
+    Run the following command to enable or disable IPv6.
+    set ipv6-state on
+    set ipv6-state off

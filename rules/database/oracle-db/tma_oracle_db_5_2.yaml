@@ -1,0 +1,38 @@
+id: TMA-ORACLE-DB-5.2
+title: Ensure the 'LOGON' AND 'LOGOFF' Actions Audit Is Enabled
+description: Oracle database users log on to the database to perform their work. Enabling this unified audit causes logging of all LOGON actions, whether successful or unsuccessful, issued by the users regardless of the privileges held by the users to log into the database. In addition, LOGOFF and LOGOFF BY CLEANUP action audit captures logoff activities. This audit action also captures logon/logoff to ... Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- logging
+- audit
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 5.2 Ensure the 'LOGON' AND 'LOGOFF' Actions Audit Is Enabled
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    with cis_audit(con_id, audit_option) as (
+      select c.con_id, ll.column_value from v$containers c, table(dbmsoutput_linesarray('LOGON','LOGOFF')) ll where c.open_mode = 'READ WRITE'),
+    audit_enabled as (
+      select distinct aud.con_id, aud.audit_option from containers(audit_unified_policies) aud
+      where aud.audit_option in ('LOGON','LOGOFF') and aud.audit_option_type = 'STANDARD ACTION'
+      and exists (select 1 from containers(audit_unified_enabled_policies) e
+        where e.success = 'YES' and e.failure = 'YES' and e.enabled_option = 'BY USER' and e.entity_name = 'ALL USERS'
+        and e.policy_name = aud.policy_name and e.con_id = aud.con_id)
+    )
+    select count(*) from cis_audit c
+    where not exists (select 1 from audit_enabled e where e.audit_option = c.audit_option and e.con_id = c.con_id);
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Execute the following SQL statement to remediate this setting. Run the following query in the CDB and in each PDB: CREATE AUDIT POLICY CIS_CDB_LOGON_LOGOFF ACTIONS LOGON, LOGOFF ACTIONS COMPONENT=PROTOCOL HTTP, FTP, AUTHENTICATION; AUDIT POLICY CIS_CDB_LOGON_LOGOFF; Note: If you do not have CIS_CDB_LOGON_LOGOFF, please create one using the CREATE AUDIT POLICY statement. Refer to Section 8.2 where a PL/SQL block is provided to help create or modify the audit policy to remediate this item in both container and pluggable database.'

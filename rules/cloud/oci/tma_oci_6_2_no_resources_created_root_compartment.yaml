@@ -1,0 +1,28 @@
+id: TMA-OCI-6.2
+title: Ensure no resources are created in the root compartment
+description: When you create a cloud resource such as an instance, block volume, or cloud network, you must specify to which compartment you want the resource to belong. Placing resources in the root compartment makes it difficult to organize and isolate those resources. Placing resources into a compartment will allow you to organize and have more granular access controls to your cloud resources. Resource search in every subscribed region must find no VCN, instance, volume, boot volume, file system, bucket or database resources in the root compartment. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: high
+tags:
+- oci
+- asset-management
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 6.2 Ensure no resources are created in the root compartment
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    rs=$(oci iam region-subscription list --tenancy-id "$t" --query 'data[?status==`"READY"`]."region-name"' --raw-output 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$rs" | grep -o '"[a-z0-9-]*"' | tr -d '"')
+    [ -n "$regions" ] || exit 1
+    for r in $regions; do
+      n=$(oci search resource structured-search --region "$r" --query-text "query VCN, instance, volume, bootvolume, filesystem, bucket, autonomousdatabase, database, dbsystem resources where compartmentId = '$t'" --query 'length(data.items[?"lifecycle-state"!=`"TERMINATED"` && "lifecycle-state"!=`"DELETED"`])' --raw-output 2>/dev/null) || exit 1
+      [ "${n:-0}" -eq 0 ] || { echo "$n resources in the root compartment: $r"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Move the listed resources to child compartments (oci <service> <resource> change-compartment --compartment-id <child-ocid>).

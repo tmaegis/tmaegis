@@ -1,0 +1,54 @@
+id: TMA-ESXI9-7.18
+title: Virtual machines must deactivate console copy operations
+description: 'Deactivating console copy operations is critical for preventing data transfer between the virtual machine and the local client, irrespective of the access method, whether via Web Console, VMRC, or others. The parameter governing this behavior is isolation.tools.copy.disable with a recommended setting of TRUE or Undefined. Expected: isolation.tools.copy.disable absent or "TRUE". The audit parses every .vmx file under /vmfs/volumes/ on the host and lists the VMs that do not comply; it passes when none are found (or no VMs exist). Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- virtual-machine
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 7.18 Virtual machines must deactivate console copy operations
+audit:
+  type: command
+  command: |-
+    command -v find >/dev/null 2>&1 || exit 1
+    out=$(find /vmfs/volumes/ -maxdepth 3 -type f -name '*.vmx' 2>/dev/null | while IFS= read -r f; do
+      awk -v KEYRE='^isolation[.]tools[.]copy[.]disable$' -v MODE='absent' -v VAL='TRUE' 'BEGIN { re = tolower(KEYRE) }
+    { line = $0; sub(/^[ \t]+/, "", line); i = index(line, "="); if (i == 0) next
+      k = tolower(substr(line, 1, i - 1)); sub(/[ \t]+$/, "", k)
+      v = substr(line, i + 1); sub(/^[ \t]*"?/, "", v); sub(/"?[ \t\r]*$/, "", v); v = tolower(v)
+      if (k ~ re) { seen = 1; if (MODE == "not" && v == tolower(VAL)) bad = bad " " k "=" v
+                    else if (MODE != "not" && MODE != "ge" && v != tolower(VAL)) bad = bad " " k "=" v
+                    else if (MODE == "ge" && (v + 0) < (VAL + 0)) bad = bad " " k "=" v } }
+    END { if ((MODE == "eq" || MODE == "ge") && !seen) bad = " " KEYRE " not set"
+          if (bad != "") print FILENAME ":" bad }' "$f"
+    done)
+    [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 25
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v vim-cmd >/dev/null 2>&1 || exit 0
+    # Only powered-off VMs: ESXi rewrites the .vmx of running VMs, so edits to those would not stick.
+    find /vmfs/volumes/ -maxdepth 3 -type f -name '*.vmx' 2>/dev/null | while IFS= read -r f; do
+      id=$(vim-cmd vmsvc/getallvms 2>/dev/null | awk -v f="$(basename "$f")" 'index($0,f){print $1; exit}')
+      [ -n "$id" ] && ! vim-cmd vmsvc/power.getstate "$id" 2>/dev/null | grep -q 'Powered off' && { echo "skip running VM $f"; continue; }
+      cp -p "$f" "$f.tmaegis.bak"
+      { grep -viE '^[[:space:]]*isolation[.]tools[.]copy[.]disable[[:space:]]*=' "$f.tmaegis.bak"; printf '%s = "%s"\n' 'isolation.tools.copy.disable' 'TRUE'; } > "$f.tma.new" && cat "$f.tma.new" > "$f"; rm -f "$f.tma.new"
+      [ -n "$id" ] && vim-cmd vmsvc/reload "$id" >/dev/null 2>&1
+    done; true
+  guidance: "To set this configuration utilize the vSphere interface as follows: 1. Select the VM then select Actions followed by Edit Settings. 2. Click on the VM Options tab then expand Advanced. 3. Click on EDIT CONFIGURATION. 4. Click on ADD CONFIGURATION PARAMS then input isolation.tools.copy.disable with a value of TRUE. 5. Click OK, then OK again. To explicitly disable VM console copy operations, run the following PowerCLI command: # Add the setting to all VMs Get-VM | New-AdvancedSetting -Name \"isolation.tools.copy.disable\" -value $true"

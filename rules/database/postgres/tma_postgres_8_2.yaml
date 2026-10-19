@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-8.2
+title: Ensure the backup and restore tool, 'pgBackRest', is installed and configured
+description: pgBackRest aims to be a simple, reliable backup and restore system that can seamlessly scale up to the largest databases and workloads. Instead of relying on traditional backup tools like tar and rsync, pgBackRest implements all backup features internally and uses a custom protocol for communicating with remote systems. Passes when the pgbackrest binary is installed and /etc/pgbackrest/pgbackrest.conf (or /etc/pgbackrest.conf) exists; an alternative backup tool makes this an accepted exception.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- backup
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 8.2 Ensure the backup and restore tool, 'pgBackRest', is installed and configured
+audit:
+  type: command
+  command: command -v pgbackrest >/dev/null 2>&1 || { echo not-installed; exit 0; }; if [ -f /etc/pgbackrest/pgbackrest.conf ] || [ -f /etc/pgbackrest.conf ]; then echo compliant; else echo not-configured; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Install pgBackRest from PGDG (dnf install pgbackrest / apt install pgbackrest), configure /etc/pgbackrest/pgbackrest.conf (stanza, repository on separate storage, retention, logging), run pgbackrest --stanza=<name> stanza-create and test a restore.

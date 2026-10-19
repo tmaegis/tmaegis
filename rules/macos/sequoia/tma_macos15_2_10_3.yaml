@@ -1,0 +1,38 @@
+id: TMA-MACOS15-2.10.3
+title: Ensure Wake for Network Access Is Disabled
+description: This feature allows the computer to take action when the user is not present and the computer is in energy saving mode. These tools require FileVault to remain unlocked and fully rejoin known networks. This macOS feature is meant to allow the computer to resume activity as needed regardless of physical security controls.
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.10.3 Ensure Wake for Network Access Is Disabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    out=$(/usr/bin/pmset -g custom 2>/dev/null) || exit 1
+    n=$(printf '%s\n' "$out" | /usr/bin/awk '$1 == "womp" && $2 != 0 {n++} END {print n+0}')
+    p=$(/usr/bin/profiles -P -o stdout 2>/dev/null | /usr/bin/grep -c '"Wake On LAN" = 1')
+    if [ "$n" -eq 0 ] && [ "${p:-0}" -eq 0 ]; then echo compliant; else echo "womp enabled ($n) / profile Wake On LAN=1 ($p)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/pmset -a womp 0
+  guidance: "Profile (preferred): com.apple.MCX com.apple.EnergySaver.desktop.ACPower = <dict>; com.apple.MCX com.apple.EnergySaver.portable.ACPower = <dict>; com.apple.MCX com.apple.EnergySaver.portable.BatteryPower = <dict>. Terminal: sudo /usr/bin/pmset -a womp 0. GUI: Desktop Instructions: System Settings > Energy Saver > Set Wake for network access to disabled. Laptop Instructions: System Settings > Battery > Options > Set Wake for network access to Never."

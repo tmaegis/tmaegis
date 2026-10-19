@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-7.3.4
+title: Ensure that the XCSFKEY class is active
+description: While the CSFKEYS class controls who has access to key material, the XCSFKEY class provides additional controls regarding how the keys can be used. For example, it is possible to setup profiles in the XCSFKEY class to restrict a keys ability to be used as an exporter or importer key. The XCSFKEY class provides usage control in addition to access permission provided by the CSFKEYS class.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.3.4 Ensure that the XCSFKEY class is active
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that XCSFKEY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The XCSFKEY entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify that all profiles in the XCSFKEY class: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of FAILURES(READ)'
+remediation:
+  type: iac_patch
+  command: 'To activate the XCSFKEY class use the RACF SETROPTS command: SETROPTS CLASSACT(XCSFKEY) To modify the UACC setting for a profile use the RACF RALTER command: RALTER XCSFKEY <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING'

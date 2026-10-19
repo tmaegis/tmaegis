@@ -1,0 +1,16 @@
+id: TMA-TDSQL-8.1
+title: Ensure KMS Is Deployed and Instance Data Encryption Is Enabled
+description: TDSQL TDE depends on an available KMS, a valid cluster-level KMS configuration, and the instance-level Data Encryption switch being enabled in the management platform.
+target: tdsql
+level: 2
+severity: high
+tags:
+- tdsql
+- encryption
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 8.1 Ensure KMS Is Deployed and Instance Data Encryption Is Enabled
+audit:
+  type: manual
+  command: '1. Confirm that all configured KMS nodes are healthy. 2. In Cluster Management -> KMS Configuration, verify the approved endpoint, protocol, service domain, and credentials. 3. In Instance Management -> Instance Details -> Basic Information, confirm Data Encryption is enabled for each in-scope instance. 4. Confirm the KMS keyring configuration is present: SHOW GLOBAL VARIABLES LIKE ''keyring_kms_file''; 5. Create and verify a controlled encrypted test table.'
+remediation:
+  type: iac_patch
+  command: 1. Deploy KMS with the TDSQL one-click package and supported playbooks/tdsql_kms.yml procedure. 2. Create a dedicated KMS business account and obtain its SecretId and SecretKey. 3. Add the KMS endpoint and credentials in Cluster Management -> KMS Configuration; use an HA VIP in production. 4. Enable Data Encryption in the target instance's basic information. 5. Validate encrypted-table creation as described in 8.2.

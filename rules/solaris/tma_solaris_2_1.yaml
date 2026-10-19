@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-2.1
+title: Configure TCP Wrappers
+description: TCP Wrappers is a host-based access control system that allows administrators to control who has access to various network services based on the IP address of the remote end of the connection. TCP Wrappers also provide logging information via syslog about both successful and unsuccessful connections.
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- network
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 2.1 Configure TCP Wrappers
+audit:
+  type: manual
+  command: 'Perform the following and verify that the result is as shown: # inetadm -p | grep tcp_wrappers tcp_wrappers=TRUE # ls /etc/hosts.deny /etc/hosts.deny # ls /etc/hosts.allow /etc/hosts.allow The following script will check whether TCP Wrappers is enabled for all TCP-based services started by inetd. Individual inetd services may still be configured to use TCP Wrappers even if the global parameter (above) is set to FALSE. To check the status of individual inetd services, use the command: # for svc in `inetadm | awk ''/svc:\// { print $NF }''`; do val=`inetadm -l ... (full steps: CIS section 2.1)'
+remediation:
+  type: iac_patch
+  command: 'To enable TCP Wrappers, run the following commands: 1. Create and customize your policy in /etc/hosts.allow: # echo "ALL: <net>/<mask>, <net/<mask>, …" > /etc/hosts.allow where each / combination (for example, the Class C address block "192.168.1.0/255.255.255.0") can represent one network block in use by your organization that requires access to this system. 2. Create a default deny policy in /etc/hosts.deny: # echo "ALL: ALL" >/etc/hosts.deny 3. Enable TCP Wrappers for all services started by inetd: # inetadm -M tcp_wrappers=TRUE To protect only specific inetd services, use the command: # inetadm -m [FMRI] tcp_wrappers=TRUE where [FMRI] is the service to protect. To enable TCP Wrappers for the RPC port mapping service, use the commands: # svccfg -s rpc/bind setprop config/enable_tcpwrappers=true # svcadm refresh rpc/bind To protect UDP and RPC-based services that are spawned from inetd, consider implementing a host-based firewall. Oracle Solaris PF firewall (a.k.a. PF) has
+    replaced Solaris IP Filter (IPF) in Solaris 11.4. See firewall(5) for more information.'

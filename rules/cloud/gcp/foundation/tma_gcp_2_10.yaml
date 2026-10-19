@@ -1,0 +1,20 @@
+id: TMA-GCP-2.10
+title: Ensure That the Log Metric Filter and Alerts Exist for VPC Network Changes
+description: It is recommended that a metric filter and alarm be established for Virtual Private Cloud (VPC) network changes. It is possible to have more than one VPC within a project. In addition, it is also possible to create a peer connection between two VPCs enabling network traffic to route between VPCs. Monitoring changes to a VPC will help ensure VPC traffic flow is not getting impacted.
+target: gcp
+level: 2
+severity: low
+tags:
+- cloud
+- gcp
+- logging
+- network
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 2.10 Ensure That the Log Metric Filter and Alerts Exist for VPC Network Changes
+audit:
+  type: manual
+  command: 'From Google Cloud Console Ensure the prescribed log metric is present: 1. Go to Logging/Logs-based Metrics by visiting https://console.cloud.google.com/logs/metrics. 2. In the User-defined Metrics section, ensure at least one metric <Log_Metric_Name> is present with filter text: resource.type="gce_network" AND (protoPayload.methodName:"compute.networks.insert" OR protoPayload.methodName:"compute.networks.patch" OR protoPayload.methodName:"compute.networks.delete" OR protoPayload.methodName:"compute.networks.removePeering" OR protoPayload.methodName:"compute.networks.addPeering") Ensure the prescribed alerting policy is present: 3. Go to Alerting by visiting https://console.cloud.google.com/monitoring/alerting. 4. Under the Policies section, ensure that at least one alert policy exists for the log metric above. Clicking on the policy should show that it is configured with a condition. For example, Violates when: Any logging.googleapis.com/user/<Log Metric Name> stream is above
+    a threshold of 0 for greater than 0 seconds means that the alert will trigger for any new owner change. Verify that the chosen alerting thresholds make sense for the user''s organization. 5. Ensure that appr...'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Console Create the prescribed log metric: 1. Go to Logging/Logs-based Metrics by visiting https://console.cloud.google.com/logs/metrics and click "CREATE METRIC". 2. Click the down arrow symbol on Filter Bar at the rightmost corner and select Convert to Advanced Filter. 3. Clear any text and add: resource.type="gce_network" AND (protoPayload.methodName:"compute.networks.insert" OR protoPayload.methodName:"compute.networks.patch" OR protoPayload.methodName:"compute.networks.delete" OR protoPayload.methodName:"compute.networks.removePeering" OR protoPayload.methodName:"compute.networks.addPeering") 4. Click Submit Filter. Display logs appear based on the filter text entered by the user. 5. In the Metric Editor menu on the right, fill out the name field. Set Units to 1 (default) and Type to Counter. This ensures that the log metric counts the number of log entries matching the user''s advanced logs query. 6. Click Create Metric. Create the prescribed alert policy:
+    1. Identify the newly created metric under the section User-defined Metrics at https://console.cloud.google.com/logs/metrics. 2. Click the 3-dot icon in the rightmost column for the new metric and select...'

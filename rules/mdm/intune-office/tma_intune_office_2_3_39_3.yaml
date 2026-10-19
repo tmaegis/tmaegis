@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.39.3
+title: Ensure 'Disable Opt-in Wizard on first run' is set to 'Enabled'
+description: 'This policy setting controls whether users see the Opt-in Wizard the first time they run a Microsoft Office application. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) shownfirstrunoptin that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.39.3 Ensure 'Disable Opt-in Wizard on first run' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\general'') -Name ''shownfirstrunoptin'' -ErrorAction SilentlyContinue).''shownfirstrunoptin''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':shownfirstrunoptin='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Office 2016\Trust Center\Disable Opt-in Wizard on First Run'

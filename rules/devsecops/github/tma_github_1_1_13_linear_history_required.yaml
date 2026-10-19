@@ -1,0 +1,26 @@
+id: TMA-GITHUB-1.1.13
+title: Ensure linear history is required
+description: 'Linear history is the name for Git history where all commits are listed in chronological order, one after another. Such history exists if a pull request is merged either by rebase merge (re-order the commits history) or squash merge (squashes all commits to one). Enforcing linear history produces a clear record of activity, and as such it offers specific advantages: it is easier to follow, easier to revert a change, and bugs can be found more easily. Checks the default branch: linear history is required. Satisfied by classic branch protection or an active ruleset (rules/branches). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin
+  token.'
+target: github
+level: 2
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.13 Ensure linear history is required
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    p=$(gh api "repos/$R/branches/$B/protection" --jq '.required_linear_history.enabled == true' 2>/dev/null) || p=false
+    s=$(gh api "repos/$R/rules/branches/$B" --jq 'any(.[]; .type == "required_linear_history")' 2>/dev/null) || s=false
+    [ "$p" = true ] || [ "$s" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: enable Require linear history.'

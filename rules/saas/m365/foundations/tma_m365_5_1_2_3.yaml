@@ -1,0 +1,16 @@
+id: TMA-M365-5.1.2.3
+title: Ensure 'Restrict non-admin users from creating tenants' is set to 'Yes'
+description: Non-privileged users can create tenants in the Microsoft Entra ID and Microsoft Entra administration portal under "Manage tenant". The creation of a tenant is recorded in the Audit log as category "DirectoryManagement" and activity "Create Company". By default, the user who creates a Microsoft Entra tenant is automatically assigned the Global Administrator role. The newly created tenant doesn't inherit any settings or configurations. Restricting tenant creation prevents unauthorized or uncontrolled deployment of resources and ensures that the organization retains control over its infrastructure. User generation of shadow IT could lead to multiple, disjointed environments that can make it difficult for IT to manage and secure the organization's data, especially if other users in the organization began using these tenants for business purposes under the misunderstanding that they were s...
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.1.2.3 Ensure 'Restrict non-admin users from creating tenants' is set to 'Yes'
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/ 2. Expand Entra ID > Users and select User settings. 3. Verify that Restrict non-admin users from creating tenants is set to Yes To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.Read.All" 2. Run the following commands: (Get-MgPolicyAuthorizationPolicy).DefaultUserRolePermissions | Select-Object AllowedToCreateTenants 3. Verify the returned value is False'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/ 2. Expand Entra ID > Users and select User settings. 3. Set Restrict non-admin users from creating tenants to Yes then Save. To remediate using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.ReadWrite.Authorization" 2. Run the following commands: # Create hashtable and update the auth policy $params = @{ AllowedToCreateTenants = $false } Update-MgPolicyAuthorizationPolicy -DefaultUserRolePermissions $params'

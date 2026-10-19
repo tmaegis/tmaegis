@@ -1,0 +1,16 @@
+id: TMA-AKS-AUTOMATIC-5.1.4
+title: Restrict AKS workloads to approved container registries only
+description: Configure AKS Automatic so workloads pull images only from registries that have been explicitly approved by the organization, such as selected ACR instances or other trusted registries. This is typically enforced with Azure Policy by auditing or denying deployments whose image references do not match approved image source patterns, while AKS to ACR integration provides the managed identity and pull role pattern needed for authorized image ... The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 2
+severity: medium
+tags:
+- aks-automatic
+- managed-services
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 5.1.4 Restrict AKS workloads to approved container registries only
+audit:
+  type: manual
+  command: Review AKS Automatic image source controls to confirm workloads are limited to approved container registries. The audit should verify that an Azure Policy definition or initiative is assigned to the cluster to audit or deny unapproved image sources, that the approved image source patterns are explicitly defined, and that AKS Automatic has valid pull access only to those approved registries. The presence of Azure Policy and Deployment Safeguards alone does not confirm that the allowed images policy or the organization’s approved patterns are configured.
+remediation:
+  type: iac_patch
+  command: Restrict AKS Automatic workloads to approved container registries by enforcing an Azure Policy control for allowed images or trusted registries, defining the approved image source patterns, and ensuring workloads reference only those registries. Use the Azure Policy add on with the built in allowed images policy, and deploy only validated images from approved sources. 1. Confirm that Azure Policy remains enabled on the AKS Automatic cluster. Assign the allowed images policy separately because the preconfigured safeguards do not define the organization’s approved registry patterns. 2. Assign an AKS policy or initiative that audits or denies unapproved image sources, and set the parameters to the organization’s approved image reference patterns. 3. Migrate or mirror workload images from external or nonapproved registries into an approved registry, such as ACR, before deployment.

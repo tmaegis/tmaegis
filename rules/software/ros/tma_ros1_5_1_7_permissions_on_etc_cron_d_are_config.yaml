@@ -1,0 +1,25 @@
+id: TMA-ROS1-5.1.7
+title: Ensure permissions on /etc/cron.d are configured
+description: The /etc/cron.d directory contains system cron jobs that need to run in a similar manner to the hourly, daily weekly and monthly jobs from /etc/crontab , but require more granular control as to when they run. The files in this directory cannot be manipulated by the crontab command, but are instead edited by system administrators using a text editor. The audit requires /etc/cron.d root:root with no group/other permissions. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.1.7 Ensure permissions on /etc/cron.d are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    [ -e /etc/cron.d ] || { echo '/etc/cron.d not found'; exit 1; }
+    set -- $(stat -Lc '%a %u %g' /etc/cron.d) || exit 1
+    m=$((8#$1)); [ $((m & ~8#0700)) -eq 0 ] || { echo "/etc/cron.d mode $1 exceeds 0700"; exit 1; }
+    [ "$2" = 0 ] || { echo "/etc/cron.d uid $2"; exit 1; }
+    case " 0 " in *" $3 "*) echo compliant ;; *) echo "/etc/cron.d gid $3" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to set ownership and permissions on /etc/cron.d : # chown root:root /etc/cron.d # chmod og-rwx /etc/cron.d'

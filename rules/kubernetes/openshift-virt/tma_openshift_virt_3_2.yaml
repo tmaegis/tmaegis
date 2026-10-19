@@ -1,0 +1,24 @@
+id: TMA-OPENSHIFT-VIRT-3.2
+title: Disable Shareable disks
+description: 'Sharable disks are shared between VMs, and they can be used only if a filesystem installed on top of it is a cluster - file system or the application using the device is distributed and cloud aware. Their wrong usage might cause data corruption. Audit: Passes when no VirtualMachine in any namespace has a disk with shareable set to true (needs jq). Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- storage
+- disks
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 3.2 Disable Shareable disks
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; command -v jq >/dev/null 2>&1 || exit 1; out=$(oc get vm -A -o json) || exit 1; printf '%s' "$out" | jq -e '[.items[]|select(.spec.template.spec.domain.devices.disks[]?.shareable == true)]|length == 0' >/dev/null && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: 'Remove the shareable flag from any diskwhere it is found. For example, to remove the shareable flag on the first disk (index 0) of a given VM, this command can be used: $ oc patch vm <vm-name> --type=''json'' -p=''[ {"op": "remove", "path": "/spec/template/spec/domain/devices/disks/0/shareable"}, ]'' To set a shareable flag to false on every disk, this (experimental) command can be used: $ oc get vm <vm - name> - o json | jq ''.spec.template.spec.domain.devices.disks[] += {"shareable":false}'' | oc apply -f -'

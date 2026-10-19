@@ -1,0 +1,24 @@
+id: TMA-CISCO-NXOS-1.1.1.1
+title: Configure AAA Authentication - TACACS if applicable
+description: 'TACACS+ is an authentication protocol that Cisco NX-OS devices can use for authentication of management users against a remote AAA server. These management users can access the Cisco NX-OS device through any protocol and use this back-end authentication. Central authentication is key as it minimizes the effort in managing named user accounts. Keeping local admin accounts opens the door to all the issues inherent in shared accounts, namely: - Errors in implementation being done by generic admin accounts, which ... Not applicable (passes) when ''feature tacacs+'' is not enabled; otherwise requires two ''tacacs-server host'' entries and an ''aaa group server tacacs+''. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- aaa
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.1.1.1 Configure AAA Authentication - TACACS if applicable
+audit:
+  type: config_regex
+  pattern: (?m)(?:(?s:^feature tacacs\+.*^tacacs-server host \S.*^tacacs-server host \S.*^aaa group server tacacs\+ \S))|(?:\A(?:[ \t]*(?:$|[^f \t\n]|f(?:$|[^e\n]|e(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^u\n]|u(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^ \n]| (?:$|[^t\n]|t(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^s\n]|s(?:$|[^+\n])))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^f \t\n]|f(?:$|[^e\n]|e(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^u\n]|u(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^ \n]| (?:$|[^t\n]|t(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^s\n]|s(?:$|[^+\n])))))))))))))))[^\n]*)?\z)
+remediation:
+  type: iac_patch
+  command: |-
+    ! First, enable TACACS+ in NX-OS
+    feature tacacs+ Next, define two or more TACACS+ servers:
+    tacacs-server host 3.4.5.6 key somekey
+    tacacs-server host 4.5.6.7 key someotherkey define the aaa group for TACACS+:
+    aaa group server tacacs+ TACACSGROUP server 3.4.5.6 server 4.5.6.7 Finally, create the aaa authentication list for both console and default access:
+    aaa authentication login default group TACACSGROUP local
+    aaa authentication login console group TACACSGROUP local It is common to include "local" as the last entry in the list, to allow access to administer the device even if the RADIUS server is offline. Note that while this ensures access in the case of the device or the RADIUS server being offline, it also means that if an attacker can DOS the RADIUS Servers, they can authenticate locally as well.

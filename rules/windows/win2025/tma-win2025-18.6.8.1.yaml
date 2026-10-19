@@ -1,0 +1,21 @@
+id: TMA-WIN2025-18.6.8.1
+title: Ensure 'Audit insecure guest logon' is set to 'Enabled'
+description: 'This policy determines whether the Server Message Block (SMB) client will log events when the client is logged on as guest account. Enabling this will create event log entries in Applications and Service Logs\Microsoft\Windows\SMBClient\Security, with Event IDs 3023, 31017, 31018, and 31022. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.6.8.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation'' -Name ''AuditInsecureGuestLogon'' -ErrorAction SilentlyContinue).''AuditInsecureGuestLogon''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''AuditInsecureGuestLogon='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation' -Name 'AuditInsecureGuestLogon' -Value 1 -PropertyType DWord -Force | Out-Null

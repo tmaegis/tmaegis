@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.2.3.5
+title: 'Ensure ''Set document behavior if file validation fails'' is set to ''Unchecked: Do not allow edit'''
+description: 'This policy setting controls how Office handles documents when they fail file validation. Office File Validation is a feature that performs security checks on files. If Office File Validation detects a problem with a file, the file cannot be opened. The recommended state for this setting is: Unchecked: Do not allow edit (False). Audit: reads the registry value(s) disableeditfrompv that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.2.3.5 Ensure ''Set document behavior if file validation fails'' is set to ''Unchecked: Do not allow edit'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\word\security\filevalidation'') -Name ''disableeditfrompv'' -ErrorAction SilentlyContinue).''disableeditfrompv''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':disableeditfrompv='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path Unchecked: Do not allow edit (False). The value should be set to False. Microsoft Excel 2016\Excel Options\Security\Trust Center\Protected View\Set document behavior if file validation fails'

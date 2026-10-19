@@ -1,0 +1,25 @@
+id: TMA-GITHUB-1.1.9
+title: Ensure all checks have passed before merging new code
+description: 'Before a code change request can be merged to the code base, all predefined checks must successfully pass. On top of manual reviews of code changes, a code protect should contain a set of prescriptive checks which validate each change. Organizations should enforce those status checks so that changes can only be introduced if ... Checks the default branch: at least one required status check is configured. Satisfied by classic branch protection or an active ruleset (rules/branches). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 1
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.9 Ensure all checks have passed before merging new code
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    p=$(gh api "repos/$R/branches/$B/protection" --jq '.required_status_checks != null and (((.required_status_checks.checks // []) | length) + ((.required_status_checks.contexts // []) | length)) > 0' 2>/dev/null) || p=false
+    s=$(gh api "repos/$R/rules/branches/$B" --jq 'any(.[]; .type == "required_status_checks" and ((.parameters.required_status_checks // []) | length) > 0)' 2>/dev/null) || s=false
+    [ "$p" = true ] || [ "$s" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: enable Require status checks to pass before merging and select the required checks.'

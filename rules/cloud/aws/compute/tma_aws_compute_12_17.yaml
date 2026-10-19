@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-12.17
+title: Ensure Lambda functions accessing private resources or sensitive data are deployed within a customer managed VPC
+description: By default, Lambda functions run in an AWS managed VPC with unrestricted outbound internet access. Functions that access private resources, such as RDS or internal APIs or that process sensitive data such as PII, should instead be deployed within a customer managed VPC to enforce network boundary controls through security groups and network ACLs. Without VPC configuration, Lambda functions have unrestricted outbound access, meaning sensitive data could be exfiltrated with no network level controls in place to detect or stop it. Security groups, network ACLs, and standard network monitoring tools cannot be applied to functions outside a VPC. This is required under frameworks such as FedRAMP and is auditable today using the AWS Config managed rule lambda inside vpc.
+target: aws
+level: 2
+severity: medium
+tags:
+- access-control
+- aws
+- cloud
+- compute
+- network
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.17 Ensure Lambda functions accessing private resources or sensitive data are deployed within a customer managed VPC
+audit:
+  type: manual
+  command: From the Console 1. Navigate to AWS Lambda 2. For each function, open Configuration, then VPC 3. Confirm a customer managed VPC, subnets, and security groups are configured 4. Functions showing No VPC that access private resources or sensitive data are non compliant 5. Repeat for each function in the current region, then repeat for all other regions
+remediation:
+  type: iac_patch
+  command: From the Console 1. Navigate to the non compliant function, open Configuration, then VPC, then Edit 2. Select the target VPC and at least two private subnets across different Availability Zones 3. Select or create security groups enforcing least privilege for inbound and outbound traffic 4. Save the configuration

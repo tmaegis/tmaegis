@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-7.3.3
+title: Ensure that the CRYPTOZ class is active
+description: The CRYPTOZ class is used to protect tokens and objects stored in the ICSF Token Data Set (TKDS). Users can be permitted or restricted from access tokens and objects in the TKDS by using resource profiles the CRYPTOZ class.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.3.3 Ensure that the CRYPTOZ class is active
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that CRYPTOZ appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The CRYPTOZ entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify that all profiles in the CRYPTOZ class: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of FAILURES(READ)'
+remediation:
+  type: iac_patch
+  command: 'To activate the CRYPTOZ class use the RACF SETROPTS command: SETROPTS CLASSACT(CRYPTOZ) To modify the UACC setting for a profile use the RACF RALTER command: RALTER CRYPTOZ <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING'

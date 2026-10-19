@@ -1,0 +1,20 @@
+id: TMA-WIN2025-2.3.10.6
+title: 'Ensure ''Network access: Named Pipes that can be accessed anonymously'' is configured (DC only)'
+description: 'This policy setting determines which communication sessions, or pipes, will have attributes and permissions that allow anonymous access. The recommended state for this setting is: LSARPC, NETLOGON, SAMR and (when the legacy Computer Browser service is enabled) BROWSER. Note: A Member Server that holds the Remote Desktop Services Role with Remote Desktop Licensing Role Service will require a special exception to this recommendation, to allow the HydraLSPipe and TermServLicensing Named Pipes to be accessed anonymously.'
+target: windows
+os_family:
+- windows-server-2025-dc
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 2.3.10.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters'' -Name ''NullSessionPipes'' -ErrorAction SilentlyContinue).''NullSessionPipes''; if (-not ((@($v) | Where-Object { $_ } | ForEach-Object { $_.ToLower() } | Sort-Object) -join '','') -eq ''lsarpc,netlogon,samr'') { $bad += ''NullSessionPipes='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters' -Name 'NullSessionPipes' -Value @('LSARPC','NETLOGON','SAMR') -PropertyType MultiString -Force | Out-Null

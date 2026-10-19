@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-4.1
+title: Ensure sudo is configured correctly
+description: It is common to have more than one authorized individual administering the YugabyteDB service at the Operating System level. It is also quite common to permit login privileges to individuals on a YugabyteDB host who otherwise are not authorized to access the server's data cluster and files.
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- privileges
+reference: CIS YugabyteDB Benchmark v2.0.0 - 4.1 Ensure sudo is configured correctly
+audit:
+  type: manual
+  command: 'Review /etc/sudoers and /etc/sudoers.d: escalation to the yugabyte account must be granted only to an approved DBA group (e.g. %dba ALL= /bin/su - yugabyte, file mode 600). As a non-member run sudo su - yugabyte (must be refused) and as a DBA group member confirm it succeeds; any broader grant is a finding.'
+remediation:
+  type: iac_patch
+  command: 'As superuser root, execute the following commands: # echo ''%dba ALL= /bin/su - yugabyte'' > /etc/sudoers.d/yugabyte # chmod 600 /etc/sudoers.d/yugabyte This grants any Operating System user that is a member of the dba group to use sudo su - yugabyte to become the yugabyte user. Ensure that all Operating System user''s that need such access are members of the group.'

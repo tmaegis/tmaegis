@@ -1,0 +1,16 @@
+id: TMA-TDSQL-2.3
+title: Ensure a Backup and Recovery Strategy Is Configured
+description: 'TDSQL should be configured with a complete backup strategy. Supported methods include: Physical backup (XtraBackup): enabled by default (xtrabackup="1") Logical backup (mydumper): optional (mydumper="0") ZooKeeper data backup: metadata backed up to local files (/data/home/zkback/) Storage backends: local filesystem (/tdsqlbackup/), COS, OBS, S3, HDFS, DBS.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- backup
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 2.3 Ensure a Backup and Recovery Strategy Is Configured
+audit:
+  type: manual
+  command: '# Check the backup configuration in scheduler.xml grep -A5 ''<backup'' /path/to/tdsql/conf/scheduler.xml # Expected: xtrabackup="1" # Check the ZK backup configuration cat /path/to/tdsql/conf/backupConf.xml # Verify the backup directory ls -la /tdsqlbackup/ 2>/dev/null'
+remediation:
+  type: iac_patch
+  command: 'Enable physical backup with incremental support in scheduler.xml: <backup increment_flag="1" increment_interval_day="1" mydumper="0" xtrabackup="1" /> Configure the ZK backup retention policy in backupConf.xml: <backup backupfile_save_dir="/data/home/zkback" resv_capacity="800" resv_days="30"> Configure off-site backups (COS/S3/HDFS) for disaster recovery. Test recovery regularly.'

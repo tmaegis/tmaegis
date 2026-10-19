@@ -1,0 +1,30 @@
+id: TMA-BIND-3.2
+title: Restrict Recursive Queries
+description: A recursive DNS query is your typical DNS query from a client to a caching DNS server. It places the burden of finding the answer on the caching DNS server which will recursively query other DNS servers authoritative for the domains, until it gets the answer which is then returned to the client. The audit passes when the global options set "recursion no;" or an allow-recursion list that does not contain any. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: high
+tags:
+- bind
+- dns
+- access-control
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 3.2 Restrict Recursive Queries
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    if printf '%s\n' "$opts" | grep -Eq '[{; ]recursion no;'; then echo compliant; exit 0; fi
+    ar=$(printf '%s\n' "$opts" | grep -Eo 'allow-recursion \{[^}]*\}') || { echo 'recursion enabled without allow-recursion'; exit 1; }
+    printf '%s\n' "$ar" | grep -Eq '[{ ]"?any"?;' && { echo 'allow-recursion contains any'; exit 1; }
+    echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: 'Authoritative Name Server: For an authoritative name server, insert one of the following either into the global options or into every zone section. allow-recursion { localhost; }; recursion no; Caching Name Server: ; Define an ACL named trusted_clients which will identify the networks which are expected to use the DNS caching server, and will be allowed to send recursive DNS queries. acl trusted_clients { 10.19.4.0/28; . . . } ; Insert the following into the global options. allow-recursion { localhost; trusted_clients };'

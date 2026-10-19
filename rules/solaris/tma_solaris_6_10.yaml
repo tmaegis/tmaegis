@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-6.10
+title: Disable Host-based Authentication for Login-based Services
+description: 'The .rhosts files are used for automatic login to remote hosts and contain username and hostname combinations. The .rhosts files are unencrypted (usually group- or world-readable) and present a serious risk in that a malicious user could use the information within to gain access to a remote host with the privileges of the original application or user. Audit: no uncommented pam_rhosts_auth entry may exist in /etc/pam.conf or /etc/pam.d/*.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.10 Disable Host-based Authentication for Login-based Services
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; out=$( { grep -h pam_rhosts_auth /etc/pam.conf /etc/pam.d/* | grep -v "^[[:blank:]]*#" ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit /etc/pam.conf and any /etc/pam.d/* results from audit procedure and comment out or remove any pam_rhosts_auth lines: #rlogin auth sufficient pam_rhosts_auth.so.1 #rsh auth sufficient pam_rhosts_auth.so.1'

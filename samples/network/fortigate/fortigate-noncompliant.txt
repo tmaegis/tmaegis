@@ -1,0 +1,57 @@
+#config-version=FGT60F-7.4.3-FW-build2573-240101:opmode=0:vdom=0
+# Synthetic sample: FortiGate "show full-configuration" (weak). Not a secure template.
+config system global
+    set hostname "FortiGate-60F"
+    set admin-port 80
+    set admin-sport 443
+    set admin-telnet enable
+    set admintimeout 480
+    set admin-https-ssl-versions tlsv1-1 tlsv1-2
+    set ssl-min-proto-version TLSv1
+end
+config system zone
+    edit "LAN-ZONE"
+        set intrazone allow
+        set interface "lan"
+    next
+end
+config system interface
+    edit "wan1"
+        set ip 203.0.113.3 255.255.255.248
+        set allowaccess ping https http ssh telnet
+    next
+end
+config system admin
+    edit "admin"
+        set accprofile "super_admin"
+        set trusthost1 0.0.0.0 0.0.0.0
+        set password ENC REDACTED
+    next
+end
+config system snmp sysinfo
+    set status enable
+end
+config system snmp community
+    edit 1
+        set name "public"
+        config hosts
+            edit 1
+                set ip 0.0.0.0 0.0.0.0
+            next
+        end
+    next
+end
+config firewall policy
+    edit 1
+        set name "any-any"
+        set srcintf "lan"
+        set dstintf "wan1"
+        set action accept
+        set srcaddr "all"
+        set dstaddr "all"
+        set schedule "always"
+        set service "ALL"
+        set logtraffic disable
+        set nat enable
+    next
+end

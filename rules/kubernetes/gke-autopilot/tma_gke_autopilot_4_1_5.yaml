@@ -1,0 +1,17 @@
+id: TMA-GKE-AUTOPILOT-4.1.5
+title: Ensure service account tokens are mounted only when Pods require Kubernetes API access
+description: Kubernetes service account tokens should be mounted in Pods only when the workload explicitly requires authenticated access to the Kubernetes API server. For workloads that do not need API server access, disable token mounting to reduce unnecessary credential exposure inside the Pod. automountServiceAccountToken controls whether Kubernetes injects a service account credential token into the Pod, and its default value is true. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 1
+severity: high
+tags:
+- gke-autopilot
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 4.1.5 Ensure service account tokens are mounted only when Pods require Kubernetes API access
+audit:
+  type: manual
+  command: Review Kubernetes service accounts and Pods in each namespace in the GKE Autopilot cluster to confirm that service account tokens are mounted only where the workload requires authenticated access to the Kubernetes API server. The audit should verify both the service account configuration and the Pod specification, because token mounting can be controlled at either level. The automountServiceAccountToken field defaults to true, so workloads that do not need Kubernetes API access should explicitly set it to false.
+remediation:
+  type: iac_patch
+  command: Remediate by disabling service account token mounting and assigning API access only to workloads that require it. Pods that do not need to communicate with the Kubernetes API server should set automountServiceAccountToken=false, and workloads that do need API access should use a dedicated Kubernetes service account with narrowly assigned RBAC permissions. In addition, avoiding the default service account and using separate Kubernetes service accounts per workload is recommended. • Set automountServiceAccountToken=false in Pod or workload specifications that do not require Kubernetes API access. • Create dedicated Kubernetes service accounts for workloads that require API access instead of relying on the namespace default service account. • Grant only the required RBAC permissions to those service accounts through least privilege Roles, ClusterRoles, RoleBindings, or ClusterRoleBindings.

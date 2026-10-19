@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.11
+title: Ensure the correct messages are written to the server log
+description: The log_min_messages setting specifies the message levels that are written to the server log. Each level includes all the levels that follow it. The lower the level (vertically, below), the fewer messages are sent. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Passes when log_min_messages is warning or more verbose.
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.11 Ensure the correct messages are written to the server log
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SELECT CASE WHEN lower(current_setting('log_min_messages')) IN ('debug5','debug4','debug3','debug2','debug1','info','notice','warning') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_min_messages='warning'" on every YB-TServer and restart it.

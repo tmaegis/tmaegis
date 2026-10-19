@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.1.1.2
+title: Ensure 'Prevent enabling lock screen slide show' is set to 'Enabled'
+description: 'Disables the lock screen slide show settings in PC Settings and prevents a slide show from playing on the lock screen. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.1.1.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Personalization'' -Name ''NoLockScreenSlideshow'' -ErrorAction SilentlyContinue).''NoLockScreenSlideshow''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''NoLockScreenSlideshow='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Personalization')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Personalization' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Personalization' -Name 'NoLockScreenSlideshow' -Value 1 -PropertyType DWord -Force | Out-Null

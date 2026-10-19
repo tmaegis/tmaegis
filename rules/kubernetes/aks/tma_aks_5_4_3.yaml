@@ -1,0 +1,20 @@
+id: TMA-AKS-5.4.3
+title: Ensure clusters are created with Private Nodes
+description: In AKS, node pools should use private IP addressing only and should not assign instance-level public IPs to individual nodes unless a specific workload requires that design. Keeping nodes private reduces direct internet reachability of the worker node plane and helps ensure node access occurs through approved internal network paths, load-balanced services, or controlled management methods rather than through per-node public exposure. Requires the az CLI (logged in) with read access to the cluster named by AKS_RG and AKS_NAME. Fails when any node pool has enableNodePublicIP true.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- managed-services
+- network
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.4.3 Ensure clusters are created with Private Nodes
+audit:
+  type: command
+  command: |-
+    out=$(az aks nodepool list --resource-group "${AKS_RG:?set AKS_RG}" --cluster-name "${AKS_NAME:?set AKS_NAME}" -o json) || exit 1
+    if printf '%s' "$out" | grep -Eiq '"enableNodePublicIp"[[:space:]]*:[[:space:]]*true'; then echo noncompliant; else echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Where AKS node pools are configured with node public IPs, the preferred remediation is to return them to the standard AKS networking model unless there is a clear workload requirement for direct per-node public reachability. In AKS, node public IPs are an optional feature rather than the normal operating model, so remediation should focus on removing unnecessary node-level internet exposure and shifting any needed inbound or outbound connectivity to supported service and egress patterns. 1. Identify each node pool where enableNodePublicIP is enabled and confirm whether the setting is actually required for the workload, since AKS documents node public IPs as a special-case feature. 2.

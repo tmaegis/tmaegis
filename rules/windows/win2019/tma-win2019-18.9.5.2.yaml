@@ -1,0 +1,21 @@
+id: TMA-WIN2019-18.9.5.2
+title: 'Ensure ''Turn On Virtualization Based Security: Select Platform Security Level'' is set to ''Secure Boot'' or higher'
+description: 'This policy setting specifies whether Virtualization Based Security (VBS) is enabled. VBS uses the Windows Hypervisor to provide support for security services. The recommended state for this setting is: Secure Boot. Configuring this setting to Secure Boot and DMA Protection also conforms to the benchmark. Note: VBS requires a 64-bit version of Windows with Secure Boot enabled, which in turn requires that Windows was installed with a UEFI BIOS configuration, not a Legacy BIOS configuration. In addition, if running Windows on a virtual machine, the hardware- assisted CPU virtualization feature ('
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 18.9.5.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard'' -Name ''RequirePlatformSecurityFeatures'' -ErrorAction SilentlyContinue).''RequirePlatformSecurityFeatures''; if (-not ($null -ne $v -and @(1,3) -contains [int64]$v)) { $bad += ''RequirePlatformSecurityFeatures='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard' -Name 'RequirePlatformSecurityFeatures' -Value 1 -PropertyType DWord -Force | Out-Null

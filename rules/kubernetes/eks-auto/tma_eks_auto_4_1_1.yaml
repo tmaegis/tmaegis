@@ -1,0 +1,16 @@
+id: TMA-EKS-AUTO-4.1.1
+title: Grant AmazonEKSClusterAdminPolicy only where full cluster administration is required
+description: Grant AmazonEKSClusterAdminPolicy only to IAM principals that require unrestricted, cluster administrative control. In EKS Auto Mode, cluster access is built on EKS access entries and the EKS API authentication mode, and the initial bootstrap administrator access for the cluster creator can be disabled, so full administrator rights should be assigned deliberately rather than used as the default operating model. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: medium
+tags:
+- eks-auto
+- policies
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.1.1 Grant AmazonEKSClusterAdminPolicy only where full cluster administration is required
+audit:
+  type: manual
+  command: For EKS Auto Mode, this setting should be audited through EKS access entries and associated access policies, because Auto Mode uses the EKS API access model and you cannot disable access entries on an Auto Mode cluster. AmazonEKSClusterAdminPolicy is the AWS managed policy that grants cluster administrator access, so the audit should confirm that it is present only on principals with a documented need for full cluster administration. Identify the IAM principal you want to review and confirm its principal ARN and target cluster name.
+remediation:
+  type: iac_patch
+  command: In EKS Auto Mode, this setting should be updated through EKS access entries and associated access policies rather than older cluster access methods. Auto Mode relies on the EKS access entry model to authorize IAM principals for Kubernetes access, and STANDARD access entries support adding or removing AWS-managed EKS access policies with either cluster or namespace permissions. Where those predefined policies do not provide the required level of restriction, administrators can use access entries with Kubernetes group assignments and apply custom Kubernetes RBAC for fine grained control. Identify principals that do not need full cluster administration. Review each IAM user or role that currently has AmazonEKSClusterAdminPolicy and confirm whether its duties truly require unrestricted access across all Kubernetes API groups, resources, verbs, and non-resource URLs.

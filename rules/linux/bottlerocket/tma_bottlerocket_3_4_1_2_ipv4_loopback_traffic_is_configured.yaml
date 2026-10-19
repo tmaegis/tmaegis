@@ -1,0 +1,24 @@
+id: TMA-BOTTLEROCKET-3.4.1.2
+title: Ensure IPv4 loopback traffic is configured
+description: Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network (127.0.0.0/8). The audit runs iptables -S and requires the INPUT lo ACCEPT, INPUT 127.0.0.0/8 DROP and OUTPUT lo ACCEPT rules (rule order is not verified). Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 2
+severity: low
+tags:
+- bottlerocket
+- network
+reference: CIS Bottlerocket Benchmark v1.0.0 - 3.4.1.2 Ensure IPv4 loopback traffic is configured
+audit:
+  type: command
+  command: |-
+    in=$(iptables -S INPUT 2>/dev/null) || exit 1
+    out=$(iptables -S OUTPUT 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$in" | grep -Eq -- '^-A INPUT -i lo( .*)? -j ACCEPT' || { echo 'missing: -A INPUT -i lo -j ACCEPT'; bad=1; }
+    printf '%s\n' "$in" | grep -Eq -- '^-A INPUT -s 127.0.0.0/8( .*)? -j DROP' || { echo 'missing: -A INPUT -s 127.0.0.0/8 -j DROP'; bad=1; }
+    printf '%s\n' "$out" | grep -Eq -- '^-A OUTPUT -o lo( .*)? -j ACCEPT' || { echo 'missing: -A OUTPUT -o lo -j ACCEPT'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # iptables -A INPUT -i lo -j ACCEPT # iptables -A OUTPUT -o lo -j ACCEPT # iptables -A INPUT -s 127.0.0.0/8 -j DROP'

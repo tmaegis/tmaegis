@@ -1,0 +1,66 @@
+id: TMA-AZL3-5.2.17
+title: Ensure sshd PermitEmptyPasswords is disabled
+description: The PermitEmptyPasswords parameter specifies if the SSH server allows login to accounts with empty password strings.
+target: linux
+os_family:
+- azurelinux-3
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS AKS Optimized Azure Linux 3 Benchmark v1.0.0 - 5.2.17
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v sshd >/dev/null 2>&1 || { echo "step1: sshd not installed"; return 1; }; o=$(bash -c ''sshd -T | grep permitemptypasswords'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''permitemptypasswords no'' || { echo step1: missing ''permitemptypasswords no''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # tma_sshd_apply "Name value" ... : replace every existing setting, put ours first, validate, reload.
+    tma_sshd_apply() {
+      c=/etc/ssh/sshd_config
+      [ -f "$c" ] || { echo "sshd_config not present, nothing to do"; return 0; }
+      files="$c $(ls /etc/ssh/sshd_config.d/*.conf 2>/dev/null)"
+      sv=$(mktemp -d)
+      for f in $files; do tma_bak "$f"; cp -a "$f" "$sv/$(echo "$f" | tr / _)"; done
+      for kv in "$@"; do
+        n=${kv%% *}
+        for f in $files; do
+          [ -L "$f" ] && continue
+          sed -i -E "s/^([[:space:]]*$n[[:space:]=].*)$/# tmaegis: \1/I" "$f"
+        done
+      done
+      tmp=$(mktemp); : > "$tmp"
+      for kv in "$@"; do printf '%s\n' "$kv" >> "$tmp"; done
+      cat "$c" >> "$tmp"; cat "$tmp" > "$c"; rm -f "$tmp"
+      if command -v sshd >/dev/null 2>&1 && ! sshd -t 2>/dev/null; then
+        echo "sshd -t failed, restoring" >&2
+        for f in $files; do cat "$sv/$(echo "$f" | tr / _)" > "$f"; done
+        rm -rf "$sv"; return 1
+      fi
+      rm -rf "$sv"
+      for u in sshd ssh; do systemctl reload "$u" 2>/dev/null && break; done
+      return 0
+    }
+
+    tma_sshd_apply 'PermitEmptyPasswords no'
+  guidance: "Edit /etc/ssh/sshd_config and set the PermitEmptyPasswords parameter to no above any Include and Match entries as follows: PermitEmptyPasswords no Note: First occurrence of an option takes precedence, Match set statements withstanding. If Include locations are enabled, used, and order of precedence is understood in your environment, the entry may be created in a file in Include location. The SSH daemon must be restarted for the changes to take effect. To restart the SSH daemon, run the following command: # systemctl reload-or-restart sshd.service"

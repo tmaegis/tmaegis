@@ -1,0 +1,19 @@
+id: TMA-DOCKER-3.22
+title: Ensure that the /etc/sysconfig/docker file ownership is set to root:root
+description: /etc/sysconfig/docker (daemon start-up options) must be owned by root:root. The audit stats every existing candidate path (/etc/sysconfig/docker); not applicable when none exists.
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.22 Ensure that the /etc/sysconfig/docker file ownership is set to root:root
+audit:
+  type: command
+  command: for f in /etc/sysconfig/docker; do [ -e "$f" ] || continue; o=$(stat -Lc '%U:%G' "$f") || exit 1; [ "$o" = root:root ] || { echo "$f $o"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/sysconfig/docker
+remediation:
+  type: command
+  command: for f in /etc/sysconfig/docker; do if [ -e "$f" ]; then chown root:root "$f" || exit 1; fi; done

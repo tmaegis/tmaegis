@@ -1,0 +1,25 @@
+id: TMA-CISCO-NXOS-3.5.1
+title: Basic Fiber Channel Configuration
+description: 'Fibre Channel over Ethernet (FCoE) encapsulation allows a physical Ethernet cable to carry standard Fibre Channel traffic within Ethernet frames. In Cisco Nexus devices, an FCoE-capable physical Ethernet interface can carry traffic for one virtual Fibre Channel (vFC) interface. If FCoE functionality is not required, this functionality should be disabled. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: medium
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.5.1 Basic Fiber Channel Configuration
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. switch# sho interface fcoe Ethernet1/1 is FCoE down Ethernet1/2 is FCoE UP Ethernet1/3 is FCoE down Ethernet1/4 is FCoE down Displays basic FCoE status switch# sho fcoe Global FCF details FCF-MAC is 8c:60:4f:a6:29:60 FC-MAP is 0e:fc:00 FCF Priority is 128 FKA Advertisement period for FCF is 8 seconds Displays full FCoE database: switch# show fcoe database Displays the FCoE settings for an interface or all interfaces. switch# show interface [interface number] fcoe Displays LLDP configuration. switch# show lldp neighbors'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Enable the FCoE feature globally on the switch:
+    feature fcoe FC license checked out successfully fc_plugin extracted successfully FC plugin loaded successfully FCoE manager enabled successfully FC enabled on all modules successfully Warning: Ensure class-fcoe is included in qos policy-maps of all types Enable FCoE on a specific port (not required on all models):
+    interface ethernet x/y
+    fcoe mode on set the priority flow mode on a specific port:
+    priority-flow-control mode auto FCoE also requires the DCBX (Data Center Bridging Exchange) protocol, which is used to negotiate capabilities between the FCOE endpoints. DCBX is an extension of LLDP, and LLDP is enabled globally and on all interfaces by default. If LLDP is disabled on any particular interface, it can be re-enabled as:
+    int Ethernet x/y
+    lldp transmit
+    lldp receive

@@ -1,0 +1,16 @@
+id: TMA-TDSQL-4.8
+title: Ensure High-Risk Parameters Cannot Be Arbitrarily Modified via `SET GLOBAL`
+description: Users with the SUPER or SYSTEM_VARIABLES_ADMIN privilege can modify system variables online via SET GLOBAL, including security-related parameters (such as sql_mode, read_only).
+target: tdsql
+level: 2
+severity: medium
+tags:
+- tdsql
+- privileges
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.8 Ensure High-Risk Parameters Cannot Be Arbitrarily Modified via `SET GLOBAL`
+audit:
+  type: manual
+  command: Run SELECT User, Host FROM mysql.user WHERE Super_priv = 'Y' AND User NOT LIKE 'tdsqlsys%'; and check SYSTEM_VARIABLES_ADMIN grants (SELECT * FROM mysql.global_grants WHERE PRIV = 'SYSTEM_VARIABLES_ADMIN'). Only TDSQL system accounts may hold them; with audit logging enabled, review the audit trail for unexpected SET GLOBAL statements.
+remediation:
+  type: iac_patch
+  command: 1. Allow only TDSQL system accounts (tdsqlsys_*) to hold the SUPER privilege. 2. Have business accounts modify parameters uniformly through the OSS management interface. 3. Enable audit logging of SET GLOBAL operations.

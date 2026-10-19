@@ -1,0 +1,21 @@
+id: TMA-ALINUX2-5.2.16
+title: Ensure that strong Key Exchange algorithms are used
+description: Key exchange is any method in cryptography by which cryptographic keys are exchanged between two parties, allowing use of a cryptographic algorithm. If the sender and receiver wish to exchange encrypted messages, each must be equipped to encrypt messages to be sent and decrypt messages received
+target: linux
+os_family:
+- alinux-2
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Aliyun Linux 2 Benchmark v1.0.0 ARCHIVE - 5.2.16
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v sshd >/dev/null 2>&1 || { echo "step1: sshd not installed"; return 1; }; o=$(bash -c ''sshd -T | grep kexalgorithms'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Weak Key Exchange Algorithms:'' || { echo step1: missing ''Weak Key Exchange Algorithms:''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- diffie-hellman-group1-sha1 || { echo step1: missing diffie-hellman-group1-sha1; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- diffie-hellman-group14-sha1 || { echo step1: missing diffie-hellman-group14-sha1; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- diffie-hellman-group-exchange-sha1 || { echo step1: missing diffie-hellman-group-exchange-sha1; return 1; }; }; if alt0; then echo compliant;
+    fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/ssh/sshd_config file add/modify the KexAlgorithms line to contain a comma separated list of the site approved key exchange algorithms Example: KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman- group14-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18- sha512,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie- hellman-group-exchange-sha256 Restart sshd : systemctl restart sshd'

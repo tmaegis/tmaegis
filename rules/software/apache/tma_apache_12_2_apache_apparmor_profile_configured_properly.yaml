@@ -1,0 +1,16 @@
+id: TMA-APACHE-12.2
+title: Ensure the Apache AppArmor Profile Is Configured Properly
+description: 'AppArmor includes customizable profiles that may be used to confine the Apache web server to enforce least privileges so that the server has only the minimal access to specified directories, files and network ports. Access is controlled by a profile defined for the apache2 process. The default AppArmor profile is typically a very permissive profile that allows read-write access to all system files. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- apparmor
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 12.2 Ensure the Apache AppArmor Profile Is Configured Properly
+audit:
+  type: manual
+  command: 'Perform the following steps to determine if the recommended state is implemented: 1. Find the Apache AppArmor profile typically found in /etc/apparmor.d/usr.sbin.apache2 along with any files included by the profile such as /etc/apparmor.d/apache2.d/* and files in the /etc/apparmor.d/abstractions/ directory. 2. Review the capabilities and permissions granted to ensure that the profile implements least privileges for the web application. Wild-card paths such as /**, which grant access to all files and directories starting with the root level directory, should not be present in the profile.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: 1. Stop the Apache server # service apache2 stop 2. Create a mostly empty apache2 profile based on program dependencies. # aa-autodep apache2 Writing updated profile for /usr/sbin/apache2. 3. Set the apache2 profile in complain mode so that access violations will be allowed and logged. # aa-complain apache2 Setting /usr/sbin/apache2 to complain mode. 4. Start the apache2 service # service apache2 start 5. Thoroughly test the web application attempting to exercise all intended functionality so that AppArmor will generate the necessary logs of all resources accessed. The logs are sent via the system syslog utility and are typically found in either the /var/log/syslog or /var/log/messages files. Also stop and restart the web server as part of the testing process. 6.'

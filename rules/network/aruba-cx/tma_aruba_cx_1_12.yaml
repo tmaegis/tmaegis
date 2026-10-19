@@ -1,0 +1,44 @@
+id: TMA-ARUBA-CX-1.12
+title: Login Banner
+description: Setting a banner to be displayed during the login process notifies users that unauthorized use is prohibited, and that access to and use of the system may be monitored and logged. PASS requires both a pre-login (banner motd) and a post-login (banner exec) banner. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: low
+tags:
+- aruba-cx
+- banner
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.12 Login Banner
+audit:
+  type: config_regex
+  pattern: (?m)(?:^banner motd \S(?s:.*?)^banner exec \S|^banner exec \S(?s:.*?)^banner motd \S)
+remediation:
+  type: iac_patch
+  command: |-
+    banner motd ^
+    This system is for authorized use only.
+    ^
+    banner exec ^
+    This banner is displayed after login
+    ^
+    # CIS guidance:
+    To configure Message of the Day (Pre-Login) Banner -
+    banner motd <delimiter>
+    <Banner Text> <delimiter>
+    To configure Post-Login Banner -
+    banner exec <delimiter>
+    <Banner Text> <delimiter>
+    Sample Configuration of pre-login banner (motd) -
+    banner motd ^
+    Enter a new banner. Terminate the banner with the delimiter you have chosen.
+    This system is for authorized use only.
+    Unauthorized or improper
+    use of this system may result in civil or
+    criminal penalties. By
+    continuing to use this system you acknowledge
+    your consent to
+    these conditions of use.
+    ^
+    Sample Configuration of post-login banner -
+    banner exec ^
+    This banner is displayed after login
+    ^

@@ -1,0 +1,18 @@
+id: TMA-OFFICE-1.1.5.2
+title: Ensure 'Hide option to enable or disable updates' is set to 'Enabled'
+description: 'This policy setting determines if the user interface (UI) options to enable or disable Office automatic updates is visible to users. These options are found in the Product Information area of all Office applications installed via Click-to-Run. This policy setting has no effect on Office applications installed via Windows Installer. The recommended state for this setting is: Enabled. Rationale: Security updates help prevent malicious attacks on Office applications. Timely application of Office updates helps ensure the security of devices and the applications running on the devices. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\office\16.0\common\officeupdate:hideenabledisableupdates (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: office
+level: 1
+severity: medium
+tags:
+- office
+- productivity
+- cis-l1
+reference: CIS Microsoft Office Enterprise Benchmark v2.0.0 - 1.1.5.2 Ensure 'Hide option to enable or disable updates' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\officeupdate'' -Name ''hideenabledisableupdates'' -ErrorAction SilentlyContinue).''hideenabledisableupdates''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\officeupdate'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'hideenabledisableupdates' -Value 1 -PropertyType DWord -Force | Out-Null

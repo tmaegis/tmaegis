@@ -1,0 +1,18 @@
+id: TMA-MARIADB-2.9
+title: Ensure MariaDB is Bound to One or More Specific IP Addresses
+description: 'By default, the MariaDB server accepts TCP/IP connections from MariaDB user accounts on all server host IPv6 and IPv4 interfaces. You can make this configuration more restrictive by setting the bind_address configuration option to one or more specific IPv4 or IPv6 addresses so that the server only accepts TCP/IP connections on those addresses. Fails when bind_address is empty, ''*'', ''::'' or ''0.0.0.0'' (all interfaces). Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 2
+severity: medium
+tags:
+- mariadb
+- database
+- network
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 2.9 Ensure MariaDB is Bound to One or More Specific IP Addresses
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF(IFNULL(@@global.bind_address, '') NOT IN ('', '*', '::', '0.0.0.0'), 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set bind_address=<specific IP> (comma-separated list for several addresses) under [mariadbd] in /etc/mysql/mariadb.conf.d/50-server.cnf (or /etc/my.cnf.d/server.cnf), then restart MariaDB.

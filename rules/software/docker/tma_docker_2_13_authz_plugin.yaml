@@ -1,0 +1,22 @@
+id: TMA-DOCKER-2.13
+title: Ensure that authorization for Docker client commands is enabled
+description: An authorization plugin gives granular control over which Docker API commands each client may run. Compliant when --authorization-plugin or a non-empty "authorization-plugins" list is configured. The audit reads the running dockerd command line (ps) together with /etc/docker/daemon.json.
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- daemon
+reference: CIS Docker Benchmark v1.9.0 - 2.13 Ensure that authorization for Docker client commands is enabled
+audit:
+  type: command
+  command: args=$(ps -eo args 2>/dev/null) || exit 1; s=$(printf '%s\n' "$args" | grep '[d]ockerd'; cat /etc/docker/daemon.json 2>/dev/null); printf '%s\n' "$s" | grep -Eq -e '--authorization-plugin|"authorization-plugins"[[:space:]]*:[[:space:]]*\[[[:space:]]*("|$)' && echo compliant || echo missing
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Install an authorization plugin and add it to "authorization-plugins" in /etc/docker/daemon.json (or --authorization-plugin=<PLUGIN>), then restart the Docker daemon.

@@ -1,0 +1,23 @@
+id: TMA-GCP-AUDIT-LOGS-ALL-SERVICES
+title: Ensure Cloud Audit Logging is configured to capture all activities across all services
+description: Admin Activity logs are always on, but Data Access logs must be configured. The project IAM policy needs an allServices auditConfig with ADMIN_READ, DATA_READ and DATA_WRITE and no exempted members. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: medium
+tags:
+- gcp
+- logging
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Logging and Monitoring - Data Access audit logs for all services (verify section number for your release)
+audit:
+  type: command
+  command: 'p=$(gcloud config get-value project 2>/dev/null)
+
+    [ -n "$p" ] || exit 1
+
+    out=$(gcloud projects get-iam-policy "$p" --flatten=''auditConfigs[]'' --format=''value(auditConfigs.service,auditConfigs.auditLogConfigs[].logType,auditConfigs.auditLogConfigs[].exemptedMembers)'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''$1 == "allServices" && $2 ~ /ADMIN_READ/ && $2 ~ /DATA_READ/ && $2 ~ /DATA_WRITE/ && $3 !~ /:/ { ok = 1 } END { if (ok) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add to the project (or organisation) IAM policy: auditConfigs: [{service: allServices, auditLogConfigs: [{logType: ADMIN_READ}, {logType: DATA_READ}, {logType: DATA_WRITE}]}] via gcloud projects get-iam-policy / set-iam-policy, or google_project_iam_audit_config in Terraform. Remove exemptedMembers.'

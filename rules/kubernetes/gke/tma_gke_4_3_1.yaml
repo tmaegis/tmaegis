@@ -1,0 +1,17 @@
+id: TMA-GKE-4.3.1
+title: Enable NetworkPolicy enforcement with GKE Dataplane V2 or Calico
+description: NetworkPolicy enforcement should be enabled for GKE clusters by using a supported enforcement mechanism, either GKE Dataplane V2 or the Calico network policy plugin. Without a supported enforcement mechanism, Kubernetes NetworkPolicy objects cannot reliably restrict pod to pod, pod to service, ingress, or egress traffic. The benchmark marks this recommendation Manual.
+target: gke
+level: 1
+severity: medium
+tags:
+- gke
+- policies
+- network
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.3.1 Enable NetworkPolicy enforcement with GKE Dataplane V2 or Calico
+audit:
+  type: manual
+  command: Review the GKE Standard cluster configuration and verify that NetworkPolicy enforcement is available through GKE Dataplane V2 or Calico. NetworkPolicy requires a network plugin to implement enforcement. GKE Dataplane V2 is the recommended option, and Calico is available for Standard clusters. If no managed or self managed plugin is configured, NetworkPolicy objects are not enforced.
+remediation:
+  type: iac_patch
+  command: For noncompliant GKE Standard clusters, update the cluster build standard so a supported NetworkPolicy enforcement option is selected during cluster creation. Use GKE Dataplane V2 where possible, or Calico based NetworkPolicy enforcement where Dataplane V2 is not used. GKE Dataplane V2 is selected only during cluster creation, and existing clusters cannot be upgraded to use it. • Select GKE Dataplane V2 when creating new or replacement GKE Standard clusters, because NetworkPolicy enforcement is built into Dataplane V2. For existing legacy datapath clusters that cannot be recreated immediately, enable Calico based NetworkPolicy enforcement as an interim remediation path by enabling both the NetworkPolicy add-on and node enforcement.

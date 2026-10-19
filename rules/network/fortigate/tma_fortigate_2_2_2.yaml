@@ -1,0 +1,27 @@
+id: TMA-FORTIGATE-2.2.2
+title: Ensure administrator password retries and lockout time are configured
+description: Failed login attempts can indicate malicious attempts to gain access to your network. To prevent this security risk, FortiGate is preconfigured to limit the number of failed administrator login attempts. After the maximum number of failed login attempts is reached, access to the account is blocked for the configured lockout period. PASS requires admin-lockout-threshold of 3 or less and admin-lockout-duration of 900 seconds or less, exactly as the CIS audit states (the CIS remediation value is 900). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: high
+tags:
+- fortigate
+- authentication
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.2.2 Ensure administrator password retries and lockout time are configured
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set admin-lockout-threshold [1-3][ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set admin-lockout-duration (?:[1-9]\d?|[1-8]\d\d|900)[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set admin-lockout-duration (?:[1-9]\d?|[1-8]\d\d|900)[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set admin-lockout-threshold [1-3][ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set admin-lockout-threshold 3
+        set admin-lockout-duration 900
+    end
+    # CIS guidance:
+    To configure the lockout options, from CLI:
+    config system global
+        set admin-lockout-threshold 3
+        set admin-lockout-duration 900
+    end
+    Lockout affects the offending IP address, not the entire account.

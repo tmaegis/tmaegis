@@ -1,0 +1,17 @@
+id: TMA-CISCO-FTD-2.1.1
+title: Access Policy Default Logging
+description: 'Each Access Policy should have it''s default logging set to send all events to both Syslog and the FMC Events Database. While it is also recommended that each rule have logging explicitly defined, this recommendation is to prevent a situation where a misconfigured rule results in matching traffic not being properly logged. The default setting for logging when creating a new rule is *check this This recommendation ensures that logging still occurs for traffic matching any rule where adjusting this default is missed. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-ftd
+level: 1
+severity: medium
+tags:
+- cisco-ftd
+- network
+- logging
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 2.1.1 Access Policy Default Logging
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. GUI Audit Procedure: Device > Platform Setting > Threat Defense Policy > Syslog > Logging Destinations API Audit Procedure (Python Example): apireq = "/api/fmc_config/v1/domain/"+domainuuid+"/policy/accesspolicies?expanded=true " apiheaders = {''Accept'': ''application/json'', ''X-auth-access-token'': accesstoken} r = requests.get(baseuri+apireq, headers=apiheaders, verify = False ) retvals = json.loads(r.text)[''items''] policylist = [] for x in range(len(retvals)): try: print(retvals[x][''defaultAction''][''syslogConfig''][''name'']) except: ...'
+remediation:
+  type: iac_patch
+  command: In the GUI Device > Platform Setting > Threat Defense Policy > Syslog > Logging Destinations

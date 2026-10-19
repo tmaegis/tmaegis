@@ -1,0 +1,21 @@
+id: TMA-ARUBA-CX-1.2.5
+title: Two-factor authentication with the SSH server
+description: Two-factor authentication provides an additional level of security by requiring administrators to perform X.509 certificate-based authentication with the AOS-CX SSH server. The two factors are possession of the certificate private key and knowledge of the password associated with the certificate private key. The switch must be configured with the corresponding CA certificate which issued the administrator's certificate. PASS requires ssh two-factor-authentication and ssh certificate-as-authorized-key. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.2.5 Two-factor authentication with the SSH server
+audit:
+  type: config_regex
+  pattern: (?m)(?:^ssh two-factor-authentication\b(?s:.*?)^ssh certificate-as-authorized-key\b|^ssh certificate-as-authorized-key\b(?s:.*?)^ssh two-factor-authentication\b)
+remediation:
+  type: iac_patch
+  command: |-
+    ssh certificate-as-authorized-key
+    ssh two-factor-authentication authorization local
+    # CIS guidance:
+    ssh certificate-as-authorized-key
+    ssh two-factor-authentication authorization local

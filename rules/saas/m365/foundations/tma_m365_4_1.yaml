@@ -1,0 +1,16 @@
+id: TMA-M365-4.1
+title: Ensure devices without a compliance policy are marked 'not compliant'
+description: 'Compliance policies are sets of rules and conditions that are used to evaluate the configuration of managed devices. These policies can help secure organizational data and resources from devices that don''t meet those configuration requirements. Managed devices must satisfy the conditions you set in your policies to be considered compliant by Intune. When combined with conditional access, this allows more control over how non-compliant devices are treated. The recommended state is Mark devices with no compliance policy assigned as as Not compliant Implementing this setting is a first step in adopting compliance policies for devices. When used together with Conditional Access policies the attack surface can be reduced by forcing an action to be taken for non-compliant devices. Note: This section does not focus on which compliance policies to use, only that an organization should adopt a...'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 4.1 Ensure devices without a compliance policy are marked 'not compliant'
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Intune admin center https://intune.microsoft.com/ 2. Select Devices and then under Manage devices click Compliance 3. Click Compliance settings. 4. Verify that Mark devices with no compliance policy assigned as is set to Not compliant. To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "DeviceManagementConfiguration.Read.All" 2. Run the following commands: $Uri = ''https://graph.microsoft.com/v1.0/deviceManagement/settings'' Invoke-MgGraphRequest -Uri $Uri -Method GET 3. Verify that secureByDefault is set to True.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Intune admin center https://intune.microsoft.com/ 2. Select Devices and then under Manage devices click Compliance 3. Click Compliance settings. 4. Set Mark devices with no compliance policy assigned as to Not compliant. To remediate using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "DeviceManagementConfiguration.ReadWrite.All" 2. Run the following commands: $Uri = ''https://graph.microsoft.com/v1.0/deviceManagement'' $Body = @{ settings = @{ secureByDefault = $true } } | ConvertTo-Json Invoke-MgGraphRequest -Uri $Uri -Method PATCH -Body $Body'

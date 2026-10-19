@@ -1,0 +1,17 @@
+id: TMA-ARISTA-EOS-3.2.2
+title: BGP TCP Authentication Option (TCP-AO)
+description: 'BGP TCP Authentication Option (TCP-AO) (RFC 5925) support adds a new option for BGP message and TCP segments authentication using superior hashing algorithms such as HMACs and CMACs as an improvement over TCP MD5, with stronger hashing algorithms providing higher security and protection against replays attacks. EOS supports BGP message authentication via the TCP MD5 Signature (TCP MD5) option (RFC 2385) to protect the BGP sessions from spoofed TCP segments. However, research has shown many concerns that the TCP MD5 algorithm is cryptographically ineffective with a ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: arista-eos
+level: 2
+severity: high
+tags:
+- arista-eos
+- network
+- aaa
+reference: CIS Arista EOS Benchmark v1.0.0 - 3.2.2 BGP TCP Authentication Option (TCP-AO)
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. TCP-AO requires a shared secret profile with a valid lifetime and a per-neighbor configuration to use the shared secret. #show running-config section shared-secret management security session shared-secret profile TCPAO secret 1 7 $1c$G8BQN0ezkiJOX2cuAYpsEA== receive-lifetime 2026-01-01 00:00:00 2026-12-31 23:59:59 transmit-lifetime 2026-01-01 00:00:00 2026-12-31 23:59:59 router bgp 65013 neighbor {IP Address} password shared-secret profile TCPAO algorithm hmac-sha-256'
+remediation:
+  type: iac_patch
+  command: 'Enable TCP-AO using the secret keys in Shared Secret Profile NAME with a specified algorithm: router bgp {ASN} neighbor NEIGHBOR_ID password shared-secret profile NAME algorithm ALGORITHM'

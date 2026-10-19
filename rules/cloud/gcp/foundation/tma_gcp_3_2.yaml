@@ -1,0 +1,17 @@
+id: TMA-GCP-3.2
+title: Ensure Legacy Networks Do Not Exist for Older Projects
+description: In order to prevent use of legacy networks, a project should not have a legacy network configured. As of now, Legacy Networks are gradually being phased out, and you can no longer create projects with them. This recommendation is to check older projects to ensure that they are not using Legacy Networks. Legacy networks have a single network IPv4 prefix range and a single gateway IP address for the whole network. The network is global in scope and spans all cloud regions. Subnetworks cannot be created in a legacy network and are unable to switch from legacy to auto or custom subnet networks. Legacy networks can have an impact for high network traffic projects and are subject to a single point of contention or failure.
+target: gcp
+level: 1
+severity: medium
+tags:
+- cloud
+- gcp
+- network
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 3.2 Ensure Legacy Networks Do Not Exist for Older Projects
+audit:
+  type: manual
+  command: 'From Google Cloud CLI For each Google Cloud Platform project, 1. Set the project name in the Google Cloud Shell: gcloud config set project <Project-ID> 2. List the networks configured in that project: gcloud compute networks list None of the listed networks should be in the legacy mode.'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud CLI 1.Create a new non-legacy network gcloud compute networks create <NEW_NETWORK_NAME> --subnet-mode=custom -- project=<PROJECT_ID> 2.Create required subnets (for custom mode networks) gcloud compute networks subnets create <SUBNET_NAME> \ --network=<NEW_NETWORK_NAME> \ --region=<REGION> \ --range=<IP_CIDR_RANGE> \ --project=<PROJECT_ID> 3.Migrate existing resources - Compute Engine VMs: Create new VMs in the new network or use the gcloud compute instances move command (if supported) - Firewall rules: Recreate required firewall rules - Routes: Recreate any custom routes - Cloud VPN / Cloud Interconnect: Reconfigure to use the new network 4.Verify no resources remain in the legacy network gcloud compute instances list --filter="network=<LEGACY_NETWORK_NAME>" -- project=<PROJECT_ID> 5. Delete the legacy network gcloud compute networks delete <LEGACY_NETWORK_NAME> --project=<PROJECT_ID>'

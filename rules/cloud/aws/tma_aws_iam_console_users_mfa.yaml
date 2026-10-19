@@ -1,0 +1,17 @@
+id: TMA-AWS-IAM-CONSOLE-USERS-MFA
+title: Ensure MFA is enabled for all IAM users that have a console password
+description: A console password without MFA is a single factor that can be phished or guessed. Every IAM user with a login profile must have at least one MFA device. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- iam
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Identity and Access Management - MFA for console users (verify section number for your release)
+audit:
+  type: command
+  command: "users=$(aws iam list-users --query 'Users[].UserName' --output text 2>/dev/null) || exit 1\nbad=0\nfor u in $users; do\n  if err=$(aws iam get-login-profile --user-name \"$u\" 2>&1 >/dev/null); then\n    n=$(aws iam list-mfa-devices --user-name \"$u\" --query 'length(MFADevices)' --output text 2>/dev/null) || exit 1\n    [ \"$n\" -gt 0 ] || { echo \"no MFA: $u\"; bad=1; }\n  else\n    printf '%s\\n' \"$err\" | grep -q NoSuchEntity || exit 1\n  fi\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Have each listed user enable a virtual, hardware or passkey MFA device (IAM > Users > Security credentials > Assign MFA). Enforce with an IAM policy that denies actions when aws:MultiFactorAuthPresent is false, or move users to IAM Identity Center.

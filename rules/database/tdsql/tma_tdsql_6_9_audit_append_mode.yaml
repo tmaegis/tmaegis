@@ -1,0 +1,18 @@
+id: TMA-TDSQL-6.9
+title: Ensure Audit Logs Are Written in Append Mode and Protected from Overwrite
+description: 'audit_txsql_rotate_write_log controls how the TXSQL audit facility handles local audit files. The value is intentionally counterintuitive: OFF uses append mode with date- and size-based file creation, while ON uses circular files that may overwrite earlier evidence. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Run against every primary and replica. Passes when audit_txsql_rotate_write_log is OFF (append mode); also confirm audit files use append-mode names (audit_log.YYYY-MM-DD.ID) and reach the central destination before local cleanup.'
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- logging
+- audit
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 6.9 Ensure Audit Logs Are Written in Append Mode and Protected from Overwrite
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SHOW GLOBAL VARIABLES LIKE 'audit_txsql_rotate_write_log'" 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | awk -F'\t' '$1 == "audit_txsql_rotate_write_log" {print toupper($2)}'); case "$v" in OFF|0) echo compliant;; *) echo "value '$v'";; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET GLOBAL audit_txsql_rotate_write_log = OFF; persist it through the TDSQL parameter template and configure disk-capacity alerts for the audit directory.

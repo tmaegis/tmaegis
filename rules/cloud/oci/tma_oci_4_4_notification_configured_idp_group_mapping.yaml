@@ -1,0 +1,36 @@
+id: TMA-OCI-4.4
+title: Ensure a notification is configured for IdP group mapping changes
+description: 'It is recommended to setup an Event Rule and Notification that gets triggered when Identity Provider Group Mappings are created, updated or deleted. Event Rules are compartment scoped and will detect events in child compartments. It is recommended to create the Event rule at the root compartment level. IAM Policies govern access to all resources within an OCI Tenancy. IAM Policies use OCI Groups for assigning the privileges. Identity Provider Groups could be mapped to OCI Groups to assign privileges to federated users ... Passes when one ACTIVE, enabled Events rule in an accessible compartment (home region) has an enabled ONS action and a condition containing every event type: com.oraclecloud.identitycontrolplane.addidpgroupmapping com.oraclecloud.identitycontrolplane.removeidpgroupmapping com.oraclecloud.identitycontrolplane.updateidpgroupmapping. Read-only OCI CLI calls; credentials and home region come from the CLI''s normal configuration (~/.oci/config, OCI_CLI_PROFILE,
+  OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.'
+target: oci
+level: 1
+severity: medium
+tags:
+- oci
+- logging
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 4.4 Ensure a notification is configured for IdP group mapping changes
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    cs=$(oci iam compartment list --compartment-id "$t" --compartment-id-in-subtree true --access-level ACCESSIBLE --all --query 'data[?"lifecycle-state"==`"ACTIVE"`].id' --raw-output 2>/dev/null) || exit 1
+    comps="$t $(printf '%s\n' "$cs" | grep -o 'ocid1\.compartment\.[^"]*')"
+    need="com.oraclecloud.identitycontrolplane.addidpgroupmapping com.oraclecloud.identitycontrolplane.removeidpgroupmapping com.oraclecloud.identitycontrolplane.updateidpgroupmapping"
+    ok=0
+    for c in $comps; do
+      ids=$(oci events rule list --compartment-id "$c" --all --query 'data[?"lifecycle-state"==`"ACTIVE"` && "is-enabled"==`true`].id' --raw-output 2>/dev/null) || exit 1
+      for i in $(printf '%s\n' "$ids" | grep -o 'ocid1\.eventrule\.[^"]*'); do
+        rule=$(oci events rule get --rule-id "$i" --query 'data.[condition, length(actions.actions[?"action-type"==`"ONS"` && "is-enabled"==`true`])]' --raw-output 2>/dev/null) || exit 1
+        printf '%s\n' "$rule" | grep -Eq '^[[:space:]]*[1-9][0-9]*[[:space:]]*$' || continue
+        miss=0
+        for e in $need; do printf '%s\n' "$rule" | grep -qF "$e" || { miss=1; break; }; done
+        [ "$miss" -eq 0 ] && { ok=1; break 2; }
+      done
+    done
+    [ "$ok" -eq 1 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create an Events rule (oci events rule create --compartment-id <tenancy> --display-name <name> --is-enabled true --condition ''{"eventType":[...]}'' --actions ''{"actions":[{"actionType":"ONS","isEnabled":true,"topicId":"<topic>"}]}'') covering: com.oraclecloud.identitycontrolplane.addidpgroupmapping com.oraclecloud.identitycontrolplane.removeidpgroupmapping com.oraclecloud.identitycontrolplane.updateidpgroupmapping.'

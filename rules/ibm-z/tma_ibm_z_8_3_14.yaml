@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.3.14
+title: Ensure that access to JESJOBS SUBMIT resources is controlled
+description: Resources with a SUBMIT high-level qualifier in the JESJOBS resource class control the submitting of batch jobs from all sources. By using these resources, you can control the combination of job names, owning user IDs, and submitting user IDs that can be used. Typically, resources of this type are used when the use of job names must be restricted to certain owning user IDs or submitting user IDs. This would be the case if job names are used to control other concepts such as encryption.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.3.14 Ensure that access to JESJOBS SUBMIT resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that JESJOBS appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that JESJOBS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the JESJOBS entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no SUBMIT prefixed entries Note: The following specific entry can be considered compliant, but is not encouraged: SUBMIT.*.&RACUID*.&RACUID/READ Request reports generated using ... (full steps: CIS section 8.3.14)'
+remediation:
+  type: iac_patch
+  command: 'o activate the JESJOBS class use the RACF SETROPTS command: SETROPTS CLASSACT(JESJOBS) To enable generic profile checking for the JESJOBS class use the RACF SETROPTS command: SETROPTS GENERIC(JESJOBS) To create a JESJOBS profile use the RACF RDEFINE commands: RDEFINE JESJOBS SUBMIT.** + UACC(READ) + AUDIT(ALL(READ)) + DATA(''CATCH-ALL PROFILE'') To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER command: RALTER JESJOBS SUBMIT.** + UACC(READ) + AUDIT(ALL(READ)) + NOWARNING To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(JESJOBS) + DELETE ID(<non-compliant>) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use
+    both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

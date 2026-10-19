@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="{{.Lang}}" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="generator" content="TMAegis">
+{{.CSP}}
+<title>{{T "report.app.title"}} - {{.PageHost}}</title>
+{{.Style}}
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-pass" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-fail" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="i-skip" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M5 12h14"/></symbol>
+  <symbol id="i-total" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6"/></symbol>
+</svg>
+<div class="wrap">
+  <a class="skiplink" href="#main" {{A "report.app.skip"}}>{{T "report.app.skip"}}</a>
+  <header class="top">
+    <div class="brand">
+      {{.Logo}}
+      <div>
+        <h1>TMAegis<sup>&trade;</sup> <span {{A "report.app.title"}}>{{T "report.app.title"}}</span></h1>
+        <p class="sub" {{A "report.app.subtitle"}}>{{T "report.app.subtitle"}}</p>
+      </div>
+    </div>
+    <div class="tools">
+      <label class="langsel"><span class="sr" {{A "report.app.language"}}>{{T "report.app.language"}}</span>
+        <select id="lang" {{AA "aria-label" "report.app.language"}} aria-label="{{T "report.app.language"}}">
+          {{range .LangNames}}<option value="{{.Tag}}"{{if eq .Tag $.Lang}} selected{{end}}>{{.Name}}</option>{{end}}
+        </select>
+      </label>
+      <button class="btn" id="theme" type="button" {{A "report.app.theme"}}>{{T "report.app.theme"}}</button>
+      <button class="btn" id="print" type="button" {{A "report.app.print"}}>{{T "report.app.print"}}</button>
+    </div>
+  </header>
+
+  <noscript><p class="note" {{A "report.app.noscript"}}>{{T "report.app.noscript"}}</p></noscript>
+
+  <nav class="tabs" role="tablist" aria-label="{{T "report.tabs.aria"}}" {{AA "aria-label" "report.tabs.aria"}}>
+    <button role="tab" id="t-overview" class="tab" type="button" aria-controls="p-overview" aria-selected="true" data-tab="overview"><span {{A "report.tab.overview"}}>{{T "report.tab.overview"}}</span></button>
+    <button role="tab" id="t-plan" class="tab" type="button" aria-controls="p-plan" aria-selected="false" tabindex="-1" data-tab="plan"><span {{A "report.tab.plan"}}>{{T "report.tab.plan"}}</span><span class="badge fail">{{.Failed}}</span></button>
+    <button role="tab" id="t-results" class="tab" type="button" aria-controls="p-results" aria-selected="false" tabindex="-1" data-tab="results"><span {{A "report.tab.results"}}>{{T "report.tab.results"}}</span><span class="badge">{{.Total}}</span></button>
+    <button role="tab" id="t-benchmarks" class="tab" type="button" aria-controls="p-benchmarks" aria-selected="false" tabindex="-1" data-tab="benchmarks"><span {{A "report.tab.benchmarks"}}>{{T "report.tab.benchmarks"}}</span><span class="badge">{{len .Benches}}</span></button>
+    <button role="tab" id="t-skipped" class="tab" type="button" aria-controls="p-skipped" aria-selected="false" tabindex="-1" data-tab="skipped"><span {{A "report.tab.skipped"}}>{{T "report.tab.skipped"}}</span><span class="badge skip">{{.Skipped}}</span></button>
+    <button role="tab" id="t-about" class="tab" type="button" aria-controls="p-about" aria-selected="false" tabindex="-1" data-tab="about"><span {{A "report.tab.about"}}>{{T "report.tab.about"}}</span></button>
+  </nav>
+
+  <main id="main" data-report="{{.ReportID}}">
+
+  <!-- 1. Overview -->
+  <section id="p-overview" class="panel" role="tabpanel" aria-labelledby="t-overview" tabindex="0">
+    <h2 class="ptitle ph" {{A "report.tab.overview"}}>{{T "report.tab.overview"}}</h2>
+    <div class="grid">
+      <div class="card c-score">
+        <div class="gauge {{.Verdict.Class}}" role="img" aria-label="{{T "report.score.aria" "score" (printf "%s%%" .ScoreNum)}}" data-i18n-aria-label="report.score.aria" data-args="{&#34;score&#34;:&#34;{{.ScoreNum}}%&#34;}">
+          <svg viewBox="0 0 132 132" aria-hidden="true"><circle class="bg" cx="66" cy="66" r="52"/><circle class="fg" cx="66" cy="66" r="52" stroke-dasharray="{{.Circ}} {{.Circ}}" stroke-dashoffset="{{.Offset}}" data-offset="{{.Offset}}" data-full="{{.Circ}}"/></svg>
+          <div class="num"><span><span data-num="{{.ScoreNum}}" data-dec="1" data-suffix="%">{{.ScoreText}}%</span><small {{A "report.score.label"}}>{{T "report.score.label"}}</small></span></div>
+        </div>
+        <div>
+          <p class="verdict {{.Verdict.Class}}" {{A .Verdict.Key}}>{{T .Verdict.Key}}</p>
+          {{if .LeadN}}<p class="lead" {{AN .LeadKey .LeadN "evaluated" .Evaluated "urgent" .Urgent}}>{{N .LeadKey .LeadN "evaluated" .Evaluated "urgent" .Urgent}}</p>
+          {{else}}<p class="lead" {{A .LeadKey}}>{{T .LeadKey}}</p>{{end}}
+        </div>
+      </div>
+      <div class="c-stats">
+        <div class="stat pass"><div class="n" data-num="{{.Passed}}">{{.Passed}}</div><div class="l"><svg class="ico" aria-hidden="true"><use href="#i-pass"/></svg><span {{A "report.stat.passed"}}>{{T "report.stat.passed"}}</span></div></div>
+        <div class="stat fail"><div class="n" data-num="{{.Failed}}">{{.Failed}}</div><div class="l"><svg class="ico" aria-hidden="true"><use href="#i-fail"/></svg><span {{A "report.stat.failed"}}>{{T "report.stat.failed"}}</span></div></div>
+        <div class="stat skip"><div class="n" data-num="{{.Skipped}}">{{.Skipped}}</div><div class="l"><svg class="ico" aria-hidden="true"><use href="#i-skip"/></svg><span {{A "report.stat.skipped"}}>{{T "report.stat.skipped"}}</span></div></div>
+        <div class="stat"><div class="n" data-num="{{.Total}}">{{.Total}}</div><div class="l"><svg class="ico" aria-hidden="true"><use href="#i-total"/></svg><span {{A "report.stat.total"}}>{{T "report.stat.total"}}</span></div></div>
+      </div>
+
+      <div class="card c-sev">
+        <h3 class="ch" {{A "report.sev.title"}}>{{T "report.sev.title"}}</h3>
+        {{if .Failed}}
+        <div class="bars">
+          {{range .Bars}}<div class="bar {{.Class}}"><span {{A .Key}}>{{T .Key}}</span><div class="track" aria-hidden="true"><div class="fill" style="width:{{.Pct}}%"></div></div><span class="v" data-num="{{.Count}}">{{.Count}}</span></div>
+          {{end}}
+        </div>
+        {{else}}<p class="empty" {{A "report.sev.none"}}>{{T "report.sev.none"}}</p>{{end}}
+      </div>
+      <div class="card c-top">
+        <h3 class="ch" {{A "report.fixfirst.title"}}>{{T "report.fixfirst.title"}}</h3>
+        {{if .Top}}
+        <ul class="top-list">
+          {{range .Top}}<li><a href="#r-{{.N}}" data-jump="{{.N}}"><span class="pill sev-{{.SevClass}}" {{A (printf "report.sev.%s" .SevClass)}}>{{.Severity}}</span><span><span class="t">{{.Title}}</span><br><span class="i mono">{{.ID}}</span></span></a></li>
+          {{end}}
+        </ul>
+        <p class="more"><a href="#plan" data-tab-link="plan" {{A "report.fixfirst.more"}}>{{T "report.fixfirst.more"}}</a></p>
+        {{else}}<p class="empty" {{A "report.fixfirst.none"}}>{{T "report.fixfirst.none"}}</p>{{end}}
+      </div>
+      <div class="card c-host">
+        <h3 class="ch" {{A "report.host.title"}}>{{T "report.host.title"}}</h3>
+        <dl class="kv">
+          <div><dt {{A "report.host.hostname"}}>{{T "report.host.hostname"}}</dt><dd>{{if .Host.Name}}{{.Host.Name}}{{else}}-{{end}}</dd></div>
+          <div><dt {{A "report.host.os"}}>{{T "report.host.os"}}</dt><dd>{{if .Host.OS}}{{.Host.OS}}{{else}}-{{end}}</dd></div>
+          <div><dt {{A "report.host.arch"}}>{{T "report.host.arch"}}</dt><dd>{{if .Host.Arch}}{{.Host.Arch}}{{else}}-{{end}}</dd></div>
+          <div><dt {{A "report.host.targets"}}>{{T "report.host.targets"}}</dt><dd>{{if .Host.Targets}}{{.Host.Targets}}{{else}}-{{end}}</dd></div>
+          <div><dt {{A "report.host.scanned"}}>{{T "report.host.scanned"}}</dt><dd><time data-ts="{{.Host.WhenISO}}" datetime="{{.Host.WhenISO}}">{{.Host.When}}</time></dd></div>
+          {{if .Host.Duration}}<div><dt {{A "report.host.duration"}}>{{T "report.host.duration"}}</dt><dd>{{.Host.Duration}}</dd></div>{{end}}
+          {{if .Host.RulesDir}}<div><dt {{A "report.host.rulesdir"}}>{{T "report.host.rulesdir"}}</dt><dd class="mono">{{.Host.RulesDir}}</dd></div>{{end}}
+          <div><dt {{A "report.host.benchmarks"}}>{{T "report.host.benchmarks"}}</dt><dd data-num="{{len .Benches}}">{{len .Benches}}</dd></div>
+          <div><dt {{A "report.host.rules"}}>{{T "report.host.rules"}}</dt><dd data-num="{{.Evaluated}}">{{.Evaluated}}</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Action plan -->
+  <section id="p-plan" class="panel" role="tabpanel" aria-labelledby="t-plan" tabindex="0" hidden>
+    <h2 class="ptitle" {{A "report.plan.title"}}>{{T "report.plan.title"}}</h2>
+    <p class="intro" {{A "report.plan.intro"}}>{{T "report.plan.intro"}}</p>
+    {{if .Failed}}
+    <div class="planbar">
+      <div class="prog">
+        <div class="track" role="progressbar" aria-valuemin="0" aria-valuemax="{{.Failed}}" aria-valuenow="0" {{AA "aria-label" "report.plan.progress.aria"}} aria-label="{{T "report.plan.progress.aria"}}" id="prog"><div class="fill" id="prog-fill" style="width:0"></div></div>
+        <span id="prog-text" class="progtext" aria-live="polite" data-total="{{.Failed}}">{{N "report.plan.progress" .Failed "done" 0}}</span>
+      </div>
+      <button class="btn" id="copy-list" type="button" {{A "report.plan.copy"}}>{{T "report.plan.copy"}}</button>
+      <button class="btn ghost" id="reset-plan" type="button" {{A "report.plan.reset"}}>{{T "report.plan.reset"}}</button>
+    </div>
+    <p id="toast" class="toast" role="status" aria-live="polite"></p>
+    <textarea id="copy-buffer" class="sr" tabindex="-1" aria-hidden="true"></textarea>
+    {{template "group" (dict "Key" "quick" "Items" .Quick)}}
+    {{template "group" (dict "Key" "planned" "Items" .Planned)}}
+    {{template "group" (dict "Key" "manual" "Items" .Manuals)}}
+    {{else}}
+    <p class="empty" {{A "report.plan.empty"}}>{{T "report.plan.empty"}}</p>
+    {{end}}
+  </section>
+
+  <!-- 3. Results -->
+  <section id="p-results" class="panel" role="tabpanel" aria-labelledby="t-results" tabindex="0" hidden>
+    <h2 class="ptitle" {{A "report.results.title"}}>{{T "report.results.title"}}</h2>
+    <div class="toolbar" role="search">
+      <input id="q" type="search" placeholder="{{T "report.results.search"}}" aria-label="{{T "report.results.search"}}" {{AA "placeholder" "report.results.search"}} {{AA "aria-label" "report.results.search"}} autocomplete="off">
+      <div class="chips" role="group" aria-label="{{T "report.col.status"}}" {{AA "aria-label" "report.col.status"}}>
+        <button class="chip" type="button" data-status="FAIL" aria-pressed="false"><span {{A "report.stat.failed"}}>{{T "report.stat.failed"}}</span> (<span data-num="{{.Failed}}">{{.Failed}}</span>)</button>
+        <button class="chip" type="button" data-status="PASS" aria-pressed="false"><span {{A "report.stat.passed"}}>{{T "report.stat.passed"}}</span> (<span data-num="{{.Passed}}">{{.Passed}}</span>)</button>
+        <button class="chip" type="button" data-status="SKIP" aria-pressed="false"><span {{A "report.stat.skipped"}}>{{T "report.stat.skipped"}}</span> (<span data-num="{{.Skipped}}">{{.Skipped}}</span>)</button>
+      </div>
+      <select id="sev" aria-label="{{T "report.col.severity"}}" {{AA "aria-label" "report.col.severity"}}>
+        <option value="" {{A "report.results.allseverities"}}>{{T "report.results.allseverities"}}</option>
+        <option value="critical" {{A "report.sev.critical"}}>{{T "report.sev.critical"}}</option><option value="high" {{A "report.sev.high"}}>{{T "report.sev.high"}}</option><option value="medium" {{A "report.sev.medium"}}>{{T "report.sev.medium"}}</option><option value="low" {{A "report.sev.low"}}>{{T "report.sev.low"}}</option>
+      </select>
+      <select id="tgt" aria-label="{{T "report.results.target"}}" {{AA "aria-label" "report.results.target"}}>
+        <option value="" {{A "report.results.alltargets"}}>{{T "report.results.alltargets"}}</option>
+        {{range .Targets}}<option value="{{.}}">{{.}}</option>{{end}}
+      </select>
+      <select id="bm" aria-label="{{T "report.results.benchmark"}}" {{AA "aria-label" "report.results.benchmark"}}>
+        <option value="" {{A "report.results.allbenchmarks"}}>{{T "report.results.allbenchmarks"}}</option>
+        {{range .Benches}}<option value="{{.Key}}">{{.Name}}</option>{{end}}
+      </select>
+      <label class="grpsel"><span {{A "report.results.groupby"}}>{{T "report.results.groupby"}}</span>
+        <select id="grp">
+          <option value="" {{A "report.results.group.none"}}>{{T "report.results.group.none"}}</option>
+          <option value="bench" {{A "report.results.group.benchmark"}}>{{T "report.results.group.benchmark"}}</option>
+          <option value="target" {{A "report.results.group.target"}}>{{T "report.results.group.target"}}</option>
+          <option value="sev" {{A "report.results.group.severity"}}>{{T "report.results.group.severity"}}</option>
+        </select>
+      </label>
+      <button class="btn" id="expand" type="button" {{A "report.results.expandall"}}>{{T "report.results.expandall"}}</button>
+      <button class="btn" id="collapse" type="button" {{A "report.results.collapseall"}}>{{T "report.results.collapseall"}}</button>
+      <button class="btn ghost hidden" id="clear" type="button" {{A "report.results.clear"}}>{{T "report.results.clear"}}</button>
+      <span class="count" id="count" aria-live="polite"></span>
+    </div>
+
+    <table class="tbl">
+      <thead><tr>
+        <th style="width:34px"><span class="sr" {{A "report.col.details"}}>{{T "report.col.details"}}</span></th>
+        <th data-sort="id" scope="col" {{A "report.col.id"}}>{{T "report.col.id"}}</th>
+        <th data-sort="title" scope="col" {{A "report.col.title"}}>{{T "report.col.title"}}</th>
+        <th class="col-level" data-sort="level" scope="col" {{A "report.col.level"}}>{{T "report.col.level"}}</th>
+        <th data-sort="sev" scope="col" {{A "report.col.severity"}}>{{T "report.col.severity"}}</th>
+        <th data-sort="status" scope="col" {{A "report.col.status"}}>{{T "report.col.status"}}</th>
+      </tr></thead>
+      <tbody id="rows">
+      {{range .Results}}<tr class="rule" id="r-{{.N}}" data-n="{{.N}}" data-id="{{.ID}}" data-title="{{.Title}}" data-sev="{{.SevClass}}" data-status="{{.Status}}" data-target="{{.Target}}" data-bench="{{.Bench}}" data-benchname="{{.BenchName}}" data-level="{{.Level}}" data-search="{{.Search}}">
+        <td><button class="tgl" type="button" aria-expanded="false" aria-controls="d-{{.N}}" aria-label="{{T "report.col.details"}}" {{AA "aria-label" "report.col.details"}}><svg aria-hidden="true"><use href="#i-chev"/></svg></button></td>
+        <td class="rid mono">{{.ID}}</td>
+        <td><div class="rtitle">{{.Title}}</div><div class="rtarget">{{.Target}}</div></td>
+        <td class="col-level">L{{.Level}}</td>
+        <td><span class="pill sev-{{.SevClass}}" {{A (printf "report.sev.%s" .SevClass)}}>{{.Severity}}</span></td>
+        <td><span class="pill st-{{.StatusClass}}"><svg class="ico" aria-hidden="true"><use href="#i-{{.Icon}}"/></svg><span {{A (printf "report.status.%s" .StatusClass)}}>{{.StatusLabel}}</span></span></td>
+      </tr>
+      <tr class="detail hidden" id="d-{{.N}}"><td colspan="6">
+        <div class="dgrid">
+          {{if .Description}}<div><h3 {{A "report.detail.description"}}>{{T "report.detail.description"}}</h3><p>{{.Description}}</p></div>{{end}}
+          {{if .Details}}<div><h3 {{A "report.detail.output"}}>{{T "report.detail.output"}}</h3><pre>{{.Details}}</pre></div>{{end}}
+          {{if .Remediation}}<div><h3 {{A "report.detail.remediation"}}>{{T "report.detail.remediation"}}</h3><pre>{{.Remediation}}</pre>{{if .Guidance}}<div class="note" {{A "report.detail.guidance"}}>{{T "report.detail.guidance"}}</div>{{end}}</div>{{end}}
+          {{if .Reference}}<div><h3 {{A "report.detail.reference"}}>{{T "report.detail.reference"}}</h3><p>{{.Reference}}</p></div>{{end}}
+        </div>
+      </td></tr>
+      {{end}}
+      </tbody>
+      <tbody><tr id="none" class="hidden"><td colspan="6" class="none" {{A "report.results.none"}}>{{T "report.results.none"}}</td></tr></tbody>
+    </table>
+  </section>
+
+  <!-- 4. By benchmark -->
+  <section id="p-benchmarks" class="panel" role="tabpanel" aria-labelledby="t-benchmarks" tabindex="0" hidden>
+    <h2 class="ptitle" {{A "report.bench.title"}}>{{T "report.bench.title"}}</h2>
+    <p class="intro" {{A "report.bench.intro"}}>{{T "report.bench.intro"}}</p>
+    {{if .Benches}}
+    <div class="bgrid">
+      {{range .Benches}}<button type="button" class="card bcard {{.Class}}" data-bench="{{.Key}}">
+        <span class="bname">{{.Name}}</span>
+        {{if .Ref}}<span class="bref">{{.Ref}}</span>{{end}}
+        <span class="bscore">{{if .HasScore}}<b data-num="{{.Score}}" data-dec="1" data-suffix="%">{{.ScoreText}}</b><small {{A "report.bench.score"}}>{{T "report.bench.score"}}</small>{{else}}<small {{A "report.bench.noeval"}}>{{T "report.bench.noeval"}}</small>{{end}}</span>
+        <span class="mini" role="img" aria-label="{{T "report.bench.bar" "passed" .Pass "failed" .Fail "skipped" .Skip}}" data-i18n-aria-label="report.bench.bar" data-args="{&#34;passed&#34;:{{.Pass}},&#34;failed&#34;:{{.Fail}},&#34;skipped&#34;:{{.Skip}}}"><i class="m-pass" style="width:{{.PassPct}}%"></i><i class="m-fail" style="width:{{.FailPct}}%"></i><i class="m-skip" style="width:{{.SkipPct}}%"></i></span>
+        <span class="bcounts"><span class="c-pass"><b data-num="{{.Pass}}">{{.Pass}}</b> <span {{A "report.stat.passed"}}>{{T "report.stat.passed"}}</span></span><span class="c-fail"><b data-num="{{.Fail}}">{{.Fail}}</b> <span {{A "report.stat.failed"}}>{{T "report.stat.failed"}}</span></span><span class="c-skip"><b data-num="{{.Skip}}">{{.Skip}}</b> <span {{A "report.stat.skipped"}}>{{T "report.stat.skipped"}}</span></span></span>
+        <span class="bopen" {{A "report.bench.open"}}>{{T "report.bench.open"}}</span>
+      </button>
+      {{end}}
+    </div>
+    {{else}}<p class="empty" {{A "report.bench.empty"}}>{{T "report.bench.empty"}}</p>{{end}}
+  </section>
+
+  <!-- 5. Skipped & manual -->
+  <section id="p-skipped" class="panel" role="tabpanel" aria-labelledby="t-skipped" tabindex="0" hidden>
+    <h2 class="ptitle" {{A "report.skipped.title"}}>{{T "report.skipped.title"}}</h2>
+    <p class="intro" {{A "report.skipped.intro"}}>{{T "report.skipped.intro"}}</p>
+    <div class="card sk">
+      <h3 class="ch" {{A "report.skipped.manual.title"}}>{{T "report.skipped.manual.title"}}</h3>
+      <p class="intro" {{A "report.skipped.manual.desc"}}>{{T "report.skipped.manual.desc"}}</p>
+      <p class="cnt" {{AN "report.skipped.manual.count" .Manual}}>{{N "report.skipped.manual.count" .Manual}}</p>
+      {{if .SkipManual}}<ol class="mlist">
+        {{range .SkipManual}}<li id="m-{{.N}}"><div class="phead"><span class="pill sev-{{.SevClass}}" {{A (printf "report.sev.%s" .SevClass)}}>{{.Severity}}</span><b class="ptitle2">{{.Title}}</b><span class="mono rid">{{.ID}}</span></div>
+          {{if .Description}}<p class="desc">{{.Description}}</p>{{end}}
+          {{if .Instructions}}<h4 {{A "report.skipped.instructions"}}>{{T "report.skipped.instructions"}}</h4><pre>{{.Instructions}}</pre>{{end}}
+          {{if .Reference}}<p class="note">{{.Reference}}</p>{{end}}</li>
+        {{end}}
+      </ol>{{else}}<p class="empty muted" {{A "report.skipped.manual.empty"}}>{{T "report.skipped.manual.empty"}}</p>{{end}}
+    </div>
+    <div class="card sk">
+      <h3 class="ch" {{A "report.skipped.na.title"}}>{{T "report.skipped.na.title"}}</h3>
+      <p class="intro" {{A "report.skipped.na.desc"}}>{{T "report.skipped.na.desc"}}</p>
+      <p class="cnt" {{AN "report.skipped.na.count" .NA}}>{{N "report.skipped.na.count" .NA}}</p>
+      {{if .SkipNA}}<ul class="nalist">
+        {{range .SkipNA}}<li><span class="mono rid">{{.ID}}</span><span class="natitle">{{.Title}}</span><span class="nareason"><span class="lbl" {{A "report.skipped.reason"}}>{{T "report.skipped.reason"}}</span>: {{.Details}}</span></li>
+        {{end}}
+      </ul>{{else}}<p class="empty muted" {{A "report.skipped.na.empty"}}>{{T "report.skipped.na.empty"}}</p>{{end}}
+    </div>
+  </section>
+
+  <!-- 6. About -->
+  <section id="p-about" class="panel" role="tabpanel" aria-labelledby="t-about" tabindex="0" hidden>
+    <h2 class="ptitle" {{A "report.about.title"}}>{{T "report.about.title"}}</h2>
+    <div class="aboutgrid">
+      <div class="card">
+        <h3 class="ch" {{A "report.about.tool.title"}}>{{T "report.about.tool.title"}}</h3>
+        <dl class="kv">
+          <div><dt {{A "report.about.tool.name"}}>{{T "report.about.tool.name"}}</dt><dd>TMAegis&trade;</dd></div>
+          <div><dt {{A "report.about.tool.version"}}>{{T "report.about.tool.version"}}</dt><dd>{{.Version}}</dd></div>
+          <div><dt {{A "report.about.tool.generated"}}>{{T "report.about.tool.generated"}}</dt><dd><time data-ts="{{.Host.WhenISO}}" datetime="{{.Host.WhenISO}}">{{.Host.When}}</time></dd></div>
+          <div><dt {{A "report.about.tool.language"}}>{{T "report.about.tool.language"}}</dt><dd id="about-lang">{{.Lang}}</dd></div>
+        </dl>
+      </div>
+      <div class="card">
+        <h3 class="ch" {{A "report.about.counts.title"}}>{{T "report.about.counts.title"}}</h3>
+        <dl class="kv">
+          <div><dt {{A "report.about.counts.total"}}>{{T "report.about.counts.total"}}</dt><dd data-num="{{.Total}}">{{.Total}}</dd></div>
+          <div><dt {{A "report.about.counts.evaluated"}}>{{T "report.about.counts.evaluated"}}</dt><dd data-num="{{.Evaluated}}">{{.Evaluated}}</dd></div>
+          <div><dt {{A "report.stat.passed"}}>{{T "report.stat.passed"}}</dt><dd data-num="{{.Passed}}">{{.Passed}}</dd></div>
+          <div><dt {{A "report.stat.failed"}}>{{T "report.stat.failed"}}</dt><dd data-num="{{.Failed}}">{{.Failed}}</dd></div>
+          <div><dt {{A "report.about.counts.manual"}}>{{T "report.about.counts.manual"}}</dt><dd data-num="{{.Manual}}">{{.Manual}}</dd></div>
+          <div><dt {{A "report.about.counts.na"}}>{{T "report.about.counts.na"}}</dt><dd data-num="{{.NA}}">{{.NA}}</dd></div>
+          <div><dt {{A "report.about.counts.benchmarks"}}>{{T "report.about.counts.benchmarks"}}</dt><dd data-num="{{len .Benches}}">{{len .Benches}}</dd></div>
+        </dl>
+      </div>
+      <div class="card">
+        <h3 class="ch" {{A "report.about.options.title"}}>{{T "report.about.options.title"}}</h3>
+        <dl class="kv">
+          <div><dt {{A "report.about.options.targets"}}>{{T "report.about.options.targets"}}</dt><dd>{{if .Host.Targets}}{{.Host.Targets}}{{else}}-{{end}}</dd></div>
+          <div><dt {{A "report.about.options.levels"}}>{{T "report.about.options.levels"}}</dt><dd>{{if .Levels}}{{.Levels}}{{else}}-{{end}}</dd></div>
+          <div><dt {{A "report.about.options.manual"}}>{{T "report.about.options.manual"}}</dt><dd>{{if .HasManual}}<span {{A "report.about.options.manual.yes"}}>{{T "report.about.options.manual.yes"}}</span>{{else}}<span {{A "report.about.options.manual.no"}}>{{T "report.about.options.manual.no"}}</span>{{end}}</dd></div>
+          {{if .Host.RulesDir}}<div><dt {{A "report.about.options.rulesdir"}}>{{T "report.about.options.rulesdir"}}</dt><dd class="mono">{{.Host.RulesDir}}</dd></div>{{end}}
+          {{if .Options}}<div><dt {{A "report.about.options.extra"}}>{{T "report.about.options.extra"}}</dt><dd class="mono">{{range $i, $o := .Options}}{{if $i}} {{end}}{{$o}}{{end}}</dd></div>{{end}}
+        </dl>
+      </div>
+      <div class="card wide">
+        <h3 class="ch" {{A "report.about.read.title"}}>{{T "report.about.read.title"}}</h3>
+        <ul class="prose">
+          <li {{A "report.about.read.formula"}}>{{T "report.about.read.formula"}}</li>
+          <li {{A "report.about.read.bands"}}>{{T "report.about.read.bands"}}</li>
+          <li {{A "report.about.read.severity"}}>{{T "report.about.read.severity"}}</li>
+          <li {{A "report.about.read.status"}}>{{T "report.about.read.status"}}</li>
+        </ul>
+      </div>
+      <div class="card wide">
+        <h3 class="ch" {{A "report.about.legal.title"}}>{{T "report.about.legal.title"}}</h3>
+        <ul class="prose">
+          <li {{A "report.about.legal.disclaimer"}}>{{T "report.about.legal.disclaimer"}}</li>
+          <li {{A "report.about.legal.cis"}}>{{T "report.about.legal.cis"}}</li>
+          <li {{A "report.about.legal.tm"}}>{{T "report.about.legal.tm"}}</li>
+        </ul>
+        <h3 class="ch" {{A "report.about.licences.title"}}>{{T "report.about.licences.title"}}</h3>
+        <ul class="prose">
+          <li {{A "report.about.licences.tmaegis"}}>{{T "report.about.licences.tmaegis"}}</li>
+          <li {{A "report.about.licences.geist"}}>{{T "report.about.licences.geist"}}</li>
+          <li {{A "report.about.offline"}}>{{T "report.about.offline"}}</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <footer class="foot">
+    <span><span {{A "report.app.generated"}}>{{T "report.app.generated"}}</span> &middot; <span {{A "report.app.disclaimer"}}>{{T "report.app.disclaimer"}}</span></span>
+    <span>Geist &copy; Vercel (SIL OFL 1.1)</span>
+  </footer>
+</div>
+<script type="application/json" id="i18n-data">{{.Dict}}</script>
+{{.Script}}
+</body>
+</html>
+{{define "group"}}
+<section class="pgroup g-{{.Key}}" data-group="{{.Key}}" aria-labelledby="gh-{{.Key}}">
+  <div class="gh">
+    <h3 id="gh-{{.Key}}" {{A (printf "report.plan.%s.title" .Key)}}>{{T (printf "report.plan.%s.title" .Key)}}</h3>
+    <span class="gcount" {{AN "report.plan.count" (len .Items)}}>{{N "report.plan.count" (len .Items)}}</span>
+  </div>
+  <p class="intro" {{A (printf "report.plan.%s.desc" .Key)}}>{{T (printf "report.plan.%s.desc" .Key)}}</p>
+  {{if .Items}}<ol class="plist">
+    {{range .Items}}<li class="pi" data-n="{{.N}}" data-id="{{.ID}}" data-sev="{{.SevClass}}">
+      <input type="checkbox" class="pchk" id="c-{{.N}}" data-id="{{.ID}}" aria-labelledby="pt-{{.N}}">
+      <div class="pbody">
+        <div class="phead"><span class="pill sev-{{.SevClass}}" {{A (printf "report.sev.%s" .SevClass)}}>{{.Severity}}</span><span class="pill risk-{{.Risk}}" {{A (printf "report.risk.%s" .Risk)}}>{{T (printf "report.risk.%s" .Risk)}}</span><label class="ptitle2" id="pt-{{.N}}" for="c-{{.N}}">{{.Title}}</label><span class="mono rid">{{.ID}}</span></div>
+        {{if .Remediation}}<pre class="prem">{{.Remediation}}</pre>{{else}}<p class="note" {{A "report.plan.noremediation"}}>{{T "report.plan.noremediation"}}</p>{{end}}
+        <div class="pact">{{if .Remediation}}<button class="btn sm copyfix" type="button" {{A "report.plan.copyfix"}}>{{T "report.plan.copyfix"}}</button>{{end}}<a class="btn sm" href="#r-{{.N}}" data-jump="{{.N}}" {{A "report.plan.viewrule"}}>{{T "report.plan.viewrule"}}</a></div>
+      </div>
+    </li>
+    {{end}}
+  </ol>{{else}}<p class="empty muted" {{A "report.plan.groupempty"}}>{{T "report.plan.groupempty"}}</p>{{end}}
+</section>
+{{end}}

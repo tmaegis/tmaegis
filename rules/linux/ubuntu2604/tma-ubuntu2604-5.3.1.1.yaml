@@ -1,0 +1,39 @@
+id: TMA-UBUNTU2604-5.3.1.1
+title: Ensure latest version of pam is installed
+description: Linux Pluggable Authentication Modules (PAM) is a suite of libraries that allow a Linux system administrator to configure methods to authenticate users. It provides a flexible and centralized way to switch authentication methods for secured applications by using configuration files instead of changing application code The libpam-runtime provides the runtime support for the PAM library
+target: linux
+os_family:
+- ubuntu-26.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 26.04 LTS Benchmark v1.0.0 - 5.3.1.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -s libpam-runtime &>/dev/null && echo "libpam-runtime is installed"'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''libpam-runtime is installed'' || { echo step1: missing ''libpam-runtime is installed''; return 1; }; command -v apt >/dev/null 2>&1 || { echo "step2: apt not installed"; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''apt list --upgradable 2>&1 | grep -P ''"''"''^libpam-runtime\b''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    if command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade libpam-runtime
+    elif command -v dnf >/dev/null 2>&1; then dnf -y upgrade pam
+    elif command -v yum >/dev/null 2>&1; then yum -y update pam
+    elif command -v zypper >/dev/null 2>&1; then zypper -n update pam; fi
+    true
+  guidance: "Run the following command to install the latest version of libpam-runtime: # apt install libpam-runtime"

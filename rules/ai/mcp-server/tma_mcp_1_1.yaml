@@ -1,0 +1,21 @@
+id: TMA-MCP-1.1
+title: Ensure MCP protocol version is pinned and logged
+description: MCP servers, hosts, and gateways serve only operator-approved protocol revisions, such as 2026-07-28, and record the asserted protocol version for every request in structured logs. The allowlist is configured explicitly rather than inherited from SDK defaults, and it defines the revisions the endpoint serves, not only those it accepts per request. Serving older revisions alongside approved ones creates downgrade paths that bypass the allowlist. The allowlist is set no lower than 2025-06-18, the revision that introduced the MCP-Protocol-Version header and header-body validation, because a server that serves earlier revisions can read a request carrying no header as an earlier revision and process it silently. In Streamable HTTP, the protocol version is asserted in both the MCP-Protocol-Version header and the _meta.io.modelcontextprotocol/protocolVersion field, the two values agree, and...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- logging
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 1.1 Ensure MCP protocol version is pinned and logged
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_1_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 1.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure the deployment to reject any request that asserts a version outside the allowlist, omits it, or carries disagreeing header and body values, and to record the asserted version on every request. The version is asserted twice per Streamable HTTP POST, in the MCP-Protocol-Version header and in _meta under io.modelcontextprotocol/protocolVersion, and the two are required to match. The MCP server, or an L7 gateway able to inspect the body, rejects these in request-handling middleware: an out-of-allowlist version with -32022 (UnsupportedProtocolVersion), a header that disagrees with the body or a missing MCP-Protocol-Version header with -32020 (HeaderMismatch), and a request whose _meta omits the protocol version value with -32602 (Invalid params). All are rejected at HTTP 400. Record the asserted version, the request direction, and the client identity from _meta on every request, and ship the logs to the SIEM. The Audit reads the version from that _meta key, so a deployment
+    that records it under a different name changes the Audit and this field together. Record the approved revision(s) in the enterprise MCP registry and export them to the newline-delimited allowlist the Audi...'

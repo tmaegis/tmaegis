@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.11.2
+title: 'Ensure ''Disable HTTP proxy features: Disable proxy authentication'' is set to ''Enabled: Disable authentication over loopback interfaces'' or higher'
+description: 'This policy setting determines whether Windows can authenticate over a loopback interface. The recommended state for this setting is: Enabled: Disable authentication over loopback interfaces. Configuring this setting to Disable all authentication protocols and loopback authentication also conforms to the benchmark.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.11.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings'' -Name ''DisableProxyAuthenticationSchemes'' -ErrorAction SilentlyContinue).''DisableProxyAuthenticationSchemes''; if (-not ($null -ne $v -and @(256,287) -contains [int64]$v)) { $bad += ''DisableProxyAuthenticationSchemes='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\InternetSettings' -Name 'DisableProxyAuthenticationSchemes' -Value 256 -PropertyType DWord -Force | Out-Null

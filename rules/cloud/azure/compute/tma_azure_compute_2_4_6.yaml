@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.4.6
+title: Ensure 'HTTPS Only' is set to 'On'
+description: Azure App Service allows function app deployment slots to run under both HTTP and HTTPS by default. Function app deployment slots can be accessed by anyone using non-secure HTTP links by default. Non-secure HTTP requests can be restricted and all HTTP requests redirected to the secure HTTPS port. It is recommended to enforce HTTPS-only traffic. This recommendation applies to function apps using the Consumption, Premium, or Dedicated (App Service) plans, which support deployment slots. Enabling HTTPS-only traffic will redirect all non-secure HTTP requests to HTTPS ports. HTTPS uses the TLS/SSL protocol to provide a secure connection which is both encrypted and authenticated. It is therefore important to support HTTPS for the security benefits.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.4.6 Ensure 'HTTPS Only' is set to 'On'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings tab, under Platform settings, ensure that HTTPS Only is set to On. 7. Repeat steps 1-6 for each function app and deployment slot. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to list deployment slots: az functionapp deployment slot list --resource-group <resource-group-name> -- name <function-app-name> For each deployment slot, ensure that httpsOnly is set to true. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: 5e5dbe3f-2702-4ffc-8b1e-0cae008a5c71 - Name: ''Function app slots should only be accessible over HTTPS'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings tab, under Platform settings, next to HTTPS Only, select the radio button next to On. 7. Click Save. 8. Click Continue. 9. Repeat steps 1-8 for each function app and deployment slot requiring remediation. Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to enable HTTPS Only: az resource update --resource-group <resource-group-name> --name <function- app-name>/slots/<deployment-slot-name> --resource-type "Microsoft.Web/sites" --set properties.httpsOnly=true'

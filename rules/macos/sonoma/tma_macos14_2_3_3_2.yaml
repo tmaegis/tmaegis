@@ -1,0 +1,38 @@
+id: TMA-MACOS14-2.3.3.2
+title: Ensure File Sharing Is Disabled
+description: 'File sharing from a user workstation creates additional risks, such as: - Open ports are created that can be probed and attacked - Passwords are attached to user accounts for access that may be exposed and endanger other parts of the organizational environment, including directory accounts - Increased complexity makes security more difficult and may expose additional attack vectors Apple''s File Sharing uses the Server Message Block (SMB) protocol to share to other computers that can mount SMB shares. This includes other macOS computers. Apple warns that SMB sharing stored passwords is less secure, and anyone with system access can gain access to the password for that account. When sharing with SMB, each user accessing the Mac must have SMB enabled. Storing passwords, especially copies of valid directory passwords, decreases security for the directory account and should not be used. By...'
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.3.3.2 Ensure File Sharing Is Disabled
+audit:
+  type: command
+  command: 'out=$(/bin/launchctl list 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | /usr/bin/grep -c ''com.apple.smbd'' || true'
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /bin/launchctl disable system/com.apple.smbd 2>/dev/null
+    /bin/launchctl bootout system/com.apple.smbd 2>/dev/null
+    /bin/launchctl unload -w /System/Library/LaunchDaemons/com.apple.smbd.plist 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to disable File Sharing: 1. Open System Settings 2. Select General 3. Select Sharing 4. Set File Sharing to disabled Terminal Method: Run the following command to disable File Sharing: % /usr/bin/sudo /bin/launchctl disable system/com.apple.smbd % /usr/bin/sudo /bin/launchctl bootout system/com.apple.smbd"

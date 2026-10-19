@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.27.16
+title: 'Ensure ''Macro Runtime Scan Scope'' is set to ''Enabled: Enable for all documents'''
+description: 'This policy setting specifies the behavior for both the VBA and Excel 4.0 (XLM) runtime scan features. Multiple Office apps support VBA macros, but XLM macros are only supported by Excel. The VBA and XLM runtimes report certain high-risk code behaviors to an antivirus system before the macro executes them. This enables the antivirus system to assess whether the macro''s behavior is malicious or not. If the behavior is identified as malicious, the Office application terminates the session, and the antivirus system can quarantine the file. If the behavior is deemed non-malicious, the macro execution continues. ... Audit: reads the registry value(s) macroruntimescanscope that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.27.16 Ensure ''Macro Runtime Scan Scope'' is set to ''Enabled: Enable for all documents'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\security'') -Name ''macroruntimescanscope'' -ErrorAction SilentlyContinue).''macroruntimescanscope''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $_.PSChildName + '':macroruntimescanscope='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Enable for all documents: Microsoft Office 2016\Security Settings\Macro Runtime Scan Scope'

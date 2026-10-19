@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.10.2.2
+title: Ensure 'Allow Secure Boot for integrity validation' is set to 'Enabled'
+description: This policy setting allows you to configure whether Secure Boot will be allowed as the platform integrity provider for BitLocker operating system drives. Secure Boot ensures that the PC's pre-boot environment only loads firmware that is digitally signed by authorized software publishers. Secure Boot also provides more flexibility for managing pre-boot configuration than legacy BitLocker integrity checks. Secure Boot requires a system that meets the UEFI 2.3.1 Specifications for Class 2 and Class 3 computers. When this policy is enabled and the hardware is capable of using Secure Boot for BitLo
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.10.2.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE'' -Name ''OSAllowSecureBootForIntegrity'' -ErrorAction SilentlyContinue).''OSAllowSecureBootForIntegrity''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''OSAllowSecureBootForIntegrity='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Name 'OSAllowSecureBootForIntegrity' -Value 1 -PropertyType DWord -Force | Out-Null

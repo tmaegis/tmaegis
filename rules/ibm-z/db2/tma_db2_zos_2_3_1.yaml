@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.3.1
+title: Ensure that access to the program authorization table is restricted
+description: When program authorization is used, the SYSIBM.DSNPROGAUTH table controls whether a program can use a plan for execution. PUBLIC should be restricted from accessing this table. PUBLIC access to this table exposes the control information that indicates whether a program is allowed to use a plan for execution.
+target: db2-zos
+level: 1
+severity: high
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.3.1 Ensure that access to the program authorization table is restricted
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check if PUBLIC has access: SELECT GRANTEE FROM SYSIBM.SYSTABAUTH WHERE TCREATOR = ''SYSIBM'' AND TTNAME = ''DSNPROGRAUTH'' AND GRANTEE = ''PUBLIC''; Output that contains zero rows is considered a successful finding. Otherwise, PUBLIC has access and the remediation steps should be followed. For external security users: Issue the RACF RLIST command to list the profile that controls access to the SYSIBM.DSNPROGAUTH table in the MDSNTB class. Examine the universal access (UACC) and user (USER) ... (full steps: CIS section 2.3.1)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the SQL REVOKE statement to revoke access from PUBLIC. For external security users: Issue the RACF RALTER command to update the profile and change the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

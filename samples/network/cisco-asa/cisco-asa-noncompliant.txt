@@ -1,0 +1,40 @@
+: Saved
+: Synthetic sample: Cisco ASA running-config (weak). Not a secure template.
+ASA Version 9.18(3)
+!
+hostname ciscoasa
+enable password cisco
+passwd cisco
+!
+interface GigabitEthernet0/0
+ nameif outside
+ security-level 50
+ ip address 203.0.113.3 255.255.255.248
+!
+interface GigabitEthernet0/1
+ nameif inside
+ security-level 100
+ ip address 192.0.2.2 255.255.255.0
+!
+access-list OUTSIDE_IN extended permit ip any any
+access-group OUTSIDE_IN in interface outside
+!
+logging monitor debugging
+!
+snmp-server community public
+snmp-server community private
+!
+username admin password admin privilege 15
+username cisco password cisco encrypted privilege 15
+!
+telnet 0.0.0.0 0.0.0.0 inside
+telnet timeout 60
+ssh 0.0.0.0 0.0.0.0 outside
+ssh version 1
+ssh timeout 60
+console timeout 0
+http server enable
+http 0.0.0.0 0.0.0.0 outside
+ssl server-version tlsv1
+!
+: end

@@ -1,0 +1,19 @@
+id: TMA-SUPPLY-CHAIN-BRANCH-PROTECTION
+title: Ensure the default branch is protected and requires pull request review
+description: 'Without protection anyone with write access (or a stolen token) can push directly to the default branch, bypassing review and status checks. The audit uses the GitHub REST API through gh: it resolves the repository from the git remote (gh api repos/{owner}/{repo}, honours GH_REPO/GH_HOST), then passes when an active ruleset or classic branch protection on the default branch requires pull requests. Fails when gh is missing or unauthenticated; reading classic protection needs admin rights, rulesets are readable with repo read access.'
+target: supply-chain
+level: 1
+severity: high
+tags:
+- supply-chain
+- source-code
+- branch-protection
+- github
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Source Code - protect the default branch and require code review (verify section number for your release)
+audit:
+  type: command
+  command: "command -v gh >/dev/null 2>&1 || exit 1\ninfo=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + \" \" + .default_branch' 2>/dev/null) || exit 1\nrepo=${info% *}\nbr=${info#* }\n[ -n \"$repo\" ] && [ -n \"$br\" ] || exit 1\nrs=$(gh api \"repos/$repo/rules/branches/$br\" --jq '[.[] | select(.type == \"pull_request\")] | length' 2>/dev/null) || rs=0\nbp=$(gh api \"repos/$repo/branches/$br/protection\" --jq 'if .required_pull_request_reviews then 1 else 0 end' 2>/dev/null) || bp=0\nif [ \"${rs:-0}\" -gt 0 ] 2>/dev/null || [ \"${bp:-0}\" -gt 0 ] 2>/dev/null; then\n  echo compliant\nelse\n  echo \"default branch '$br' of $repo does not require pull request review (or the token cannot read its protection)\"\nfi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'GitHub: Settings > Rules > Rulesets > New branch ruleset targeting the default branch with ''Require a pull request before merging'' (1+ approvals, dismiss stale approvals, require Code Owner review), ''Require status checks'', ''Block force pushes'' and restrict deletions; or classic Settings > Branches > Add branch protection rule.'

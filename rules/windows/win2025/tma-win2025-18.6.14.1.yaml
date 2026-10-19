@@ -1,0 +1,22 @@
+id: TMA-WIN2025-18.6.14.1
+title: Ensure 'Hardened UNC Paths' is set to 'Enabled, with "Require Mutual Authentication", "Require Integrity", and "Require Privacy" set for all NETLOGON and SYSVOL shares'
+description: 'This policy setting configures secure access to Universal Naming Convention (UNC) paths. UNC paths identify network resources using a specific notation. These names consist of three parts: a host device name, a share name, and an optional file path. The recommended state for this setting is: Enabled, with "Require Mutual Authentication", "Require Integrity", and "Require Privacy" set for all NETLOGON and SYSVOL shares.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.6.14.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths'' -Name ''\\*\NETLOGON'' -ErrorAction SilentlyContinue).''\\*\NETLOGON''; if (-not ($null -ne $v -and (($v -replace ''\s'','''') -eq ''RequireMutualAuthentication=1,RequireIntegrity=1,RequirePrivacy=1''))) { $bad += ''\\*\NETLOGON='' + $v }; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths'' -Name ''\\*\SYSVOL'' -ErrorAction SilentlyContinue).''\\*\SYSVOL''; if (-not ($null -ne $v -and (($v -replace ''\s'','''') -eq ''RequireMutualAuthentication=1,RequireIntegrity=1,RequirePrivacy=1''))) { $bad += ''\\*\SYSVOL='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths' -Name '\\*\NETLOGON' -Value 'RequireMutualAuthentication=1, RequireIntegrity=1, RequirePrivacy=1' -PropertyType String -Force | Out-Null; if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths' -Name '\\*\SYSVOL' -Value 'RequireMutualAuthentication=1, RequireIntegrity=1, RequirePrivacy=1' -PropertyType
+    String -Force | Out-Null

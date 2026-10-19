@@ -1,0 +1,42 @@
+id: TMA-SLES12-3.2.1
+title: Ensure IP forwarding is disabled
+description: The net.ipv4.ip_forward and net.ipv6.conf.all.forwarding flags are used to tell the system whether it can forward packets or not.
+target: linux
+os_family:
+- sles-12
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 12 Benchmark v3.2.0 - 3.2.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v sysctl >/dev/null 2>&1 || { echo "step1: sysctl not installed"; return 1; }; o=$(bash -c ''sysctl net.ipv4.ip_forward'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''net.ipv4.ip_forward = 0'' || { echo step1: missing ''net.ipv4.ip_forward = 0''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''grep -E -s "^\s*net\.ipv4\.ip_forward\s*=\s*1" /etc/sysctl.conf /etc/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /run/sysctl.d/*.conf'' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=net.ipv4.ip_forward; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+  guidance: "Run the following commands to restore the default parameters and set the active kernel parameters: # grep -Els \"^\\s*net\\.ipv4\\.ip_forward\\s*=\\s*1\" /etc/sysctl.conf /etc/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /run/sysctl.d/*.conf | while read filename; do sed -ri \"s/^\\s*(net\\.ipv4\\.ip_forward\\s*)(=)(\\s*\\S+\\b).*$/# *REMOVED* \\1/\" $filename; done; sysctl -w net.ipv4.ip_forward=0; sysctl -w net.ipv4.route.flush=1 # grep -Els \"^\\s*net\\.ipv6\\.conf\\.all\\.forwarding\\s*=\\s*1\" /etc/sysctl.conf /etc/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /run/sysctl.d/*.conf | while read filename; do sed -ri \"s/^\\s*(net\\.ipv6\\.conf\\.all\\.forwarding\\s*)(=)(\\s*\\S+\\b).*$/# *REMOVED* \\1/\" $filename; done; sysctl -w net…"

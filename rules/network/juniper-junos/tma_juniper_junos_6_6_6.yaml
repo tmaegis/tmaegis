@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.6.6
+title: Ensure Predefined Login Classes are not used
+description: 'All user accounts must have a class set, but the Predefined JUNOS Login Classes should be avoided. JUNOS routers ship with 4 Predefined Login Classes, these are: - super-user - read-only - operator - unauthorized These classes provide basic configuration to allow organizations to get a router up and running, but do not provide fine grained control needed ... Allows one emergency account in a predefined class; fails if two or more users use predefined classes. Audited against the output of ''show configuration | display set | no-more'' (set format, not the curly-brace hierarchy).'
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.6.6 Ensure Predefined Login Classes are not used
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^set system login user \S+ class (?:super-user|superuser|read-only|operator|unauthorized)\b.*^set system login user \S+ class (?:super-user|superuser|read-only|operator|unauthorized)\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To create a new class you can issue the following commands from the hierarchy. In this example, we create a new class named 'noc' and allow them permissions to run show commands like show bgp summary, view the configuration and access the network with ping, SSH, traceroute and Telnet.
+    set system login class noc permissions [ view view-configuration network ] (this class should also have Idle timeouts and other options set in line with other recommendations in this section). To change the class for a user account, use the following command under the hierarchy:
+    set system login user <username> class <class name>

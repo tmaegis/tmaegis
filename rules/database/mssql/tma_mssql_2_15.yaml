@@ -1,0 +1,18 @@
+id: TMA-MSSQL-2.15
+title: Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases
+description: 'AUTO_CLOSE determines if a given database is closed or not after a connection terminates. If enabled, subsequent connections to the given database will require the database to be reopened and relevant procedure caches to be rebuilt. Default: By default, the database property AUTO_CLOSE is OFF which is equivalent to is_auto_close_on = 0. Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: low
+tags:
+- mssql
+- database
+- availability
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 2.15 Ensure 'AUTO_CLOSE' is set to 'OFF' on contained databases
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.databases WHERE containment <> 0 AND is_auto_close_on = 1;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Execute the following T-SQL, replacing <database_name> with each database name found by the Audit Procedure: ALTER DATABASE <database_name> SET AUTO_CLOSE OFF;'

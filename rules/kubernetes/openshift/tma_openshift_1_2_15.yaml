@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-1.2.15
+title: Ensure that the --insecure-port argument is set to 0
+description: Do not bind to insecure port. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- api-server
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 1.2.15 Ensure that the --insecure-port argument is set to 0
+audit:
+  type: manual
+  command: 'The openshift-kube-apiserver is served over HTTPS with authentication and authorization; the secure API endpoint is bound to 0.0.0.0:6443 by default. By default the insecure-port argument is set to 0. Note that the openshift-apiserver is not running in the host network namespace. The port is not exposed on the node, but only through the pod network. Run the following command: oc -n openshift-kube-apiserver get endpoints -o jsonpath=''{.items[*].subsets[*].ports[*].port}'' Verify the return value is 6443.'
+remediation:
+  type: iac_patch
+  command: Set the openshift-kube-server --insecure-port argument to 0

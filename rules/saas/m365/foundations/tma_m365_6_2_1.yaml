@@ -1,0 +1,18 @@
+id: TMA-M365-6.2.1
+title: Ensure all forms of mail forwarding are blocked and/or disabled
+description: 'Exchange Online offers several methods of managing the flow of email messages. These are Remote domain, Transport Rules, and Anti-spam outbound policies. These methods work together to provide comprehensive coverage for potential automatic forwarding channels: - Outlook forwarding using inbox rules. - Outlook forwarding configured using OOF rule. - OWA forwarding setting (ForwardingSmtpAddress). - Forwarding set by the admin using EAC (ForwardingAddress). - Forwarding using Power Automate / Flow. Ensure a Transport rule and Anti-spam outbound policy are used to block mail forwarding. NOTE: Any exclusions should be implemented based on organizational policy. Attackers often create these rules to exfiltrate data from your tenancy, this could be accomplished via access to an end-user account or otherwise. An insider could also use one of these methods as a secondary channel to exfiltrate...'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 6.2.1 Ensure all forms of mail forwarding are blocked and/or disabled
+audit:
+  type: manual
+  command: 'Note: Audit is a two step procedure as follows: STEP 1: Transport rules To audit using the UI: 1. Select Exchange to open the Exchange admin center. 2. Select Mail Flow then Rules. 3. Review the rules and verify that none of them are forwards or redirects e-mail to external domains. To audit using PowerShell: 1. Connect to Exchange online using Connect-ExchangeOnline. 2. Run the following PowerShell command to review the Transport Rules that are redirecting email: Get-TransportRule | Where-Object {$_.RedirectMessageTo -ne $null} | ft Name,RedirectMessageTo 3. Verify that none of the addresses listed belong to external domains outside of the organization. If nothing returns then there are no transport rules set to redirect messages. STEP 2: Anti-spam outbound policy To audit using the UI: 1. Navigate to Microsoft 365 Defender https://security.microsoft.com/ 2. Expand E-mail & collaboration then select Policies & rules. 3. Select Threat policies > Anti-spam. 4. Inspect Anti-spam
+    outbound policy (default) and ensure Automatic forwarding is set to Off - Forwarding is disabled 5. Inspect any additional custom outbound policies and ensure Automatic forwarding is set to Off - Forwardin...'
+remediation:
+  type: iac_patch
+  command: 'Note: Remediation is a two step procedure as follows: STEP 1: Transport rules To remediate using the UI: 1. Select Exchange to open the Exchange admin center. 2. Select Mail Flow then Rules. 3. For each rule that redirects email to external domains, select the rule and click the ''Delete'' icon. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Remove-TransportRule {RuleName} STEP 2: Anti-spam outbound policy To remediate using the UI: 1. Navigate to Microsoft 365 Defender https://security.microsoft.com/ 2. Expand E-mail & collaboration then select Policies & rules. 3. Select Threat policies > Anti-spam. 4. Select Anti-spam outbound policy (default) 5. Click Edit protection settings 6. Set Automatic forwarding rules dropdown to Off - Forwarding is disabled and click Save 7. Repeat steps 4-6 for any additional higher priority, custom policies. To remediate using PowerShell: 1. Connect to Exchange
+    Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Set-HostedOutboundSpamFilterPolicy -Identity {policyName} -AutoForwardingMode Off 3. To remove AutoForwarding from all outbound po...'

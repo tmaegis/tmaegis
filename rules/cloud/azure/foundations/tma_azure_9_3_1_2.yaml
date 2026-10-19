@@ -1,0 +1,19 @@
+id: TMA-AZURE-9.3.1.2
+title: Ensure That Storage Account Access keys are Periodically Regenerated
+description: For increased security, regenerate storage account access keys periodically. When a storage account is created, Azure generates two 512-bit storage access keys which are used for authentication when the storage account is accessed. Rotating these keys periodically ensures that any inadvertent access or exposure does not result from the compromise of these keys. Cryptographic key rotation periods will vary depending on your organization's security requirements and the type of data which is being stored in the Storage Account. For example, PCI DSS mandates that cryptographic keys be replaced or rotated 'regularly,' and advises that keys for static data stores be rotated every 'few months.' For the purposes of this recommendation, 90 days will be prescribed for the reminder. Review and adjustment of the 90 day period is recommended, and may even be necessary. Your organization's security...
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- crypto
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 9.3.1.2 Ensure That Storage Account Access keys are Periodically Regenerated
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage Accounts. 2. For each Storage Account, under Security + networking, go to Access keys. 3. Review the date and days in the Last rotated field for each key. If the Last rotated field indicates a number or days greater than 90 [or greater than your organization''s period of validity], the key should be rotated. Audit from Azure CLI 1. Get a list of storage accounts az storage account list --subscription <subscription-id> Make a note of id, name and resourceGroup. 2. For every storage account make sure that key is regenerated in the past 90 days. az monitor activity-log list --namespace Microsoft.Storage --offset 90d -- query "[?contains(authorization.action, ''regenerateKey'')]" --resource-id <resource id> The output should contain "authorization"/"scope": <your_storage_account> AND "authorization"/"action": "Microsoft.Storage/storageAccounts/regeneratekey/action" AND "status"/"localizedValue": "Succeeded" "status"/"Value": "Succeeded" Audit
+    from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy ID...'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Go to Storage Accounts. 2. For each Storage Account with outdated keys, under Security + networking, go to Access keys. 3. Click Rotate key next to the outdated key, then click Yes to the prompt confirming that you want to regenerate the access key. After Azure regenerates the Access Key, you can confirm that Access keys reflects a Last rotated date of (0 days ago).

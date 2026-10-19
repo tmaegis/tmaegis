@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-1.2.16
+title: Ensure that the --secure-port argument is not set to 0
+description: Do not disable the secure port. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- api-server
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 1.2.16 Ensure that the --secure-port argument is not set to 0
+audit:
+  type: manual
+  command: 'The openshift-kube-apiserver is served over HTTPS with authentication and authorization; the secure API endpoint is bound to 0.0.0.0:6443 by default. In OpenShift, the only supported way to access the API server pod is through the load balancer and then through the internal service. The value is set by the bindAddress argument under the servingInfo parameter. Run the following command: oc get kubeapiservers.operator.openshift.io cluster -o json | jq ''.spec.observedConfig.servingInfo.bindAddress'' Verify the bind address is 0.0.0.0:6443.'
+remediation:
+  type: iac_patch
+  command: remove the openshift-kube-server --secure-port argument to 0

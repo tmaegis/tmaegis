@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-5.3
+title: Ensure login via "local" UNIX Domain Socket is configured correctly
+description: A remote host login, via SSH, is arguably the most secure means of remotely accessing and administering the PostgreSQL server. Once connected to the PostgreSQL server, using the psql client, via UNIX DOMAIN SOCKETS, while using the peer authentication method is the most secure mechanism available for local database connections.
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- authentication
+- pg_hba
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 5.3 Ensure login via "local" UNIX Domain Socket is configured correctly
+audit:
+  type: manual
+  command: 'Review the ''local'' lines of pg_hba.conf (SELECT * FROM pg_hba_file_rules WHERE type = ''local'';). As user1 run psql -U postgres -d postgres: it must fail with ''Peer authentication failed''; as postgres it must succeed. Local login as another account than your own is a fail.'
+remediation:
+  type: iac_patch
+  command: Use 'local all all peer' (or 'local all postgres peer') as the local rule, create database roles that match OS users that need access, then SELECT pg_reload_conf();

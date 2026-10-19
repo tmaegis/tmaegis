@@ -1,0 +1,18 @@
+id: TMA-GCP-1.18
+title: Ensure Secrets are Not Stored in Cloud Functions Environment Variables by Using Secret Manager
+description: Google Cloud Functions allow you to host serverless code that is executed when an event is triggered, without the requiring the management a host operating system. These functions can also store environment variables to be used by the code that may contain authentication or other information that needs to remain confidential. It is recommended to use the Secret Manager, because environment variables are stored unencrypted, and accessible for all users who have access to the code.
+target: gcp
+level: 1
+severity: medium
+tags:
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 1.18 Ensure Secrets are Not Stored in Cloud Functions Environment Variables by Using Secret Manager
+audit:
+  type: manual
+  command: Determine if Confidential Information is Stored in your Functions in Cleartext From Google Cloud Console 1. Within the project you wish to audit, select the Navigation hamburger menu in the top left. Scroll down to under the heading Serverless, then select Cloud Functions 2. Click on a function name from the list 3. Open the Variables tab and you will see both buildEnvironmentVariables and environmentVariables 4. Review the variables whether they are secrets 5. Repeat step 3-5 until all functions are reviewed From Google Cloud CLI 1. To view a list of your cloud functions run gcloud functions list 2. For each cloud function in the list run the following command. gcloud functions describe <function_name> 3. Review the settings of the buildEnvironmentVariables and environmentVariables. Determine if this is data that should not be publicly accessible. Determine if Secret Manager API is 'Enabled' for your Project From Google Cloud Console 1. Within the project you wish to audit, select
+    the Navigation hamburger menu in the top left. Hover over APIs & Services to under the heading Serverless, then select Enabled APIs & Services in the menu that opens up. 2. Click the button + Enable A...
+remediation:
+  type: iac_patch
+  command: Enable Secret Manager API for your Project From Google Cloud Console 1. Within the project you wish to enable, select the Navigation hamburger menu in the top left. Hover over APIs & Services to under the heading Serverless, then select Enabled APIs & Services in the menu that opens up. 2. Click the button + Enable APIS and Services 3. In the Search bar, search for Secret Manager API and select it. 4. Click the blue box that says Enable. From Google Cloud CLI 1. Within the project you wish to enable the API in, run the following command. gcloud services enable Secret Manager API Reviewing Environment Variables That Should Be Migrated to Secret Manager From Google Cloud Console 1. Log in to the Google Cloud Web Portal (https://console.cloud.google.com/) 2. Go to Cloud Functions 3. Click on a function name from the list 4. Click on Edit and review the Runtime environment for variables that should be secrets. Leave this list open for the next step. From Google Cloud CLI 1. To view
+    a list of your cloud functions run gcloud functions list 2. For each cloud function run the following command. gcloud functions describe <function_name> 3. Review the settings of the buildEnvironmentVaria...

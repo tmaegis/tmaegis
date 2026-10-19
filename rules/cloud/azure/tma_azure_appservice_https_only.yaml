@@ -1,0 +1,19 @@
+id: TMA-AZURE-APPSERVICE-HTTPS-ONLY
+title: Ensure App Service web apps redirect HTTP to HTTPS
+description: HTTPS Only redirects all HTTP traffic to HTTPS so credentials and session cookies are never sent in clear text. Every web/function app must have httpsOnly true. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- appservice
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - App Service - HTTPS only (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(az webapp list --query ''[?httpsOnly!=`true`].name'' -o tsv 2>/dev/null) || exit 1
+
+    [ -z "$out" ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'az webapp update --name <app> --resource-group <rg> --https-only true (Terraform: https_only = true).'

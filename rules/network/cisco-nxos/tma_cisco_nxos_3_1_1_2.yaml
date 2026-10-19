@@ -1,0 +1,20 @@
+id: TMA-CISCO-NXOS-3.1.1.2
+title: Configure EIGRP Passive interfaces for interfaces that do not have peers
+description: 'EIGRP both listens on and advertises on all interfaces that have IPs in subnets that are defined as "networks" in the EIGRP configuration. Ensure that interfaces that do not "face" an EIGRP peer are set to passive. If an interface is set to "passive", then EIGRP will not advertise out of that interface or listen on that interface for EIGRP neighbors. By default, all interfaces advertise via multicast to solicit EIGRP neighbors, and also listen for neighbor ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- routing
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.1.2 Configure EIGRP Passive interfaces for interfaces that do not have peers
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The "show running-config eigrp" command will list the entire EIGRP configuration. Passive interfaces are listed individually - in this example, interface VLAN 1 is passive switch# sho run eigrp !Command: show running-config eigrp !Running configuration last done at: Wed May 20 14:13:17 2020 !Time: Wed May 20 14:17:22 2020 version 9.3(3) Bios:version feature eigrp router eigrp 10 address-family ipv4 unicast authentication mode md5 authentication key-chain <key-chain-name> interface Vlan1 ip passive-interface eigrp 10'
+remediation:
+  type: iac_patch
+  command: |-
+    ! If some IP interfaces have peers and some do not, set the ones with no peers to "passive"
+    int vlan 1
+    ip passive-interface eigrp <EIGRP process number>

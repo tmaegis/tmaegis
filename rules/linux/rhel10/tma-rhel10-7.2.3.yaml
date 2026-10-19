@@ -1,0 +1,41 @@
+id: TMA-RHEL10-7.2.3
+title: Ensure all groups in /etc/passwd exist in /etc/group
+description: Over time, system administration errors and changes can lead to groups being defined in /etc/passwd but not in /etc/group .
+target: linux
+os_family:
+- rhel-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 10 Benchmark v1.0.1 - 7.2.3
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   a_passwd_group_gid=(\"$(awk -F: '\"'\"'{print $4}'\"'\"' /etc/passwd | sort -u)\")\n   a_group_gid=(\"$(awk -F: '\"'\"'{print $3}'\"'\"' /etc/group | sort -u)\")\n   a_passwd_group_diff=(\"$(printf '\"'\"'%s\\n'\"'\"' \"${a_group_gid[@]}\" \"${a_passwd_group_gid[@]}\" | sort | uniq -u)\")\n   while IFS= read -r l_gid; do\n      awk -F: '\"'\"'($4 == '\"'\"'\"$l_gid\"'\"'\"') {print \"  - User: \\\"\" $1 \"\\\" has GID: \\\"\" $4 \"\\\" which does not exist in /etc/group\" }'\"'\"' /etc/passwd\n   done < <(printf '\"'\"'%s\\n'\"'\"' \"${a_passwd_group_gid[@]}\" \"${a_passwd_group_diff[@]}\" | sort | uniq -D | uniq)\n   unset a_passwd_group_gid; unset a_group_gid; unset a_passwd_group_diff\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    for g in $(awk -F: '{print $4}' /etc/passwd | sort -u); do
+      case "$g" in ''|*[!0-9]*) continue;; esac
+      awk -F: -v g="$g" '$3==g{f=1} END{exit !f}' /etc/group && continue
+      n=tmaegis_gid$g
+      getent group "$n" >/dev/null || groupadd -g "$g" "$n" || groupadd -o -g "$g" "$n"
+    done
+    true
+  guidance: "Analyze the output of the Audit step above and perform the appropriate action to correct any discrepancies found."

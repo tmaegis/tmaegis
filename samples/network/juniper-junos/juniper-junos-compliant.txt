@@ -1,0 +1,75 @@
+## Synthetic sample: Juniper Junos "show configuration | display set" (hardened). Not a secure template.
+set version 23.2R1.13
+set system host-name vsrx-edge-01
+set system domain-name example.com
+set system root-authentication encrypted-password "$6$REDACTED$FAKEHASHFAKEHASHFAKEHASHFAKEHASHFAKEHASH"
+set system diag-port-authentication encrypted-password "$6$REDACTED$FAKEHASHFAKEHASHFAKEHASHFAKEHASHFAKEHASH"
+set system pic-console-authentication encrypted-password "$6$REDACTED$FAKEHASHFAKEHASHFAKEHASHFAKEHASHFAKEHASH"
+set system authentication-order tacplus
+set system tacplus-server 192.0.2.60 secret "$9$REDACTED"
+set system tacplus-server 192.0.2.60 source-address 198.51.100.1
+set system accounting events login
+set system accounting events change-log
+set system accounting destination tacplus server 192.0.2.60 secret "$9$REDACTED"
+set system login message "Authorized access only. Activity is logged."
+set system login password format sha512
+set system login password minimum-length 12
+set system login password minimum-changes 4
+set system login password change-type character-sets
+set system login retry-options tries-before-disconnect 3
+set system login retry-options backoff-threshold 2
+set system login retry-options backoff-factor 5
+set system login retry-options minimum-time 30
+set system login retry-options lockout-period 30
+set system login class OPS idle-timeout 10
+set system login class OPS permissions [ view view-configuration ]
+set system login class OPS deny-commands "start shell"
+set system login class AUDIT idle-timeout 10
+set system login class AUDIT permissions view
+set system login class AUDIT deny-commands "start shell"
+set system login user netadmin uid 2001
+set system login user netadmin class OPS
+set system login user netadmin authentication encrypted-password "$6$REDACTED$FAKEHASHFAKEHASHFAKEHASHFAKEHASHFAKEHASH"
+set system services ssh protocol-version v2
+set system services ssh root-login deny
+set system services ssh connection-limit 5
+set system services ssh rate-limit 3
+set system services ssh hostkey-algorithm no-ssh-dss
+set system services ssh ciphers [ aes256-ctr aes192-ctr aes128-ctr ]
+set system services ssh macs [ hmac-sha2-512 hmac-sha2-256 ]
+set system services ssh key-exchange [ ecdh-sha2-nistp256 ecdh-sha2-nistp384 ]
+set system services netconf ssh connection-limit 5
+set system services netconf ssh rate-limit 5
+set system services web-management https system-generated-certificate
+set system services web-management https interface fxp0.0
+set system services web-management session idle-timeout 10
+set system services web-management session session-limit 5
+set system ports auxiliary disable
+set system ports console log-out-on-disconnect
+set system syslog host 192.0.2.50 any info
+set system syslog file messages any critical
+set system syslog file messages authorization info
+set system syslog file firewall-log firewall any
+set system syslog file auth-log authorization any
+set system syslog file cli-commands interactive-commands any
+set system ntp server 192.0.2.123 version 4
+set system ntp server 192.0.2.124 version 4
+set system no-ping-record-route
+set system no-ping-time-stamp
+set system no-redirects
+set system no-redirects-ipv6
+set system internet-options no-source-quench
+set system internet-options tcp-drop-synfin-set
+set system internet-options no-tcp-reset drop-all-tcp
+set snmp v3 usm local-engine user nmsuser authentication-sha authentication-password "$9$REDACTED"
+set snmp v3 usm local-engine user nmsuser privacy-aes128 privacy-password "$9$REDACTED"
+set snmp name vsrx-edge-01
+set snmp interface fxp0.0
+set interfaces lo0 unit 0 family inet address 198.51.100.1/32
+set interfaces lo0 unit 0 family inet filter input PROTECT-RE
+set interfaces fxp0 unit 0 family inet address 192.0.2.5/24
+set firewall family inet filter PROTECT-RE term ALLOW-SSH from source-address 192.0.2.0/24
+set firewall family inet filter PROTECT-RE term ALLOW-SSH from protocol tcp
+set firewall family inet filter PROTECT-RE term ALLOW-SSH from destination-port ssh
+set firewall family inet filter PROTECT-RE term ALLOW-SSH then accept
+set firewall family inet filter PROTECT-RE term DENY-ALL then discard

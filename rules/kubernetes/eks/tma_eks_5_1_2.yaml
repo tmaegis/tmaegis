@@ -1,0 +1,17 @@
+id: TMA-EKS-5.1.2
+title: Ensure least-privilege access is enforced for Amazon ECR repositories used by EKS workloads
+description: Least-privilege access for Amazon ECR repositories helps limit who can pull, push, delete, or administer container images used by EKS workloads. This reduces unnecessary exposure of the image registry and helps ensure that only the identities required to support cluster operation, image delivery, and approved build or release processes can access the repositories. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- managed-services
+- registry
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.1.2 Ensure least-privilege access is enforced for Amazon ECR repositories used by EKS workloads
+audit:
+  type: manual
+  command: Review the IAM permissions and ECR repository policies that apply to repositories used by EKS workloads, and verify that access is limited to approved node roles, Fargate pod execution roles, CI/CD identities, and administrative roles. Confirm that pull access is limited to the minimum ECR actions required for image retrieval, that push or administrative access is scoped only to the repositories and actions required, and that no unnecessary wildcard or broad cross-account access is present.
+remediation:
+  type: iac_patch
+  command: Enforce least-privilege access for ECR repositories used by EKS workloads by separating image pull, image push, and repository administration into different IAM roles and policy scopes. Grant node roles and Fargate pod execution roles only the ECR permissions needed to authenticate and pull images, such as ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:BatchGetImage, and ecr:GetDownloadUrlForLayer. Scope CI/CD and administrator access to the specific repositories and actions they require, and review both IAM identity-based policies and ECR repository policies because ECR authorization can be affected by both. AWS also provides the AmazonEC2ContainerRegistryPullOnly managed policy for pull-only use cases. • Separate ECR access by role. Use different roles for node pulls, Fargate pulls, CI/CD pushes, and repository administration.

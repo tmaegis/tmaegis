@@ -1,0 +1,37 @@
+id: TMA-VMWARE-4.3
+title: Host must log sufficient information for events
+description: Set the Syslog.global.logLevel parameter to "info" to ensure that audit logs capture sufficient information for diagnosing issues and investigating security events. This setting strikes a balance between log verbosity and storage utilization. The parameter governing this behavior is Syslog.global.logLevel with a recommended setting of info. The audit reads Syslog.global.logLevel with esxcli and requires info; also review logger rotation/size (esxcli system syslog config logger list). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 4.3 Host must log sufficient information for events
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Syslog/global/logLevel 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^ *String Value: *//p' | head -n 1)
+    if [ "$v" = info ]; then echo compliant; else echo "/Syslog/global/logLevel = '$v' (expected info)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Syslog/global/logLevel -s 'info'
+  guidance: "1. Increase the number of rotations and/or individual log size 2. esxcli system syslog config logger set --id=vmkernel --rotate=15 --size=10240 3. esxcli system syslog config logger set --id=hostd --rotate=15 -- size=10240"

@@ -1,0 +1,28 @@
+id: TMA-FORTIGATE-2.4.8
+title: Virtual patching on the local-in management interface
+description: Allow virtual patching to be applied to traffic destined to the FortiGate by applying IPS signatures to the local in interface using local in policies. Attacks geared towards GUI and SSH management access, for example, can be mitigated using IPS signatures pushed from FortiGuard, thereby virtually patching these vulnerabilities. The FortiGate must have a valid FMWR (Firmware) license to install the FMWP database. The FMWP database can be viewed by running the diagnose autoupdate versions command. PASS requires virtual-patch enable on a local-in policy; confirm every accepting local-in policy has it. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- management
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.4.8 Virtual patching on the local-in management interface
+audit:
+  type: config_regex
+  pattern: (?m)^config firewall local-in-policy\n(?:[ \t]+[^\n]*\n)*?[ \t]+set virtual-patch enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config firewall local-in-policy
+        edit <id>
+            set virtual-patch enable
+        next
+    end
+    # CIS guidance:
+    On CLI:
+    config firewall local-in-policy
+        edit <id>
+            set virtual-patch enable
+        next
+    end

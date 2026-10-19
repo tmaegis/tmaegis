@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.10.83.1
+title: Ensure 'Configure the transmission of the user's password in the content of MPR notifications sent by winlogon.' is set to 'Disabled'
+description: 'This policy setting controls whether winlogon includes a user''s password in the content of Multiple Provider Router (MPR) notifications. MPR handles communication between the Windows operating system and the installed network providers. MPR checks the registry to determine which providers are installed on the system and the order they are cycled through. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.10.83.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''EnableMPR'' -ErrorAction SilentlyContinue).''EnableMPR''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''EnableMPR='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'EnableMPR' -Value 0 -PropertyType DWord -Force | Out-Null

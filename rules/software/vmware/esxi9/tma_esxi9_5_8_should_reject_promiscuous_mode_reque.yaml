@@ -1,0 +1,30 @@
+id: TMA-ESXI9-5.8
+title: Host should reject promiscuous mode requests on standard virtual switches and port groups
+description: 'Enabling promiscuous mode allows all virtual machines in a port group to read all packets transmitted across it, regardless of the intended recipient. Rejecting promiscuous mode requests on standard virtual switches and port groups prevents unauthorized packet inspection, enhancing network isolation and data privacy. The audit runs esxcli network vswitch standard (portgroup) policy security get for every standard vSwitch and port group and requires "Allow Promiscuous: false". Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- network
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 5.8 Host should reject promiscuous mode requests on standard virtual switches and port groups
+audit:
+  type: command
+  command: |-
+    command -v esxcli >/dev/null 2>&1 || exit 1
+    vs=$(esxcli network vswitch standard list 2>/dev/null | sed -n 's/^ *Name: *//p') || exit 1
+    pgs=$(esxcli --formatter=csv network vswitch standard portgroup list 2>/dev/null | awk -F, 'NR==1 {for (i = 1; i <= NF; i++) if ($i == "Name") c = i; next} c {print $c}') || exit 1
+    out=$(for v in $vs; do
+      x=$(esxcli network vswitch standard policy security get -v "$v" 2>/dev/null | sed -n 's/^ *Allow Promiscuous: *//p' | head -n 1)
+      [ "$x" = false ] || echo "vSwitch $v: Allow Promiscuous=${x:-unknown}"
+    done
+    printf '%s\n' "$pgs" | while IFS= read -r p; do [ -n "$p" ] || continue
+      x=$(esxcli network vswitch standard portgroup policy security get -p "$p" 2>/dev/null | sed -n 's/^ *Allow Promiscuous: *//p' | head -n 1)
+      [ "$x" = false ] || echo "portgroup $p: Allow Promiscuous=${x:-unknown}"
+    done)
+    [ -z "$out" ] && echo compliant || printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To set the policy to reject, perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand Networking. 3. Select Virtual switches then click Edit. 4. Click on Security. 5. Set Promiscuous mode to Reject in the dropdown. 6. Click on OK. Alternately, perform the following via the ESXi shell: # esxcli network vswitch standard policy security set -v vSwitch2 -p false'

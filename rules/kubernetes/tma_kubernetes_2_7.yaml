@@ -1,0 +1,16 @@
+id: TMA-KUBERNETES-2.7
+title: Ensure that a unique Certificate Authority is used for etcd
+description: Use a different certificate authority for etcd from the one used for Kubernetes. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 2
+severity: medium
+tags:
+- kubernetes
+- etcd
+reference: CIS Kubernetes Benchmark v2.1.0 - 2.7 Ensure that a unique Certificate Authority is used for etcd
+audit:
+  type: manual
+  command: 'Review the CA used by the etcd environment and ensure that it does not match the CA certificate file used for the management of the overall Kubernetes cluster. Run the following command on the master node: ps -ef | grep etcd Note the file referenced by the --trusted-ca-file argument. Run the following command on the master node: ps -ef | grep apiserver Verify that the file referenced by the --client-ca-file for apiserver is different from the --trusted-ca-file used by etcd.'
+remediation:
+  type: iac_patch
+  command: Follow the etcd documentation and create a dedicated certificate authority setup for the etcd service. Then, edit the etcd pod specification file /etc/kubernetes/manifests/etcd.yaml on the master node and set the below parameter. --trusted-ca-file=</path/to/ca-file>

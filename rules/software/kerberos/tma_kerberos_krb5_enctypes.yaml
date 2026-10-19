@@ -1,0 +1,17 @@
+id: TMA-KERBEROS-KRB5-ENCTYPES
+title: Ensure krb5.conf does not permit DES, 3DES or RC4 encryption types
+description: 'permitted_enctypes, default_tkt_enctypes and default_tgs_enctypes in /etc/krb5.conf control which session and ticket enctypes the KDC host and its clients negotiate. The audit fails if any of them names a des, des3, rc4 or arcfour type.'
+target: kerberos
+level: 1
+severity: high
+tags: [kerberos, crypto]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - Strong Kerberos encryption types (verify section number for your release)
+audit:
+  type: file_regex
+  file_path: /etc/krb5.conf
+  pattern: '(?mi)^\s*(permitted_enctypes|default_tkt_enctypes|default_tgs_enctypes)\s*=.*(des|rc4|arcfour)'
+  must_not_match: true
+  requires_file: [/etc/krb5.conf]
+remediation:
+  type: iac_patch
+  command: 'In [libdefaults] of /etc/krb5.conf remove weak types or set permitted_enctypes = aes256-cts-hmac-sha1-96 aes128-cts-hmac-sha1-96 (plus aes256-cts-hmac-sha384-192 aes128-cts-hmac-sha256-128 where supported). Verify that all clients and services have AES keys before deploying.'

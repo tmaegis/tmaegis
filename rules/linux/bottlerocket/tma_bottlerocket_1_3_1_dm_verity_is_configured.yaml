@@ -1,0 +1,23 @@
+id: TMA-BOTTLEROCKET-1.3.1
+title: Ensure dm-verity is configured
+description: dm-verity provides transparent integrity checking of block devices using a cryptographic digest. Because dm-verity devices are read-only, filesystems mounted from the devices are also read-only. The audit requires dm-mod.create=root,,,ro,0, root=/dev/dm-0 and restart_on_corruption on /proc/cmdline. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 1
+severity: high
+tags:
+- bottlerocket
+- system
+reference: CIS Bottlerocket Benchmark v1.0.0 - 1.3.1 Ensure dm-verity is configured
+audit:
+  type: command
+  command: |-
+    c=$(cat /proc/cmdline 2>/dev/null) || exit 1
+    bad=0
+    for w in 'dm-mod.create=root,,,ro,0' 'root=/dev/dm-0' restart_on_corruption; do
+      printf '%s\n' "$c" | grep -Fwq -- "$w" || { echo "kernel cmdline lacks $w"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Replace the system or reinstall the distribution.

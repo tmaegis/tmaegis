@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-1.6.3
+title: Ensure remote login warning banner is configured properly
+description: 'The contents of the /etc/issue.net file are displayed to users prior to login for remote connections from configured services. Unix-based systems have typically displayed information about the OS release and patch level upon logging in to the system. This information can be useful to developers who are developing software for a particular OS platform. Audit: /etc/issue.net must not disclose the OS version from /etc/os-release; review the wording against site policy.'
+target: freebsd
+level: 1
+severity: low
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.6.3 Ensure remote login warning banner is configured properly
+audit:
+  type: command
+  command: '[ -f /etc/issue.net ] || { echo compliant; exit 0; }; v=$(grep "^VERSION=" /etc/os-release 2>/dev/null | cut -d= -f2 | sed -e ''s/"//g''); [ -n "$v" ] || exit 1; grep -Fiq "$v" /etc/issue.net && echo "/etc/issue.net discloses the OS version" || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/issue.net file with the appropriate contents according to your site policy, remove any references to the OS platform. Example: # echo "Authorized users only. All activity may be monitored and reported." > /etc/issue.net'

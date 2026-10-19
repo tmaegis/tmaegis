@@ -1,0 +1,16 @@
+id: TMA-NGINX-5.2.5
+title: Ensure rate limits by IP address are set
+description: 'NGINX''s ngx_http_limit_req_module provides a mechanism to limit the rate of incoming requests from a single client IP address, based on the "leaky bucket" algorithm. This is configured in two steps: 1. limit_req_zone: This directive, defined in the http block, creates a shared memory zone that defines the bucket''s parameters, such as the average request rate. 2. limit_req ... Manual review: the benchmark gives no reliable automated check for this control.'
+target: nginx
+level: 2
+severity: low
+tags:
+- nginx
+- request-limits
+reference: CIS NGINX Benchmark v3.0.0 - 5.2.5 Ensure rate limits by IP address are set
+audit:
+  type: manual
+  command: 'This is a manual check requiring context. 1. Run the following command to find rate-limiting rules: nginx -T 2>/dev/null | grep -E ''^\s*(limit_req_zone|limit_req)'' 2. Manually evaluate the findings: Is a limit_req_zone defined in the http block? Important, where is limit_req applied? Is it applied globally (server Block or location /)? This is a high risk. Or is it applied to specific endpoints like /login? Which is best practice. Are the rate and burst values reasonable for the protected endpoint?'
+remediation:
+  type: iac_patch
+  command: 'First, define a shared memory zone in the http block. Then, apply a carefully tuned limit only to the specific location blocks that require protection. Understanding the "Leaky Bucket" Parameters: rate: The average rate at which the bucket "leaks" (requests are processed). 5r/s means 5 requests per second. burst: The size of the bucket. It''s the number of "token" requests a client can make in excess of the defined rate. A burst=10 allows a client to burst up to 10 requests instantly before the rate limit kicks in. nodelay: Without nodelay, excess requests in a burst are queued and processed at the defined rate (slowing the client down). With nodelay, excess requests are processed immediately as long as they fit in the burst "bucket", and only requests beyond the burst limit are rejected. For APIs and login pages, nodelay is generally preferred for a better user experience.'

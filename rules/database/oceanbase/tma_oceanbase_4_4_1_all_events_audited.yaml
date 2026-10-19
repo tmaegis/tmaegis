@@ -1,0 +1,18 @@
+id: TMA-OCEANBASE-4.4.1
+title: Ensure ALL Events are Audited
+description: The database audit function must record all critical operations to support security incident traceability, compliance reviews, and behavioral analysis. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when audit_trail is not None (DB, DB,EXTENDED, DB_EXTENDED or OS) for the tenant on every server.
+target: oceanbase
+level: 2
+severity: high
+tags:
+- oceanbase
+- logging
+- audit
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.4.1 Ensure ALL Events are Audited
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN COUNT(*) > 0 AND SUM(CASE WHEN UPPER(value) <> 'NONE' THEN 0 ELSE 1 END) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM oceanbase.GV\$OB_PARAMETERS WHERE name = 'audit_trail'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'ALTER SYSTEM SET audit_trail = ''DB_EXTENDED''; and on 4.2.4+ apply an audit filter: SELECT AUDIT_LOG_FILTER_SET_FILTER(''log_all'', ''{"filter": {"log": true}}''); SELECT AUDIT_LOG_FILTER_SET_USER(''%'', ''log_all'');'

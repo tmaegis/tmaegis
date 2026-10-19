@@ -1,0 +1,20 @@
+id: TMA-WIN10-2.3.17.6
+title: 'Ensure ''User Account Control: Run all administrators in Admin Approval Mode'' is set to ''Enabled'''
+description: 'This policy setting controls the behavior of all User Account Control (UAC) policy settings for the computer. If you change this policy setting, you must restart your computer. The recommended state for this setting is: Enabled. Note: If this policy setting is disabled, the Security Center notifies you that the overall security of the operating system has been reduced.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 2.3.17.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''EnableLUA'' -ErrorAction SilentlyContinue).''EnableLUA''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableLUA='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'EnableLUA' -Value 1 -PropertyType DWord -Force | Out-Null

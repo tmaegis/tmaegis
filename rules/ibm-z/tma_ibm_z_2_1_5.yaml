@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.1.5
+title: Ensure that access to the IRRDPI00 program is controlled
+description: ICHDPI00 is the program that is used to update the dynamic parse function in RACF, and to refresh in-storage custom field data after making updates in the CFIELD class. READ authority to this program in the PROGRAM class is one way a user can have authority to run the program. RACF ships the program in SYS1.LINKLIB.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.1.5 Ensure that access to the IRRDPI00 program is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The FACILITY entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entry covering the IRRDPI00 resource The PROGRAM entry has: o -- GLOBAL INACTIVE -- or -- NO ... (full steps: CIS section 2.1.5)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To create a PROGRAM profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE PROGRAM IRRDPI00 + UACC(NONE) + AUDIT(ALL(READ)) + ADDMEM(''SYS1.LINKLIB''//NOPADCHK) + DATA(''UPDATE RACF DYNAMIC PARSE FUNCTION'') PERMIT IRRDPI00 CLASS(PROGRAM) + ACCESS(READ) ID(SECADMIN SYSPROG) SETROPTS REFRESH WHEN(PROGRAM) To create a FACILITY profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE FACILITY IRRDPI00 + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''UPDATE RACF DYNAMIC PARSE FUNCTION'') PERMIT IRRDPI00 CLASS(FACILITY) + ACCESS(READ) ID(SECADMIN SYSPROG) SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS
+    commands: RALTER PROGRAM IRRDPI00 + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH WHEN(PROGRAM) RALTER FACILITY IRRDPI00 + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING ... (see CIS section 2.1.5)'

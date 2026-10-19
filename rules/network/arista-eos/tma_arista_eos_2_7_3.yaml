@@ -1,0 +1,18 @@
+id: TMA-ARISTA-EOS-2.7.3
+title: Use SNMPv3 Instead of Earlier Versions
+description: The network element should use SNMP Version 3 for any SNMP agent configured on the device. SNMPv2 only requires a community string to be specified, which the client needs to use in their requests to "authenticate". SNMPv3 uses an actual security model called "User-based Security Model" (USM) codified in RFC3414 (originally in RFC2264 1998). Fails if no SNMPv3 group is defined or any group uses v1/v2c or lacks 'priv'. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: medium
+tags:
+- arista-eos
+- network
+- snmp
+reference: CIS Arista EOS Benchmark v1.0.0 - 2.7.3 Use SNMPv3 Instead of Earlier Versions
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^p\n]|p(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^ \n]| (?:$|[^g\n]|g(?:$|[^r\n]|r(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^p\n]|p(?:$|[^ \n]))))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^p\n]|p(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^ \n]| (?:$|[^g\n]|g(?:$|[^r\n]|r(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^p\n]|p(?:$|[^ \n]))))))))))))))))))[^\n]*)?\z)|(?:^snmp-server group \S+ v(?:1|2c)\b|^snmp-server group \S+ v3 (?:auth|noauth)\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: snmp-server group group1 v3 priv snmp-server user user1 group1 v3 auth sha256 12345 priv aes256 {password} snmp-server host server1 version 3 priv user1

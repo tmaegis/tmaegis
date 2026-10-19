@@ -1,0 +1,17 @@
+id: TMA-GKE-5.7.2
+title: Enable Linux auditd logging for Container Optimized OS GKE nodes
+description: Enable Linux auditd logging for GKE nodes running Container Optimized OS to collect detailed operating system audit events from the node. These logs provide host level visibility into activity such as login attempts, error messages, and binary executions, and can be forwarded to Cloud Logging using the supported logging agent configuration. The benchmark marks this recommendation Manual.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+- logging
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.7.2 Enable Linux auditd logging for Container Optimized OS GKE nodes
+audit:
+  type: manual
+  command: 'Review the cluster and verify that Linux auditd logging is deployed for Container Optimized OS nodes using an approved DaemonSet. Search for an audit logging DaemonSet across all namespaces: kubectl get daemonsets -A | grep -Ei ''auditd|cos-auditd'' • Expected output: An approved audit logging DaemonSet, such as cos-auditd-logging, should be present and show the desired Pods as available. If no matching DaemonSet is returned, Linux auditd logging is not deployed.'
+remediation:
+  type: iac_patch
+  command: Deploy an approved Linux auditd logging DaemonSet when the audit returns no matching auditd or cos-auditd DaemonSets or Pods. The DaemonSet should run on eligible Container Optimized OS nodes and forward Linux audit events to Cloud Logging or another approved log destination. • Download the current GKE example manifest for Linux auditd logging on Container Optimized OS nodes. curl https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-node-tools/master/troubleshooting/os-audit/cos-auditd-logging.yaml > cos-auditd-logging.yaml • Review the manifest before deployment, including the namespace, DaemonSet name, node selectors, ConfigMap settings, and logging destination. • Replace any sample logging agent image with an approved image from a trusted source and pin it by digest where required.

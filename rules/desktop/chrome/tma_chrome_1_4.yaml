@@ -1,0 +1,18 @@
+id: TMA-CHROME-1.4
+title: Ensure 'Allow queries to a Google time service' is set to 'Enabled'
+description: 'This setting controls whether Google Chrome can send queries to a Google time service for accurate timestamps. This check helps in validation of certificates. The recommended state for this setting is: Enabled(1) Rationale: Google Chrome uses a network time service to randomly track times from a trusted external service. This allows Google Chrome the ability for verification of a certificate''s validity and is important for certificate validation. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:BrowserNetworkTimeQueriesEnabled (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: low
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 1.4 Ensure 'Allow queries to a Google time service' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''BrowserNetworkTimeQueriesEnabled'' -ErrorAction SilentlyContinue).''BrowserNetworkTimeQueriesEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'BrowserNetworkTimeQueriesEnabled' -Value 1 -PropertyType DWord -Force | Out-Null

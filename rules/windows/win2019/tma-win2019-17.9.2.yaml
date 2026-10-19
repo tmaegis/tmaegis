@@ -1,0 +1,21 @@
+id: TMA-WIN2019-17.9.2
+title: Ensure 'Audit Other System Events' is set to 'Success and Failure'
+description: 'This subcategory reports on other system events. Events for this subcategory include: • 5024: The Windows Firewall Service has started successfully. • 5025: The Windows Firewall Service has been stopped. • 5027: The Windows Firewall Service was unable to retrieve the security policy from the local storage. The service will continue enforcing the current policy. • 5028: The Windows Firewall Service was unable to parse the new security policy. The service will continue with currently enforced policy. • 5029: The Windows Firewall Service failed to initialize the driver. The service will continue '
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 17.9.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9214-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9214-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

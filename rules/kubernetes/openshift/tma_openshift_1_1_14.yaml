@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-1.1.14
+title: Ensure that the kubeconfig file ownership is set to root:root
+description: Ensure that the kubeconfig file ownership is set to root:root. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- control-plane
+- file-permissions
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 1.1.14 Ensure that the kubeconfig file ownership is set to root:root
+audit:
+  type: manual
+  command: In OpenShift 4 the admin config file is stored in /etc/kubernetes/kubeconfig with ownership root:root. Run the following command. for i in $(oc get nodes -o name) do echo $i oc debug $i -- <<EOF chroot /host stat -c %U:%G /etc/kubernetes/kubeconfig EOF done Verify that the ownership is set to root:root.
+remediation:
+  type: iac_patch
+  command: Execute the chown command to remediate ownership and set it file ownership to root:root.

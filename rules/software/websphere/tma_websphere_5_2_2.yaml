@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-5.2.2
+title: Ensure 'establishTrustInClient' is 'Required' for the CSIv2 Authentication Layer - needsReview/Zech
+description: The CSIv2 Authentication policy configures security at the Authentication layer when accessing EJB applications using RMI/IIOP. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 1
+severity: high
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 5.2.2 Ensure 'establishTrustInClient' is 'Required' for the CSIv2 Authentication Layer - needsReview/Zech
+audit:
+  type: manual
+  command: Ensure the establishTrustInClient attribute in the ORB > serverPolicy.csiv2 > layers > authenticationLayer element is set to Required in the Liberty configuration grep -w -R -i 'establishTrustInClient' ${server.config.dir}
+remediation:
+  type: iac_patch
+  command: Set the establishTrustInClient attribute in ORB > clientPolicy.csiv2 > layers > authenticationLayer to Required in the ${server.config.dir}/configDropins/overrides/<any file name>.xml <orb id="defaultOrb"> <clientPolicy.csiv2> <layers> <authenticationLayer mechanisms="LTPA,GSSUP" establishTrustInClient="Required"/> </layers> </clientPolicy.csiv2> </orb>

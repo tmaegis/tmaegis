@@ -1,0 +1,21 @@
+id: TMA-AWS-CLOUDTRAIL-LOG-VALIDATION
+title: Ensure CloudTrail log file validation is enabled
+description: Log file validation produces signed digest files so tampering with or deleting CloudTrail logs can be detected. At least one trail must exist and every trail must have LogFileValidationEnabled. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- logging
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Logging - CloudTrail log file validation (verify section number for your release)
+audit:
+  type: command
+  command: 'n=$(aws cloudtrail describe-trails --query ''length(trailList)'' --output text 2>/dev/null) || exit 1
+
+    out=$(aws cloudtrail describe-trails --query ''trailList[?LogFileValidationEnabled!=`true`].Name'' --output text 2>/dev/null) || exit 1
+
+    [ "$n" -gt 0 ] && [ -z "$out" ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'aws cloudtrail update-trail --name <trail> --enable-log-file-validation (Terraform: enable_log_file_validation = true).'

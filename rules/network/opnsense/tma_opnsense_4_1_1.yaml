@@ -1,0 +1,16 @@
+id: TMA-OPNSENSE-4.1.1
+title: Ensure Default Deny is Enforced on All Internal Interfaces
+description: You must enforce a default deny policy on all internal interfaces (e.g., LAN, VLANs, DMZ, VPN). Default deny prevents accidental exposure and limits lateral movement.
+target: opnsense
+level: 1
+severity: high
+tags:
+- opnsense
+reference: CIS OPNsense Benchmark v1.0.0 - 4.1.1 Ensure Default Deny is Enforced on All Internal Interfaces
+audit:
+  type: config_regex
+  pattern: <rule>(?:[^<]|<[^/<]|</[^r<]|</r[^u<]|</ru[^l<]|</rul[^e<]|</rule[^><])*?<type>pass</type>(?:[^<]|<[^/<]|</[^r<]|</r[^u<]|</ru[^l<]|</rul[^e<]|</rule[^><])*?<destination>\s*(?:<any\s*/>|<any>\s*</any>)\s*</destination>
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: '- Navigate to Firewall → Rules - Verify each internal interface contains only explicit allow rules and no broad “any/any” permits. - Confirm traffic not explicitly allowed is denied. - Remove broad allow rules. - Replace with explicit allow rules using aliases.'

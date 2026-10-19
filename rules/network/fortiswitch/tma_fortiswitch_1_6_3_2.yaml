@@ -1,0 +1,28 @@
+id: TMA-FORTISWITCH-1.6.3.2
+title: Ensure Admin idle timeout time is configured
+description: The idle timeout period is the amount of time that an administrator will stay logged in to the GUI without any activity. PASS requires admintimeout between 1 and 5 minutes. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: medium
+tags:
+- fortiswitch
+- authentication
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.6.3.2 Ensure Admin idle timeout time is configured
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set admintimeout [1-5][ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set admintimeout 5
+    end
+    # CIS guidance:
+    To change the idle timeout in the GUI:
+    1) Login to FortiSwitch with Super Admin privileges.
+    2) Go to 'System' > 'Admin' > 'Settings'.
+    3) In the 'Administration Settings' section, set the 'Idle Timeout' value to five minutes by typing 5.
+    4) Click 'Update'. To change the idle timeout in the CLI:
+    config system global
+        set admintimeout 5
+    end

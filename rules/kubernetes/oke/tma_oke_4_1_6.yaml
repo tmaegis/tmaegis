@@ -1,0 +1,21 @@
+id: TMA-OKE-4.1.6
+title: Ensure that Service Account Tokens are only mounted where necessary
+description: Service account tokens in OKE should be mounted only for Pods that require Kubernetes API access or an explicitly configured workload identity flow. Kubernetes supports disabling automatic token mounting at the Pod or ServiceAccount level, and workloads that need OCI access through OKE workload identity should use a dedicated service account rather than relying on broad default token mounting. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Reports pods with an auto-mounted service account token (kube-api-access-* volume).
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- policies
+- rbac
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.1.6 Ensure that Service Account Tokens are only mounted where necessary
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}}{{range .spec.volumes}} {{.name}}{{end}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($0 ~ / kube-api-access-/)')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Apply the following steps to reduce unnecessary service account token mounting in OKE: • Set automountServiceAccountToken to false for Pods and ServiceAccounts that do not require Kubernetes API access. This reduces unnecessary default token auto mounting. • Update workloads to use a dedicated serviceAccountName only where a service account token is operationally required, instead of inheriting token behavior from the namespace default service account. Each application should use its own dedicated service account. • For workloads that need OCI access, use OKE workload identity with a dedicated service account rather than broad default token mounting. OKE workload identity uses the combination of cluster, namespace, and service account to grant access to OCI resources for the intended workload.'

@@ -1,0 +1,16 @@
+id: TMA-SOLARIS-6.2
+title: Set EEPROM Security Mode and Log Failed Access (SPARC)
+description: Oracle SPARC systems support the use of an EEPROM password for the console. Setting the EEPROM password helps prevent attackers who gain physical access to the system console from booting from an external device (such as a CD-ROM or floppy).
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- audit
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.2 Set EEPROM Security Mode and Log Failed Access (SPARC)
+audit:
+  type: manual
+  command: 'Perform the following to verify that the result is as recommended: # eeprom security-mode | awk -F= ''{ print $2 }'' [command|full|none] # eeprom security-#badlogins | awk -F= ''{ print $2 }'' 0 If a password has been set, the command will return command or full. If a password has not been set, the command will return none.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # eeprom security-mode=command # eeprom security-#badlogins=0 After entering the last command above, the administrator will be prompted for a password. This password will be required to authorize any future command issued at boot-level on the system (the ok or > prompt) except for the normal multi-user boot command (i.e., the system will be able to reboot unattended). Write down the password and store it in a sealed envelope in a secure location (note that locked desk drawers are typically not secure). If the password is lost or forgotten, simply log into the system and run the following command: # eeprom security-mode=none This will erase the forgotten password. If the password is lost or forgotten and this action cannot be completed, then the EEPROM must be replaced to gain access to the system. To set a new password, run the following command: # eeprom security-mode=command'

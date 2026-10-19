@@ -1,0 +1,99 @@
+version: 2
+project_name: tmaegis
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: tmaegis
+    main: .   # the package directory, so rsrc_windows_*.syso (icon, version info) are linked
+    binary: tmaegis
+    flags:
+      - -trimpath
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, windows, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -buildid= -X github.com/tmaegis/tmaegis/cmd.Version={{ .Version }}
+
+  # Experimental builds for Unix systems the rules also cover (compile-checked, not yet run on real hardware).
+  - id: tmaegis-extra
+    main: .
+    binary: tmaegis
+    flags:
+      - -trimpath
+    env:
+      - CGO_ENABLED=0
+    targets:
+      - freebsd_amd64
+      - freebsd_arm64
+      - aix_ppc64
+      - solaris_amd64
+      - linux_s390x
+      - linux_riscv64
+    ldflags:
+      - -buildid= -X github.com/tmaegis/tmaegis/cmd.Version={{ .Version }}
+
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - NOTICE
+      - TRADEMARK.md
+      - AUTHORS
+      - README.md
+      - config.example.yaml
+      - Start-TMAegis-GUI.cmd
+      - rules/**/*
+      - plugins/*
+      - samples/**/*
+
+# Re-running a release (or a re-pushed tag) replaces the files instead of failing with "already_exists".
+release:
+  header: |
+    First public beta (0.1.0). Linux, Windows and macOS builds are the supported ones; FreeBSD, AIX, Solaris, Linux s390x/riscv64 and Docker are experimental. Please test on non-production systems first.
+  mode: keep-existing
+  replace_existing_artifacts: true
+
+# Linux packages. The rules live in /usr/share/tmaegis/rules, which the CLI finds on its own.
+nfpms:
+  - id: packages
+    package_name: tmaegis
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor: TMAegis
+    homepage: https://www.tmaegis.dev
+    maintainer: Tommy Huynh <tommy.huynh@tmaegis.dev>
+    description: Open-source CIS hardening and compliance engine (scan, report, fix with rollback).
+    license: MPL-2.0
+    formats: [deb, rpm]
+    bindir: /usr/bin
+    contents:
+      - src: rules
+        dst: /usr/share/tmaegis/rules
+        type: tree
+      - src: plugins
+        dst: /usr/share/tmaegis/plugins
+        type: tree
+      - src: samples
+        dst: /usr/share/doc/tmaegis/samples
+        type: tree
+      - src: LICENSE
+        dst: /usr/share/doc/tmaegis/LICENSE
+      - src: NOTICE
+        dst: /usr/share/doc/tmaegis/NOTICE
+      - src: TRADEMARK.md
+        dst: /usr/share/doc/tmaegis/TRADEMARK.md
+      - src: config.example.yaml
+        dst: /usr/share/doc/tmaegis/config.example.yaml
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc

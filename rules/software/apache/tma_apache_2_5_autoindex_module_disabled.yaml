@@ -1,0 +1,60 @@
+id: TMA-APACHE-2.5
+title: Ensure the Autoindex Module Is Disabled
+description: The Apache autoindex module automatically generates web page listing the contents of directories on the server, typically used so that an index.html does not have to be generated. Counts loaded modules matching autoindex_module; expects 0. Uses the module list from apachectl -M (apache2ctl/httpd; needs root).
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- modules
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 2.5 Ensure the Autoindex Module Is Disabled
+audit:
+  type: command
+  shell: bash
+  command: b=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 1; m=$("$b" ${APACHE_CONF:+-f "$APACHE_CONF"} -M 2>/dev/null) || exit 1; printf '%s\n' "$m" | grep -Eic 'autoindex_module' || true
+  expected_output: '0'
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi
+    [ -r "$c" ] || exit 0
+    R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c")
+    ctl=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 0
+    tma_mod() { command -v a2enmod >/dev/null 2>&1 && a2enmod "$1" >/dev/null 2>&1; true; }
+    tma_test() { "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -t >/dev/null 2>&1; }
+    tma_reload() { systemctl reload apache2 2>/dev/null || systemctl reload httpd 2>/dev/null || "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -k graceful >/dev/null 2>&1; true; }
+    tma_audit() (
+    b=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 1; m=$("$b" ${APACHE_CONF:+-f "$APACHE_CONF"} -M 2>/dev/null) || exit 1; printf '%s\n' "$m" | grep -Eic 'autoindex_module' || true
+    )
+    [ "$(tma_audit 2>/dev/null | tail -n 1)" = '0' ] && exit 0
+    for m in autoindex; do
+      if command -v a2dismod >/dev/null 2>&1; then a2dismod -f "$m" >/dev/null 2>&1
+      else for f in "$R"/conf.modules.d/*.conf "$R"/conf/*.conf "$R"/conf/extra/*.conf; do
+        [ -f "$f" ] && grep -Eq "^[[:space:]]*LoadModule[[:space:]]+${m}_module" "$f" && { cp -p "$f" "$f.tmaegis.bak"; sed -i -E "s/^([[:space:]]*LoadModule[[:space:]]+${m}_module)/#\1/" "$f"; }
+      done; fi
+    done
+    if ! tma_test; then
+      for m in autoindex; do command -v a2enmod >/dev/null 2>&1 && a2enmod "$m" >/dev/null 2>&1; done
+      for f in "$R"/conf.modules.d/*.tmaegis.bak "$R"/conf/*.tmaegis.bak "$R"/conf/extra/*.tmaegis.bak; do [ -f "$f" ] && cp -p "$f" "${f%.tmaegis.bak}"; done
+      echo "configtest failed, change rolled back" >&2; exit 1
+    fi
+    tma_reload
+  guidance: "Comment out LoadModule autoindex_module or run a2dismod -f autoindex. Then run apachectl configtest and reload Apache."

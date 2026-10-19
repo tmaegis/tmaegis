@@ -1,0 +1,17 @@
+id: TMA-AWS-CONFIG-ALL-REGIONS
+title: Ensure AWS Config is enabled in all regions
+description: AWS Config records resource configuration history needed for investigations and drift detection. In every enabled region a recorder must record all supported resource types and be recording. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- logging
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Logging - AWS Config enabled in all regions (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  rec=$(aws configservice describe-configuration-recorders --region \"$r\" --query 'length(ConfigurationRecorders[?recordingGroup.allSupported==`true`])' --output text 2>/dev/null) || exit 1\n  on=$(aws configservice describe-configuration-recorder-status --region \"$r\" --query 'length(ConfigurationRecordersStatus[?recording==`true`])' --output text 2>/dev/null) || exit 1\n  [ \"$rec\" -ge 1 ] && [ \"$on\" -ge 1 ] || { echo \"not recording: $r\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: In each listed region create a delivery channel and a configuration recorder with recordingGroup allSupported=true (include global resources in one region) and start it (aws configservice put-configuration-recorder / put-delivery-channel / start-configuration-recorder), or deploy via a CloudFormation StackSet / Control Tower.

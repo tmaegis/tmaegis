@@ -1,0 +1,21 @@
+id: TMA-DEBIAN9-5.2.13
+title: Ensure only strong ciphers are used
+description: This variable limits the ciphers that SSH can use during communication.
+target: linux
+os_family:
+- debian-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 9 Benchmark v1.0.1 ARCHIVE - 5.2.13
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v sshd >/dev/null 2>&1 || { echo "step1: sshd not installed"; return 1; }; o=$(bash -c ''sshd -T | grep ciphers'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Weak Ciphers:'' || { echo step1: missing ''Weak Ciphers:''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- 3des-cbc || { echo step1: missing 3des-cbc; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- aes128-cbc || { echo step1: missing aes128-cbc; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- aes192-cbc || { echo step1: missing aes192-cbc; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- aes256-cbc || { echo step1: missing aes256-cbc; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t''
+    ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- arcfour || { echo step1: missing arcfour; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- arcfour128 || { echo step1: missing arcfour128; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- arcfour256 || { echo step1: missing arcfour256; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- blowfish-cbc || { echo step1: missing blowfish-cbc; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- cast128-cbc || { echo step1: missing cast128-cbc; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- rijndael-cbc@lysator.liu.se || { echo step1: missing rijndael-cbc@lysator.liu.se; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/ssh/sshd_config file add/modify the Ciphers line to contain a comma separated list of the site approved ciphers Example: Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128- gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr'

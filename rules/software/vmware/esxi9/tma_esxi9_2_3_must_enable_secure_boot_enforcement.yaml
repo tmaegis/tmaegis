@@ -1,0 +1,21 @@
+id: TMA-ESXI9-2.3
+title: Host must enable Secure Boot enforcement
+description: 'Enabling Secure Boot enforcement ensures that the host only loads UEFI drivers and applications with valid digital signatures, as part of the UEFI firmware standard. It requires support from the server''s BIOS and hypervisor boot loader, and mandates that all ESXi kernel modules, drivers, and VIBs be signed by VMware or a trusted partner subordinate. The audit runs esxcli system settings encryption get and requires "Require Secure Boot: true". Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 2.3 Host must enable Secure Boot enforcement
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings encryption get 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk -F': *' 'tolower($1) ~ /^ *require secure boot$/ {print $2; exit}' | tr 'A-Z' 'a-z' | sed 's/ *$//')
+    if [ "$v" = true ]; then echo compliant; else echo "Require Secure Boot: ${v:-not reported}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 1. Enable UEFI Secure Boot and TPM 2.0 on the hardware. 2. Configure ESXi secure configuration/Secure Boot enforcement using the supported vSphere/ESXCLI procedure for the installed ESXi 8 build. 3. Reboot if required and verify both secureBoot.py -s and esxcli system settings encryption get

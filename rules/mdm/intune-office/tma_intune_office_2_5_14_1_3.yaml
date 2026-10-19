@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.1.3
+title: Ensure 'Display pictures and external content in HTML e-mail' is set to 'Enabled'
+description: 'This policy setting controls whether Outlook downloads untrusted pictures and external content located in HTML e-mail messages without users explicitly choosing to download them. Note: If Outlook''s default blocking configuration is overridden, in the Trust Center or by some other method, Outlook will display external content in all HTML e-mail messages, including any that include Web beacons. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) blockextcontent that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.1.3 Ensure 'Display pictures and external content in HTML e-mail' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\options\mail'') -Name ''blockextcontent'' -ErrorAction SilentlyContinue).''blockextcontent''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':blockextcontent='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Outlook 2016\Security\Automatic Picture Download Settings\Display pictures and external content in HTML e-mail'

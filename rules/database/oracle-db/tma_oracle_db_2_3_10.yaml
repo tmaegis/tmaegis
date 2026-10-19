@@ -1,0 +1,49 @@
+id: TMA-ORACLE-DB-2.3.10
+title: Ensure 'SEC_PROTOCOL_ERROR_TRACE_ACTION' Is Set To 'LOG'
+description: 'The SEC_PROTOCOL_ERROR_TRACE_ACTION setting determines the Oracle''s server''s logging response level to bad/malformed packets received from the client by generating ALERT, LOG, or TRACE levels of detail in the log files. This setting should have a value of LOG unless the organization has a compelling reason to use a different value because LOG should cause the necessary information to be ... Counts non-compliant GV$SYSTEM_PARAMETER rows across instances and containers; 0 is required. Default: TRACE Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- parameters
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.3.10 Ensure 'SEC_PROTOCOL_ERROR_TRACE_ACTION' Is Set To 'LOG'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from gv$system_parameter v
+    where upper(v.name) = 'SEC_PROTOCOL_ERROR_TRACE_ACTION'
+    and upper(v.value) != 'LOG';
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v sqlplus >/dev/null 2>&1 || exit 0
+    sqlplus -S -L / as sysdba <<'EOF'
+    whenever sqlerror exit failure
+    ALTER SYSTEM SET SEC_PROTOCOL_ERROR_TRACE_ACTION=LOG SCOPE = BOTH;
+    exit
+    EOF
+  guidance: "To remediate this setting, execute the following SQL statement. ALTER SYSTEM SET SEC_PROTOCOL_ERROR_TRACE_ACTION=LOG SCOPE = BOTH; Note: This parameter is not modifiable at the PDB level. You must modify this parameter at the CDB level."

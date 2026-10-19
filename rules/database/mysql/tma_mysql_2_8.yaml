@@ -1,0 +1,19 @@
+id: TMA-MYSQL-2.8
+title: Ensure Password Resets Require Strong Passwords
+description: 'Disabling password reuse, enforcing password strength, and denying reuse can be implemented to prevent successful usage of stolen or previously guessed passwords by malicious users. Restricted accounts using passwords on the basis of the number of password changes and length ensure a password cannot be chosen from a specified number of the most recent passwords. Requires password_history >= 5 and password_reuse_interval >= 365. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- authentication
+- password
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.8 Ensure Password Resets Require Strong Passwords
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.password_history >= 5 AND @@global.password_reuse_interval >= 365, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST password_history = 5; SET PERSIST password_reuse_interval = 365"

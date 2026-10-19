@@ -1,0 +1,20 @@
+id: TMA-AZURE-6.1.4
+title: Ensure that Azure Monitor Resource Logging is Enabled for All Services that Support it
+description: Resource Logs capture activity to the data access plane while the Activity log is a subscription-level log for the control plane. Resource-level diagnostic logs provide insight into operations that were performed within that resource itself; for example, reading or updating a secret from a Key Vault. Currently, 95 Azure resources support Azure Monitoring (See the more information section for a complete list), including Network Security Groups, Load Balancers, Key Vault, AD, Logic Apps, and CosmosDB. The content of these logs varies by resource type. A number of back-end services were not configured to log and store Resource Logs for certain activities or for a sufficient length. It is crucial that monitoring is correctly configured to log all relevant activities and retain those logs for a sufficient length of time. Given that the mean time to detection in an enterprise is 240 days, a...
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- logging
+- monitoring
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 6.1.4 Ensure that Azure Monitor Resource Logging is Enabled for All Services that Support it
+audit:
+  type: manual
+  command: 'Audit from Azure Portal The specific steps for configuring resources within the Azure console vary depending on resource, but typically the steps are: 1. Go to the resource 2. Click on Diagnostic settings 3. In the blade that appears, click Add diagnostic setting 4. Configure the diagnostic settings 5. Click on Save Audit from Azure CLI List all resources for a subscription az resource list --subscription <subscription id> For each resource run the following az monitor diagnostic-settings list --resource <resource ID> An empty result means a diagnostic settings is not configured for that resource. An error message means a diagnostic settings is not supported for that resource. Audit from PowerShell Get a list of resources in a subscription context and store in a variable $resources = Get-AzResource Loop through each resource to determine if a diagnostic setting is configured or not. foreach ($resource in $resources) {$diagnosticSetting = Get- AzDiagnosticSetting -ResourceId $resource.id
+    -ErrorAction "SilentlyContinue"; if ([string]::IsNullOrEmpty($diagnosticSetting)) {$message = "Diagnostic Settings not configured for resource: " + $resource.Name;Write-Output $message}else{$diag...'
+remediation:
+  type: iac_patch
+  command: 'Azure Subscriptions should log every access and operation for all resources. Logs should be sent to Storage and a Log Analytics Workspace or equivalent third-party system. Logs should be kept in readily-accessible storage for a minimum of one year, and then moved to inexpensive cold storage for a duration of time as necessary. If retention policies are set but storing logs in a Storage Account is disabled (for example, if only Event Hubs or Log Analytics options are selected), the retention policies have no effect. Enable all monitoring at first, and then be more aggressive moving data to cold storage if the volume of data becomes a cost concern. Remediate from Azure Portal The specific steps for configuring resources within the Azure console vary depending on resource, but typically the steps are: 1. Go to the resource 2. Click on Diagnostic settings 3. In the blade that appears, click Add diagnostic setting 4. Configure the diagnostic settings 5. Click on Save Remediate from
+    Azure CLI For each resource, run the following making sure to use a resource appropriate JSON encoded category for the --logs option. az monitor diagnostic-settings create --name <diagnostic settings name>...'

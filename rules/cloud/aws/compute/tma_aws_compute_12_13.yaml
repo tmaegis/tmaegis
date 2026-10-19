@@ -1,0 +1,17 @@
+id: TMA-AWS-COMPUTE-12.13
+title: Ensure Lambda layers are not shared publicly
+description: 'Lambda layer version permissions control which AWS accounts can use or download a layer. A layer permission policy with Principal: "*" makes the layer publicly accessible to all AWS accounts. This exposes the layer''s code, libraries, and configuration to anyone who knows or discovers the layer ARN. Lambda layers may contain proprietary code, shared authentication logic, internal API endpoint URLs, database connection helpers, and utility libraries. Publicly sharing a layer exposes this intellectual property and provides attackers with information about application architecture. Additionally, if the layer contains any embedded credentials or configuration, these become publicly accessible.'
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.13 Ensure Lambda layers are not shared publicly
+audit:
+  type: manual
+  command: '1. List all Lambda layers in the region: aws lambda list-layers --region $AWS_REGION \ --query ''Layers[].{LayerName:LayerName,LatestVersion:LatestMatchingVersion.Version}'' --output table 2. For each layer returned above, fetch its permission policy: aws lambda get-layer-version-policy --layer-name <layer-name> \ --version-number <version> --region $AWS_REGION \ --query ''Policy'' --output text - If the command returns ResourceNotFoundException, the layer has no permission policy (Pass — no sharing). Otherwise, inspect the returned policy JSON for "Principal": "*". - The layer Fails if any statement in the policy has "Principal": "*", which grants public access to all AWS accounts.'
+remediation:
+  type: iac_patch
+  command: '1. For each layer that Failed the audit, identify the statement ID granting public access from the policy output in audit step 2 (look for the Sid field). 2. Remove the public permission: aws lambda remove-layer-version-permission --layer-name <layer-name> --region $AWS_REGION \ --version-number <version> --statement-id <statement-id> 3. If cross-account access is legitimately required, grant it to specific account IDs instead of *: aws lambda add-layer-version-permission --layer-name <layer-name> --region $AWS_REGION \ --version-number <version> --statement-id "allow-account-123" \ --action lambda:GetLayerVersion --principal "123456789012"'

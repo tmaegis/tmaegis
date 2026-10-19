@@ -1,0 +1,43 @@
+id: TMA-MACOS14-6.4.1
+title: Ensure Secure Keyboard Entry Terminal.app Is Enabled
+description: Secure Keyboard Entry prevents other applications on the system and/or network from detecting and recording what is typed into Terminal. Unauthorized applications and malicious code could intercept keystrokes entered in the Terminal. Enabling Secure Keyboard Entry minimizes the risk of a key logger detecting what is entered in Terminal.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: medium
+tags:
+- crypto
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 6.4.1 Ensure Secure Keyboard Entry Terminal.app Is Enabled
+audit:
+  type: command
+  command: '/usr/bin/osascript -l JavaScript <<''EOS''
+
+    $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.Terminal'').objectForKey(''SecureKeyboardEntry'').js
+
+    EOS'
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.Terminal" 'SecureKeyboardEntry' -bool true
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.Terminal" 'SecureKeyboardEntry' -bool true; true
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Date Version Changes for this version Oct 31, 2025 3.0.0 2.9.1 – Updated Impact Statement Oct 31, 2025 3.0.0 6.1.1 – Updated Title and switched to a Manual recommendation Oct 31, 2025 3.0.0 6.3 - Updated Description Oct 31, 2025 3.0.0 7.4 – Added to Supplemental from removed recommendation 1.7 Oct 31, 2025 3.0.0 Updated Benchmark Release May 15, 2026 3.1.0 Draft Update Released Jun 1, 2026 3.1.0 2.3.5 - Device Management Sub-Section Added Jun 1, 2026 3.1.0 2.7.1 – Updated Title, Audit, and Remediation to focus on the current user Jun 1, 2026 3.1.0 2.10.1.2 – Updated Audit for better device check Jun 1, 2026 3.1.0 3.4 – Updated Title, Description, Impact Statement, Audit, and Remediation to retain logs for 30 days with no maximum Jun 1, 2026 3.1.0 3.5 – Updated Remediation to access of 700 from 440 Jun 1, 2026 3.1.0 5.1.6 – Updated Audit to output any error codes to null Jun 1, 2026 3.1.0 5.1.7 – Updated Audit to ignore non-accessible folder Date Version Changes for this version Jun 1, 2026 3.1.0 5.3 – Description updated to refer to new recommendations Jun 1, 2026 3.1.0 5.3.1 and 5.3.2 – Original Recommendations removed and replace Jun 1, 2026 3.1.0 5.3.1 – Added Recommendation..."

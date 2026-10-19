@@ -1,0 +1,96 @@
+# Publishes a clean snapshot of the private repository (tnptommy/tmaegis) to the public
+# repository (tmaegis/tmaegis) whenever a release tag v* is pushed, or on demand.
+# Setup (deploy key, secret, optional approval): docs/RELEASING.md
+name: Publish public snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and verify the snapshot without pushing"
+        type: boolean
+        default: false
+      remove_old_tags:
+        description: "Also delete the obsolete v0.4.0 / v2.4.0 tags in the public repo"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-public
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    # This file is part of the public snapshot too; it must only ever run in the private repo.
+    if: github.repository == 'tnptommy/tmaegis'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27"
+      - name: Build, vet and test
+        run: |
+          go build ./...
+          go vet ./...
+          go test ./...
+      - name: Validate rules
+        run: go run . rules validate
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    # Add required reviewers to this environment (Settings > Environments) to approve each publish.
+    environment: public-release
+    env:
+      # the secrets context is not allowed in step conditions, so expose the check as a plain value
+      HAS_APP_CREDS: ${{ secrets.PUBLISHER_APP_ID != '' && secrets.PUBLISHER_APP_PRIVATE_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Otherwise checkout's default token (github-actions[bot]) overrides the URL credentials
+          # below and the push to the public repo is denied with 403.
+          persist-credentials: false
+      # Preferred: a GitHub App installed on tmaegis/tmaegis (short-lived token, nothing long-lived to leak).
+      # Secrets in this repo: PUBLISHER_APP_ID and PUBLISHER_APP_PRIVATE_KEY. See docs/RELEASING.md.
+      - name: Create a short-lived token from the GitHub App
+        id: app
+        if: env.HAS_APP_CREDS == 'true'
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.PUBLISHER_APP_ID }}
+          private-key: ${{ secrets.PUBLISHER_APP_PRIVATE_KEY }}
+          owner: tmaegis
+          repositories: tmaegis
+      # Fallback: an SSH deploy key (only works if the organization allows deploy keys).
+      - name: Configure the deploy key
+        id: deploykey
+        if: ${{ steps.app.outcome != 'success' }}
+        env:
+          DEPLOY_KEY: ${{ secrets.PUBLIC_REPO_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::No credentials to write to the public repo. Set PUBLISHER_APP_ID + PUBLISHER_APP_PRIVATE_KEY (GitHub App, recommended) or PUBLIC_REPO_DEPLOY_KEY. See docs/RELEASING.md."
+            exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/public_deploy && chmod 600 ~/.ssh/public_deploy
+          # GitHub's published SSH host key (pinned instead of trusting ssh-keyscan)
+          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
+      - name: Publish
+        env:
+          APP_TOKEN: ${{ steps.app.outputs.token }}
+          GIT_SSH_COMMAND: ssh -i ~/.ssh/public_deploy -o IdentitiesOnly=yes
+          VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          REMOVE_OLD_TAGS: ${{ inputs.remove_old_tags || 'false' }}
+        run: |
+          if [ -n "$APP_TOKEN" ]; then
+            export PUBLIC_REPO_URL="https://x-access-token:${APP_TOKEN}@github.com/tmaegis/tmaegis.git"
+          else
+            export PUBLIC_REPO_URL="git@github.com:tmaegis/tmaegis.git"
+          fi
+          bash scripts/publish_public.sh

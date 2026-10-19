@@ -1,0 +1,18 @@
+id: TMA-AWS-DB-5.12
+title: Ensure ElastiCache is deployed across multiple Availability Zones (AZs)
+description: Deploying Amazon ElastiCache across multiple Availability Zones means configuring the cache cluster nodes (primary and replicas) to be distributed in different AZs within the same AWS region. This multi-AZ deployment improves fault tolerance and availability by mitigating risks associated with failure or degradation in a single Availability Zone. If the primary node or an AZ becomes unavailable, ElastiCache can automatically fail over to a replica in a different AZ, minimizing downtime and data unavailability. Distributing ElastiCache nodes across multiple AZs protects the caching layer from localized infrastructure failures, such as power outages, networking disruptions, or hardware faults in a single AZ.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 5.12 Ensure ElastiCache is deployed across multiple Availability Zones (AZs)
+audit:
+  type: manual
+  command: 'Audit All Replication Groups for Multi-AZ Status: aws elasticache describe-replication-groups --query "ReplicationGroups[*].{ID:ReplicationGroupId,MultiAZ:MultiAZ}" This returns true if Multi-AZ with automatic failover is enabled, otherwise false.'
+remediation:
+  type: iac_patch
+  command: '1. Prerequisites for Enabling Multi-AZ on ElastiCache - VPC with Subnets in Multiple Availability Zones: The VPC associated with your ElastiCache replication group must have at least two subnets in different Availability Zones within the same AWS Region. - Cache Subnet Group Configuration: The cache subnet group used by the replication group must include multiple subnets spanning the desired AZs to support node placement. - Replication Group with At Least One Replica: Multi-AZ requires a primary node and at least one read replica that can be deployed in a different AZ to support automatic failover. - Automatic Failover Enabled: Failover between primary and replicas is automatic with Multi-AZ, so automatic failover must be enabled on the replication group (can be set at creation or modified later). 2. Modify the Replication Group to Enable Multi-AZ: aws elasticache modify-replication-group \ --replication-group-id <your-replication-group-id> \ --multi-az-enabled \ --apply-immediately
+    - This command enables Multi-AZ with automatic failover for the specified replication group. - The --apply-immediately flag ensures the change happens without waiting for the next maintenance window....'

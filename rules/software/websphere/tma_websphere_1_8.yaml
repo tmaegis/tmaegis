@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-1.8
+title: Ensure Websphere Liberty file system access is Restricted
+description: The permissions of files and directories underneath ${wlp.install.dir} should follow the principle of least privilege. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 1
+severity: medium
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 1.8 Ensure Websphere Liberty file system access is Restricted
+audit:
+  type: manual
+  command: 'Check the permissions of ${wlp.install.dir}: ls -l -R ${wlp.install.dir} | awk ''{print $1}'' Expected result: All files should show permissions of the form (d)rw(x)r-(x)---. The d(directory) and x(executable) flags may or may not exist depending on the file type, however the r(read) and w(write) flags should always appear in the same position as the above output.'
+remediation:
+  type: iac_patch
+  command: 'Change WebSphere Liberty file system access to 750 (owner has read/write/execute, group has read/execute, other has no access): chmod –R 750 ${wlp.install.dir}'

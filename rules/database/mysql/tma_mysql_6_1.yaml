@@ -1,0 +1,18 @@
+id: TMA-MYSQL-6.1
+title: Ensure 'log_error' is configured correctly
+description: 'The error log contains information about events such as mysqld starting and stopping, when a table needs to be checked or repaired, and, depending on the host operating system, stack traces when mysqld fails. Fails when log_error is empty, stderr or ./stderr.err. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- logging
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 6.1 Ensure 'log_error' is configured correctly
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(IFNULL(@@global.log_error, '') NOT IN ('', 'stderr') AND @@global.log_error NOT LIKE '%stderr.err', 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set log_error=<path to error log file> under [mysqld] in /etc/my.cnf (or /etc/mysql/mysql.conf.d/mysqld.cnf), then restart MySQL.

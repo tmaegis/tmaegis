@@ -1,0 +1,19 @@
+id: TMA-M365-5.2.2.3
+title: Enable Conditional Access policies to block legacy authentication
+description: 'Entra ID supports the most widely used authentication and authorization protocols including legacy authentication. This authentication pattern includes basic authentication, a widely used industry-standard method for collecting username and password information. The following messaging protocols support legacy authentication: - Authenticated SMTP - Used to send authenticated email messages. - Autodiscover - Used by Outlook and EAS clients to find and connect to mailboxes in Exchange Online. - Exchange ActiveSync (EAS) - Used to connect to mailboxes in Exchange Online. - Exchange Online PowerShell - Used to connect to Exchange Online with remote PowerShell. If you block Basic authentication for Exchange Online PowerShell, you need to use the Exchange Online PowerShell Module to connect. For instructions, see Connect to Exchange Online PowerShell using multifactor authentication. - Exch...'
+target: m365
+level: 1
+severity: high
+tags:
+- access-control
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.3 Enable Conditional Access policies to block legacy authentication
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify All users is included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify All resources (formerly ''All cloud apps'') is selected. o Verify that only documented resource exclusions exist and that they are reviewed annually. o Under Conditions select Client apps then verify Exchange ActiveSync clients and Other clients is checked. o Under Grant verify Block access is selected. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies
+    2. Filter to policies where Conditions.ClientAppTypes contains exchangeActiveSync OR other. 3. For each policy returned, verify the following criteria: o Conditions.Users.IncludeUsers is All o Conditions.App...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users. o Under Target resources include All resources (formerly ''All cloud apps''). ▪ Under Exclude exclude any break-glass accounts. o Under Conditions select Client apps and check the boxes for Exchange ActiveSync clients and Other clients. o Under Grant select Block Access. o Click Select. 4. Set the policy On and click Create.'

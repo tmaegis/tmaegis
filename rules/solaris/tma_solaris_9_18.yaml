@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.18
+title: Check for Duplicate Group Names
+description: 'Although the groupadd program will not let you create a duplicate group name, it is possible for an administrator to manually modify group and change the group name. If a group is assigned a duplicate group name, it will create and have access to files with the first GID for that group in group. Effectively, the GID is shared, which is a security risk. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.18 Check for Duplicate Group Names
+audit:
+  type: command
+  command: 'command -v getent >/dev/null 2>&1 || exit 1; out=$( { getent group | cut -f1 -d: | sort | uniq -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if there are any duplicate group names, and work with their respective owners to determine the best course of action in accordance with site policy.

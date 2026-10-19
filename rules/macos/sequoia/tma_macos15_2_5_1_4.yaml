@@ -1,0 +1,47 @@
+id: TMA-MACOS15-2.5.1.4
+title: Ensure Notes Summarization Is Disabled
+description: 'Apple Intelligence''s Notes summarization feature quickly condenses content within the Notes app. This includes summarizing written text you''ve highlighted or, notably, automatically generating summaries from audio recordings taken directly within Notes, like lectures or meetings, helping you grasp key information at a glance. Audit: Both allowNotesTranscription and allowNotesTranscriptionSummary must be false.'
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.5.1.4 Ensure Notes Summarization Is Disabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    /usr/bin/osascript -l JavaScript <<'EOS'
+    function run() {
+      let pref1 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.applicationaccess').objectForKey('allowNotesTranscription'))
+      let pref2 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.applicationaccess').objectForKey('allowNotesTranscriptionSummary'))
+      if ( pref1 == 0 && pref2 == 0 ) {
+        return("true")
+      } else {
+        return("false")
+      }
+    }
+    EOS
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.applicationaccess" 'allowNotesTranscription' -bool false
+    /usr/bin/defaults write "/Library/Preferences/com.apple.applicationaccess" 'allowNotesTranscriptionSummary' -bool false
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile (preferred): com.apple.applicationaccess allowNotesTranscription = <false/>; com.apple.applicationaccess allowNotesTranscriptionSummary = <false/>."

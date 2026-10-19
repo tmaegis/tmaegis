@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.3.1
+title: Ensure that the JESJOBS resource class is configured
+description: The JESJOBS class controls access to job level resources. The high-level qualifier for entities in this class are used to specify which functions are being controlled. When defining resources in the JESJOBS class, avoid generic high-level qualifiers such as '*' as these could have impacts beyond the original intended purpose (especially as new resources are added to the class).
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.3.1 Ensure that the JESJOBS resource class is configured
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that JESJOBS appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that JESJOBS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the JESJOBS entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Note: The following specific entry can be considered compliant, but is not encouraged: SUBMIT.*.&RACUID*.&RACUID/READ Request reports generated using IRRDBU00 output that will allow you to ... (full steps: CIS section 8.3.1)'
+remediation:
+  type: iac_patch
+  command: 'To activate the JESJOBS class use the RACF SETROPTS command: SETROPTS CLASSACT(JESJOBS) To enable generic profile checking for the JESJOBS class use the RACF SETROPTS command: SETROPTS GENERIC(JESJOBS) To create a JESJOBS profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE JESJOBS CANCEL.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS ENCRYPT.** + DATA(''DEFAULT KEY LABEL TO USE TO ENCRYPT JES SPOOL DATA SETS'') RDEFINE JESJOBS GROUPREG.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS HOLD.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS JOBCLASS.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS JOBNFY.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS MODIFY.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS PURGE.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS RELEASE.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS REROUTE.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS RESTART.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS SPIN.** + DATA(''CATCH-ALL PROFILE'')
+    RDEFINE JESJOBS SPOOLIO.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS START.** + DATA(''CATCH-ALL PROFILE'') RDEFINE JESJOBS SUBMIT.** + DATA(''CATCH-ALL PROFILE'') To remove a non-compliant GAC entry ... (see CIS section 8.3.1)'

@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-3.5
+title: Ensure 'Number of attempts allowed' is set to '10'
+description: This policy setting is used to restrict the number of failed logon attempts a user can make before an account is locked out. MaxPasswordFailedAttempts must be 10 or less (Unlimited fails). Prints the number of mobile device mailbox policies that do not comply (expected 0). Run on a Mailbox server; every mobile device mailbox policy is checked. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- mobile
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 3.5 Ensure 'Number of attempts allowed' is set to '10'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $ts = { param($v) $s = "$v"; if (-not $s -or $s -eq 'Unlimited') { $null } else { [timespan]$s } }; $num = { param($v) $s = "$v"; if ($s -match '^\d+$') { [int64]$s } else { $null } }; $bad = @(Get-MobileDeviceMailboxPolicy -ErrorAction Stop | Where-Object { $n = & $num $_.MaxPasswordFailedAttempts; $null -eq $n -or $n -gt 10 }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-MobileDeviceMailboxPolicy '<Profile>' -MaxPasswordFailedAttempts 10

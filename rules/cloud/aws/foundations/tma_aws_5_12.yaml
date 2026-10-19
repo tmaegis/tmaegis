@@ -1,0 +1,20 @@
+id: TMA-AWS-5.12
+title: Ensure changes to network gateways are monitored
+description: Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs or an external Security Information and Event Management (SIEM) environment, and establishing corresponding metric filters and alarms. Network gateways are required to send and receive traffic to a destination outside of a VPC. It is recommended that a metric filter and alarm be established for changes to network gateways. CloudWatch is an AWS native service that allows you to observe and monitor resources and applications. CloudTrail logs can also be sent to an external Security Information and Event Management (SIEM) environment for monitoring and alerting. Monitoring changes to network gateways will help ensure that all ingress/egress traffic traverses the VPC border via a controlled path.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- monitoring
+- network
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 5.12 Ensure changes to network gateways are monitored
+audit:
+  type: manual
+  command: 'If you are using CloudTrail trails and CloudWatch, perform the following to ensure that there is at least one active multi-region CloudTrail trail with the prescribed metric filters and alarms configured: 1. Identify the log group name that is configured for use with the active multi-region CloudTrail trail: - List all CloudTrail trails: aws cloudtrail describe-trails - Identify multi-region CloudTrail trails: Trails with "IsMultiRegionTrail" set to true - Note the value associated with "Name":<trail-name> - Note the <trail-log-group-name> within the value associated with "CloudWatchLogsLogGroupArn" o Example: arn:aws:logs:<region>:<account-id>:log- group:<trail-log-group-name>:* - Ensure the identified multi-region CloudTrail trail is active: o aws cloudtrail get-trail-status --name <trail-name> § Ensure IsLogging is set to TRUE - Ensure the identified multi-region CloudTrail trail captures all management events: o aws cloudtrail get-event-selectors --trail-name <trail-name>
+    § Ensure there is at least one event selector for a trail with IncludeManagementEvents set to true and ReadWriteType set to All 2. Get a list of all associated metric filters for the <trail-log-group-name>...'
+remediation:
+  type: iac_patch
+  command: 'If you are using CloudTrail trails and CloudWatch, perform the following steps to set up the metric filter, alarm, SNS topic, and subscription: 1. Create a metric filter based on the provided filter pattern that checks for network gateways changes and uses the <trail-log-group-name> taken from audit step 1: aws logs put-metric-filter --log-group-name <trail-log-group-name> -- filter-name <network-gw-changes-metric> --metric-transformations metricName=<network-gw-changes- metric>,metricNamespace=''CISBenchmark'',metricValue=1 --filter-pattern ''{ ($.eventName = CreateCustomerGateway) || ($.eventName = DeleteCustomerGateway) || ($.eventName = AttachInternetGateway) || ($.eventName = CreateInternetGateway) || ($.eventName = DeleteInternetGateway) || ($.eventName = DetachInternetGateway) }'' Note: You can choose your own metricName and metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together. 2. Create an SNS topic that
+    the alarm will notify: aws sns create-topic --name <sns-topic-name> Note: You can execute this command once and then reuse the same topic for all monitoring alarms. Note: Capture the TopicArn that is displayed...'

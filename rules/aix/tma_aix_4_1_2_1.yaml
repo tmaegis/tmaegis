@@ -1,0 +1,17 @@
+id: TMA-AIX-4.1.2.1
+title: Ensure local user Home directories exists
+description: 'All accounts must have a trusted started point - a HOME directory. A missing home directory on many systems places the account in a default directory. Examples include: / and /home/guest. This recommendation is specifically about locally administered accounts (in AIX terms, -R files). Audit: unlocked accounts with uid >= 200 must have an existing HOME directory.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.2.1 Ensure local user Home directories exists
+audit:
+  type: command
+  command: 'command -v lsuser >/dev/null 2>&1 || exit 1; out=$( { lsuser -R files -a id home account_locked ALL | while read name ids homes locks rest; do uid=${ids#id=}; home=${homes#home=}; locked=${locks#account_locked=}; [ "$uid" -ge 200 ] 2>/dev/null || continue; [ "$locked" = true ] && continue; [ -d "$home" ] || echo "$name: missing HOME $home"; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Lock local accounts with UID >= 200 when HOME directory does not exist: #!/usr/bin/ksh -e # Provided to CIS by AIXTools # Copyright AIXTools, 2022 lsuser -R files -a id home account_locked ALL | while read name ids homes locks rest; do uid=$(echo ${ids} | cut -f2 -d =) if [[ ${uid} -ge 200 ]]; then home=$(echo ${homes} | cut -f2 -d =) locked=$(echo ${locks} | cut -f2 -d =) if [[ ${locked} == "true" ]]; then continue elif [[ ! -d ${home} ]]; then /usr/bin/printf "Locked Account [%s]: Missing \${HOME} at: %-32s\n" ${name} ${home} /usr/bin/chuser -R files account_locked=true ${name} fi fi done'

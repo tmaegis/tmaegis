@@ -1,0 +1,19 @@
+id: TMA-MARIADB-6.4
+title: Ensure Audit Logging Is Enabled
+description: 'Enabling audit logging is an important consideration for a production environment, and MariaDB plugin exist to help with this. Enable audit logging for ; Connect events ; Query and Table events (optional) Requires the server_audit plugin with server_audit_logging=ON and CONNECT events audited (an empty server_audit_events audits everything). Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 2
+severity: high
+tags:
+- mariadb
+- database
+- logging
+- audit
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 6.4 Ensure Audit Logging Is Enabled
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF((SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE LOWER(VARIABLE_NAME) = 'server_audit_logging') = 'ON' AND ((SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE LOWER(VARIABLE_NAME) = 'server_audit_events') = '' OR FIND_IN_SET('CONNECT', (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE LOWER(VARIABLE_NAME) = 'server_audit_events')) > 0), 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Under [mariadbd] add plugin_load_add = server_audit, server_audit_logging=ON and server_audit_events=CONNECT (optionally QUERY_DDL,QUERY_DCL,TABLE), then restart MariaDB.

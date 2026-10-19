@@ -1,0 +1,19 @@
+id: TMA-AZURE-CONTAINER-LINUX-1.1.3
+title: Ensure dm-verity is configured
+description: 'dm-verity provides transparent integrity checking of block devices using a cryptographic digest. Because dm-verity devices are read-only, filesystems mounted from them are also read-only. On Azure Container Linux the /usr filesystem is mounted via dm-verity with panic_on_corruption, so any tampering with the read-only root image is detected at runtime. Audit: Passes when the kernel command line contains systemd.verity_usr, a dm-verity table is active (needs root) and panic_on_corruption is set.'
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- integrity
+- verity
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 1.1.3 Ensure dm-verity is configured
+audit:
+  type: command
+  shell: bash
+  command: grep -q "systemd.verity_usr" /proc/cmdline && dm=$(dmsetup table 2>/dev/null) && printf "%s\n" "$dm" | grep -q verity && printf "%s\n" "$dm" | grep -q panic_on_corruption && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: dm-verity for /usr is configured at image build time. Build and deploy an Azure Container Linux image with systemd.verity_usr enabled on the kernel command line and panic_on_corruption set. The filesystem cannot be remediated in place; replace the system with a correctly built image.

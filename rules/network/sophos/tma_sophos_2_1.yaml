@@ -1,0 +1,21 @@
+id: TMA-SOPHOS-2.1
+title: Ensure Firewall rules are configured to identify users before authorizing access
+description: Configure appropriate settings to map IP addresses to usernames. Mapping users to IP addresses is what permits the firewall to create rules based on users and groups rather than IP addresses and subnets, as well as log events by usernames rather than IP addresses or DNS names. The specifics of how to achieve IP-to-username mapping is highly dependent on the environment. It can be enabled by integrating the firewall with a domain controller, captive portal, Terminal Server, Kerberos, NTLM, and synchronized security heartbeat from a variety of devices. Reviewed in the Sophos Firewall web admin console (SFOS has no plain-text configuration export to audit offline).
+target: sophos
+level: 2
+severity: medium
+tags:
+- sophos
+- authentication
+reference: CIS Sophos Firewall v22 Benchmark v1.0.0 - 2.1 Ensure Firewall rules are configured to identify users before authorizing access
+audit:
+  type: manual
+  command: Validate allowed firewall rules with source zone (LAN/DMZ) are configured with user identification. Source network where users are located must authenticate to Sophos Firewall first before accessing network resources. Verify that 'Protect > Rules and policies > Firewall rules' and within the firewall rule ensure 'Match known users' is checked and add authorized 'User or groups'. Captive portal redirects to unknown users by ensuring 'Use web authentication for unknown users' is checked.
+remediation:
+  type: iac_patch
+  command: |-
+    To enable user based firewall rule:
+    Navigate to 'Protect > Rules and policies > Firewall rules' edit existing policies or when creating a new firewall policy 'match known users' is checked. 'Log firewall traffic' is checked to log for allowed traffic. Configure authentication server to use for firewall connections.
+    Navigate to 'Configure > Authentication > Services > Firewall authentication methods' move the primary authentication server at the top. Configure Clientless users for devices such as printers and IoT devices that unable to authenticate with standard authentication options. To add the devices to clientless users, navigate to 'Configure > Authentication > Clientless users > Add or Add range' In Active directory environment AD SSO can be configured to allow unauthenticated web access. Sophos Firewall also supports Authentication using Microsoft Entra ID SSO
+    Navigate to 'Configure > Authentication > Web Authentication > Authorize unauthenticated users for web access > Kerberos & NTLM' and 'show captive portal link' is checked. In Window only environment clientless SSO can be configured to authenticate with Sophos Firewall based on security logon events at the Domain Controllers.
+    Navigate to 'Configure > Authentication > STAS > Enable Sophos Transparent Authentication Suite > Add new collector' and 'Restrict client traffic during identity probe > Yes'. Refer to the reference section for more information with the configuration.

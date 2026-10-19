@@ -1,0 +1,69 @@
+!Synthetic sample: Aruba AOS-CX running-config (hardened). Not a secure template.
+!Version ArubaOS-CX FL.10.13.0001
+hostname cx-core-01
+system serviceos password-prompt
+!
+user admin group administrators password ciphertext REDACTEDFAKEHASH
+!
+password complexity
+    enable
+    minimum-length 12
+    lowercase-count 1
+    uppercase-count 1
+    numeric-count 1
+!
+cli-session
+    max-per-user 1
+    timeout 10
+    tracking-range 15
+!
+banner motd !
+Authorized access only. Activity is logged.
+!
+banner exec !
+Authorized access only.
+!
+ssh server allow-list
+    enable
+ssh server port 2222
+ssh server vrf mgmt
+ssh two-factor-authentication
+ssh certificate-as-authorized-key
+!
+ntp server 192.0.2.123 prefer
+ntp authentication
+ntp authentication-key 1 md5 REDACTED
+ntp enable
+!
+aaa authorization commands default local
+aaa accounting all-mgmt default start-stop local
+radius-server host 192.0.2.60 tls vrf mgmt
+!
+crypto pki application syslog-client certificate SYSLOG-CERT
+crypto pki application https-server certificate HTTPS-CERT
+logging 192.0.2.50 tls include-auditable-events vrf mgmt
+https-server authentication certificate
+https-server vrf mgmt
+!
+snmp-server vrf mgmt
+snmpv3 user nmsuser auth sha REDACTED priv aes REDACTED
+!
+job backup-cfg
+    1 cli copy running-config tftp://192.0.2.70/cx-core-01.cfg vrf mgmt
+schedule backup-cfg daily 02:00
+!
+vlan 1
+    shutdown
+vlan 10
+    name USERS
+!
+interface mgmt
+    no shutdown
+    ip static 198.51.100.11/24
+!
+interface 1/1/1
+    no shutdown
+    description uplink
+    no routing
+    vlan trunk native 1
+    vlan trunk allowed 10

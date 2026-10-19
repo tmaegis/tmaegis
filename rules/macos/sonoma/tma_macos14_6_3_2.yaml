@@ -1,0 +1,19 @@
+id: TMA-MACOS14-6.3.2
+title: Audit History and Remove History Items
+description: 'Organizational management of user web browsing history is a challenge affected by multiple facets. Organizations should decide whether to manage browser history and how much history should be maintained. There are conflicting concerns in the retention of browser history. Unlimited retention: - Consumes disk space - Is preferred by on-disk forensics teams - Is user searchable for old visited pages - Raises some user privacy concerns - Has security concerns regarding retaining old links that may be stale or lead to compromised pages, or pages with changes or inappropriate content Old browser history becomes stale and the use or misuse of the data can lead to unwanted outcomes. Search engine results are maintained and often provide much more relevant current information than old website visit information.'
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 6.3.2 Audit History and Remove History Items
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to verify how long the history in Safari is kept: 1. Open System Settings 2. Select General 3. Select Device Management 4. Verify that an installed profile has HistoryAgeInDaysLimit set to your organization''s requirements Terminal Method: Run the following command to verify that a profile is installed that sets how long the history is kept in Safari: % /usr/bin/sudo /usr/sbin/system_profiler SPConfigurationProfileDataType | /usr/bin/grep HistoryAgeInDaysLimit | /usr/bin/tr -d '' '' The output will be HistoryAgeInDaysLimit = followed by your organizations requirements.'
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.Safari 2. The key to include is HistoryAgeInDaysLimit 3. The key must be set to: <integer><1,7,14,31,365,36500></integer> Note: Setting the plist key to a value that is not represented by the GUI could cause issues.'

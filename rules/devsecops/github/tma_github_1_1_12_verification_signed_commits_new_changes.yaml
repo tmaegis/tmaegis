@@ -1,0 +1,25 @@
+id: TMA-GITHUB-1.1.12
+title: Ensure verification of signed commits for new changes before merging
+description: 'Ensure every commit in a pull request is signed and verified before merging. Signing commits, or requiring to sign commits, gives other users confidence about the origin of a specific code change. It ensures that the author of the change is not hidden and is verified by the version control ... Checks the default branch: signed commits are required. Satisfied by classic branch protection or an active ruleset (rules/branches). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: high
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.12 Ensure verification of signed commits for new changes before merging
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    p=$(gh api "repos/$R/branches/$B/protection" --jq '.required_signatures.enabled == true' 2>/dev/null) || p=false
+    s=$(gh api "repos/$R/rules/branches/$B" --jq 'any(.[]; .type == "required_signatures")' 2>/dev/null) || s=false
+    [ "$p" = true ] || [ "$s" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: enable Require signed commits.'

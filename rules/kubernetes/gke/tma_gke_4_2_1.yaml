@@ -1,0 +1,17 @@
+id: TMA-GKE-4.2.1
+title: Enforce baseline or restricted Pod Security Standards on workload namespaces
+description: Pod Security Standards provide predefined pod security profiles that can be applied to GKE Standard workload namespaces through the built in PodSecurity admission controller. At minimum, workload namespaces should enforce the baseline profile, with restricted used where stronger pod hardening is required. The benchmark marks this recommendation Manual.
+target: gke
+level: 1
+severity: medium
+tags:
+- gke
+- policies
+- pod-security
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.2.1 Enforce baseline or restricted Pod Security Standards on workload namespaces
+audit:
+  type: manual
+  command: Run the following command to list workload namespaces that do not enforce either the baseline or restricted Pod Security Standard. The restricted profile satisfies this control because it is more restrictive than baseline. PodSecurity is applied to namespaces with labels, and enforce mode rejects violating pod creation while audit and warn do not block pods.
+remediation:
+  type: iac_patch
+  command: Update workload namespaces so Pod Security enforcement is applied consistently through namespace labels. Use restricted where workloads can support it, and use baseline where compatibility requires a less restrictive profile. • Identify all namespaces that host user workloads and confirm each one uses pod-security.kubernetes.io/enforce=baseline or pod-security.kubernetes.io/enforce=restricted. • Test the selected profile before enforcement using server side dry run, especially when moving from no enforcement to restricted. • Remediate violating workload specs by updating security contexts, privilege settings, host namespace usage, volume types, and Linux capability settings.

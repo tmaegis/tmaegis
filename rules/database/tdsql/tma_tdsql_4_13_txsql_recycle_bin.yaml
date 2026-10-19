@@ -1,0 +1,17 @@
+id: TMA-TDSQL-4.13
+title: Ensure the TXSQL Recycle Bin Is Enabled
+description: 'TXSQL provides a recycle bin mechanism (txsql_recycle_bin_enabled): when a user executes DROP TABLE or TRUNCATE TABLE, the table is not physically deleted immediately but is renamed and moved into the recycle bin, retained for txsql_recycle_bin_retention seconds before being cleaned up by the background scheduler (txsql_recycle_scheduler_interval). Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Passes when txsql_recycle_bin_enabled is ON; also confirm txsql_recycle_bin_retention / txsql_recycle_scheduler_interval and gateway.mode.recycle_bin.recycle_bin_switch = 1.'
+target: tdsql
+level: 2
+severity: low
+tags:
+- tdsql
+- availability
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.13 Ensure the TXSQL Recycle Bin Is Enabled
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SHOW GLOBAL VARIABLES LIKE 'txsql_recycle_bin_enabled'" 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | awk -F'\t' '$1 == "txsql_recycle_bin_enabled" {print toupper($2)}'); case "$v" in ON|1) echo compliant;; *) echo "value '$v'";; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET GLOBAL txsql_recycle_bin_enabled = ON; SET GLOBAL txsql_recycle_bin_retention = 604800; SET GLOBAL txsql_recycle_scheduler_interval = 60; and persist them in the parameter template.

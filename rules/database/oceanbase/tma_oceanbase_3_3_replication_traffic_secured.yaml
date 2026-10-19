@@ -1,0 +1,18 @@
+id: TMA-OCEANBASE-3.3
+title: Ensure Replication Traffic is Secured
+description: The replication traffic between servers in OceanBase cluster should be secured. Security measures should include ensuring the confidentiality and integrity of the traffic, and performing mutual authentication between the servers before performing replication. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when ssl_client_authentication is True and rpc_server_authentication_method is SSL_NO_ENCRYPT on every OBServer; also confirm valid certificates are deployed on all observers.
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- tls
+- replication
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 3.3 Ensure Replication Traffic is Secured
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN SUM(CASE WHEN name = 'ssl_client_authentication' AND UPPER(value) = 'TRUE' THEN 1 ELSE 0 END) > 0 AND SUM(CASE WHEN name = 'ssl_client_authentication' AND UPPER(value) <> 'TRUE' THEN 1 ELSE 0 END) = 0 AND SUM(CASE WHEN name = 'rpc_server_authentication_method' AND UPPER(value) = 'SSL_NO_ENCRYPT' THEN 1 ELSE 0 END) > 0 AND SUM(CASE WHEN name = 'rpc_server_authentication_method' AND UPPER(value) <> 'SSL_NO_ENCRYPT' THEN 1 ELSE 0 END) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM oceanbase.GV\$OB_PARAMETERS WHERE name IN ('ssl_client_authentication', 'rpc_server_authentication_method')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Deploy CA/server certificates to every observer, then ALTER SYSTEM SET ssl_client_authentication = 'True'; ALTER SYSTEM SET rpc_server_authentication_method = 'SSL_NO_ENCRYPT'; and set sql_protocol_min_tls_version = 'TLSv1.2'.

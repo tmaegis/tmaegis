@@ -1,0 +1,17 @@
+id: TMA-M365-2.1.9
+title: Ensure that DKIM is enabled for all Exchange Online Domains
+description: DKIM is one of the trio of Authentication methods (SPF, DKIM and DMARC) that help prevent attackers from sending messages that look like they come from your domain. DKIM lets an organization add a digital signature to outbound email messages in the message header. When DKIM is configured, the organization authorizes it's domain to associate, or sign, it's name to an email message using cryptographic authentication. Email systems that get email from this domain can use a digital signature to help verify whether incoming email is legitimate. Use of DKIM in addition to SPF and DMARC to help prevent malicious actors using spoofing techniques from sending messages that look like they are coming from your domain. By enabling DKIM with Office 365, messages that are sent from Exchange Online will be cryptographically signed. This will allow the receiving email system to validate that the mess...
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.1.9 Ensure that DKIM is enabled for all Exchange Online Domains
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com/ 2. Expand Email & collaboration > Policies & rules > Threat policies. 3. Under Rules section click Email authentication settings. 4. Select DKIM. 5. For each Accepted domain that is configured to send email: o Skip any *.onmicrosoft.com domain (MOERA or Coexistence), these outbound messages are automatically signed by Microsoft. o Click on the domain name. o Confirm Sign messages for this domain with DKIM signatures is Enabled. o Ensure Status reads Signing DKIM signatures for this domain. 6. A status of Not signing DKIM signatures for this domain or No DKIM keys saved for this domain is out of compliance. Note: For step 5 these can also be audited the overview showing all domains. In this case a passing audit procedure will display the Toggle set as Enabled and Status as Valid. To audit using PowerShell: 1. Connect to Exchange Online service using Connect-ExchangeOnline. 2. Run the following:
+    # Get-DkimSigningConfig does not display unconfigured domains, # so we first get all accepted domains and then match them against # the DKIM signing configurations. $Domains = Get-AcceptedDomain | Wher...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com/ 2. Expand Email & collaboration > Policies & rules > Threat policies. 3. Under Rules section click Email authentication settings. 4. Select DKIM 5. Select the domain to remediate. 6. Click Create DKIM keys. 7. Microsoft provides the properly formatted CNAME records, copy these for later use. 8. In another browser tab or window, go to the domain registrar for the domain, and then create the two CNAME records using the information from the previous step. 9. Return the domain properties flyout and toggle Sign messages for this domain with DKIM signatures to Enabled. If successful the status will show Signing DKIM signatures for this domain.'

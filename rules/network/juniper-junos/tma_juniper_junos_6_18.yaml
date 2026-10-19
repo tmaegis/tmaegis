@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.18
+title: Ensure Time-Zone is Set to UTC
+description: All devices should use the UTC time zone. When a network comprises of hosts across multiple countries or states, the use of local time zones can make analysis of log events confusing and error prone, particularly when localized "Daylight Savings Time" or equivalent changes occur, affecting one area ... Fails if a time-zone other than UTC or GMT is configured. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: low
+tags:
+- juniper-junos
+- network
+- ntp
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.18 Ensure Time-Zone is Set to UTC
+audit:
+  type: config_regex
+  pattern: (?m)^set system time-zone (?:[^GU \t\n][^ \t\n]*|G(?:|[^M \t\n][^ \t\n]*|M(?:|[^T \t\n][^ \t\n]*|T(?:[^ \t\n][^ \t\n]*)))|U(?:|[^T \t\n][^ \t\n]*|T(?:|[^C \t\n][^ \t\n]*|C(?:[^ \t\n][^ \t\n]*))))[ \t\r]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To configure the Time Zone, issue the following command from the hierarchy;
+    set system time-zone UTC

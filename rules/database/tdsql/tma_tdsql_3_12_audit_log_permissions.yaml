@@ -1,0 +1,18 @@
+id: TMA-TDSQL-3.12
+title: Ensure Correct Permissions on Audit Log Files
+description: If MySQL audit logging is enabled, the audit log files must have restrictive permissions. Audit logs are critical for security monitoring and forensic analysis. Searches /data/tdsql (the benchmark path; confirm audit_txsql_audit_dir points inside it). Counts audit files accessible by other users; expected 0600 or 0640, owner mysql:mysql.
+target: tdsql
+level: 2
+severity: high
+tags:
+- tdsql
+- permissions
+- audit
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.12 Ensure Correct Permissions on Audit Log Files
+audit:
+  type: command
+  command: n=0; for p in "/data/tdsql"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "/data/tdsql"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" -type f -name '*audit*' -perm /o+rw -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: find /data/tdsql -name '*audit*' -type f -exec chmod 640 {} +; chown mysql:mysql those files.

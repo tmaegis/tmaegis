@@ -1,0 +1,24 @@
+id: TMA-FORTIGATE-2.1.12
+title: Ensure single CPU core overloaded event is logged
+description: Add log-single-cpu-high option under config system global. When enabled, CPU single core usage will be polled every three seconds, and any single CPU core usage above the CPU usage threshold will report an event log. If a core is reported, that core will not be checked again for the next 30 seconds. PASS requires set log-single-cpu-high enable. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: low
+tags:
+- fortigate
+- hardening
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.1.12 Ensure single CPU core overloaded event is logged
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set log-single-cpu-high enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set log-single-cpu-high enable
+    end
+    # CIS guidance:
+    On CLI:
+    config system global
+        set log-single-cpu-high enable
+    end

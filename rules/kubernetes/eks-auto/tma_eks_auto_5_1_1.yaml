@@ -1,0 +1,20 @@
+id: TMA-EKS-AUTO-5.1.1
+title: Enable ECR enhanced scanning for EKS Auto Mode workload images
+description: Container image vulnerability scanning helps strengthen the security of EKS Auto Mode workload images by identifying known software weaknesses before or after images are deployed. Because EKS Auto Mode manages more of the cluster infrastructure while customers remain responsible for application containers and pods, image scanning remains a customer controlled workload security requirement. Requires the aws CLI (ecr:GetRegistryScanningConfiguration) in the cluster region; repository filter coverage still needs review.
+target: eks-auto
+level: 1
+severity: medium
+tags:
+- eks-auto
+- managed-services
+- registry
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.1.1 Enable ECR enhanced scanning for EKS Auto Mode workload images
+audit:
+  type: command
+  command: |-
+    t=$(aws ecr get-registry-scanning-configuration --query scanningConfiguration.scanType --output text) || exit 1
+    if [ "$t" = ENHANCED ]; then echo compliant; else echo "noncompliant: scanType=$t"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable ECR enhanced scanning for the private registry in each Region that stores images used by EKS Auto Mode workloads. Use registry scanning configuration rather than repository scan on push configuration, because the repository PutImageScanningConfiguration API is being deprecated in favor of registry configuration. Enhanced scanning integrates ECR with Amazon Inspector to provide automated and continuous scanning for operating system and programming language package vulnerabilities. Identify the ECR repositories and Regions that provide images to EKS Auto Mode workloads. Use the image references from Kubernetes workloads to determine which ECR repositories must be covered by enhanced scanning. Enable enhanced scanning for the private registry in each applicable Region. When no rules are specified, ECR sets enhanced scanning to continuous scanning for all repositories by default.

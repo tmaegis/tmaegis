@@ -1,0 +1,109 @@
+id: TMA-UBUNTU2004-1.7.5
+title: Ensure GDM screen locks cannot be overridden
+description: GNOME Desktop Manager can lock down specific settings by using the lockdown mode in dconf to prevent users from changing specific settings. To lock down a dconf key or subpath, create a locks subdirectory in the keyfile directory. The files inside this directory contain a list of keys or subpaths to lock. Just as with the keyfiles, you may add any number of files to this directory.
+target: linux
+os_family:
+- ubuntu-20.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 1.7.5
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''grep -Psi "idle-delay|lock-delay|lock-enabled" /etc/dconf/db/*/locks/*'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- /org/gnome/desktop/session/idle-delay || { echo step1: missing /org/gnome/desktop/session/idle-delay; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- /org/gnome/desktop/screensaver/lock-delay || { echo step1: missing /org/gnome/desktop/screensaver/lock-delay; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- /org/gnome/desktop/screensaver/lock-enabled || { echo step1: missing /org/gnome/desktop/screensaver/lock-enabled; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+  requires_file:
+  - /usr/sbin/gdm3
+  - /usr/sbin/gdm
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; return 0; }
+    tma_ini_set() { # file section key value
+      local f=$1 s=$2 k=$3 v=$4
+      [ -e "$f" ] || { mkdir -p "$(dirname "$f")"; : > "$f"; }
+      tma_bak "$f"
+      awk -v s="$s" -v k="$k" -v v="$v" '
+        function flush() { if (insec && !done) { print k "=" v; done=1 } }
+        /^[[:space:]]*\[/ { flush(); insec = ($0 ~ "^[[:space:]]*\\[" s "\\][[:space:]]*$"); print; next }
+        insec && $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { if (!done) { print k "=" v; done=1 } ; next }
+        { print }
+        END { flush(); if (!done) { print "[" s "]"; print k "=" v } }' "$f" > "$f.tma" && cat "$f.tma" > "$f"; rm -f "$f.tma"
+    }
+    tma_grub_regen() {
+      if command -v update-grub >/dev/null 2>&1; then update-grub
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        if [ -f /boot/grub2/grub.cfg ]; then grub2-mkconfig -o /boot/grub2/grub.cfg
+        else for c in /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c"; done; fi
+      elif command -v grub-mkconfig >/dev/null 2>&1; then
+        [ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg
+      fi; return 0
+    }
+    tma_cmdline_rm() { # names of kernel args (name or name=value) to drop from the grub defaults
+      local a f c k n
+      for a in "$@"; do
+        for f in /etc/default/grub /etc/default/grub.d/*.cfg; do
+          [ -f "$f" ] || continue
+          grep -Eq "^[[:space:]]*GRUB_CMDLINE_LINUX" "$f" || continue
+          tma_bak "$f"
+          sed -i -E "/^[[:space:]]*GRUB_CMDLINE_LINUX/{ :a; s/([\"' ])${a}(=[^\"' ]*)?([ \"'])/\1\3/; ta; s/  +/ /g; s/ ([\"'])\$/\1/ }" "$f"
+        done
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --remove-args="$a" >/dev/null 2>&1
+      done
+      if command -v grub2-editenv >/dev/null 2>&1; then
+        k=$(grub2-editenv - list 2>/dev/null | sed -n 's/^kernelopts=//p')
+        if [ -n "$k" ]; then n=$k; for a in "$@"; do n=$(printf '%s' "$n" | sed -E "s/(^| )${a}(=[^ ]*)?( |\$)/ /g"); done
+          [ "$n" != "$k" ] && grub2-editenv - set "kernelopts=$n"; fi
+      fi
+      for c in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
+        [ -f "$c" ] || continue
+        for a in "$@"; do sed -i -E "/^[[:space:]]*(linux|kernelopts)/ s/(^|[ =])${a}(=[^ ]*)?( |\$)/\1\3/g" "$c"; done
+      done
+      return 0
+    }
+    tma_cmdline_set() { # name=value pairs forced into GRUB_CMDLINE_LINUX
+      local f=/etc/default/grub kv; [ -f "$f" ] || { echo "no $f"; return 0; }
+      for kv in "$@"; do
+        tma_cmdline_rm "${kv%%=*}" "${kv%%=*}=[^ \"']*" 2>/dev/null
+        tma_bak "$f"
+        if grep -Eq '^[[:space:]]*GRUB_CMDLINE_LINUX=' "$f"; then
+          sed -i -E "s/^([[:space:]]*GRUB_CMDLINE_LINUX=[\"'])(.*)([\"'])\$/\1\2 ${kv}\3/; s/=([\"']) /=\1/" "$f"
+        else printf 'GRUB_CMDLINE_LINUX="%s"\n' "$kv" >> "$f"; fi
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --args="$kv" >/dev/null 2>&1
+      done
+      return 0
+    }
+    prof=gdm
+    mkdir -p /etc/dconf/profile /etc/dconf/db/$prof.d/locks
+    pf() { [ -f "$1" ] || : > "$1"; while IFS= read -r l; do grep -qxF "$l" "$1" || printf '%s\n' "$l" >> "$1"; done; }
+    printf '%s\n' 'user-db:user
+    system-db:gdm
+    file-db:/usr/share/gdm/greeter-dconf-defaults' | pf /etc/dconf/profile/$prof
+    cat > /etc/dconf/db/$prof.d/00-screensaver <<'TMAEOF'
+    [org/gnome/desktop/session]
+    idle-delay=uint32 900
+
+    [org/gnome/desktop/screensaver]
+    lock-delay=uint32 5
+    lock-enabled=true
+    TMAEOF
+    printf '%s\n' /org/gnome/desktop/session/idle-delay /org/gnome/desktop/screensaver/lock-delay /org/gnome/desktop/screensaver/lock-enabled > /etc/dconf/db/$prof.d/locks/00-screensaver
+    command -v dconf >/dev/null 2>&1 && dconf update
+    true
+  guidance: "1. To prevent the user from overriding these settings, create the file /etc/dconf/db/local.d/locks/00-screensaver with the following content: # Lock desktop screensaver settings /org/gnome/desktop/session/idle-delay /org/gnome/desktop/screensaver/lock-delay /org/gnome/desktop/screensaver/lock-enabled 2. Update the system databases: # dconf update Note: • A user profile must exist in order to apply locks. If a user profile does not exist review the remediation steps in the previous recommendation. • Users must log out and back in again before the system-wide settings take effect."

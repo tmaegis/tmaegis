@@ -1,0 +1,28 @@
+id: TMA-ARUBA-CX-1.1.10
+title: Using Local RBAC to Limit User Access to Shell
+description: 'AOS-CX switches include three different built-in local user groups: administrators, operators, auditors. Administrators have full read-write access, operators have read- only access, and auditors can read the logs. There may be scenarios where customers need a local administrator user with a different set of permissions. User-defined local user groups allow customers to create their own user group with specific CLI commands allowed for members of that group, including access to the underlying OS shell.'
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.1.10 Using Local RBAC to Limit User Access to Shell
+audit:
+  type: manual
+  command: Run 'show user-group' and 'show user-group <group>' for each custom administrator group. The rules must deny 'start-shell' and deny changes to 'user .*' and 'user-group .*' before the final permit rule, so administrators cannot reach the underlying OS shell or edit RBAC.
+remediation:
+  type: iac_patch
+  command: |-
+    Create local user groups as needed:
+    user-group group
+    10 permit cli command "<command>"
+    20 permit cli command "<command>"
+    exit
+    Create user group rules to restrict access to underlying shell, and ability to modify the user-group rules:
+    user-group custom-admin
+    10 deny cli command "start-shell"
+    20 deny cli command "user .*"
+    30 deny cli command "user-group .*"
+    500 permit cli command ".*"
+    exit

@@ -1,0 +1,21 @@
+id: TMA-AZURE-STORAGE-3.1.4
+title: Ensure 'Use infrastructure encryption for this vault' is enabled on Backup vaults
+description: In addition to using customer-managed keys for encryption at rest in the Backup vault, you can enable an additional layer of platform-managed infrastructure encryption. This dual-layer approach enhances the protection of your backup data. Enabling infrastructure encryption on a Backup vault adds a second layer of protection to backup data, enhancing security and ensuring compliance for sensitive data storage. This dual-layer strategy reduces the risk of unauthorized access by keeping data encrypted even if one layer is compromised.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- backup
+- cloud
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.1.4 Ensure 'Use infrastructure encryption for this vault' is enabled on Backup vaults
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Under Encryption Settings, click Update. 5. Under Infrastructure encryption, ensure the box next to Use infrastructure encryption for this vault is checked. 6. Repeat steps 1-5 for each Backup vault. Audit from Azure CLI Run the following command to list Backup vaults: az dataprotection backup-vault list For each Backup vault, run the following command: az dataprotection backup-vault show --resource-group <resource-group> -- vault-name <backup-vault> Ensure that under properties > securitySettings > encryptionSettings, infrastructureEncryption is set to Enabled. Audit from PowerShell Run the following command to list Backup vaults: Get-AzDataProtectionBackupVault Run the following command to get the Backup vault in a resource group with a given name: $vault = Get-AzDataProtectionBackupVault -ResourceGroupName <resource-group> -VaultName <backup-vault> Run
+    the following command to get the infrastructure encryption setting for the Backup vault: $vault.EncryptionSetting.CmkInfrastructureEncryption Ensure that the command returns Enabled. Repeat for each Backup...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure CLI Run the following command to create a locally redundant Backup vault with a customer- managed encryption key and infrastructure encryption enabled: az dataprotection backup-vault create --resource-group <resource-group> -- vault-name <backup-vault> --location <location> --storage-setting "[{type:''LocallyRedundant'',datastore-type:''VaultStore''}]" --type "UserAssigned" --user-assigned-identities ''{"<user-assigned-identity- id>":{}}'' --cmk-encryption-key-uri <cmk-uri> --cmk-encryption-state Enabled - -cmk-identity-type "UserAssigned" --cmk-user-assigned-identity-id <cmk-user- assigned-identity-id> --cmk-infrastructure-encryption Enabled Remediate from PowerShell Run the following commands to create a locally redundant Backup vault with a customer-managed encryption key and infrastructure encryption enabled: $sub = "<subscription-id>" $storagesetting = New-AzDataProtectionBackupVaultStorageSettingObject - DataStoreType VaultStore -Type LocallyRedundant
+    $userAssignedIdentity = @{ "<user-assigned-identity-id>" = @{ clientId = "<user-assigned-identity-client-id>" principalId = "<user-assigned-identity-principal-id>" } } $cmkIdentityId = "<cmk-user-assigned-ident...'

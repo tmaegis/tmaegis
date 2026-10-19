@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-1.10
+title: Restrict namespace administrator access to migration tools
+description: Namespace administrators have the capability to perform live migrations, which can potentially impact other users of the system. Live migration is a process where virtual machines can be moved from one physical host to another without any downtime, making it a valuable tool for managing clusters and ensuring high availability. However, since live migration involves moving data between hosts, it can have an impact on other users who may have applications running on the same hosts. As such, it is important to exercise caution when granting access to namespace administrators and ensure that appropriate safeguards are in place to minimize any potential disruptions. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.10 Restrict namespace administrator access to migration tools
+audit:
+  type: manual
+  command: 'Use the following command to find users, service accounts and groups who are allowed to create VirtualMachineInterfaceMigration and MigrationPolicy resources: $ oc adm policy who - can create vmim $ oc adm policy who - can create migrationpolicy Ensure users are authorized to perform those actions.'
+remediation:
+  type: iac_patch
+  command: 'Remove access to virtualmachineinstancemigration and migrationpolicy objects create in the cluster. Example: Remove create access given by the clusterRoleBinding for the I migrationpolicy for the test user # Get all the users and service accounts who can create migrationpolicies $ oc adm policy who-can create migrationpolicy Users: system:admin .. Test # Verify that the test user can create the migrationpolicy $ oc auth can-i create migrationpolicies --as test Warning: resource ''migrationpolicies'' is not namespace scoped in group ''migrations.kubevirt.io'' yes # Find out which rolebinding or clusterrolbinding associated to the test user $ oc get rolebindings,clusterrolebindings --all-namespaces -o custom-columns=''KIND:kind,NAMESPACE:metadata.namespace,NAME:metadata.n ...'

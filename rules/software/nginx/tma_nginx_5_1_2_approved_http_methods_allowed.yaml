@@ -1,0 +1,16 @@
+id: TMA-NGINX-5.1.2
+title: Ensure only approved HTTP methods are allowed
+description: 'Following the principle of least functionality, an NGINX server should be configured to reject any HTTP methods that are not explicitly required by the application. While standard web browsing typically only needs GET, POST, and HEAD, modern RESTful APIs might require methods like PUT, PATCH, or DELETE. Any method not essential for the application''s functionality should be blocked at the web server level. Manual review: the benchmark gives no reliable automated check for this control.'
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- request-limits
+reference: CIS NGINX Benchmark v3.0.0 - 5.1.2 Ensure only approved HTTP methods are allowed
+audit:
+  type: manual
+  command: '1. Configuration Inspection: Run the following command to analyze the fully loaded NGINX configuration for any method-limiting directives: nginx -T 2>/dev/null | grep -E ''(\$request_method|limit_except)'' Review the configuration to ensure that either a limit_except block or an if ($request_method) block is correctly implemented for the relevant location. 2. Active Testing: Send a request with a non-approved method (e.g., OPTIONS or DELETE) using curl and verify that the server responds with the correct status code, not a 200 OK or 404 Not Found.'
+remediation:
+  type: iac_patch
+  command: 'There are two recommended methods to restrict HTTP verbs. Method 1 (Preferred): Using limit_except This directive is designed for this purpose and is considered the cleanest approach. It restricts all methods except for the ones listed. location /api_login/ { # Only allow GET, HEAD, and POST methods for this location. limit_except GET HEAD POST { deny all; } # ... other directives ... } Method 2 (Alternative): Using an if condition This method offers more flexibility, such as returning a non-standard status code like 444, which simply closes the connection without sending a response header. location / { # If the request method is NOT one of GET, HEAD, or POST if ($request_method !~ ^(GET|HEAD|POST)$) { # --> close the connection immediately. return 444; } # ... other directives ... }'

@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.12
+title: Ensure the correct YSQL statements generating errors are recorded
+description: The log_min_error_statement setting causes all YSQL statements generating errors at or above the specified severity level to be recorded in the server log. Each level includes all the levels that follow it. The lower the level (vertically, below), the fewer messages are recorded. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Passes when log_min_error_statement is error or more verbose.
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.12 Ensure the correct YSQL statements generating errors are recorded
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SELECT CASE WHEN lower(current_setting('log_min_error_statement')) IN ('debug5','debug4','debug3','debug2','debug1','info','notice','warning','error') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_min_error_statement='error'" on every YB-TServer and restart it.

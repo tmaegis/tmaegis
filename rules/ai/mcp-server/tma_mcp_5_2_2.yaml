@@ -1,0 +1,19 @@
+id: TMA-MCP-5.2.2
+title: Ensure sessions are not used as authentication and, where present, are bound to user identity
+description: Under the 2026-07-28 revision, the protocol-level session and the Mcp-Session-Id header are removed. Every request carries its protocol version, self-reported client identity metadata, and client capabilities in _meta, and none of these is authentication. For a remote HTTP server, authentication and authorization are established independently for each request through the transport authorization framework, and an invalid or absent credential is rejected, so a session identifier or a continuity handle is never proof of identity. Where an application needs continuity across calls, it uses an explicit, server-issued handle passed as an ordinary tool argument, which the specification treats as an application value rather than a credential. Building on the specification's non-normative guidance for such handles, this Recommendation requires that the handle be generated from a cryptographica...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.2.2 Ensure sessions are not used as authentication and, where present, are bound to user identity
+audit:
+  type: manual
+  command: 'First, confirm the server rejects a request that carries a captured handle but no authorization credential. Run the following command, substituting the endpoint, a tool that accepts a continuity-handle argument, and a captured handle or session value. The request is otherwise a valid tool call, so a rejection can only be due to the missing authorization and not to some other defect in the request: URL="<MCP_ENDPOINT>" CAPTURED_HANDLE=''<CAPTURED_HANDLE_OR_SESSION_VALUE>'' TOOL="<TOOL_ACCEPTING_A_HANDLE>" code=$(curl -sS -o /dev/null -w ''%{http_code}'' --connect-timeout 5 -m 10 -X POST "$URL" \ -H ''Content-Type: application/json'' \ -H ''Accept: application/json, text/event-stream'' \ -H ''MCP-Protocol-Version: 2026-07-28'' \ -H ''Mcp-Method: tools/call'' \ -H "Mcp-Name: $TOOL" \ -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"$TOOL \",\"arguments\":{\"handle\":\"$CAPTURED_HANDLE\"},\"_meta\":{\"io.modelcontextprotoc ol/protocolVersion\":\"2026-07-
+    28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"cis-benchmark- audit\",\"version\":\"1.0\"},\"io.modelcontextprotocol/clientCapabilities\":{}}}}" 2>/dev/null) case "$code" in 401) echo "PASS: a request...'
+remediation:
+  type: iac_patch
+  command: Establish authentication per request through the transport authorization framework, never through a session identifier or a continuity handle, and do not rely on a protocol session under the 2026-07-28 revision. For cross-call continuity, issue an explicit handle from a tool. Generate the handle from a cryptographically secure random source, bind it to the authenticated identity, store the binding server-side in a shared store for multi-node deployments, re-validate it against the identity on every use, and expire it after a server-defined duration. Reject any request that presents only a handle without independent authentication. This is server middleware and configuration, and there is no portable command.

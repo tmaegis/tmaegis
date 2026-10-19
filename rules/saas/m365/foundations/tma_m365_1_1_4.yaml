@@ -1,0 +1,17 @@
+id: TMA-M365-1.1.4
+title: Ensure administrative accounts use licenses with a reduced application footprint
+description: Administrative accounts are special privileged accounts that could have varying levels of access to data, users, and settings. A license can enable an account to gain access to a variety of different applications, depending on the license assigned. The recommended state is to not license a privileged account or use licenses without associated applications such as Microsoft Entra ID P1 or Microsoft Entra ID P2. Ensuring administrative accounts do not use licenses with applications assigned to them will reduce the attack surface of high privileged identities in the organization's environment. Granting access to a mailbox or other collaborative tools increases the likelihood that privileged users might interact with these applications, raising the risk of exposure to social engineering attacks or malicious content. These activities should be restricted to an unprivileged 'daily driver' a...
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 1.1.4 Ensure administrative accounts use licenses with a reduced application footprint
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft 365 admin center https://admin.microsoft.com. 2. Expand Users > Active users. 3. Sort by the Licenses column. 4. For each user account in an administrative role verify the account is assigned a license that is not associated with applications i.e. (Microsoft Entra ID P1, Microsoft Entra ID P2). o If an organization uses PIM to elevate a daily driver account to privileged levels, this control and licensing requirement can be considered satisfied. Note: The final step assumes PIM is properly configured to best practices. Accounts eligible for the Global Administrator role should require approval to activate. Using the PIM blade to permanently assign accounts to privileged roles would not satisfy this audit procedure. To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "RoleManagement.Read.Directory","User.Read.All" 2. Run the following PowerShell script: $DirectoryRoles = Get-MgDirectoryRole # Get
+    privileged role IDs $PrivilegedRoles = $DirectoryRoles | Where-Object { $_.DisplayName -like "*Administrator*" -or $_.DisplayName -eq "Global Reader" } # Get the members of these various roles $RoleMembers...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft 365 admin center https://admin.microsoft.com. 2. Expand Users > Active users. 3. Click Add a user. 4. Fill out the appropriate fields for Name, user, etc. 5. When prompted to assign licenses select as needed Microsoft Entra ID P1 or Microsoft Entra ID P2, then click Next. 6. Under the Option settings screen you may choose from several types of privileged roles. Choose Admin center access followed by the appropriate role then click Next. 7. Select Finish adding. Note: Utilizing PIM to best practices will satisfy this control. CIS and Microsoft recommend an organization keep zero permanently active assignments for roles other than emergency access accounts.'

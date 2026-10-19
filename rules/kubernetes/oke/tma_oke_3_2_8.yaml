@@ -1,0 +1,26 @@
+id: TMA-OKE-3.2.8
+title: Ensure the kubelet client certificate rotation is enabled
+description: In OKE, the setting rotateCertificates is about whether the kubelet renews its client certificate before that certificate expires. Oracle OKE documentation shows worker nodes using the kubelet client certificate at /var/lib/kubelet/pki/kubelet-client-current.pem, which is trusted by the cluster CA, but Oracle does not publish a fixed OKE default for rotateCertificates. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- worker-node
+- kubelet
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 3.2.8 Ensure the kubelet client certificate rotation is enabled
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"rotateCertificates":true'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns false, the worker node is not configured to rotate its kubelet client certificate and should be treated as noncompliant. If the field is not present, interpret that conservatively as rotation not enabled unless your OKE platform explicitly manages certificate rotation for you. Oracle OKE documentation shows worker nodes using kubelet client certificates trusted by the cluster CA and supports managed node customization through cloud-init initialization scripts and kubelet extra args. Oracle also documents that worker node property changes can be applied through new or replacement managed nodes. Remediation of new cluster When creating a new OKE cluster or node pool, the goal is to ensure worker nodes start with kubelet client certificate rotation enabled if the nodes may remain in service long enough for certificate expiry to matter.

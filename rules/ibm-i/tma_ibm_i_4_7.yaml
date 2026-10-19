@@ -1,0 +1,16 @@
+id: TMA-IBM-I-4.7
+title: Inactive Profiles
+description: Remove/disable inactive user profiles within 90 days. Accounts that are not used regularly are often targets of attack since it is less likely that any changes (such as a changed password) will be noticed. As such, these accounts may be more easily exploited and used to access sensitive data.
+target: ibm-i
+level: 1
+severity: medium
+tags:
+- ibm-i
+- accounts
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 4.7 Inactive Profiles
+audit:
+  type: manual
+  command: 'On a command line, type STRSQL and press Enter Enter the following SQL statement and press Enter. SELECT USER_NAME, STATUS, LASTUSED, TIMESTAMP FROM QSYS2/USER_INFO T01 WHERE STATUS = ''*ENABLED'' AND LASTUSED <= ''yyyy-mm-dd'' AND TIMESTAMP <= ''yyyy-mm-dd'' OR STATUS = ''*ENABLED'' AND TIMESTAMP <= ''yyyy-mm-dd'' AND LASTUSED IS NULL Note: In the above SQL, enter the calendar date equal to 90 days prior to the audit or that of your inactive profile policy as the LASTUSED date in the format yyyy-mm-dd. The date needs to be entered in ''yyyy-mm-dd'' format enclosed in ... (full steps: CIS section 4.7)'
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration, remove/disable all inactive profiles displayed. CHGUSRPRF USRPRF(<xxxxxx>) STATUS(*DISABLED) Optional (recommended) on a regular basis such as 30-90 days after inactive profiles have been *DISABLED, they should be archived and removed. DLTUSRPRF USRPRF(<xxxxxx>) Note that when removing user profiles, there needs to be consideration of changing ownership of the objects they own.

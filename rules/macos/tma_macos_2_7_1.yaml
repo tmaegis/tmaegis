@@ -1,0 +1,49 @@
+id: TMA-MACOS-2.7.1
+title: Ensure Screen Saver Hot Corners Are Secure For Current User
+description: 'Hot Corners can be configured to disable the screen saver by moving the mouse cursor to a corner of the screen. This can only be accomplished by the current user, so that is the only user that needs to be audited. Audit: Checks the console user (or loginwindow lastUserName); no corner may be set to 6 (Disable Screen Saver).'
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 2.7.1 Ensure Screen Saver Hot Corners Are Secure For Current User
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    [ -x /usr/bin/defaults ] || exit 1
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || exit 1
+    bad=""
+    for c in bl tl tr br; do
+      v=$(/usr/bin/defaults read "/Users/$u/Library/Preferences/com.apple.dock" "wvous-$c-corner" 2>/dev/null)
+      [ "$v" = 6 ] && bad="$bad $c"
+    done
+    if [ -z "$bad" ]; then echo compliant; else echo "hot corner set to disable screen saver:$bad"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] || exit 0
+    for c in bl tl tr br; do
+      v=$(/usr/bin/defaults read "/Users/$u/Library/Preferences/com.apple.dock" "wvous-$c-corner" 2>/dev/null)
+      if [ "$v" = 6 ]; then /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.dock" "wvous-$c-corner" -int 1; fi
+    done
+  guidance: "Terminal: sudo -u <current user> /usr/bin/defaults delete /Users/<current user>/Library/Preferences/com.apple.dock wvous-bl-corner 2>/dev/null ; sudo -u <current user> /usr/bin/defaults delete /Users/<current user>/Library/Preferences/com.apple.dock wvous-tl-corner 2>/dev/null ; sudo -u <current user> /usr/bin/defaults delete /Users/<current user>/Library/Preferences/com.apple.dock wvous-tr-corner 2>/dev/null. GUI: System Settings > Desktop & Dock > Hot Corners > Set and hot corner that is set to Disable Screen Saver to a setting that matches your organizational requirements."

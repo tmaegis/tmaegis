@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.119
+title: Ensure 'Enable upload files from mobile in Microsoft Edge desktop' is set to 'Disabled'
+description: 'This policy settings allows the configuration of the Edge "Upload from mobile" feature. The "Upload from mobile" feature allows users to select file(s) from a mobile device and upload to a via a webpage in Microsoft Edge. The recommended state for this setting is: Disabled. Rationale: Allowing users the ability to use the file upload from mobile feature in Microsoft Edge could lead to data leakage or intellectual property being exposed. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:UploadFromPhoneEnabled (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.119 Ensure 'Enable upload files from mobile in Microsoft Edge desktop' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''UploadFromPhoneEnabled'' -ErrorAction SilentlyContinue).''UploadFromPhoneEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'UploadFromPhoneEnabled' -Value 0 -PropertyType DWord -Force | Out-Null

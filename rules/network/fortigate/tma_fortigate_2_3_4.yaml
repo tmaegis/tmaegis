@@ -1,0 +1,30 @@
+id: TMA-FORTIGATE-2.3.4
+title: Enabling SNMP trap for memory usage
+description: Enabling SNMP traps for memory usage monitoring helps detect anomalies and ensure critical security features remain operational. This proactive approach enhances system reliability by alerting administrators to potential resource issues. PASS requires trap-free-memory-threshold 20 and trap-freeable-memory-threshold 50 (the CIS values). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: low
+tags:
+- fortigate
+- snmp
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.3.4 Enabling SNMP trap for memory usage
+audit:
+  type: config_regex
+  pattern: (?m)^config system snmp sysinfo\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set trap-free-memory-threshold 20[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set trap-freeable-memory-threshold 50[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set trap-freeable-memory-threshold 50[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set trap-free-memory-threshold 20[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config system snmp sysinfo
+        set status enable
+        set trap-free-memory-threshold 20
+        set trap-freeable-memory-threshold 50
+    end
+    # CIS guidance:
+    To configure SNMP trap trap-free-memory-threshold and trap-freeable-memory- threshold. From CLI:
+    config system snmp sysinfo
+        show
+        config system snmp sysinfo
+            set status enable
+            set trap-free-memory-threshold 20
+            set trap-freeable-memory-threshold 50
+        end

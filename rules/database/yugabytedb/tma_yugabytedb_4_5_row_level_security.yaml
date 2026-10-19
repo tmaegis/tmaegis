@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-4.5
+title: Ensure Row Level Security (RLS) is configured correctly
+description: In addition to the YSQL-standard privilege system available through GRANT, tables can have row security policies that restrict, on a per-user basis, which individual rows can be returned by normal queries or inserted, updated, or deleted by data modification commands. This feature is also known as Row Level Security (RLS).
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- privileges
+reference: CIS YugabyteDB Benchmark v2.0.0 - 4.5 Ensure Row Level Security (RLS) is configured correctly
+audit:
+  type: manual
+  command: Identify the tables that require row-level security under business policy, then run SELECT oid, relname, relrowsecurity FROM pg_class WHERE relrowsecurity IS TRUE; and review policies with SELECT * FROM pg_policies; Any table that should be RLS-protected but is missing, or whose policies do not restrict rows as intended, is a finding.
+remediation:
+  type: iac_patch
+  command: 'In this example, we are using the using the example passwd table. We will create three database roles to illustrate the workings of RLS: yugabyte=# CREATE ROLE admin; CREATE ROLE yugabyte=# CREATE ROLE bob; CREATE ROLE yugabyte=# CREATE ROLE alice; CREATE ROLE Now, we will insert known data into the passwd table: yugabyte=# INSERT INTO passwd VALUES (''admin'',''xxx'',0,0,''Admin'',''111-222-3333'',null,''/root'',''/bin/dash'');'

@@ -1,0 +1,25 @@
+id: TMA-CISCO-NXOS-1.5.1
+title: Ensure Syslog Logging is configured
+description: 'Logging should be configured such that: Logging level is set to a level sufficient for the target device Logs should be sent off the device to a syslog or trap server or servers Logs should be sourced from a consistent interface to ensure easy attribution of logs to the correct device Logging levels should be explicitly set to a level appropriate to the device. Logging on any network device is always limited by how much storage can be set aside for logs. It''s important for this reason to send all log entries to a central device that can collect and correlate all logs, either in a database or in flat text files. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 2
+severity: medium
+tags:
+- cisco-nxos
+- network
+- logging
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.5.1 Ensure Syslog Logging is configured
+audit:
+  type: config_regex
+  pattern: (?m)^logging server \S+
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure a logging level and a syslog host:
+    logging server <server ip address or name>
+    logging level <service name> <logging level> or
+    logging level all <logging level>
+    logging source-interface <interface name>
+    logging server <server ip address or name> optionally:
+    logging server <server ip address or name> vrf [management vrf name]
+    logging source-interface <mgmt 0 or other dedicated management interface>

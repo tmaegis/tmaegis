@@ -1,0 +1,23 @@
+id: TMA-DOCKER-2.14
+title: Ensure centralized and remote logging is configured
+description: Centralized logging keeps container logs off the host where they can be tampered with. The audit reads the default logging driver from docker info and fails for the local-only drivers json-file, local and none.
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- daemon
+- logging
+reference: CIS Docker Benchmark v1.9.0 - 2.14 Ensure centralized and remote logging is configured
+audit:
+  type: command
+  command: d=$(docker info --format '{{.LoggingDriver}}') || exit 1; case "$d" in json-file|local|none|'') echo "local:$d";; *) echo compliant;; esac
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Set "log-driver" (e.g. syslog, journald forwarded to a collector, fluentd, gelf, splunk) and its "log-opts" in /etc/docker/daemon.json, then restart the Docker daemon.

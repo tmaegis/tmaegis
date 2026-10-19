@@ -1,0 +1,20 @@
+id: TMA-GKE-5.8.1
+title: Disable legacy client certificate authentication for the GKE API server
+description: Disable legacy client certificate authentication for the GKE API server by ensuring GKE does not issue a pre provisioned client certificate for cluster access. Use supported identity based authentication methods, such as OAuth tokens through gcloud, service account bearer tokens, or approved external identity provider authentication instead of long lived static client certificates. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- managed-services
+- api-server
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.8.1 Disable legacy client certificate authentication for the GKE API server
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(masterAuth.clientCertificate)') || exit 1
+    if [ -z "$v" ]; then echo compliant; else echo "noncompliant: masterAuth.clientCertificate=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For new clusters, create the cluster without issuing a legacy client certificate by using the --no-issue-client-certificate flag. gcloud container clusters create $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --no-issue-client-certificate For existing clusters where a legacy client certificate was already issued, GKE does not provide a direct method to remove that client certificate from the cluster. To fully remediate the setting, create a replacement cluster with --no-issue-client-certificate, migrate workloads, validate access, and decommission the old cluster after migration. Note: If immediate replacement is not practical, reduce risk on the existing cluster by ensuring RBAC is enabled and that the legacy client certificate has no Kubernetes RBAC permissions.'

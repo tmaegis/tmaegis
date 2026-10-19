@@ -1,0 +1,27 @@
+id: TMA-FORTISWITCH-1.4.1.1
+title: Ensure DNS server is configured
+description: Fortinet uses the Domain Name Service (DNS) to translate host names into IP addresses. To enable DNS lookups, you must specify the primary DNS server for your system. You can also specify secondary and tertiary DNS servers. When resolving host names, the system consults the primary name server. If a failure or time-out occurs, the system consults the secondary name server. For security purpose, trusted DNS servers should be configured to prevent man-in-the- middle attacks. PASS requires a primary DNS server in config system dns. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: low
+tags:
+- fortiswitch
+- hardening
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.4.1.1 Ensure DNS server is configured
+audit:
+  type: config_regex
+  pattern: (?m)^config system dns\n(?:[ \t]+[^\n]*\n)*?[ \t]+set primary "?[1-9][\d.]*"?[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system dns
+        set primary 8.8.8.8
+        set secondary 8.8.4.4
+    end
+    # CIS guidance:
+    In this example, we will assign 8.8.8.8 as primary DNS and 8.8.4.4 as secondary DNS. In CLI:
+    config system dns
+        set primary 8.8.8.8
+        set secondary 8.8.4.4
+    end
+    In the GUI, go to System > Network > DNS. Click on "Specify" and put in 8.8.8.8 as "Primary DNS Server" and 8.8.4.4 as "Secondary DNS Server"

@@ -1,0 +1,16 @@
+id: TMA-IBM-I-5.2.3
+title: DDM TCP/IP Attributes
+description: The default setting for the DDM server has a default security of *USRIDPWD which allows clear-text password. Allowing the use of clear-text passwords permits credentials to be intercepted over the network by sniffers, packet monitoring and communication trace tools which could easily lead to unauthorized access to system resources.
+target: ibm-i
+level: 1
+severity: medium
+tags:
+- ibm-i
+- network
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 5.2.3 DDM TCP/IP Attributes
+audit:
+  type: manual
+  command: 'On a command line, type STRSQL and press Enter Copy or type the following SQL statement to the terminal and press Enter. SELECT CASE WHEN LAND(DBXRSEC,X''E0'') = X''00'' THEN ''*USRID'' WHEN LAND(DBXRSEC,X''E0'') = X''20'' THEN ''*VLDONLY'' WHEN LAND(DBXRSEC,X''E0'') = X''40'' THEN ''*USRIDPWD'' WHEN LAND(DBXRSEC,X''E0'') = X''C0'' THEN ''*USRENCPWD'' WHEN LAND(DBXRSEC,X''E0'') = X''80'' THEN ''*ENCUSRPWD'' WHEN LAND(DBXRSEC,X''E0'') = X''A0'' THEN ''*KERBEROS'' ELSE ''*UNKNOWN'' END AS LOWAUT, CASE WHEN LAND(DBTFLGS,X''01'') = X''01'' THEN ''*AES'' ELSE ''*DES'' END AS LOWENC FROM QSYS/QADBXRDBD WHERE ... (full steps: CIS section 5.2.3)'
+remediation:
+  type: iac_patch
+  command: CHGDDMTCPA AUTOSTART(*YES) PWDRQD(*USRENCPWD) ENCALG(*AES)

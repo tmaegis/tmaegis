@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.22
+title: Ensure 'log_statement' is set correctly
+description: 'The log_statement setting specifies the types of YSQL statements that are logged. Valid values are: - none - ddl - mod - all It is recommended this be set to ddl unless otherwise directed by your organization''s logging policy. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Passes when log_statement is ddl, mod or all (anything but none).'
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.22 Ensure 'log_statement' is set correctly
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SELECT CASE WHEN current_setting('log_statement') <> 'none' THEN 'compliant' ELSE 'none' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_statement='ddl'" on every YB-TServer and restart it.

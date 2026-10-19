@@ -1,0 +1,19 @@
+id: TMA-MACOS14-2.9.1.1
+title: Ensure the OS Is Not Active When Resuming from Standby (Intel)
+description: In order to use a computer with Full Disk Encryption (FDE), macOS must keep encryption keys in memory to allow the use of the disk that has been FileVault protected. The storage volume has been unlocked and acts as if it were not encrypted. When the system is not in use, the volume is protected through encryption. When the system is sleeping and available to quickly resume, the encryption keys remain in the Secure Enclave (if the device is a Mac with a T1 security chip, it remains in memory). https://www.helpnetsecurity.com/2018/08/20/laptop-sleep-security/ Mac systems should be set to hibernate after sleeping for a risk-acceptable time period. The default value for "standbydelay" is three hours (10800 seconds). This value is likely appropriate for most desktops. If Mac desktops are deployed in unmonitored, less physically secure areas with confidential data, this value might be adjus...
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: medium
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.9.1.1 Ensure the OS Is Not Active When Resuming from Standby (Intel)
+audit:
+  type: manual
+  command: 'Terminal Method: Run the following command to verify the hibernation settings and that FileVault keys are destroyed on standby: % /usr/bin/sudo /usr/sbin/system_profiler SPHardwareDataType | /usr/bin/grep -e MacBook If there is an output, run the following: % /usr/bin/sudo /usr/bin/pmset -b -g | /usr/bin/grep -e standby The output should include a standbydelaylow value ≤ 900, a standbydelayhigh value ≤ 900, and a highstandbythreshold value ≥ 90. % /usr/bin/sudo /usr/bin/pmset -b -g | /usr/bin/grep hibernatemode hibernatemode 25 example: % /usr/bin/sudo /usr/sbin/system_profiler SPHardwareDataType | /usr/bin/grep -e MacBook Model Name: MacBook Pro Model Identifier: MacBookPro13,1 % /usr/bin/sudo /usr/bin/pmset -b -g | /usr/bin/grep -e standby standbydelaylow 600 standby 1 standbydelayhigh 600 highstandbythreshold 50 % /usr/bin/sudo /usr/bin/pmset -b -g | /usr/bin/grep hibernatemode hibernatemode 25 Note: To verify if you are running an Intel processor, run /usr/sbin/sysctl -n
+    machdep.cpu.brand_string. The output will include Intel.'
+remediation:
+  type: iac_patch
+  command: 'Terminal Method: Run the following command to set the hibernate delays and to ensure the FileVault keys are set to be destroyed on standby: % /usr/bin/sudo /usr/bin/pmset -a standbydelaylow <value≤900> % /usr/bin/sudo /usr/bin/pmset -a standbydelayhigh <value≤900> % /usr/bin/sudo /usr/bin/pmset -a highstandbythreshold <value≥90> % /usr/bin/sudo /usr/bin/pmset -a destroyfvkeyonstandby 1 % /usr/bin/sudo /usr/bin/pmset -a hibernatemode 25 example: % /usr/bin/sudo /usr/bin/pmset -a standbydelaylow 500 % /usr/bin/sudo /usr/bin/pmset -a standbydelayhigh 500 % /usr/bin/sudo /usr/bin/pmset -a highstandbythreshold 100 % /usr/bin/sudo /usr/bin/pmset -a destroyfvkeyonstandby 1 % /usr/bin/sudo /usr/bin/pmset -a hibernatemode 25'

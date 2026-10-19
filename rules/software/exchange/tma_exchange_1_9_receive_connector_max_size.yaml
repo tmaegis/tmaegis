@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-1.9
+title: 'Ensure ''Maximum receive size: Connector level'' is set to ''25'''
+description: This setting limits the size of a message a user can receive. Receive size includes the header This includes the message header, the message body, and any attachments. For internal message flow, Exchange Server uses the custom X-MS-Exchange- Organization-OriginalSize message header to record the original message size of the message as it enters the Exchange Server organization. Whenever the... Prints the number of Receive connectors whose MaxMessageSize is above 25 MB or Unlimited (expected 0). Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- transport
+reference: 'CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.9 Ensure ''Maximum receive size: Connector level'' is set to ''25'''
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bytes = { param($s) if ("$s" -match '\(([\d,\.\s]+) bytes\)') { [int64]($matches[1] -replace '[^\d]','') } else { [int64]::MaxValue } }; $bad = @(Get-ReceiveConnector -ErrorAction Stop | Where-Object { (& $bytes $_.MaxMessageSize) -gt 25MB }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Set-ReceiveConnector ''<connector>'' -MaxMessageSize 25MB (or for all: Get-ReceiveConnector | Set-ReceiveConnector -MaxMessageSize 25MB)'

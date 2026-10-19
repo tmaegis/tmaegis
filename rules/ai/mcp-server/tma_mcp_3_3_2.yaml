@@ -1,0 +1,21 @@
+id: TMA-MCP-3.3.2
+title: Ensure OAuth discovery metadata is served over TLS and validated against the approved authorization server list
+description: The OAuth discovery chain for every remote MCP server resolves only to approved authorization servers, over TLS, from documents protected against unauthorized modification. Under the 2026-07-28 revision, a client discovers where to obtain tokens by reading the server's Protected Resource Metadata, reached either through the resource_metadata parameter of a WWW-Authenticate challenge or, where the challenge is absent, through the well-known protected-resource URIs (the sub-path form first, then the root form). The challenge is optional under this revision, so a server that serves only the well-known document is conformant and the audit treats a missing challenge as normal. The Protected Resource Metadata document names at least one authorization server in authorization_servers, and an empty or absent list is protocol-invalid and fails. The client then discovers each authorization serve...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+- tls
+reference: CIS MCP Server Benchmark v1.0.0 - 3.3.2 Ensure OAuth discovery metadata is served over TLS and validated against the approved authorization server list
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_3_3_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 3.3.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure the MCP server, or the gateway terminating its OAuth surface, to serve Protected Resource Metadata only over TLS, with authorization_servers containing exactly the approved entries and resource set to the server's canonical URI. Serve the same Protected Resource Metadata document on every discovery path the server supports, whether the WWW-Authenticate challenge or the well-known URIs. Generate the approved-authorization-server export from the identity governance system under change control, one issuer per line with carriage returns stripped, following the Section 1 export conventions. Restrict write access on the metadata documents or their generating configuration to the deployment pipeline identity. Where a gateway serves the metadata, apply the same restrictions there and treat gateway serving as the enforcement point of record for this surface.

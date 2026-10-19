@@ -1,0 +1,27 @@
+id: TMA-ALIBABA-3.1
+title: Ensure legacy networks does not exist
+description: In order to prevent use of legacy networks, ECS instances should not have a legacy network configured. Legacy networks have a single network IPv4 prefix range and a single gateway IP address for the whole network. With legacy networks, you cannot create subnetworks or switch from legacy to auto or custom subnet networks. Counts ECS instances with InstanceNetworkType classic in every region; any instance on the legacy classic network fails. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- network
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 3.1 Ensure legacy networks does not exist
+audit:
+  type: command
+  command: |-
+    regs=$(aliyun ecs DescribeRegions 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$regs" | sed -n 's/.*"RegionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    [ -n "$regions" ] || exit 1
+    bad=0
+    for r in $regions; do
+      out=$(aliyun ecs DescribeInstances --RegionId "$r" --InstanceNetworkType classic --PageSize 10 2>/dev/null) || exit 1
+      n=$(printf '%s\n' "$out" | sed -n 's/.*"TotalCount"[[:space:]]*:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -n 1)
+      [ "${n:-0}" -eq 0 ] || { echo "classic-network instances in $r: $n"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Migrate classic-network ECS instances to a VPC (ECS console > Instances > Migrate to VPC) and stop creating classic-network resources.

@@ -1,0 +1,19 @@
+id: TMA-MYSQL-6.4
+title: Ensure 'log-raw' is Set to 'OFF'
+description: 'The log-raw MySQL option determines whether passwords are rewritten by the server so as not to appear in log files as plain text. If log-raw is enabled, then passwords are written to the various log files (general query log, slow query log, and binary log) in plain text. Reads the effective log_raw value (OFF is also the default); also ensure no log-raw = ON remains in my.cnf. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- logging
+- credentials
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 6.4 Ensure 'log-raw' is Set to 'OFF'
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.log_raw = 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST log_raw = OFF"

@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.5.1
+title: Ensure scanners are in place to identify and prevent sensitive data in code
+description: Detect and prevent sensitive data in code, such as confidential ID numbers, passwords, etc. Having sensitive data in the source code makes it easier for attackers to maliciously use such information. In order to avoid this, designate scanners to identify and prevent the existence of sensitive data in the code.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.5.1 Ensure scanners are in place to identify and prevent sensitive data in code
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediation: For every repository in use, designate scanners to identify and prevent sensitive data in code by performing the following: 1. On GitLab, navigate to the main page of the repository. 2. Enable secret detection for this project.'

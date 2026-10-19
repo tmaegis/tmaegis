@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.10.3.12
+title: Ensure 'Configure use of smart cards on removable data drives' is set to 'Enabled'
+description: 'This policy setting specifies whether smart cards can be used to authenticate user access to BitLocker-protected removable data drives on a computer. Smart cards can be used to authenticate user access to the drive. You can require smart card authentication by selecting the "Require use of smart cards on removable data drives" check box. Note: This setting is enforced when turning on BitLocker, not when unlocking a volume. BitLocker will allow unlocking a drive with any of the protectors available on the drive. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.10.3.12
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE'' -Name ''RDVAllowUserCert'' -ErrorAction SilentlyContinue).''RDVAllowUserCert''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RDVAllowUserCert='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Name 'RDVAllowUserCert' -Value 1 -PropertyType DWord -Force | Out-Null

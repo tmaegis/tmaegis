@@ -1,0 +1,17 @@
+id: TMA-KUBERNETES-4.2.12
+title: Ensure that the Kubelet only makes use of Strong Cryptographic Ciphers
+description: Ensure that the Kubelet is configured to only use strong cryptographic ciphers. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- worker-node
+- kubelet
+reference: CIS Kubernetes Benchmark v2.1.0 - 4.2.12 Ensure that the Kubelet only makes use of Strong Cryptographic Ciphers
+audit:
+  type: manual
+  command: 'The set of cryptographic ciphers currently considered secure is the following: • TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 • TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 • TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305 • TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 • TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305 • TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Run the following command on each node: ps -ef | grep kubelet If the --tls-cipher-suites argument is present, ensure it only contains values included in this set.'
+remediation:
+  type: iac_patch
+  command: 'If using a Kubelet config file, edit the file to set tlsCipherSuites: to TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_1 28_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_R SA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 or to a subset of these values. If using executable arguments, edit the kubelet service file /etc/kubernetes/kubelet.conf on each worker node and set the --tls-cipher-suites parameter as follows, or to a subset of these values. --tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA25 6,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 Based on your system, restart the kubelet service.'

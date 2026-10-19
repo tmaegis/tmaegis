@@ -1,0 +1,18 @@
+id: TMA-MARIADB-2.8
+title: Ensure Socket Peer-Credential Authentication is Used Appropriately
+description: The server-side unix_socket authentication plugin authenticates clients that connect to the MariaDB server from the local host through the Unix socket file. Users authenticated using unix_socket need not specify a password when connecting to the server.
+target: mariadb
+level: 2
+severity: medium
+tags:
+- mariadb
+- database
+- authentication
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 2.8 Ensure Socket Peer-Credential Authentication is Used Appropriately
+audit:
+  type: manual
+  command: Run SELECT PLUGIN_NAME, PLUGIN_STATUS FROM information_schema.PLUGINS WHERE PLUGIN_NAME = 'unix_socket'; and SELECT CONCAT(user,'@',host,' => ',JSON_DETAILED(priv)) FROM mysql.global_priv WHERE JSON_CONTAINS(priv, '{"plugin":"unix_socket"}', '$.auth_or'); Use of the plugin when not allowed, a non-localhost host or an unauthorized user is a fail.
+remediation:
+  type: iac_patch
+  command: Restrict unix_socket to authorized local accounts (ALTER USER ... IDENTIFIED VIA ...), or disable the plugin with unix_socket=OFF under [mariadbd] if your policy forbids it.

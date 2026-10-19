@@ -1,0 +1,17 @@
+id: TMA-AIX-4.1.2.11
+title: Ensure root user has a dedicated home directory
+description: 'The root user must have a dedicated home directory and not use / as their home directory. By default, the home directory for the root user on AIX is /. This means that all configuration files and directories it creates are visible to all users and may be accessible if the root user has a weak umask setting. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.2.11 Ensure root user has a dedicated home directory
+audit:
+  type: command
+  command: command -v lsuser >/dev/null 2>&1 || exit 1; out=$(lsuser -a home root 2>/dev/null) || exit 1; [ -n "$out" ] && [ "$out" != "root home=/" ] && echo compliant || echo "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a new home directory for the root user mkdir /root Set ownership and permissions on this directory chown root:system /root chmod 0700 /root Update the home directory for the root user chuser home=/root root Move any necessary configuration files or directories to this new directory

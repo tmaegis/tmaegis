@@ -1,0 +1,20 @@
+id: TMA-DOCKER-3.8
+title: Ensure that registry certificate file permissions are set to 444 or more restrictively
+description: Registry certificate files under /etc/docker/certs.d must have mode 444 or more restrictive. The audit lists files under /etc/docker/certs.d with permission bits outside 444; not applicable when /etc/docker/certs.d does not exist.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+- tls
+reference: CIS Docker Benchmark v1.9.0 - 3.8 Ensure that registry certificate file permissions are set to 444 or more restrictively
+audit:
+  type: command
+  command: out=$(find /etc/docker/certs.d -type f -perm /7333 2>/dev/null) || exit 1; [ -z "$out" ] && echo compliant || printf '%s\n' "$out"
+  expected_output: compliant
+  requires_file:
+  - /etc/docker/certs.d
+remediation:
+  type: command
+  command: find /etc/docker/certs.d -type f -exec chmod 444 {} +

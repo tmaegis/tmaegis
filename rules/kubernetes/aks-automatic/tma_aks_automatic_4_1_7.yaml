@@ -1,0 +1,18 @@
+id: TMA-AKS-AUTOMATIC-4.1.7
+title: Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+description: Roles and ClusterRoles that grant bind, impersonate, or escalate should be assigned only when strictly required. These permissions can bypass normal RBAC safeguards and allow a principal to acquire or grant authority beyond its current permissions. Review AKS Automatic authorization assignments to ensure bind, escalate, and impersonate permissions are granted only to identities with a documented administrative need. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: high
+tags:
+- aks-automatic
+- policies
+- rbac
+- file-permissions
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.7 Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+audit:
+  type: manual
+  command: Review AKS Automatic RBAC to identify any users, groups, or service accounts granted bind, escalate, or impersonate permissions through Kubernetes RBAC or Microsoft Entra ID authorization for the Kubernetes API. • Identify Roles and ClusterRoles that include bind, escalate, or impersonate, then trace the RoleBindings and ClusterRoleBindings that assign them. • Determine which users, groups, or service accounts receive those permissions. • Validate that each assignment is required for a defined administrative function.
+remediation:
+  type: iac_patch
+  command: Remove bind, escalate, and impersonate permissions from any custom Role, ClusterRole, or Azure custom role that does not require them for an approved administrative function. Where these permissions are required, keep them limited to the required resources and namespace and avoid assigning them to workload service accounts. • Update each affected custom Role to remove unnecessary bind, escalate, or impersonate rules. • Update each affected custom ClusterRole to retain only the specific elevated permission that is explicitly required. • Remove unnecessary corresponding DataActions from Azure custom roles used to authorize access to the Kubernetes API. • Replace broad assignments with roles that have fewer permissions, and limit access to the required namespace rather than the entire cluster where possible.

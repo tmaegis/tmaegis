@@ -1,0 +1,21 @@
+id: TMA-WIN2016-2.3.7.3
+title: 'Ensure ''Interactive logon: Machine inactivity limit'' is set to ''900 or fewer second(s), but not 0'''
+description: 'Windows notices inactivity of a logon session, and if the amount of inactive time exceeds the inactivity limit, then the screen saver will run, locking the session. The recommended state for this setting is: 900 or fewer second(s), but not 0. Note: A value of 0 does not conform to the benchmark as it disables the machine inactivity limit.'
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 2.3.7.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''InactivityTimeoutSecs'' -ErrorAction SilentlyContinue).''InactivityTimeoutSecs''; if (-not ($null -ne $v -and [int64]$v -le 900 -and [int64]$v -ne 0)) { $bad += ''InactivityTimeoutSecs='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'InactivityTimeoutSecs' -Value 900 -PropertyType DWord -Force | Out-Null

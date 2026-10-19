@@ -1,0 +1,38 @@
+id: TMA-TDSQL-4.2
+title: Ensure `sql_mode` Contains `STRICT_ALL_TABLES`
+description: Enabling STRICT_ALL_TABLES mode ensures that MySQL performs strict data type checking during data insertion/update, rather than silently truncating or converting values. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5).
+target: tdsql
+level: 2
+severity: low
+tags:
+- tdsql
+- hardening
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.2 Ensure `sql_mode` Contains `STRICT_ALL_TABLES`
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT CASE WHEN FIND_IN_SET('STRICT_ALL_TABLES', @@global.sql_mode) > 0 THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v mysql >/dev/null 2>&1 || exit 0
+    cur=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT @@global.sql_mode") || exit 1
+    case ",$cur," in *,STRICT_ALL_TABLES,*) exit 0;; esac
+    new=${cur:+$cur,}STRICT_ALL_TABLES
+    mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SET GLOBAL sql_mode = '$new'" || exit 1
+    dir=; for x in /etc/mysql/mysql.conf.d /etc/mysql/mariadb.conf.d /etc/mysql/conf.d /etc/my.cnf.d; do [ -d "$x" ] && { dir=$x; break; }; done
+    [ -n "$dir" ] && printf '[mysqld]\nsql_mode=%s\n' "$new" > "$dir/99-tmaegis-sql_mode.cnf"; true
+  guidance: "Add STRICT_ALL_TABLES to sql_mode via the OSS management platform, e.g. SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,STRICT_ALL_TABLES'; and persist it in the parameter template."

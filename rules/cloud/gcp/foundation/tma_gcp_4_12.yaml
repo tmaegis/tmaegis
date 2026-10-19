@@ -1,0 +1,19 @@
+id: TMA-GCP-4.12
+title: Ensure the Latest Operating System Updates Are Installed On Your Virtual Machines in All Projects
+description: Google Cloud Virtual Machines have the ability via an OS Config agent API to periodically (about every 10 minutes) report OS inventory data. A patch compliance API periodically reads this data, and cross references metadata to determine if the latest updates are installed. This is not the only Patch Management solution available to your organization and you should weigh your needs before committing to using this method. Keeping virtual machine operating systems up to date is a security best practice. Using this service will simplify this process.
+target: gcp
+level: 2
+severity: low
+tags:
+- cloud
+- gcp
+- patching
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 4.12 Ensure the Latest Operating System Updates Are Installed On Your Virtual Machines in All Projects
+audit:
+  type: manual
+  command: From Google Cloud Console Determine if OS Config API is Enabled for the Project 1. Navigate into a project. In the expanded navigation menu located at the top left of the screen hover over APIs & Services. Then in the menu right of that select API Libraries 2. Search for "VM Manager (OS Config API) or scroll down in the left hand column and select the filter labeled "Compute" where it is the last listed. Open this API. 3. Verify the blue button at the top is enabled. Determine if VM Instances have correct metadata tags for OSConfig parsing 1. From the main Google Cloud console, open the hamburger menu in the top left. Mouse over Computer Engine to expand the menu next to it. 2. Under the "Settings" heading, select "Metadata". 3. In this view there will be a list of the project wide metadata tags for VMs. Determine if the tag "enable-osconfig" is set to "true". Determine if the Operating System of VM Instances have the local OS-Config Agent running There is no way to determine
+    this from the Google Cloud console. The only way is to run operating specific commands locally inside the operating system via remote connection. For the sake of brevity of this recommendation please view t...
+remediation:
+  type: iac_patch
+  command: From Google Cloud Console Enabling OS Patch Management on a Project by Project Basis Install OS Config API for the Project 1. Navigate into a project. In the expanded portal menu located at the top left of the screen hover over "APIs & Services". Then in the menu right of that select "API Libraries" 2. Search for "VM Manager (OS Config API) or scroll down in the left hand column and select the filter labeled "Compute" where it is the last listed. Open this API. 3. Click the blue 'Enable' button. Add MetaData Tags for OSConfig Parsing 1. From the main Google Cloud console, open the portal menu in the top left. Mouse over Computer Engine to expand the menu next to it. 2. Under the "Settings" heading, select "Metadata". 3. In this view there will be a list of the project wide metadata tags for VMs. Click edit and 'add item' in the key column type 'enable-osconfig' and in the value column set it to 'true'. From Command Line 1. For project wide tagging, run the following command gcloud
+    compute project-info add-metadata \ --project <PROJECT_ID>\ --metadata=enable-osconfig=TRUE Please see the reference /compute/docs/troubleshooting/vm-manager/verify- setup#metadata-enabled at the botto...

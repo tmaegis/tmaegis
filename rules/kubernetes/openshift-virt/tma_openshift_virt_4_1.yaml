@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-4.1
+title: Use dedicated VLANs to segment network traffic
+description: To ensure that virtual machines cannot access each other's network interfaces, it is crucial to segment them completely using separate VLANs. By connecting virtual machines to logically separated VLANs, you enforce network segmentation at the L2 level, preventing virtual machines from unauthorized/unintended data transmission, and reducing the risk of security breaches or data leaks. The benchmark marks this Automated, but whether VLANs are configured is a design decision per network provider, so TMAegis reports it as a manual review item with the audit commands.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 4.1 Use dedicated VLANs to segment network traffic
+audit:
+  type: manual
+  command: 'Use the following command to determine if VLANs are configured for OVN Kubernetes: $ oc get networkattachmentdefinition -o json | jq ".items[].spec.config" Review the output to determine if VLANs are configured correctly: config: | - { "type": "ovn - k8s - cni - overlay", "topology": "localnet", "vlanID": 100 } Please refer to the latest OpenShift documentation for more information. Use the following command to determine if VLANs are configured for SR-IOV: $ oc get sriovnetwork -o json | jq ".items[].spec.vlan" Output will return null for networks without VLANs configured, or a VLAN ID (e.g., 100 ). Please refer to the latest OpenShift documentation for more information. ...'
+remediation:
+  type: iac_patch
+  command: Use dedicated VLANs as required. Please refer to the latest OpenShift documentation for the appropriate networking provider. Documentation:SR-IOV CNI,VLAN with bridge CNI,VLAN with OVN localnet.

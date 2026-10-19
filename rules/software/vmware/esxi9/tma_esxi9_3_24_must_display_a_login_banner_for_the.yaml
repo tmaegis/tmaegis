@@ -1,0 +1,21 @@
+id: TMA-ESXI9-3.24
+title: Host must display a login banner for the DCUI and Host Client
+description: Enabling a login banner on the Direct Console User Interface (DCUI) and the Host Client interfaces provides a mechanism to display legal notices or organizational announcements at login. The parameter governing this behavior is Annotations.WelcomeMessage, with the recommended value being a text string aligned with organizational or legal advisories. The audit reads Annotations.WelcomeMessage with esxcli and requires a non-empty banner; confirm the text matches the approved legal notice. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 3.24 Host must display a login banner for the DCUI and Host Client
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Annotations/WelcomeMessage 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^ *String Value: *//p' | head -n 1)
+    if [ -n "$v" ]; then echo compliant; else echo "/Annotations/WelcomeMessage = '$v' (empty banner)"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set the approved banner using Get-VMHost | Get-AdvancedSetting -Name Annotations.WelcomeMessage | Set-AdvancedSetting -Value '<approved banner>' - Confirm:$false, or configure it in Host > Configure > System > Advanced System Settings. Verify it displays in DCUI/Host Client.

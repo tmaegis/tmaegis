@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-6.6
+title: Ensure 'User' Runtime Parameters are Configured
+description: These PostgreSQL runtime parameters are managed at the user account (ROLE) level.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- configuration
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 6.6 Ensure 'User' Runtime Parameters are Configured
+audit:
+  type: manual
+  command: Run SELECT name, setting FROM pg_settings WHERE context = 'user' ORDER BY 1; and inspect role and database overrides (SELECT * FROM pg_db_role_setting; \drds). Any value that differs from your approved baseline is a fail.
+remediation:
+  type: iac_patch
+  command: Reset unauthorized overrides with ALTER ROLE <role> [IN DATABASE <db>] RESET <parameter>; or ALTER DATABASE <db> RESET <parameter>; and correct the configuration files.

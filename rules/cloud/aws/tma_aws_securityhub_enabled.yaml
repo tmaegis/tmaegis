@@ -1,0 +1,17 @@
+id: TMA-AWS-SECURITYHUB-ENABLED
+title: Ensure AWS Security Hub is enabled in all regions
+description: Security Hub aggregates findings and runs the CIS / Foundational Security Best Practices standards continuously. describe-hub must succeed in every enabled region. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- monitoring
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Monitoring - AWS Security Hub enabled (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  if ! err=$(aws securityhub describe-hub --region \"$r\" 2>&1 >/dev/null); then\n    printf '%s\\n' \"$err\" | grep -Eq 'InvalidAccessException|not subscribed' || exit 1\n    echo \"not enabled: $r\"; bad=1\n  fi\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aws securityhub enable-security-hub --enable-default-standards --region <region> in each listed region, or configure central configuration from the Security Hub delegated administrator.

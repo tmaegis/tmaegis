@@ -1,0 +1,23 @@
+id: TMA-ROS1-6.2.9
+title: Ensure no users have .netrc files
+description: The .netrc file contains data for logging into a remote host for file transfers via FTP. The audit requires no interactive user to have a .netrc file. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.9 Ensure no users have .netrc files
+audit:
+  type: command
+  shell: bash
+  command: |-
+    users=$(awk -F: '($1 !~ /^(root|halt|sync|shutdown)$/ && $7 !~ /(nologin|false)$/) {print $1":"$6}' /etc/passwd) || exit 1
+    bad=$(printf '%s\n' "$users" | while IFS=: read -r u d; do [ -d "$d" ] || continue; [ -e "$d/.netrc" ] && echo "$d/.netrc"; done)
+    [ -z "$bad" ] && echo compliant || { printf '%s\n' "$bad"; echo '.netrc files present'; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Making global modifications to users' files without alerting the user community can result in unexpected outages and unhappy users. Therefore, it is recommended that a monitoring policy be established to report user .netrc files and determine the action to be taken in accordance with site policy.

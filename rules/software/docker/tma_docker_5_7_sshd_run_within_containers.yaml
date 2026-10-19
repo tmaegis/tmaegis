@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.7
+title: Ensure sshd is not run within containers
+description: Running an SSH server inside a container adds attack surface and complicates credential and patch management; use docker exec instead. The audit lists processes of every running container with docker top (no exec into the container) and flags those running sshd.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.7 Ensure sshd is not run within containers
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; bad=''; for i in $ids; do p=$(docker top "$i" -eo comm 2>/dev/null || docker top "$i") || exit 1; printf '%s\n' "$p" | grep -Eq '(^|[ /])sshd( |$)' && bad="$bad $i"; done; [ -z "$bad" ] && echo compliant || echo "sshd running in:$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Remove the SSH server from the image and use docker exec (or an orchestrator equivalent) for administrative access.

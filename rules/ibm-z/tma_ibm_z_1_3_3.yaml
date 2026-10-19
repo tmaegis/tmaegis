@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-1.3.3
+title: Ensure that MCS console user IDs are protected
+description: MCS consoles can be used to issue operator commands. When using the LOGON(AUTO) control, a user with the name of the MCS console will be used for access checking. Failure to control access to MCS consoles could result in unauthorized personnel issuing sensitive operator commands.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.3.3 Ensure that MCS console user IDs are protected
+audit:
+  type: manual
+  command: 'Review the current PARMLIB CONSOLxx members. For each console name found request IRRUT100 cross reference output and reports generated using IRRDBU00 output that will allow you to: Verify that the <console-name> has been defined in RACF as a user ID with limited privileges: Have the PROTECTED attribute Have the RESTRICTED attribute Does not have any segments beyond base (ex. no OMVS segment) Does not have any extra system or group privileges (ex. ROAUDIT, CLAUTH, group-JOIN, etc.) Does not appear on any RACF data set or general resource access lists. ... (full steps: CIS section 1.3.3)'
+remediation:
+  type: iac_patch
+  command: 'To create dedicated IDs for consoles named in CONSOLxx use the RACF ADDGROUP, ADDUSER, and CONNECT commands: ADDGROUP CONGRP + OWNER(<group>) + SUPGROUP(<group>) + DATA(''DEFAULT CONSOLE OWNING GROUP'') ADDUSER <console-name> + OWNER(CONGRP) + DFLTGRP(CONGRP) + NOPASSWORD + RESTRICTED + DATA(''MCS CONSOLE ID'') CONNECT <console-name> + GROUP(CONGRP) + OWNER(CONGRP) To create a paired profiles in the OPERCMDS and CONSOLE classes use the RACF RDEFINE and PERMIT commands: RDEFINE OPERCMDS MVS.MCSOPER.<console-name> + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''EXTENDED MCS CONSOLE ACCESS'') + NOWARNING PERMIT OPERCMDS MVS.MCSOPER.<console-name> + ACCESS(READ) ID(<console-name>) RDEFINE CONSOLE <console-name> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING PERMIT CONSOLE <console-name> + ACCESS(READ) ID(<console-name>) Notes: 1. Depending on the RACF class settings you may be required to issue a RACF SETROPTS REFRESH command for updates to be effective. 2. You cannot specify the
+    WHEN operand on the RDEFINE and RALTER commands for profiles in the CONSOLE class. 3. After you define a console in the CONSOLE class and protect it with a UACC of NONE, no one can log ... (see CIS section 1.3.3)'

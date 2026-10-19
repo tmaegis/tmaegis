@@ -1,0 +1,14 @@
+id: TMA-ROS-SROS2-POLICY
+title: Ensure SROS2 governance and permissions enforce encryption and least privilege
+description: 'Enabling SROS2 is not sufficient on its own: the signed governance document decides whether unauthenticated participants are allowed and whether traffic is encrypted, and per-enclave permissions decide which topics each node may publish or subscribe. These documents are site specific, so this is a review item.'
+target: ros
+level: 2
+severity: medium
+tags: [ros, ros2, dds, sros2]
+reference: CIS-style ROS 2 hardening guidance - SROS2 access control policy (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: manual
+  command: 'In the keystore ($ROS_SECURITY_KEYSTORE/enclaves/governance.xml) confirm allow_unauthenticated_participants=false, enable_join_access_control=true and rtps/discovery/liveliness protection_kind ENCRYPT. For each enclave permissions.xml, confirm publish/subscribe grants are limited to the topics that node needs (no "*" wildcards). Check that private/ key files are readable only by the service account (mode 600) and the CA private key is kept off the robot.'
+remediation:
+  type: iac_patch
+  command: 'Write a policy file and regenerate permissions (ros2 security create_permission <keystore> <enclave> policy.xml), edit governance.xml for ENCRYPT and re-sign it with the keystore CA, copy only the needed enclaves to the robot and restart the nodes.'

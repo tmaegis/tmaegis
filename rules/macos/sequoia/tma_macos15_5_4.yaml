@@ -1,0 +1,49 @@
+id: TMA-MACOS15-5.4
+title: Ensure the Sudo Timeout Period Is Set to Zero
+description: 'The sudo command allows the user to run programs as the root user. Working as the root user allows the user an extremely high level of configurability within the system. This control, along with the control to use a separate timestamp for each tty, limits the window where an unauthorized user, process, or attacker could utilize legitimate credentials that are valid for longer than required. Audit: Requires a 0.0 minute sudo timestamp timeout and /etc/sudoers.d owned by root:wheel. Run as root.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 5.4 Ensure the Sudo Timeout Period Is Set to Zero
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    v=$(/usr/bin/sudo -V 2>/dev/null) || exit 1
+    c=$(printf '%s\n' "$v" | /usr/bin/grep -c "Authentication timestamp timeout: 0.0 minutes")
+    o=$(/usr/bin/stat -f '%Su:%Sg' /etc/sudoers.d 2>/dev/null)
+    if [ "$c" -ge 1 ] && [ "$o" = root:wheel ]; then echo compliant; else echo "timeout-zero=$c owner=$o"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    /bin/mkdir -p /etc/sudoers.d; /usr/sbin/chown root:wheel /etc/sudoers.d; /bin/chmod 755 /etc/sudoers.d
+    t=$(/usr/bin/mktemp /tmp/tma-sudoers.XXXXXX) || exit 1
+    printf '%s\n' 'Defaults timestamp_timeout=0' > "$t"
+    if /usr/sbin/visudo -cf "$t" >/dev/null 2>&1; then
+      tma_bak /etc/sudoers.d/tmaegis_timeout
+      /usr/bin/install -m 0440 -o root -g wheel "$t" /etc/sudoers.d/tmaegis_timeout
+    else
+      /bin/rm -f "$t"; echo "TMAegis: sudoers snippet failed visudo validation" >&2; exit 1
+    fi
+    /bin/rm -f "$t"
+  guidance: "Terminal: sudo /usr/sbin/visudo -f /etc/sudoers.d/<configuration file name> ; sudo /usr/sbin/chown -R root:wheel /etc/sudoers.d/."

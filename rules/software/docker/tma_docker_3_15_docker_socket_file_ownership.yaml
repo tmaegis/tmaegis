@@ -1,0 +1,20 @@
+id: TMA-DOCKER-3.15
+title: Ensure that the Docker socket file ownership is set to root:docker
+description: The Docker socket (anyone who can write it controls the daemon) must be owned by root:docker. The audit stats every existing candidate path (/var/run/docker.sock, /run/docker.sock); not applicable when none exists.
+target: docker
+level: 1
+severity: critical
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.15 Ensure that the Docker socket file ownership is set to root:docker
+audit:
+  type: command
+  command: for f in /var/run/docker.sock /run/docker.sock; do [ -e "$f" ] || continue; o=$(stat -Lc '%U:%G' "$f") || exit 1; [ "$o" = root:docker ] || { echo "$f $o"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /var/run/docker.sock
+  - /run/docker.sock
+remediation:
+  type: command
+  command: for f in /var/run/docker.sock /run/docker.sock; do if [ -e "$f" ]; then chown root:docker "$f" || exit 1; fi; done

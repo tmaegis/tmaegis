@@ -1,0 +1,17 @@
+id: TMA-GKE-4.1.1
+title: Ensure the cluster-admin ClusterRole is only used when required
+description: The RBAC cluster-admin ClusterRole grants full administrative authority across cluster resources and should be assigned only to approved users, groups, or service accounts with a documented operational need. GKE RBAC is intended to provide fine grained control over what users and workloads can do in the cluster. The benchmark marks this recommendation Manual.
+target: gke
+level: 1
+severity: critical
+tags:
+- gke
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.1 Ensure the cluster-admin ClusterRole is only used when required
+audit:
+  type: manual
+  command: Review all Kubernetes RBAC bindings that assign the cluster-admin ClusterRole. This should include ClusterRoleBinding objects, which grant access across the cluster, and RoleBinding objects, which can bind the cluster-admin ClusterRole within a specific namespace. GKE RBAC supports both binding types, and cluster-admin grants permission to do anything on any resource in the cluster.
+remediation:
+  type: iac_patch
+  command: For each cluster-admin binding, replace the broad access with a least privilege Role or ClusterRole that grants only the required API groups, resources, and verbs. Bind the replacement role to the approved user, group, or service account first, validate access, and then remove the cluster-admin binding and use least privilege and avoiding direct bindings to cluster-admin where a specific role can meet the requirement. • Identify all ClusterRoleBinding and RoleBinding objects that assign the cluster-admin ClusterRole, including both cluster wide and namespace level bindings • Review each bound user, group, or service account to confirm whether full administrative access is still required and documented • Replace cluster-admin access where needed with a least privilege Role or ClusterRole that grants only the required API groups, resources, and verbs • Bind and validate the replacement ...

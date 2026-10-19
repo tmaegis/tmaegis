@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-7.2
+title: Specify file handler in logging.properties files
+description: 'Handlers specify where log messages are sent. Console handlers send log messages to the Java console and File handlers specify logging to a file. conf/logging.properties and every application WEB-INF/classes/logging.properties must declare a FileHandler (or AsyncFileHandler) in handlers and must not set a level to OFF. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- logging
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 7.2 Specify file handler in logging.properties files
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; bad=0; for f in "$B/conf/logging.properties" "$B"/webapps/*/WEB-INF/classes/logging.properties; do [ -f "$f" ] || { [ "$f" = "$B/conf/logging.properties" ] && exit 1; continue; }; awk -F= '$1~/^[[:space:]]*handlers[[:space:]]*$/ && $2~/(Async)?FileHandler/{h=1} $1~/\.level[[:space:]]*$/ && toupper($2)~/^[[:space:]]*OFF[[:space:]]*$/{off=1} END{exit !(h&&!off)}' "$f" || bad=1; done; [ "$bad" = 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Add handlers=1catalina.org.apache.juli.FileHandler, ... and org.apache.juli.FileHandler.level=<level> to each logging.properties. Restart Tomcat afterwards.

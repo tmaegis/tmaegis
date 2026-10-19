@@ -1,0 +1,25 @@
+id: TMA-GITHUB-1.1.11
+title: Ensure all open comments are resolved before allowing code change merging
+description: 'Organizations should enforce a "no open comments" policy before allowing code change merging. In an open code change proposal, reviewers can leave comments containing their questions and suggestions. These comments can also include potential bugs and security issues. Checks the default branch: conversation resolution is required. Satisfied by classic branch protection or an active ruleset (rules/branches). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.11 Ensure all open comments are resolved before allowing code change merging
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    p=$(gh api "repos/$R/branches/$B/protection" --jq '.required_conversation_resolution.enabled == true' 2>/dev/null) || p=false
+    s=$(gh api "repos/$R/rules/branches/$B" --jq 'any(.[]; .type == "pull_request" and .parameters.required_review_thread_resolution == true)' 2>/dev/null) || s=false
+    [ "$p" = true ] || [ "$s" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: enable Require conversation resolution before merging.'

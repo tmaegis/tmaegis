@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.90
+title: Ensure 'Disable synchronization of data using Microsoft sync services' is set to 'Enabled'
+description: 'This policy setting controls whether data synchronization with Microsoft sync services is allowed as well as whether the sync consent prompt appears to users. Examples of synced data include, but are not limited to, history and favorites. The recommended state for this setting is: Enabled. Rationale: Data should not be shared with third-party vendors in an enterprise-managed environment. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:SyncDisabled (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: low
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.90 Ensure 'Disable synchronization of data using Microsoft sync services' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''SyncDisabled'' -ErrorAction SilentlyContinue).''SyncDisabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SyncDisabled' -Value 1 -PropertyType DWord -Force | Out-Null

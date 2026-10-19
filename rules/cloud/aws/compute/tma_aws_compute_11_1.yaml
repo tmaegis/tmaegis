@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-11.1
+title: Ensure customer-managed keys are used to encrypt AWS Fargate ephemeral storage data for Amazon ECS
+description: Use customer-managed AWS KMS keys to encrypt AWS Fargate ephemeral storage data for on Amazon ECS, ensuring that sensitive data remains protected during task execution. Customer-managed KMS keys offer enhanced control over encryption, including key rotation, access policies, and audit trails.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- compute
+- crypto
+- encryption
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 11.1 Ensure customer-managed keys are used to encrypt AWS Fargate ephemeral storage data for Amazon ECS
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Clusters. 3. Click the name of a cluster. 4. Ensure that Fargate ephemeral storage is not set to -. 5. Repeat steps 1-4 for each ECS cluster. From Command Line: Run the following command to list clusters: aws ecs list-clusters Run the following command to view the Fargate ephemeral storage KMS key ID configured for a cluster: aws ecs describe-clusters --clusters <cluster-arn> --include CONFIGURATIONS - -query ''clusters[*].configuration.managedStorageConfiguration.fargateEphemeralStorag eKmsKeyId'' Ensure the command returns a customer-managed KMS key ARN. Repeat for each cluster.'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Clusters. 3. Click the name of a cluster. 4. Click Update cluster. 5. Expand the Encryption section. 6. Under Fargate ephemeral storage, select a customer-managed KMS key. Note: Ensure the KMS key has appropriate Fargate service permissions. 7. Click Update. 8. Repeat steps 1-7 for each ECS cluster requiring remediation.'

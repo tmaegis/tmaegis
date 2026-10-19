@@ -1,0 +1,16 @@
+id: TMA-DOCKER-5.19
+title: Ensure that the default ulimit is overwritten at runtime if needed
+description: 'The default ulimit is set at the Docker daemon level. However, if you need to, you may override the default ulimit setting during container runtime. ulimit provides control over the resources available to the shell and to processes started by it. Setting system resource limits in a prudent fashion, protects against denial of service conditions. Reported as a manual review item: the audit needs a site-specific judgement.'
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- manual
+reference: CIS Docker Benchmark v1.9.0 - 5.19 Ensure that the default ulimit is overwritten at runtime if needed
+audit:
+  type: manual
+  command: 'You should run the command below: docker ps --quiet --all | xargs docker inspect --format ''{{ .Id }}: Ulimits={{ .HostConfig.Ulimits }}'' This command should return Ulimits=<no value> for each container instance unless there is a need in a specific case to override the default settings.'
+remediation:
+  type: iac_patch
+  command: 'You should only override the default ulimit settings if needed in a specific case. For example, to override default ulimit settings start a container as below: docker run -ti -d --ulimit nofile=1024:1024 centos sleep 1000'

@@ -1,0 +1,16 @@
+id: TMA-M365-1.3.9
+title: Ensure shared bookings pages are restricted to select users
+description: Shared Bookings allows you to invite your team members and create booking pages and let your customers book time with you and your team. It contains various settings to define services, manage staff members, configure schedules and availability, business hours and customize how appointments are scheduled. These pages can be customized to fit the diverse needs of your organization. It is an extension of Person Bookings. The recommended state is to restrict the OwaMailboxPolicy-Default policy or disable at the organization level. Shared Bookings pages can be exploited by threat actors to impersonate legitimate users using convincing internal email addresses. A compromised low-privilege account could be used to mimic high-profile identities (e.g., the CEO) and bypass impersonation filters to initiate fraudulent actions like fund transfers. Additionally, attackers may create authoritative...
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 1.3.9 Ensure shared bookings pages are restricted to select users
+audit:
+  type: manual
+  command: 'Ensure Shared Bookings is turned off in the OWA Default policy. If booking is disabled at the tenant (OrganizationConfig) level this is also a compliant state. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following command: Get-OwaMailboxPolicy -Identity OwaMailboxPolicy-Default | fl BookingsMailboxCreationEnabled 3. Verify that BookingsMailboxCreationEnabled is set to False. Optionally: If Bookings is disabled at the organization level, this is also considered a compliant state. 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following command: Get-OrganizationConfig | fl BookingsEnabled 3. If BookingsEnabled is set to False, the organization is using a more restrictive and compliant configuration. In this case changing the default OWA policy would not be required for compliance.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Set-OwaMailboxPolicy "OwaMailboxPolicy-Default" - BookingsMailboxCreationEnabled $false Optionally: For a more restrictive state Bookings can be disabled at the organization level 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following command: Set-OrganizationConfig -BookingsEnabled $false Note: Disabling Bookings at the tenant (organization) level will be more impactful to end users and is not required for compliance.'

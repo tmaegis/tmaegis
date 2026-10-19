@@ -1,0 +1,28 @@
+id: TMA-OCI-4.2
+title: Create at least one notification topic and subscription to receive monitoring alerts
+description: Notifications provide a multi-channel messaging service that allow users and applications to be notified of events of interest occurring within OCI. Messages can be sent via eMail, HTTPs, PagerDuty, Slack or the OCI Function service. Creating one or more notification topics allow administrators to be notified of relevant changes made to OCI infrastructure. At least one ACTIVE notification (ONS) subscription must exist in an accessible compartment of the home region. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: medium
+tags:
+- oci
+- logging
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 4.2 Create at least one notification topic and subscription to receive monitoring alerts
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    cs=$(oci iam compartment list --compartment-id "$t" --compartment-id-in-subtree true --access-level ACCESSIBLE --all --query 'data[?"lifecycle-state"==`"ACTIVE"`].id' --raw-output 2>/dev/null) || exit 1
+    comps="$t $(printf '%s\n' "$cs" | grep -o 'ocid1\.compartment\.[^"]*')"
+    ok=0
+    for c in $comps; do
+      n=$(oci ons subscription list --compartment-id "$c" --all --query 'length(data[?"lifecycle-state"==`"ACTIVE"`])' --raw-output 2>/dev/null) || exit 1
+      [ "${n:-0}" -gt 0 ] && { ok=1; break; }
+    done
+    [ "$ok" -eq 1 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: oci ons topic create --compartment-id <ocid> --name <name>, then oci ons subscription create --topic-id <topic> --protocol EMAIL --subscription-endpoint <address> and confirm the subscription.

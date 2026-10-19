@@ -1,0 +1,17 @@
+id: TMA-OKE-5.1.3
+title: Restrict OCIR access for OKE workloads to required image pulls
+description: Restricting OCIR access for OKE workload image pulls helps ensure that the identities used to retrieve workload images can pull required container images without also receiving broader registry visibility, push, delete, or repository management access. In OKE, this applies to the OCI IAM users, groups, cluster policies, and Kubernetes imagePullSecrets used to pull images from private OCIR repositories. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- managed-services
+- registry
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.1.3 Restrict OCIR access for OKE workloads to required image pulls
+audit:
+  type: manual
+  command: Review the OCI IAM policies, OCIR repository access, and Kubernetes imagePullSecrets that apply to the identities used by OKE to pull images, and verify that those identities are limited to required image pull access. Focus on the OCI identity represented in the Docker registry secret, any OCI IAM policy that grants the cluster access to OCIR, and any repository policy or compartment policy that grants access to private OCIR repositories.
+remediation:
+  type: iac_patch
+  command: Enforce pull-only OCIR access for OKE workload image pull identities by limiting the OCI IAM users, groups, cluster policies, and imagePullSecrets used to retrieve private images. The runtime pull path should allow only the repository access required to pull image layers and manifests. Broader permissions that allow pushing images, deleting repositories, changing repository visibility, or managing repository metadata are not required just to start workloads. • Identify the OCI identities, groups, policies, and imagePullSecrets used by OKE workloads to pull private OCIR images. • Remove broader OCIR policies from runtime image pull identities. Avoid granting manage repos to identities that only need image pull access. • Replace broad repository access with read repos for the required repositories or compartments.

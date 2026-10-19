@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.2.4.6
+title: Ensure audit configuration files are owned by root
+description: 'Audit configuration files control auditd and what events are audited. Access to the audit configuration files could allow unauthorized personnel to prevent the auditing of critical events. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 2
+severity: high
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.2.4.6 Ensure audit configuration files are owned by root
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find /etc/security -type f -name 'audit*' ! -user root ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to change ownership to root user: # find /etc/security -type f -name ''audit*'' -user root -exec chown root {} +'

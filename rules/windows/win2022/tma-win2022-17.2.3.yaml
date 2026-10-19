@@ -1,0 +1,20 @@
+id: TMA-WIN2022-17.2.3
+title: Ensure 'Audit Distribution Group Management' is set to include 'Success' (DC only)
+description: 'This subcategory reports each event of distribution group management, such as when a distribution group is created, changed, or deleted or when a member is added to or removed from a distribution group. If you enable this Audit policy setting, administrators can track events to detect malicious, accidental, and authorized creation of group accounts. Events for this subcategory include: • 4744: A security-disabled local group was created. • 4745: A security-disabled local group was changed. • 4746: A member was added to a security-disabled local group. • 4747: A member was removed from a securi'
+target: windows
+os_family:
+- windows-server-2022-dc
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 17.2.3
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9238-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9238-69ae-11d9-bed3-505054503030}' /success:enable

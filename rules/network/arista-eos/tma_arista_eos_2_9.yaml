@@ -1,0 +1,23 @@
+id: TMA-ARISTA-EOS-2.9
+title: API access using https
+description: The Arista Command eAPI is a simple and complete API that allows you to configure and monitor your Arista switches. Once the API is enabled, the switch accepts HTTPS requests containing a list of industry standard CLI commands, and responds with machine-readable output and errors serialized in JSON (served over HTTP or HTTPS). HTTP can be enabled but should be left disabled. EOS API provides structured output more suitable for programmatic parsing than cli scraping. If the API is enabled, it should only use https, not http. Fails if eAPI has plain 'protocol http' enabled. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 2
+severity: high
+tags:
+- arista-eos
+- network
+- management-plane
+reference: CIS Arista EOS Benchmark v1.0.0 - 2.9 API access using https
+audit:
+  type: config_regex
+  pattern: '(?m)^management api http-commands[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+protocol http(?: |\r?$)'
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! management api http-commands
+    no shutdown
+    default protocol http
+    vrf MGMT
+    no shutdown

@@ -1,0 +1,28 @@
+id: TMA-ORACLE-PUBLIC-UTL-NETWORK
+title: Ensure PUBLIC has no EXECUTE on network UTL packages
+description: EXECUTE on UTL_TCP, UTL_HTTP, UTL_SMTP, UTL_INADDR and UTL_MAIL granted to PUBLIC lets any user open outbound connections (data exfiltration, SSRF). Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects with 'sqlplus -S / as sysdba' (OS authentication).
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- privileges
+- network
+reference: CIS Oracle Database Benchmark - Privileges / PUBLIC Execute on Network Packages (verify section number for your release)
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on
+    select count(*) from dba_tab_privs where grantee = 'PUBLIC' and privilege = 'EXECUTE' and table_name in ('UTL_TCP','UTL_HTTP','UTL_SMTP','UTL_INADDR','UTL_MAIL');
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Grant EXECUTE to the specific users that need it, then REVOKE EXECUTE ON <package> FROM PUBLIC; for each package (recompile invalid objects with utlrp.sql)

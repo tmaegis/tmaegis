@@ -1,0 +1,51 @@
+id: TMA-WIN2019-2.3.10.1
+title: 'Ensure ''Network access: Allow anonymous SID/Name translation'' is set to ''Disabled'''
+description: 'This policy setting determines whether an anonymous user can request security identifier (SID) attributes for another user, or use a SID to obtain its corresponding user name. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- secedit
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 2.3.10.1
+audit:
+  type: command
+  command: '$f = Join-Path $env:TEMP (''tmaegis-'' + [guid]::NewGuid().ToString() + ''.inf''); secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null; $c = Get-Content $f -ErrorAction SilentlyContinue; Remove-Item $f -Force -ErrorAction SilentlyContinue; $line = $c | Where-Object { $_ -match ''^\s*LSAAnonymousNameLookup\s*='' } | Select-Object -First 1; $v = if ($line) { ($line -split ''='', 2)[1].Trim().Trim(''"'') } else { $null }; if (($null -ne $v -and [int64]$v -eq 0)) { ''compliant'' } else { ''non-compliant: '' + $v }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    function Get-TmaSec([string]$Key) {
+      $f = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $c = Get-Content $f -ErrorAction SilentlyContinue
+      Remove-Item $f -Force -ErrorAction SilentlyContinue
+      $line = $c | Where-Object { $_ -match ('^\s*' + $Key + '\s*=') } | Select-Object -First 1
+      if ($line) { ($line -split '=', 2)[1].Trim().Trim('"') } else { $null }
+    }
+    function Backup-TmaSec {
+      $bk = Join-Path $env:ProgramData 'TMAegis\backup'
+      New-Item -ItemType Directory -Force -Path $bk | Out-Null
+      secedit /export /cfg (Join-Path $bk ('secedit-' + (Get-Date -Format 'yyyyMMddHHmmss') + '.inf')) /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+    }
+    function Set-TmaSec([string]$Section, [string]$Line) {
+      $inf = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      $db = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.sdb')
+      $txt = @('[Unicode]', 'Unicode=yes', '[Version]', 'signature="$CHICAGO$"', 'Revision=1', ('[' + $Section + ']'), $Line) -join "`r`n"
+      Set-Content -Path $inf -Value $txt -Encoding Unicode
+      secedit /configure /db $db /cfg $inf /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $rc = $LASTEXITCODE
+      Remove-Item $inf, $db -Force -ErrorAction SilentlyContinue
+      if ($rc -ne 0) { throw ('secedit /configure failed: ' + $rc) }
+    }
+    $v = Get-TmaSec 'LSAAnonymousNameLookup'
+    if (-not ($null -ne $v -and [int64]$v -eq 0)) {
+      Backup-TmaSec
+      Set-TmaSec 'System Access' 'LSAAnonymousNameLookup = 0'
+    }
+  guidance: "Set through Group Policy (domain policy for domain members): Computer Configuration\\Policies\\Windows Settings\\Security Settings\\Local Policies\\Security Options\\Network access: Allow anonymous SID/Name translation"

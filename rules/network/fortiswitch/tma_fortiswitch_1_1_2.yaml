@@ -1,0 +1,24 @@
+id: TMA-FORTISWITCH-1.1.2
+title: Ensure 'Pre-Login Banner' is set
+description: Configure a pre-login banner, ideally approved by the organization's legal team. This banner should, at minimum, prohibit unauthorized access, provide notice of logging or monitoring, and avoid using the word "welcome" or similar words of invitation. PASS requires a non-empty pre-login-banner in config system global. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: low
+tags:
+- fortiswitch
+- banner
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.1.2 Ensure 'Pre-Login Banner' is set
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set pre-login-banner (?:\"[^\"\n]+|[^\"'\s])[^\n]*[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set pre-login-banner "Authorized use only. Activity is monitored."
+    end
+    # CIS guidance:
+    Run the following command in the CLI to enable the pre-login-banner:
+    config system global
+        set pre-login-banner <Enter a message for the system pre-login
+    end

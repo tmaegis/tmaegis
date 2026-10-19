@@ -1,0 +1,58 @@
+id: TMA-WIN11-1.2.2
+title: Ensure 'Account lockout threshold' is set to '5 or fewer invalid logon attempt(s), but not 0'
+description: 'This policy setting determines the number of failed logon attempts before the account is locked. The recommended state for this setting is: 5 or fewer invalid logon attempt(s), but not 0. Note: A value of 0 does not conform to the benchmark as it disables account lockout threshold. Note #2: Password Policy settings (section 1.1) and Account Lockout Policy settings (section 1.2) must be applied via the Default Domain Policy GPO in order to be globally in effect on domain user accounts as their default behavior. If these settings are configured in another GPO, they will only affect local user ac'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- secedit
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 1.2.2
+audit:
+  type: command
+  command: '$f = Join-Path $env:TEMP (''tmaegis-'' + [guid]::NewGuid().ToString() + ''.inf''); secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null; $c = Get-Content $f -ErrorAction SilentlyContinue; Remove-Item $f -Force -ErrorAction SilentlyContinue; $line = $c | Where-Object { $_ -match ''^\s*LockoutBadCount\s*='' } | Select-Object -First 1; $v = if ($line) { ($line -split ''='', 2)[1].Trim().Trim(''"'') } else { $null }; if (($null -ne $v -and [int64]$v -le 5 -and [int64]$v -ne 0)) { ''compliant'' } else { ''non-compliant: '' + $v }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    function Get-TmaSec([string]$Key) {
+      $f = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $c = Get-Content $f -ErrorAction SilentlyContinue
+      Remove-Item $f -Force -ErrorAction SilentlyContinue
+      $line = $c | Where-Object { $_ -match ('^\s*' + $Key + '\s*=') } | Select-Object -First 1
+      if ($line) { ($line -split '=', 2)[1].Trim().Trim('"') } else { $null }
+    }
+    function Backup-TmaSec {
+      $bk = Join-Path $env:ProgramData 'TMAegis\backup'
+      New-Item -ItemType Directory -Force -Path $bk | Out-Null
+      secedit /export /cfg (Join-Path $bk ('secedit-' + (Get-Date -Format 'yyyyMMddHHmmss') + '.inf')) /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+    }
+    function Set-TmaSec([string]$Section, [string]$Line) {
+      $inf = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      $db = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.sdb')
+      $txt = @('[Unicode]', 'Unicode=yes', '[Version]', 'signature="$CHICAGO$"', 'Revision=1', ('[' + $Section + ']'), $Line) -join "`r`n"
+      Set-Content -Path $inf -Value $txt -Encoding Unicode
+      secedit /configure /db $db /cfg $inf /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $rc = $LASTEXITCODE
+      Remove-Item $inf, $db -Force -ErrorAction SilentlyContinue
+      if ($rc -ne 0) { throw ('secedit /configure failed: ' + $rc) }
+    }
+    function ToInt($x, $d) { if ($null -ne $x -and "$x" -match '^-?\d+$') { [int64]$x } else { $d } }
+    $thr = ToInt (Get-TmaSec 'LockoutBadCount') 0
+    $dur = ToInt (Get-TmaSec 'LockoutDuration') 0
+    $win = ToInt (Get-TmaSec 'ResetLockoutCount') 0
+    $nthr = $thr; if ($thr -le 0 -or $thr -gt 5) { $nthr = 5 }
+    $nwin = $win; if ($win -lt 15) { $nwin = 15 }
+    $ndur = $dur; if ($dur -lt 15) { $ndur = 15 }
+    if ($ndur -lt $nwin) { $ndur = $nwin }
+    if ($nthr -ne $thr -or $ndur -ne $dur -or $nwin -ne $win) {
+      Backup-TmaSec
+      net accounts /lockoutthreshold:$nthr /lockoutduration:$ndur /lockoutwindow:$nwin | Out-Null
+      if ($LASTEXITCODE -ne 0) { throw 'net accounts failed' }
+    }
+  guidance: "Set through Group Policy (domain policy for domain members): Computer Configuration\\Policies\\Windows Settings\\Security Settings\\Account Policies\\Account Lockout Policy\\Account lockout threshold"

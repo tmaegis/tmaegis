@@ -1,0 +1,21 @@
+id: TMA-WIN2025-9.1.2
+title: 'Ensure ''Windows Firewall: Domain: Inbound connections'' is set to ''Block (default)'''
+description: 'This policy setting determines the behavior for inbound connections that do not match an inbound firewall rule. The recommended state for this setting is: Block (default).'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 9.1.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile'' -Name ''DefaultInboundAction'' -ErrorAction SilentlyContinue).''DefaultInboundAction''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DefaultInboundAction='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -Name 'DefaultInboundAction' -Value 1 -PropertyType DWord -Force | Out-Null

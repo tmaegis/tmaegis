@@ -1,0 +1,21 @@
+id: TMA-MSSQL-5.4
+title: Ensure 'SQL Server Audit' is set to capture both 'failed' and 'successful logins'
+description: 'SQL Server Audit is capable of capturing both failed and successful logins and writing them to one of three places: the application event log, the security event log, or the file system. We will use it to capture any login attempt to SQL Server, as well as any attempts to change audit policy, changes in privileged role memberships and changes to server settings. This will also serve to be a second source to record failed login attempts. Requires an enabled server audit and enabled specification capturing success and failure for AUDIT_CHANGE_GROUP, FAILED_LOGIN_GROUP, SUCCESSFUL_LOGIN_GROUP, DATABASE_ROLE_MEMBER_CHANGE_GROUP, SERVER_ROLE_MEMBER_CHANGE_GROUP and SERVER_OPERATION_GROUP (plus the two database authentication groups when contained databases exist). Default: By default, there are no audit object tracking login events. Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for
+  another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: high
+tags:
+- mssql
+- database
+- logging
+- audit
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 5.4 Ensure 'SQL Server Audit' is set to capture both 'failed' and 'successful logins'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN COUNT(DISTINCT SAD.audit_action_id) >= 6 + CASE WHEN EXISTS (SELECT 1 FROM sys.databases WHERE containment = 1) THEN 2 ELSE 0 END THEN 'compliant' ELSE 'noncompliant' END FROM sys.server_audit_specification_details AS SAD JOIN sys.server_audit_specifications AS SA ON SAD.server_specification_id = SA.server_specification_id JOIN sys.server_audits AS S ON SA.audit_guid = S.audit_guid WHERE S.is_state_enabled = 1 AND SA.is_state_enabled = 1 AND SAD.audited_result LIKE '%SUCCESS%' AND SAD.audited_result LIKE '%FAILURE%' AND (SAD.audit_action_id IN ('CNAU','LGFL','LGSD','ADDP','ADSP','OPSV') OR (SAD.audit_action_id IN ('DAGS','DAGF') AND EXISTS (SELECT 1 FROM sys.databases WHERE containment = 1)));"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For AWS RDS Instances, please refer to the documentation for configuring SQL Server Audit here: SQL Server Audit Perform either the GUI or T-SQL method shown: GUI Method 1. Expand the SQL Server in Object Explorer. 2. Expand the Security Folder 3. Right-click on the Audits folder and choose New Audit... 4. Specify a name for the Server Audit. 5. Specify the audit destination details and then click OK to save the Server Audit. 6. Right-click on Server Audit Specifications and choose New Server Audit Specification... 7. Name the Server Audit Specification 8. Select the just created Server Audit in the Audit drop-down selection. 9. Click the drop-down under Audit Action Type and select AUDIT_CHANGE_GROUP. 10. Click the new drop-down Audit Action Type and select FAILED_LOGIN_GROUP. 11. Click the new drop-down under Audit Action Type and select SUCCESSFUL_LOGIN_GROUP. 12. Click the new drop-down under Audit Action Type and select DATABASE_ROLE_MEMBER_CHANGE_GROUP. 13. Click the new
+    drop-down under Audit Action Type and select SERVER_ROLE_MEMBER_CHANGE_GROUP. 14. Click the new drop-down under Audit Action Type and select SERVER_OPERATION_GROUP. 15. Click the new drop-down under ...'

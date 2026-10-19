@@ -1,0 +1,17 @@
+id: TMA-TDSQL-1.4
+title: Ensure MYSQL_PWD and Sensitive Environment Variables Are Not Used
+description: The MYSQL_PWD environment variable stores the MySQL password in cleartext. Any environment variable used to pass runtime passwords or encryption keys should not persist in the process environment on production nodes. Counts running processes whose environment contains MYSQL_PWD plus system and user shell profiles that set it (run as root to read every /proc/<pid>/environ). Also review environments for other *_KEY / *_SECRET / *_PASSWORD variables.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- credentials
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.4 Ensure MYSQL_PWD and Sensitive Environment Variables Are Not Used
+audit:
+  type: command
+  command: c=$( { grep -l MYSQL_PWD /proc/[0-9]*/environ 2>/dev/null; grep -ls MYSQL_PWD /etc/profile /etc/bashrc /etc/bash.bashrc /etc/environment /etc/profile.d/* /root/.bashrc /root/.bash_profile /root/.profile /home/*/.bashrc /home/*/.bash_profile /home/*/.profile 2>/dev/null; } | wc -l); echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove MYSQL_PWD from /etc/profile, /etc/bashrc and user profiles, unset it in running service environments, use ~/.my.cnf (mode 600) or mysql_config_editor login paths, and delete temporary key scripts left from installation.

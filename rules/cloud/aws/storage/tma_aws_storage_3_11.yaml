@@ -1,0 +1,19 @@
+id: TMA-AWS-STORAGE-3.11
+title: Ensure accessing Points and IAM Policies
+description: You can use IAM policies to control access to your EFS access points. To achieve this, utilize the elasticfilesystem:AccessPointArn IAM condition key. The AccessPointArn represents the Amazon Resource Name (ARN) of the access point that the file system is mounted with. The rationale for using IAM policies with the elasticfilesystem:AccessPointArn condition key is to ensure precise and secure access control to EFS access points. By specifying the access point's ARN, you can restrict interactions to authorized users and resources only, thereby enhancing data security and preventing unauthorized access. This approach maintains the integrity and confidentiality of your data within the AWS environment.
+target: aws
+level: 2
+severity: medium
+tags:
+- access-control
+- aws
+- cloud
+- iam
+- storage
+reference: CIS AWS Storage Services Benchmark v1.0.0 - 3.11 Ensure accessing Points and IAM Policies
+audit:
+  type: manual
+  command: 'Below is a same IAM policy copied from the AWS documentation: { "Version": "2012-10-17", "Id": "MyFileSystemPolicy", "Statement": [ { "Sid": "App1Access", "Effect": "Allow", "Principal": { "AWS": "arn:aws:iam::111122223333:role/app1" }, "Action": [ "elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite" ], "Condition": { "StringEquals": { "elasticfilesystem:AccessPointArn":"arn:aws:elasticfilesystem:us-east- 1:222233334444:access-point/fsap-01234567" } } }, { "Sid": "App2Access", "Effect": "Allow", "Principal": { "AWS": "arn:aws:iam::111122223333:role/app2" }, "Action": [ "elasticfilesystem:ClientMount", "elasticfilesystem:ClientWrite" ], "Condition": { "StringEquals": { "elasticfilesystem:AccessPointArn":"arn:aws:elasticfilesystem:us-east 1:222233334444:access-point/fsap-89abcdef" } } } ] }'
+remediation:
+  type: iac_patch
+  command: 'Follow the remediation procedure in CIS AWS Storage Services Benchmark v1.0.0 section 3.11 to configure: Ensure accessing Points and IAM Policies.'

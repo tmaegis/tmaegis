@@ -1,0 +1,16 @@
+id: TMA-APACHE-8.3
+title: Ensure All Default Apache Content Is Removed
+description: 'In previous recommendations, we have removed default content such as the Apache manuals and default CGI programs. However, if you want to further restrict information leakage about the web server, it is important that default content such as icons are not left on the web server. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- information-disclosure
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 8.3 Ensure All Default Apache Content Is Removed
+audit:
+  type: manual
+  command: 'Perform the following step to determine if the recommended state is implemented: Verify that there is no alias or directory access to the Apache icons directory in any of the Apache configuration files.'
+remediation:
+  type: iac_patch
+  command: 'Perform either of the following to implement the recommended state: 1. The default source build places the auto-index and icon configurations in the extra/httpd-autoindex.conf file, so it can be disabled by leaving the include line commented out in the main httpd.conffile as shown below. # Fancy directory listings #Include conf/extra/httpd-autoindex.conf 2. Alternatively, the icon alias directive and the directory access control configuration can be commented out as shown if present: # We include the /icons/ alias for FancyIndexed directory listings. If # you do not use FancyIndexing, you may comment this out. # #Alias /icons/ "/var/www/icons/" #<Directory "/var/www/icons"> # Options Indexes MultiViews FollowSymLinks # AllowOverride None # Order allow,deny # Allow from all #</Directory>'

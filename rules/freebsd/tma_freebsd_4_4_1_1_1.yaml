@@ -1,0 +1,16 @@
+id: TMA-FREEBSD-4.4.1.1.1
+title: Ensure password length is configured
+description: minlen - Minimum acceptable size for the new password. Below are the minimum allowed password lengths for different kinds of passwords/passphrases. The keyword disabled can be used to disallow passwords of a given kind regardless of length. Each subsequent number must be no larger than the preceding one.
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- password-policy
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.4.1.1.1 Ensure password length is configured
+audit:
+  type: manual
+  command: 'Run the following command to verify that the password length is 14 or more characters and conforms to local site policy: # grep -Ei -- ''\bminlen=.*(1[4-9]|[2-9][0-9]|[1-9][0-9]{2,})\b'' /etc/pam.d/* Example output: /etc/pam.d/passwd:password requisite pam_passwdqc.so enforce=everyone minlen=disabled,14,12,8,6 Verify returned value(s) are no less than 14 characters for N1 and meet local site policy Run the following command to verify that minlen is not set, or is 14 or more characters, and conforms to local site policy: grep -Ei -- ... (full steps: CIS section 4.4.1.1.1)'
+remediation:
+  type: iac_patch
+  command: 'Create or modify the file /etc/pam.d/passwd and add or modify the following line to set the password length of 14 or more characters. Ensure that password length conforms to local site policy: Example: password requisite pam_passwdqc.so enforce=everyone minlen=disabled,14,12,8,6'

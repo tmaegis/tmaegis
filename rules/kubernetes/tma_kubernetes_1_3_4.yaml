@@ -1,0 +1,29 @@
+id: TMA-KUBERNETES-1.3.4
+title: Ensure that the --service-account-private-key-file argument is set as appropriate
+description: Explicitly set a service account private key file for service accounts on the controller manager. Audited on control-plane nodes from the running process arguments (falls back to the kubeadm static pod manifest); SKIPs on nodes without that manifest.
+target: kubernetes
+level: 1
+severity: high
+tags:
+- kubernetes
+- controller-manager
+- network
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.3.4 Ensure that the --service-account-private-key-file argument is set as appropriate
+audit:
+  type: command
+  command: |-
+    set -f
+    a=$(ps -eo args 2>/dev/null | grep -E '^([^ ]*/)?kube-controller-manager( |$)' | head -n 1)
+    [ -n "$a" ] || a=$(sed -n 's/^[[:space:]]*-[[:space:]]*"\{0,1\}\(--[^"]*\)"\{0,1\}[[:space:]]*$/\1/p' /etc/kubernetes/manifests/kube-controller-manager.yaml | tr '\n' ' ')
+    [ -n "$a" ] || exit 1
+    g() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    has() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++) if($i==k||index($i,k"=")==1) f=1} END{exit !f}'; }
+    ok=1
+    v=$(g service-account-private-key-file); [ -n "$v" ] || { echo "noncompliant: --service-account-private-key-file not set"; ok=0; }
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/manifests/kube-controller-manager.yaml
+remediation:
+  type: iac_patch
+  command: Edit the Controller Manager pod specification file /etc/kubernetes/manifests/kube-controller-manager.yaml on the Control Plane node and set the --service-account-private-key-file parameter to the private key file for service accounts. --service-account-private-key-file=<filename>

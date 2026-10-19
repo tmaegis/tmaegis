@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-5.4
+title: Ensure that access to DFSMS control data sets is controlled
+description: DFSMS control data sets provide the configuration and operational characteristics of the system-managed storage environment. Failure to protect these data sets may result in unauthorized access. This exposure could compromise the availability and integrity of some system services and customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 5.4 Ensure that access to DFSMS control data sets is controlled
+audit:
+  type: manual
+  command: 'request the following values from the active IGDSMSxx member(s): Source Control Data Set (SCDS) Active Control Data Set (ACDS) Communications Data Set (COMMDS) Automatic Class Selection Routine Source Data Sets (ACS) Active Data set (ACDS) Backup Communication Data Set (COMMDS) Backup These are the DFSMS control data sets. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering DFSMS control data sets Request reports generated using IRRDBU00 output ... (full steps: CIS section 5.4)'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''DFSMS CONTROL LIBRARY'') PERMIT ''<profile>'' GENERIC + ACCESS(READ) ID(*) PERMIT ''<profile>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''<profile>'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class
+    you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

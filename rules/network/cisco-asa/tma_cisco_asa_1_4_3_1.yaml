@@ -1,0 +1,19 @@
+id: TMA-CISCO-ASA-1.4.3.1
+title: Ensure 'aaa authentication enable console' is configured correctly
+description: Authenticates users trying to access the Enable mode (privileged EXEC mode) through the 'enable' command. The default access to enable mode is done through a password. AAA provides a primary method for authenticating users (a username/password database stored on a TACACS+ or RADIUS server or group of servers) and then specifies backup method (a locally stored ... Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: high
+tags:
+- cisco-asa
+- network
+- aaa
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.4.3.1 Ensure 'aaa authentication enable console' is configured correctly
+audit:
+  type: config_regex
+  pattern: (?m)^aaa authentication enable console \S
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure the aaa authentication for enable access using the TACACS+ server-group as primary method and the local database as backup method
+    aaa authentication enable console <server-group_name> local

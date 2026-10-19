@@ -1,0 +1,20 @@
+id: TMA-WIN10-5.36
+title: Ensure 'Windows Event Collector (Wecsvc)' is set to 'Disabled'
+description: 'This service manages persistent subscriptions to events from remote sources that support WS-Management protocol. This includes Windows Vista event logs, hardware and IPMI-enabled event sources. The service stores forwarded events in a local Event Log. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-10
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 5.36
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Wecsvc'' -Name ''Start'' -ErrorAction SilentlyContinue).''Start''; if (-not ($null -ne $v -and @(4) -contains [int64]$v)) { $bad += ''Start='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Wecsvc')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Wecsvc' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Wecsvc' -Name 'Start' -Value 4 -PropertyType DWord -Force | Out-Null

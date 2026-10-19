@@ -1,0 +1,20 @@
+id: TMA-WIN11-17.6.1
+title: Ensure 'Audit Detailed File Share' is set to include 'Failure'
+description: 'This subcategory allows you to audit attempts to access files and folders on a shared folder. Events for this subcategory include: • 5145: network share object was checked to see whether client can be granted desired access. The recommended state for this setting is to include: Failure'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 17.6.1
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9244-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Failure'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9244-69ae-11d9-bed3-505054503030}' /failure:enable

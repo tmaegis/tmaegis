@@ -1,0 +1,19 @@
+id: TMA-MYSQL-2.1.4
+title: Point-in-Time Recovery
+description: 'With binlogs it is possible to implement point-in-time recovery. This makes it possible to restore the changes between the last full backup and the point-in-time. Enabling binlogs is not sufficient. The binlogs need to be backed up to separate media. The restore procedure should be created and tested. Passes when binary logging is enabled and binlog_expire_logs_seconds is not 0. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- backup
+- binlog
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.1.4 Point-in-Time Recovery
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.log_bin = 1 AND @@global.binlog_expire_logs_seconds <> 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set log_bin=<path> and binlog_expire_logs_seconds=<retention seconds, not 0> under [mysqld] in /etc/my.cnf (or /etc/mysql/mysql.conf.d/mysqld.cnf), then create and test a point-in-time restore procedure, then restart MySQL.

@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-4.2
+title: Ensure 'Turn on administrator audit logging' is set to '<values>'
+description: 'Administrator audit logging is used to provide a log of the settings that are changed by administrators anywhere in the system. This recommendation incorporates the following parameters into one setting: • AdminAuditLogEnabled • AdminAuditLogCmdlets • AdminAuditLogParameters • AdminAuditLogExcludedCmdlets • AdminAuditLogAgeLimit • LogLevel Note: Changes to the audit log configuration may take up... Prints compliant when AdminAuditLogEnabled is True, AdminAuditLogCmdlets and AdminAuditLogParameters are ''*'', AdminAuditLogExcludedCmdlets is empty, AdminAuditLogAgeLimit is at least 90 days and LogLevel is Verbose. Run on each Edge Transport and Mailbox server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.'
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- logging
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 4.2 Ensure 'Turn on administrator audit logging' is set to '<values>'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $ts = { param($v) $s = "$v"; if (-not $s -or $s -eq 'Unlimited') { $null } else { [timespan]$s } }; $c = Get-AdminAuditLogConfig -ErrorAction Stop; $age = & $ts $c.AdminAuditLogAgeLimit; if ($c.AdminAuditLogEnabled -eq $true -and (@($c.AdminAuditLogCmdlets) -join ',') -eq '*' -and (@($c.AdminAuditLogParameters) -join ',') -eq '*' -and @($c.AdminAuditLogExcludedCmdlets | Where-Object { "$_" -ne '' }).Count -eq 0 -and $null -ne $age -and $age.TotalDays -ge 90 -and "$($c.LogLevel)" -eq 'Verbose') { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-AdminAuditLogConfig -AdminAuditLogEnabled $true -AdminAuditLogCmdlets '*' -AdminAuditLogParameters '*' -AdminAuditLogExcludedCmdlets $null -AdminAuditLogAgeLimit '90.00:00:00' -LogLevel Verbose

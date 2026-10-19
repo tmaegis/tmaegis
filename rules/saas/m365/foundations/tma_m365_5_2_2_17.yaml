@@ -1,0 +1,18 @@
+id: TMA-M365-5.2.2.17
+title: Ensure authentication transfer is blocked
+description: Authentication transfer is a flow that lets users seamlessly transfer authenticated state from one device to another. For example, users might see a QR code in the desktop version of Outlook that, when scanned on their mobile device, transfers their authenticated state to the mobile device. The recommended state is to block Authentication transfer. Blocking authentication transfer helps protect against token theft and replay attacks by preventing the use of device tokens to silently authenticate on other devices or browsers. When authentication transfer is enabled, a threat actor who gains access to one device can access resources to unapproved devices, bypassing standard authentication and device compliance checks. When administrators block this flow, organizations can ensure that each authentication request must originate from the original device, maintaining the integrity of the de...
+target: m365
+level: 1
+severity: medium
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.17 Ensure authentication transfer is blocked
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access. 3. Verify that a policy exists with the following criteria: o Under Users or agents (Preview) verify All users is selected. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify Resources (formerly cloud apps) includes All resources (formerly ''All cloud apps'') o Under Conditions > Authentication flows verify Configure is set to Yes and Authentication transfer is checked. o Under Grant verify Block access is selected. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. Filter to policies where conditions.authenticationFlows.transferMethods contains authenticationTransfer.
+    3. For each policy returned, verify the following criteria: o conditions.users.includeUsers is All o conditions.applications.includeApplications is All o conditions.authenticationFlows.transferMet...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users. o Under Target resources > Resources (formerly cloud apps) include All resources (formerly ''All cloud apps''). ▪ Under Exclude exclude any break-glass accounts. o Under Conditions > Authentication flows set Configure to Yes and check Authentication transfer. ▪ Click Save. o Under Grant select Block access and click Select. 4. Under Enable policy set it to Report-only until the organization is ready to enable it. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On.'

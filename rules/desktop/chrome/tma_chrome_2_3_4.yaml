@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.3.4
+title: Ensure 'Default third-party storage partitioning setting' Is Enabled and Blocked
+description: 'This setting will block any site from accessing the storage session from any other site. This will block third party trackers that are embedded on multiple sites from tracking a user across the sites they visit. Blocking third party access to the user agent will not allow sites to infer data about the user from the data from another site. Rationale: Setting this requires that user agent state needs to be keyed by more than a single origin or site. It can also defend against timing attacks on web privacy. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DefaultThirdPartyStoragePartitioningSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.3.4 Ensure 'Default third-party storage partitioning setting' Is Enabled and Blocked
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultThirdPartyStoragePartitioningSetting'' -ErrorAction SilentlyContinue).''DefaultThirdPartyStoragePartitioningSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultThirdPartyStoragePartitioningSetting' -Value 2 -PropertyType DWord -Force | Out-Null

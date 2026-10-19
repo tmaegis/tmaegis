@@ -1,0 +1,17 @@
+id: TMA-AWS-STORAGE-4.6
+title: Ensure EC2 Kernel compatibility with Lustre
+description: The latest kernel included with the Ubuntu Amazon EC2 AMI is not compatible with the Lustre service, which is crucial for mounting the cache on your EC2 instance. To downgrade your kernel, specific prerequisites must be met if you are using the default Ubuntu machine image as of November 8, 2023. The latest kernel version is not supported by Lustre, and meeting the prerequisites for downgrading will allow you to leverage Lustre's high-performance file system capabilities effectively. This ensures optimal data access and processing efficiency on your EC2 instance.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- storage
+reference: CIS AWS Storage Services Benchmark v1.0.0 - 4.6 Ensure EC2 Kernel compatibility with Lustre
+audit:
+  type: manual
+  command: 'Follow the steps to downgrade your kernel: 1. List all of the available Lustre packages by typing in this command: sudo apt- cache search lustre-client-modules. This will show a list of supported modules with corresponding kernel versions in ascending order from top to bottom. The most recent version in this case is “lustre-client-modules-5.15.0-1049-aws. Save this information for the next commands. 2. Install the most recent linux image that supports the Lustre client with this command: sudo apt-get install -y linux-image-5.15.0-1049-aws sudo sed -i ''s/GRUB_DEFAULT=.\+/GRUB\_DEFAULT="Advanced options for Ubuntu>Ubuntu, with Linux 5.15.0-1049-aws"/'' /etc/default/grub 3. Reboot your system by typing “sudo system-reboot”. 4. Install the correct Lustre module: . sudo apt-get install -y lustre-client-modules-$(uname -r)'
+remediation:
+  type: iac_patch
+  command: 'Follow the remediation procedure in CIS AWS Storage Services Benchmark v1.0.0 section 4.6 to configure: Ensure EC2 Kernel compatibility with Lustre.'

@@ -1,0 +1,17 @@
+id: TMA-MSSQL-3.5
+title: Ensure the SQL Server's MSSQL Service Account is Not an Administrator
+description: 'The service account and/or service SID used by the MSSQLSERVER service for a default instance or MSSQL$<InstanceName> service for a named instance should not be a member of the Windows Administrator group either directly or indirectly (via a group). This also means that the account known as LocalSystem (aka NT AUTHORITY\SYSTEM) should not be used for any of the SQL Server services as this account has higher privileges than any of the SQL ... Default: By default, the Service Account (or Service SID) is not a member of the Administrators group.'
+target: mssql
+level: 1
+severity: high
+tags:
+- mssql
+- database
+- manual
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 3.5 Ensure the SQL Server's MSSQL Service Account is Not an Administrator
+audit:
+  type: manual
+  command: 'Verify that the service account for running MSSQL is not LocalSystem, by executing the below query: SELECT servicename, service_account FROM sys.dm_server_services WHERE servicename LIKE ''SQL Server (%'' AND service_account IN ( ''NT AUTHORITY\SYSTEM'', ''LocalSystem'', ''NT AUTHORITY\LocalSystem'' ); If a record is returned then this is a finding and requires remediation. If no record is returned, verify that the account used is not part of the Local Administrators group.'
+remediation:
+  type: iac_patch
+  command: In the case where LocalSystem is used, use SQL Server Configuration Manager to change to a less privileged account. Otherwise, remove the account or service SID from the Administrators group. You may need to run the SQL Server Configuration Manager if underlying permissions had been changed or if SQL Server Configuration Manager was not originally used to set the service account.

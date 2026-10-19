@@ -1,0 +1,18 @@
+id: TMA-COS-6.2.18
+title: Ensure no duplicate user names exist
+description: Although the useradd program will not let you create a duplicate user name, it is possible for an administrator to manually edit the /etc/passwd file and change the user name. If a user is assigned a duplicate user name, it will create and have access to files with the first UID for that username in /etc/passwd . For example, if "test4" has a UID of 1000 and a subsequent "test4" entry has a UID of 2000, logging in as "test4" will use UID 1000. Effectively, the UID is shared, which is a security problem.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 6.2.18 Ensure no duplicate user names exist
+audit:
+  type: command
+  shell: bash
+  command: 'cut -d: -f1 /etc/passwd | sort | uniq -d | grep -q . && echo noncompliant || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique user names for the users. File ownerships will automatically reflect the change as long as the users have unique UIDs.

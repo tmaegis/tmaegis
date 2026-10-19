@@ -1,0 +1,17 @@
+id: TMA-OKE-4.1.4
+title: Minimize access to create pods
+description: The ability to create Pods in OKE is a sensitive permission that should be limited to approved deployment and operational functions. In OKE, Pod creation is controlled through Kubernetes RBAC after OCI IAM allows access to the cluster control plane. Because Pods run within a namespace, use a service account, and can carry workload permissions, Pod creation should be limited to the smallest practical namespace and workload boundary. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- policies
+- rbac
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.1.4 Minimize access to create pods
+audit:
+  type: manual
+  command: Begin by reviewing every path that can grant the ability to create Pods in OKE. Start with OCI IAM access to the cluster and Kubernetes RBAC permissions, because OCI IAM controls access to OKE and the cluster control plane, while Kubernetes RBAC controls authorization inside the cluster. Then review Kubernetes RBAC, service accounts, and Pod security controls, because Pod creation can allow an identity to launch workloads under available service accounts and potentially exercise both Kubernetes and OCI permissions.
+remediation:
+  type: iac_patch
+  command: Start by reducing every access path that allows Pod creation in OKE. Start with OCI IAM access and Kubernetes RBAC permissions, because OCI IAM controls access to OKE and the cluster control plane, while Kubernetes RBAC controls access to Kubernetes resources such as Pods. Then reduce unnecessary permissions in Kubernetes RBAC, service accounts, and Pod security controls so Pod creation is limited to approved deployment paths and the smallest practical workload boundary. • Remove or narrow OCI IAM and Kubernetes RBAC permissions that allow Pod creation, and prefer namespace limited access wherever possible. • Replace broad RBAC permissions on pods, deployments, daemonsets, statefulsets, jobs, and cronjobs with the smallest Role or ClusterRole that supports the approved function.

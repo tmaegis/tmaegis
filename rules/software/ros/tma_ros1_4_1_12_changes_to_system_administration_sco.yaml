@@ -1,0 +1,26 @@
+id: TMA-ROS1-4.1.12
+title: Ensure changes to system administration scope (sudoers) is collected
+description: Monitor scope changes for system administrations. If the system has been properly configured to force system administrators to log in as themselves first and then use the sudo command to execute privileged commands, it is possible to monitor changes in scope. The file /etc/sudoers will be written to when the file or its attributes have changed. The audit inspects the loaded rules (auditctl -l). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.12 Ensure changes to system administration scope (sudoers) is collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)scope( |$)' | grep -Fq -- '-w /etc/sudoers ' || { echo 'missing watch: -w /etc/sudoers -k scope'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)scope( |$)' | grep -Fq -- '-w /etc/sudoers.d/ ' || { echo 'missing watch: -w /etc/sudoers.d/ -k scope'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/scope.rules and add the following lines: -w /etc/sudoers -p wa -k scope -w /etc/sudoers.d/ -p wa -k scope'

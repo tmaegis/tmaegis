@@ -1,0 +1,18 @@
+id: TMA-MYSQL-2.17
+title: Ensure Only Approved Ciphers are Used
+description: 'MySQL supports multiple encryption ciphers. Ciphers can vary in strength, speed and overhead. Expects exactly the benchmark values ssl_cipher = ECDHE-ECDSA-AES128-GCM-SHA256 and tls_ciphersuites = TLS_AES_256_GCM_SHA384 (the ECDSA cipher needs an ECDSA server certificate). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- tls
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.17 Ensure Only Approved Ciphers are Used
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.ssl_cipher = 'ECDHE-ECDSA-AES128-GCM-SHA256' AND @@global.tls_ciphersuites = 'TLS_AES_256_GCM_SHA384', 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST ssl_cipher = 'ECDHE-ECDSA-AES128-GCM-SHA256'; SET PERSIST tls_ciphersuites = 'TLS_AES_256_GCM_SHA384'; ALTER INSTANCE RELOAD TLS"

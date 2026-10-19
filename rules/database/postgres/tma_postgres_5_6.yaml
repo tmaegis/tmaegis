@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-5.6
+title: Ensure Password Complexity is configured
+description: Password complexity configuration is crucial to restrict unauthorized access to data. By default, PostgreSQL doesn't provide for password complexity. Moreover, many compliance frameworks such as PCI DSS, and HIPPA require both password complexity and length.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authentication
+- password
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 5.6 Ensure Password Complexity is configured
+audit:
+  type: manual
+  command: Run SHOW shared_preload_libraries; and SHOW dynamic_library_path; If $libdir/passwordcheck (or passwordcheck when dynamic_library_path is $libdir) is not listed in shared_preload_libraries, this is a failure.
+remediation:
+  type: iac_patch
+  command: Add '$libdir/passwordcheck' to shared_preload_libraries in postgresql.conf (keep existing entries), optionally set passwordcheck.min_password_length, and restart PostgreSQL.

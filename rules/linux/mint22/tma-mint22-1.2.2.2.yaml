@@ -1,0 +1,20 @@
+id: TMA-MINT22-1.2.2.2
+title: Ensure Automatic updates are configured
+description: Automatic software updates are a feature that allows software applications, operating systems, and other digital devices to download and install updates without requiring manual user intervention. These updates typically include security patches, bug fixes, and new features, ensuring the software remains current and secure. This process happens automatically in the background, minimizing disruptions to the user's workflow. Update Manager can be configured to automatically apply updates.
+target: linux
+os_family:
+- linuxmint-22
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Linux Mint 22 Benchmark v1.0.0 - 1.2.2.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled mintupdate-automation-upgrade.timer'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- enabled || { echo step1: missing enabled; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active mintupdate-automation-upgrade.timer'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- active || { echo step2: missing active; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to enable automatic updates: # mintupdate-automation upgrade enable'

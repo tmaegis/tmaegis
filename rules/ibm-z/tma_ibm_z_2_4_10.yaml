@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.4.10
+title: Ensure that MCS console access is controlled through profiles in the CONSOLE resource class
+description: MCS consoles can be used to issue operator commands. When MCS consoles are configured to force a logon in order to be used, the CONSOLE class protects the logon access. Failure to control access to MCS consoles could result in unauthorized personnel issuing sensitive operator commands.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.4.10 Ensure that MCS console access is controlled through profiles in the CONSOLE resource class
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that CONSOLE appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that CONSOLE appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that CONSOLE appears. Review the current PARMLIB CONSOLxx members to obtain the list of MCS <console-name>. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the CONSOLE entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no ... (full steps: CIS section 2.4.10)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(CONSOLE) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(CONSOLE) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(CONSOLE) To create a CONSOLE profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE CONSOLE <console-name> + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''MCS CONSOLE ACCESS'') PERMIT CONSOLE <console-name> + ACCESS(READ) ID(OPERATOR SYSPROG) SETROPTS REFRESH RACLIST(CONSOLE) Note: You cannot specify the WHEN operand on the RDEFINE and RALTER commands for profiles in the CONSOLE class. To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER CONSOLE <console-name> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH RACLIST(CONSOLE) Note: You cannot specify the WHEN operand on the RDEFINE and RALTER commands for profiles in the
+    CONSOLE class. To remove a non-compliant access list entry use the RACF PERMIT and SETROPTS commands: PERMIT CONSOLE <console-name> + DELETE ID(<non-compliant>) SETROPTS REFRESH ... (see CIS section 2.4.10)'

@@ -1,0 +1,19 @@
+id: TMA-IBMCLOUD-4.1
+title: Ensure IBM Cloud Databases disk encryption is enabled with customer managed keys
+description: IBM Cloud Databases provides automatic encryption at rest when provisioning the service. It is not an option to deploy a database service without encryption at rest. However, using the service's integration with IBM Key Protect, customers can bring their own encryption key at the time of database provisioning. Furthermore, IBM Cloud Databases backups are also encrypted by default. Before any UI or CLI commands. Follow the authorization instructions between the HSM and Database service. 1. Open your IBM Cloud dashboard. 2. From the menu bar, click Manage, Access (IAM). 3. In the side navigation, click Authorizations. 4. Click Create. 5. In the Source service menu, select the service of the deployment. For example, Databases for PostgreSQL or Messages for RabbitMQ 6. In the Source service instance menu, select All instances. 7. In the Target service menu, select Key Protect. 8. Select o...
+target: ibmcloud
+level: 1
+severity: high
+tags:
+- cloud
+- crypto
+- encryption
+- ibmcloud
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 4.1 Ensure IBM Cloud Databases disk encryption is enabled with customer managed keys
+audit:
+  type: manual
+  command: 'Using Console: 1. Log on to your IBM Cloud account 2. Go to the Menu icon, Resource List to access your list of account resources 3. Click the Database service you are interested in to open the service dashboard. 4. Ensure you are on the Manage page in the left pane. 5. You should be on the Overview tab. Scroll down to the security section. 6. The security section will show an Encryption Key section under Disks. If the value shown is Automatic Key this means the deployment does not have a customer-managed encryption key through IBM Key Protect Using CLI: 1. At a minimum, have the Viewer role for the IBM Cloud Databases deployment. 2. Run ibmcloud cdb deployment-about <CRN> [--all] [--json] This will return the Encryption Key Status, if the deployment is created with a customer- managed encryption key, the key CRN will display here.'
+remediation:
+  type: iac_patch
+  command: 'There is no zero-downtime remediation procedure . Customer must restore a backup with a new encryption key or create a net new database instance with Bring Your Own Key enabled. To restore a backup with a new encryption key: 1. Ensure you have the Viewer Privileges on the IBM Cloud Databases deployment to read a backup file and X privileges on IBM Cloud platform to create a resource 2. Ensure you have service to service authorization set up between IBM Cloud Databases and IBM Key Protect, directions for granting this access can be found here 3. Be sure to replace SERVICE_INSTANCE_NAME and KEY PROTECT KEY CRN with a new service instance name and your desired Key Protect key CRN respectively before running this command. For more information, please view our documentation. ibmcloud resource service-instance-create SERVICE_INSTANCE_NAME databases- for-postgresql standard us-south -p ''{"backup_id":"xyz-inital- backup","disk_encryption_key_crn":"DISK_ENCRYPTION_KEY_CRN"}'' 4. This
+    will create a new database instance from backup with the requested customer managed encryption key.'

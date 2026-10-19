@@ -1,0 +1,19 @@
+id: TMA-DEFENDER-1.5.3
+title: 'Ensure ''Join Microsoft MAPS'' is set to ''Enabled: Advanced'''
+description: 'This policy setting configures Microsoft Active Protection Service (MAPS). Microsoft MAPS is designed to help Microsoft continually update and improve definitions of malware, spyware and other potentially unwanted software and to help Microsoft improve Windows Defender and related technologies. The recommended state for this setting is: Enabled: Advanced. Rationale: Cloud protection works with Microsoft Defender Antivirus to provide intelligent, real-time threat detection. Microsoft strongly recommends enabling cloud protection, as several advanced security features in Microsoft Defender for Endpoint rely on it to function properly. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet:SpynetReporting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group
+  Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.5.3 Ensure ''Join Microsoft MAPS'' is set to ''Enabled: Advanced'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet'' -Name ''SpynetReporting'' -ErrorAction SilentlyContinue).''SpynetReporting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SpynetReporting' -Value 2 -PropertyType DWord -Force | Out-Null

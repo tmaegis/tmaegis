@@ -1,0 +1,26 @@
+id: TMA-EKS-3.2.7
+title: Ensure the kubelet client certificate rotation is enabled
+description: In EKS, the setting rotateCertificates is about whether the kubelet renews its client certificate before that certificate expires. The EKS default is that certificate rotation is not enabled by default for self-managed EKS nodes, and AWS warns that a node running longer than one year can stop authenticating to the Kubernetes API if rotation stays disabled. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- worker-node
+- kubelet
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.2.7 Ensure the kubelet client certificate rotation is enabled
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"rotateCertificates":true'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns false, the worker node is not configured to rotate its kubelet client certificate and should be treated as noncompliant. If the field is not present, interpret that conservatively as rotation not enabled unless your EKS platform explicitly manages certificate rotation for you. AWS’s self-managed EKS node guidance states that kubelet certificates have a one-year expiration, that certificate rotation is not enabled by default, and that nodes can lose the ability to authenticate to the Kubernetes API if they remain in service beyond that period without renewal. Kubernetes also defines rotateCertificates as the kubelet setting that enables client certificate rotation and gives it a default of false.

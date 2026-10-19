@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.80.1
+title: 'Ensure ''Enable ESS with Supported Peripherals'' is set to ''Enabled: 1'''
+description: 'Enhanced Sign-in Security isolates Windows Hello biometric (face and fingerprint) template data and matching operations to trusted hardware or specified memory regions. The recommended state for this setting is: Enabled: 1. (Enhanced Sign-in Security Enabled)'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.80.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Policies\PassportForWork\Biometrics'' -Name ''EnableESSwithSupportedPeripherals'' -ErrorAction SilentlyContinue).''EnableESSwithSupportedPeripherals''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableESSwithSupportedPeripherals='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Policies\PassportForWork\Biometrics')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Policies\PassportForWork\Biometrics' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Policies\PassportForWork\Biometrics' -Name 'EnableESSwithSupportedPeripherals' -Value 1 -PropertyType DWord -Force | Out-Null

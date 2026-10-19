@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.1.5
+title: Ensure there are restrictions on who can dismiss code change reviews
+description: Only trusted users should be allowed to dismiss code change reviews. Dismissing a code change review permits users to merge new suggested code changes without going through the standard process of approvals. Controlling who can perform this action will prevent malicious actors from simply dismissing the required reviews to code changes and merging malicious or dysfunctional code into the code base.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.5 Ensure there are restrictions on who can dismiss code change reviews
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Prerequisites: You must have at least the Maintainer role. When granting a group Allowed to merge or Allowed to push and merge permissions on a protected branch, the group must be added to the project. To protect a branch: 1. On the left sidebar, select Search or go to and find your project. 2. Select Settings > Repository. 3. Expand Protected branches. 4. Select Add protected branch. 5. From the Branch dropdown list, select the branch you want to protect. 6. From the Allowed to merge list, select a role that can merge into this branch. 7. From the Allowed to push and merge list, select a role that can push to this branch. In GitLab Premium and Ultimate, you can also add groups or individual users to Allowed to merge and Allowed to push and merge. Select Protect. The protected branch displays in the list of protected branches.'

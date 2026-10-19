@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.3.1
+title: Ensure AIDE is installed
+description: 'Advanced Intrusion Detection Environment (AIDE) is an intrusion detection tool that uses predefined rules to check the integrity of files and directories in the FreeBSD operating system. AIDE has its own database for this purpose. aide takes a snapshot of files and directories, including modification times, permissions, and file hashes. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- services
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.3.1 Ensure AIDE is installed
+audit:
+  type: command
+  command: command -v pkg >/dev/null 2>&1 || exit 1; q=$(pkg query -g %n 'aide*' 2>/dev/null); [ -n "$q" ] && echo compliant || echo "aide is not installed"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'pkg install aide; then initialise the database: aide --init'

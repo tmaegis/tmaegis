@@ -1,0 +1,20 @@
+id: TMA-MCP-2.4
+title: Ensure required MCP request metadata headers are present and consistent with the request body
+description: Under the 2026-07-28 revision, every Streamable HTTP request mirrors selected request-body fields into HTTP headers so that gateways, load balancers, and observability tooling can route and inspect requests without parsing the body. The MCP- Protocol-Version and Mcp-Method headers are required on every POST, with values matching the protocol version in the body's _meta and the JSON-RPC method respectively. The Mcp-Name header is required on tools/call, resources/read, and prompts/get requests, with a value that matches the tool name, resource URI, or prompt name in the body. Values that cannot be represented as plain ASCII are carried in the specification's Base64 sentinel format, which the server decodes before comparing. A server that processes the request body rejects any request with a missing required header or a header that disagrees with the body, using HTTP 400 and the HeaderM...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 2.4 Ensure required MCP request metadata headers are present and consistent with the request body
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_2_4"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 2.4"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure the MCP server to reject with HTTP 400 and the HeaderMismatch error (- 32020) any request that is missing the MCP-Protocol-Version or Mcp-Method header, is missing the Mcp-Name header on tools/call, resources/read, or prompts/get, or whose header values disagree with the body after Base64 sentinel- encoded values are decoded. Because behavior varies by SDK version and adapter, deploy a server build or SDK version that implements 2026-07-28 request metadata validation and confirm the entry point enforces it with the Audit. As a layered defense, the gateway can enforce header presence, which needs no body inspection. This layer assumes recommendation 1.1 already enforces an approved protocol version. Without that check, an intermediary acting on the mirrored Mcp- Method or Mcp-Name headers can be fed unvalidated headers by a downgraded request. The following nginx example is illustrative. The three map directives go in the http context, the maps flag a missing Mcp-Method
+    on any request and a missing Mcp- Name on the three methods that require it, and the location line places the checks inside the MCP location block ahead of proxy_pass: map $http_mcp_method $cis_mcp_metho...'

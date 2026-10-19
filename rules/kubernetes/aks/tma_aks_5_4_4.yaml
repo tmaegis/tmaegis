@@ -1,0 +1,20 @@
+id: TMA-AKS-5.4.4
+title: Ensure Network Policy is Enabled and set as appropriate
+description: In AKS, the cluster should have a supported network policy engine enabled and the resulting policy model should be configured to enforce the intended pod-level traffic restrictions. Network policies in AKS are used to allow or deny traffic between pods based on selectors such as namespace, labels, and ports. Requires the az CLI (logged in) with read access to the cluster named by AKS_RG and AKS_NAME. Passes when networkProfile.networkPolicy is azure, calico or cilium.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- managed-services
+- network
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.4.4 Ensure Network Policy is Enabled and set as appropriate
+audit:
+  type: command
+  command: |-
+    p=$(az aks show --resource-group "${AKS_RG:?set AKS_RG}" --name "${AKS_NAME:?set AKS_NAME}" --query networkProfile.networkPolicy -o tsv) || exit 1
+    case "$p" in ""|none|None|null) echo "noncompliant: networkPolicy=${p:-null}";; *) echo compliant;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Align each AKS cluster to an approved network policy baseline based on the networkProfile audit results. If networkPolicy is none or null, enable a supported policy capability so pod-to-pod traffic is no longer unmanaged by default. For new Linux-based AKS deployments, the preferred target state is Azure CNI Powered by Cilium with Cilium network policy, because it provides Kubernetes-native policy enforcement on an eBPF dataplane and is the recommended direction for new deployments. For existing clusters, treat remediation as a planned networking migration and standardization effort. Move clusters from nonpreferred engines to the approved target state, validate policy behavior after the change, and stage the migration when the cluster must first move to a different Azure CNI IPAM mode before adopting the target dataplane.

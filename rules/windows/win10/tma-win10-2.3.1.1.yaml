@@ -1,0 +1,20 @@
+id: TMA-WIN10-2.3.1.1
+title: 'Ensure ''Accounts: Block Microsoft accounts'' is set to ''Users can''t add or log on with Microsoft accounts'''
+description: 'This policy setting prevents users from adding new Microsoft accounts on this computer. The recommended state for this setting is: Users can''t add or log on with Microsoft accounts. Note: Due to the way Windows 10 version 1607 (and older) handles the process for adding Microsoft Accounts, this legacy setting will remain in the Windows 10 Benchmarks until extended support for LTSB 1607 ends in October of 2026. Applying this setting to newer versions of the OS will not cause an issue, and the OS will ignore the setting. For newer versions of the OS, this setting has been replaced with Block all '
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 2.3.1.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''NoConnectedUser'' -ErrorAction SilentlyContinue).''NoConnectedUser''; if (-not ($null -ne $v -and @(3) -contains [int64]$v)) { $bad += ''NoConnectedUser='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'NoConnectedUser' -Value 3 -PropertyType DWord -Force | Out-Null

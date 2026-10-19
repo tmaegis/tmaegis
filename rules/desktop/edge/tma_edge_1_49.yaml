@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.49
+title: Ensure 'Allow managed extensions to use the Enterprise Hardware Platform API' is set to 'Disabled'
+description: 'This policy setting allows extensions installed by enterprise policies to be allowed to use the Enterprise Hardware Platform API. This API handles requests from extensions for the manufacturer and model of the hardware platform where the browser is running. The recommended state for this setting is: Disabled. Rationale: Allowing extensions to access the Enterprise Hardware Platform API could lead to the system being compromised. It is recommended that this setting is disabled unless otherwise directed by Enterprise policies. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:EnterpriseHardwarePlatformAPIEnabled (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.49 Ensure 'Allow managed extensions to use the Enterprise Hardware Platform API' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''EnterpriseHardwarePlatformAPIEnabled'' -ErrorAction SilentlyContinue).''EnterpriseHardwarePlatformAPIEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'EnterpriseHardwarePlatformAPIEnabled' -Value 0 -PropertyType DWord -Force | Out-Null

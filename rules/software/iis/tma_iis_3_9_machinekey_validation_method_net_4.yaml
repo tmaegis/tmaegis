@@ -1,0 +1,20 @@
+id: TMA-IIS-3.9
+title: Ensure 'MachineKey validation method - .Net 4.5' is configured
+description: The machineKey element of the ASP.NET web.config specifies the algorithm and keys that ASP.NET will use for encryption. The Machine Key feature can be managed to specify hashing and encryption settings for application services such as view state, Forms authentication, membership and roles, and anonymous identification. The following validation methods are available ... The .NET 4.x root web.config machineKey validation must be HMACSHA256 (HMACSHA384/512 are also accepted as stronger). PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- aspnet
+- crypto
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.9 Ensure 'MachineKey validation method - .Net 4.5' is configured
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.web/machineKey' -PSPath 'MACHINE/WEBROOT'; if ([string]$c.validation -in @('HMACSHA256', 'HMACSHA384', 'HMACSHA512')) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT' -Filter system.web/machineKey -Name validation -Value HMACSHA256

@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.7.16
+title: 'Ensure ''Set TLS/SSL security policy for IPP printers: Disallow non-server certificates'' is set to ''Enabled: Checked'''
+description: 'This policy setting determines the TLS/SSL security policy (WINHTTP_OPTION_SECURITY_FLAGS) for printers using the Microsoft Internet Printing Protocol (IPP) Class Driver. The recommended state for this setting is: Enabled: Checked.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.7.16
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\IPP'' -Name ''SecurityFlagsBlockCertWrongUsage'' -ErrorAction SilentlyContinue).''SecurityFlagsBlockCertWrongUsage''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''SecurityFlagsBlockCertWrongUsage='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\IPP')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\IPP' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\IPP' -Name 'SecurityFlagsBlockCertWrongUsage' -Value 1 -PropertyType DWord -Force | Out-Null

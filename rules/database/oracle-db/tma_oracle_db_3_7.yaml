@@ -1,0 +1,30 @@
+id: TMA-ORACLE-DB-3.7
+title: Ensure 'PASSWORD_ROLLOVER_TIME' Is set to '0'
+description: 'This setting PASSWORD_ROLLOVER_TIME enables the gradual database password rollover time allowing both the new and old password to be used for a set period of time after a password is changed. This capability is not normally appropriate for human actors, but is frequently valuable for application and batch processing service accounts. PASSWORD_ROLLOVER_TIME exists from 19.12 onwards. Default: 0 or NULL Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- password-policy
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 3.7 Ensure 'PASSWORD_ROLLOVER_TIME' Is set to '0'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from sys.cdb_profiles p
+    where p.resource_name = 'PASSWORD_ROLLOVER_TIME'
+    and to_number(decode(p.limit, 'DEFAULT', (select d.limit from cdb_profiles d where d.profile = 'DEFAULT'
+      and d.resource_name = 'PASSWORD_ROLLOVER_TIME' and d.con_id = p.con_id), p.limit)) > 0;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remediate this setting by executing the following SQL statement for each PROFILE returned by the audit procedure. ALTER PROFILE DEFAULT LIMIT PASSWORD_ROLLOVER_TIME 0;

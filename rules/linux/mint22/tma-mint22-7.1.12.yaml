@@ -1,0 +1,22 @@
+id: TMA-MINT22-7.1.12
+title: Ensure no files or directories without an owner and a group exist
+description: Administrators may delete users or groups from the system and neglect to remove all files and/or directories owned by those users or groups.
+target: linux
+os_family:
+- linuxmint-22
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Linux Mint 22 Benchmark v1.0.0 - 7.1.12
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   a_nouser=(); a_nogroup=() # Initialize arrays\n   a_path=(! -path \"/run/user/*\" -a ! -path \"/proc/*\" -a ! -path \"*/containerd/*\" -a ! -path \"*/kubelet/pods/*\" -a ! -path \"*/kubelet/plugins/*\" -a ! -path \"/sys/fs/cgroup/memory/*\" -a ! -path \"/var/*/private/*\")\n   while IFS= read -r l_mount; do\n      while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_file; do\n         if [ -e \"$l_file\" ]; then\n            while IFS=: read -r l_user l_group; do\n               [ \"$l_user\" = \"UNKNOWN\" ] && a_nouser+=(\"$l_file\")\n               [ \"$l_group\" = \"UNKNOWN\" ] && a_nogroup+=(\"$l_file\")\n            done < <(stat -Lc '\"'\"'%U:%G'\"'\"' \"$l_file\")\n         fi\n      done < <(find \"$l_mount\" -xdev \\( \"${a_path[@]}\" \\) \\( -type f -o -type d \\) \\( -nouser -o -nogroup \\) -print0 2> /dev/null)\n   done < <(findmnt -Dkerno fstype,target | awk '\"'\"'($1 !~ /^\\s*(nfs|proc|smb|vfat|iso9660|efivarfs|selinuxfs)/\
+    \ && $2 !~ /^\\/run\\/user\\//){print $2}'\"'\"')\n   if ! (( ${#a_nouser[@]} > 0 )); then\n      l_output=\"$l_output\\n  - No files or directories without a owner exist on the local filesystem.\"\n   else\n      l_output2=\"$l_output2\\n  - There are \\\"$(printf '\"'\"'%s'\"'\"' \"${#a_nouser[@]}\")\\\" unowned files or directories on the system.\\n   - The following is a list of unowned files and/or directories:\\n$(printf '\"'\"'%s\\n'\"'\"' \"${a_nouser[@]}\")\\n   - end of list\"\n   fi\n   if ! (( ${#a_nogroup[@]} > 0 )); then\n      l_output=\"$l_output\\n  - No files or directories without a group exist on the local filesystem.\"\n   else\n      l_output2=\"$l_output2\\n  - There are \\\"$(printf '\"'\"'%s'\"'\"' \"${#a_nogroup[@]}\")\\\" ungrouped files or directories on the system.\\n   - The following is a list of ungrouped files and/or directories:\\n$(printf '\"'\"'%s\\n'\"'\"' \"${a_nogroup[@]}\")\\n   - end of list\"\n   fi\n   unset a_path; unset a_arr ; unset a_nouser;\
+    \ unset a_nogroup # Remove arrays\n   if [ -z \"$l_output2\" ]; then # If l_output2 is empty, we pass\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n - * Correctly configured * :\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - * Reasons for audit failure * :\\n$l_output2\"\n      [ -n \"$l_output\" ] && echo -e \"\\n- * Correctly configured * :\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove or set ownership and group ownership of these files and/or directories to an active user on the system as appropriate.

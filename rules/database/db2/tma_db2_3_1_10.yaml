@@ -1,0 +1,18 @@
+id: TMA-DB2-3.1.10
+title: Secure the R Runtime Path (R_PATH)
+description: 'The R_PATH parameter contains the directory under which the R runtime is installed. The R runtime is used for running R stored procedures and user-defined functions. It is recommended that the owner of this directory is bin on Linux and AIX, and a member of the Db2 administration group on Windows. The directory should have read and execute permission for all users, but only write permission ... Automated as: the R_PATH directory is not group- or world-writable (an unset R_PATH passes); the benchmark also expects owner bin on Linux/AIX, which is checked manually. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- filesystem
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.1.10 Secure the R Runtime Path (R_PATH)
+audit:
+  type: command
+  command: 'out=$(db2 get dbm cfg 2>/dev/null) || exit 1; p=$(printf ''%s\n'' "$out" | sed -n ''s/.*(R_PATH) *= *//p'' | sed ''s/[[:space:]]*$//''); [ -n "$p" ] || { echo compliant; exit 0; }; [ -e "$p" ] || { echo "noncompliant: $p does not exist"; exit 0; }; w=$(find "$p" -prune \( -perm -020 -o -perm -002 \) -print); [ -z "$w" ] && echo compliant || echo "noncompliant: $p is group/world writable"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For Windows and Linux: 1. Attach to the Db2 instance. db2 => attach to <db2instance> 2. Run the following command to change the R path, if necessary: db2 => update database manager configuration using r_path <valid directory> Additional steps for Windows: 1. Connect to the Db2 host 2. Right-click over the directory used as the R path 3. Choose Properties 4. Select the Security tab 5. Assign ownership of the directory to the Db2 Administrator 6. Grant all Db2 administrator accounts the Full Control authority 7. Grant only read and execute privileges to all other users (revoke all other privileges) Additional steps for Linux: 1. Connect to the Db2 host as root 2. Change to the directory used as the R path 3. Assign bin to be the owner of the directory using the chown command 4. Change the permissions for the directory $ chmod -R 755'

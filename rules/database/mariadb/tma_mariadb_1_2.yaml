@@ -1,0 +1,19 @@
+id: TMA-MARIADB-1.2
+title: Use Dedicated Least Privileged Account for MariaDB Daemon/Service
+description: As with any service installed on a host, it can be provided with its own user context. Providing a dedicated user to the service provides the ability to precisely constrain the service within the larger host context. Passes when the running mariadbd/mysqld process does not run as root (the benchmark expects the mysql account).
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- service
+- os
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 1.2 Use Dedicated Least Privileged Account for MariaDB Daemon/Service
+audit:
+  type: command
+  command: out=$(ps -eo user:32=,comm= 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '$2=="mysqld"||$2=="mariadbd"{n++; if($1=="root")r++} END{if(!n)print "not-running"; else if(r)print "runs-as-root"; else print "compliant"}'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run MariaDB under a dedicated unprivileged account (normally mysql, no sudo rights, shell /bin/false): groupadd -r mysql; useradd -r -M -g mysql -d /var/lib/mysql -s /bin/false mysql; set user=mysql under [mariadbd] or User=mysql in the systemd unit, then restart.'

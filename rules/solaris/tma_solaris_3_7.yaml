@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-3.7
+title: Enable Stack Protection
+description: 'Buffer overflow exploits have been the basis for many highly publicized compromises and defacements of large numbers of Internet connected systems. Many of the automated tools in use by system attackers exploit well-known buffer overflow problems in vendor-supplied and third party software. Enabling stack protection prevents certain classes of buffer overflow attacks and is a significant security enhancement. However, this does not protect against buffer overflow attacks that do not execute code on the stack (such as return-to-libc exploits). Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- hardening
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 3.7 Enable Stack Protection
+audit:
+  type: command
+  command: 'command -v sxadm >/dev/null 2>&1 || exit 1; out=$(sxadm status -po extension,status,configuration nxheap,nxstack 2>/dev/null) || exit 1; r=compliant; for p in ''^nxheap:enabled\.tagged-files:default\.default$'' ''^nxstack:enabled\.all:default\.default$''; do printf ''%s\n'' "$out" | grep -Eq -- "$p" || r="missing: $p"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enable stack protection and block stack-smashing attacks, run the following: # sxadm delcust nxheap # sxadm delcust nxstack'

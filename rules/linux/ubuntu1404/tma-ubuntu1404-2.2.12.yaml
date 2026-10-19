@@ -1,0 +1,20 @@
+id: TMA-UBUNTU1404-2.2.12
+title: Ensure Samba is not enabled
+description: The Samba daemon allows system administrators to configure their Linux systems to share file systems and directories with Windows desktops. Samba will advertise the file systems and directories via the Small Message Block (SMB) protocol. Windows desktop users will be able to mount these directories and file systems as letter drives on their systems.
+target: linux
+os_family:
+- ubuntu-14.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 14.04 LTS Benchmark v2.1.0 ARCHIVE - 2.2.12
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v initctl >/dev/null 2>&1 || { echo "step1: initctl not installed"; return 1; }; o=$(bash -c ''initctl show-config smbd'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- smbd || { echo step1: missing smbd; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remove or comment out start lines in /etc/init/smbd.conf: #start on (local-filesystems and net-device-up)'

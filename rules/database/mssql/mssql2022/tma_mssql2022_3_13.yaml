@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-3.13
+title: Ensure no admin role membership in MSDB database
+description: Based on Microsoft design an account with DB_OWNER can elevate permissions to SYSADMIN MSDBmust be configured with the TRUSTWORTHY flag ON to work properly. If the TRUSTWORTHY setting is set to ON, and if the owner of the database is a member of a group that has administrative credentials, such as the sysadmin group (for example the default sa login), the database owner can then be able to create and run unsafe assemblies that can compromise the instance of the SQL Server, as well as run code to elevate his privileges to SYSADMIN
+target: mssql
+level: 1
+severity: medium
+tags:
+- iam
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 3.13 Ensure no admin role membership in MSDB database
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM msdb.sys.database_role_members AS drm JOIN msdb.sys.database_principals AS r ON drm.role_principal_id = r.principal_id JOIN msdb.sys.database_principals AS m ON drm.member_principal_id = m.principal_id WHERE r.name IN ('db_owner','db_securityadmin','db_ddladmin','db_datawriter') AND m.name <> 'dbo';"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: USE [msdb] GO ALTER ROLE [db_owner] DROP MEMBER <username>;

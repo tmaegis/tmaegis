@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.1.1
+title: 'Ensure ''Mailbox quotas: Issue warning at'' is set to ''<value>'''
+description: This policy setting can automatically warn mailbox users that their mailbox is approaching its storage limit. It's suggested that this warning be set up when 90% of the mailbox size has been reached. For example, if the mailbox size is 100GB, set the warning to 90GB or 94,371,840 KB. A value between 0 and 2,147,483,647 KB (2.1 terabytes) can be set depending on the user's mailbox size. The benchmark leaves the value to the organization; the audit prints the number of mailbox databases where IssueWarningQuota is Unlimited (expected 0). Confirm the configured value matches your documented quota. Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: low
+tags:
+- exchange
+- mailbox
+reference: 'CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.1.1 Ensure ''Mailbox quotas: Issue warning at'' is set to ''<value>'''
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-MailboxDatabase -ErrorAction Stop | Where-Object { $v = "$($_.IssueWarningQuota)"; -not $v -or $v -match 'Unlimited' }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-MailboxDatabase '<database>' -IssueWarningQuota <value>KB

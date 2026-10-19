@@ -1,0 +1,25 @@
+id: TMA-OPENSHIFT-4.2.2
+title: Ensure that the --anonymous-auth argument is set to false
+description: Disable anonymous requests to the Kubelet server. Reads every node's effective kubelet configuration with oc get --raw /api/v1/nodes/<node>/proxy/configz; requires a cluster-admin oc login.
+target: openshift
+level: 1
+severity: critical
+tags:
+- openshift
+- worker-node
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.2.2 Ensure that the --anonymous-auth argument is set to false
+audit:
+  type: command
+  command: |-
+    nodes=$(oc get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(oc get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"anonymous":\{"enabled":false\}'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a kubeletconfig to explicitly disable anonymous authentication. Examples of how to do this can be found in the OpenShift documentation.

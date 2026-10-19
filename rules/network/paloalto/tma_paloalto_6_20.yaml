@@ -1,0 +1,23 @@
+id: TMA-PALOALTO-6.20
+title: Ensure that 'Wildfire Inline ML Action' on antivirus profiles are set to reset-both on all decoders except 'imap' and 'pop3'
+description: 'Configure ''Wildfire Inline ML Action'' on antivirus profiles to a value of ''reset-both'' for all decoders except imap and pop3 under ''Wildfire Inline ML Action''. If required by the organization''s email implementation, configure imap and pop3 decoders to ''alert'' under ''Wildfire Inline ML Action''. FAILs if any antivirus profile sets the WildFire Inline ML action (mlav-action) on ftp, http, http2, smb or smtp to anything other than reset-both. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.20 Ensure that 'Wildfire Inline ML Action' on antivirus profiles are set to reset-both on all decoders except 'imap' and 'pop3'
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles virus (?:"[^"\n]*"|\S+) decoder (?:ftp|http|http2|smb|smtp) mlav-action (?:default|allow|alert|drop|reset-client|reset-server)[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles virus <profile> decoder http mlav-action reset-both
+    (repeat for ftp, http2, smb, smtp)
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > Antivirus Set antivirus profiles to have all decoders set to reset-both for Wildfire Inline ML Action. If imap and pop3 are required in the organization, set the imap and pop3 decoders are set to alert for Wildfire Inline ML Action.

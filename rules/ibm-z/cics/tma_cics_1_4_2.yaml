@@ -1,0 +1,16 @@
+id: TMA-CICS-1.4.2
+title: Ensure that a user requires authorization to start work under a different userid
+description: 'The CICS SIT option XUSER determines if surrogate security is enabled in CICS. It can be set to the following: YES - Surrogate security is enabled NO - Surrogate security is disabled Surrogate authority allows one user ID is allow to perform work on behalf of another user ID.'
+target: cics
+level: 1
+severity: high
+tags:
+- cics
+- accounts
+reference: CIS IBM CICS Transaction Server 6.1 Benchmark v1.1.0 - 1.4.2 Ensure that a user requires authorization to start work under a different userid
+audit:
+  type: manual
+  command: 'Issue the z/OSMF Compliance data collection REST API to drive collection of compliance evidence in the SMF 1154 record. https://{host}:{port}/zosmf/compliance/rest/v1/facts 1. Wait for the data to be collected; this may take up to a minute in some regions. 2. Customize and run the DFH$54P sample JCL to create a spreadsheet containing data for all of the CICS TS regions. 3. Open the spreadsheet and review the settings of the XUSER column. They should all be set to YES. 4. List the SURROGAT class by using the RACF command RLIST SURROGAT. 5. Look for the CICS ... (full steps: CIS section 1.4.2)'
+remediation:
+  type: iac_patch
+  command: 'Define surrogate profiles as follows: RDEFINE SURROGAT *.DFHSTART OWNER(admin) UACC(NONE) RDEFINE SURROGAT *.DFHINSTL OWNER(admin) UACC(NONE) RDEFINE SURROGAT *.DFHEXCI OWNER(admin) UACC(NONE) RDEFINE SURROGAT *.DFHQUERY OWNER(admin) UACC(NONE) SETROPTS RACLIST(SURROGAT) REFRESH Investigate if surrogate security is needed anywhere if so you will need to define specific profiles similar to the following. Give READ access to the appropriate groups for these profiles. The following is an example of this: RDEFINE SURROGAT executionUserid.DFHSTART OWNER(admin) UACC(NONE) PERMIT executionUserid.DFHSTART CLASS(SURROGAT) ID(group) ACCESS(READ) SETROPTS RACLIST(SURROGAT) REFRESH Set XUSER=YES Restart CICS'

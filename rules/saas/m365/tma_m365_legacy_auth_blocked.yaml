@@ -1,0 +1,17 @@
+id: TMA-M365-LEGACY-AUTH-BLOCKED
+title: Ensure legacy authentication is blocked
+description: 'Legacy protocols (POP, IMAP, SMTP AUTH, EAS basic, other clients) cannot do MFA and are the main vector for password spray. Compliant when security defaults are on or an enabled Conditional Access policy for all users targets exchangeActiveSync/other client apps with a block grant. Requires an already-connected Microsoft Graph session: Install-Module Microsoft.Graph; Connect-MgGraph -Scopes Policy.Read.All,Directory.Read.All,RoleManagement.Read.Directory (read-only scopes). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: critical
+tags:
+- m365
+- identity
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Microsoft Entra ID / Conditional Access - block legacy authentication (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-MgContext -ErrorAction SilentlyContinue) -or -not (Get-MgContext)) { throw ''Not connected: run Connect-MgGraph first'' }; $sd = (Get-MgPolicyIdentitySecurityDefaultEnforcementPolicy -ErrorAction Stop).IsEnabled; $ca = @(Get-MgIdentityConditionalAccessPolicy -All -ErrorAction Stop | Where-Object { $_.State -eq ''enabled'' }); $blk = @($ca | Where-Object { ($_.Conditions.ClientAppTypes -contains ''other'' -or $_.Conditions.ClientAppTypes -contains ''exchangeActiveSync'') -and ($_.Conditions.Users.IncludeUsers -contains ''All'') -and ($_.GrantControls.BuiltInControls -contains ''block'') }); if ($sd -eq $true -or $blk.Count -gt 0) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create a Conditional Access policy: Users = All users (exclude break-glass accounts), Target resources = All cloud apps, Conditions > Client apps = Exchange ActiveSync clients and Other clients, Grant = Block access, State = On.'

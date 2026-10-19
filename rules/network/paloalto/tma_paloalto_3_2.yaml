@@ -1,0 +1,25 @@
+id: TMA-PALOALTO-3.2
+title: Ensure 'High Availability' requires Link Monitoring and/or Path Monitoring
+description: 'Configure Link Monitoring and/or Path Monitoring under High Availability options. If Link Monitoring is utilized, all links critical to traffic flow should be monitored. PASS requires HA link-monitoring or path-monitoring enabled yes; confirm failure-condition any and the monitored groups. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- high-availability
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 3.2 Ensure 'High Availability' requires Link Monitoring and/or Path Monitoring
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig high-availability group (?:\d+ )?monitoring (?:link-monitoring|path-monitoring) enabled yes[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig high-availability group monitoring link-monitoring enabled yes
+    set deviceconfig high-availability group monitoring link-monitoring failure-condition any
+    set deviceconfig high-availability group monitoring link-monitoring link-group <group> interface [ <if1> <if2> ]
+    commit
+    # CIS guidance:
+    To set Link Monitoring from GUI:
+    Navigate to Device > High Availability > Link and Path Monitoring. Click Link Monitoring. Set the correct interfaces to the Link Group and Group Failure Conditions. Click Link Monitoring. Set Failure Condition to Any. Check Enabled button. To set Path Monitoring from GUI:
+    Navigate to Device > High Availability > Link and Path Monitoring. Click Path Monitoring. Set Option correctly. Set Failure Condition to Any. Set Name, IP Address, Failure Condition correctly. Set Default setting to Any. Check Enabled button.

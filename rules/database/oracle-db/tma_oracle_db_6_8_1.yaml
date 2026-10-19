@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-6.8.1
+title: Ensure Directory Object Access Is Revoked From Unauthorized 'GRANTEE'
+description: A directory object specifies an alias for a directory on the server file system where external files and data are located.
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.8.1 Ensure Directory Object Access Is Revoked From Unauthorized 'GRANTEE'
+audit:
+  type: manual
+  command: 'SELECT CON_ID_TO_CON_NAME(C.CON_ID) AS CONTAINERNAME,O.ORACLE_MAINTAINED, C.OWNER, C.DIRECTORY_NAME, C.DIRECTORY_PATH FROM CDB_DIRECTORIES C JOIN CDB_OBJECTS O ON C.CON_ID = O.CON_ID AND C.OWNER=O.OWNER AND O.OBJECT_NAME=C.DIRECTORY_NAME AND OBJECT_TYPE=''DIRECTORY''; If any unauthorized users are granted directory object access, this is a fail. Note: The flag oracle_maintained=''N'' indicates whether the directory object was created by Oracle or someone else.'
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, execute the following SQL statement to delete directories which are no longer required. DROP DIRECTORY <DIRECTORY_NAME>;

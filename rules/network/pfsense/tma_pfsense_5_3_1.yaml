@@ -1,0 +1,23 @@
+id: TMA-PFSENSE-5.3.1
+title: Ensure 'DNSSEC' is Enable on DNS Service
+description: Enable the "DNSSEC" in the DNS Service Configuration. PASS requires DNSSEC support enabled in the DNS Resolver (<dnssec> in <unbound>). Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- hardening
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 5.3.1 Ensure 'DNSSEC' is Enable on DNS Service
+audit:
+  type: config_regex
+  pattern: <unbound>(?:[^<]|<[^/<]|</[^u<]|</u[^n<]|</un[^b<]|</unb[^o<]|</unbo[^u<]|</unbou[^n<]|</unboun[^d<]|</unbound[^><])*?<dnssec(?:\s*/>|>[^<]*</dnssec>)
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: Services > DNS Resolver > General Settings: tick DNSSEC, Save, Apply.
+    # CIS guidance:
+    In the GUI:
+    -
+    Navigate to Services > DNS Resolver > General DNS Resolver Options
+    - Check the box next to 'DNSSEC' and set Enable
+    - CLIck 'Save'

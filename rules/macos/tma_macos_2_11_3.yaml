@@ -1,0 +1,48 @@
+id: TMA-MACOS-2.11.3
+title: Ensure a Custom Message for the Login Screen Is Enabled
+description: 'An access warning informs the user that the system is reserved for authorized use only, and that the use of the system may be monitored. Audit: Verify the text itself matches the organisation-approved message.'
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 2.11.3 Ensure a Custom Message for the Login Screen Is Enabled
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    /usr/bin/osascript -l JavaScript <<'EOS'
+    function run() {
+      let msg = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.loginwindow').objectForKey('LoginwindowText'))
+      if ( msg != null && String(msg).trim().length > 0 ) {
+        return("true")
+      } else {
+        return("false")
+      }
+    }
+    EOS
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    cur=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow LoginwindowText 2>/dev/null)
+    if [ -z "$(printf %s "$cur" | /usr/bin/tr -d "[:space:]")" ]; then
+      /usr/bin/defaults write "/Library/Preferences/com.apple.loginwindow" 'LoginwindowText' -string "Authorized use only. Activity may be monitored and reported."
+    fi
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile (preferred): com.apple.loginwindow LoginwindowText = <string><Your organization's required. Terminal: sudo /usr/bin/defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \"<custom message>\" ; sudo /usr/bin/defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \"Center for Internet Security Test Message\". GUI: System Settings > Lock Screen > Set Show message when locked to enabled > Set > Insert text in the Set a message to appear on the lock screen that matches your organization's required text > Done."

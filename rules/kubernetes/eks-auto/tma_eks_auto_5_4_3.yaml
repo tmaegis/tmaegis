@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-5.4.3
+title: Deploy EKS Auto Mode nodes only in private subnets
+description: This recommendation is about the EKS Auto Mode data plane, not the control plane. It means EKS Auto Mode nodes are placed only in private subnets and are not intended to have direct public internet exposure. In the common pattern, nodes run in private subnets while internet facing ingress resources are placed in public subnets. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- managed-services
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.4.3 Deploy EKS Auto Mode nodes only in private subnets
+audit:
+  type: manual
+  command: Review the EKS Auto Mode NodePool and NodeClass configuration to confirm nodes are placed only in private subnets. Validate the NodeClass subnet selection, subnet public IP behavior, and route table design. A compliant design uses subnets that do not auto assign public IPv4 addresses and do not route directly to an Internet Gateway. Review the NodePool and NodeClass configuration and confirm each NodePool references a NodeClass whose subnetSelectorTerms select only private subnets. The NodeClass should use private subnet IDs directly or private subnet tags.
+remediation:
+  type: iac_patch
+  command: For EKS Auto Mode nodes placed in public subnets, remediate by updating the NodeClass and NodePool design so Auto Mode provisions nodes only in private subnets. In EKS Auto Mode, subnet placement is controlled through NodeClass subnetSelectorTerms, and NodePools reference the NodeClass that defines the infrastructure configuration. If existing nodes were created from a NodeClass that selects public subnets, create or update a NodeClass that selects only private subnets, then move workloads to NodePools that reference the corrected NodeClass. • Create or update the NodeClass so subnetSelectorTerms selects only private subnet IDs or private subnet tags • Confirm the selected subnets do not auto assign public IPv4 addresses and their route tables do not send 0.0.0.0/0 directly to an Internet Gateway.

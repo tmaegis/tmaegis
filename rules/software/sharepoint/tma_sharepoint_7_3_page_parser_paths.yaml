@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-7.3
+title: Ensure compilation or scripting of database pages via the PageParserPaths elements is not allowed
+description: Allowing compilation or scripting of database pages via the "PageParserPaths" elements can lead to disclosure of compilation error messages containing server info and source code exposed to the user. Reads every local web application web.config (all zones) and prints the number of PageParserPath entries under SharePoint/SafeMode/PageParserPaths (expected 0). Run on each Web Front End; a missing web.config fails the audit. Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: high
+tags:
+- sharepoint
+- web-config
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 7.3 Ensure compilation or scripting of database pages via the PageParserPaths elements is not allowed
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $cfgs = @(Get-SPWebApplication -ErrorAction Stop | ForEach-Object { $_.IisSettings.Values } | ForEach-Object { Join-Path $_.Path.FullName 'web.config' } | Sort-Object -Unique); if ($cfgs.Count -eq 0) { throw 'no web application web.config found' }; $bad = @($cfgs | ForEach-Object { [xml]$x = Get-Content -LiteralPath $_ -Raw -ErrorAction Stop; @($x.SelectNodes('/configuration/SharePoint/SafeMode/PageParserPaths/PageParserPath')) } | Where-Object { $null -ne $_ }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove every <PageParserPath .../> element from <PageParserPaths> in each web application's web.config (leave the element empty), then recycle the application pool.

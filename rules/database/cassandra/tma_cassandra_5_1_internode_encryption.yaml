@@ -1,0 +1,20 @@
+id: TMA-CASSANDRA-5.1
+title: Inter-node Encryption
+description: Cassandra offers the option to encrypt data in transit between nodes on the cluster. By default, inter-node encryption is turned off. Checks /etc/cassandra/cassandra.yaml (package install; SKIP when it does not exist). Acceptable values are all, dc or rack.
+target: cassandra
+level: 1
+severity: high
+tags:
+- cassandra
+- encryption
+- tls
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 5.1 Inter-node Encryption
+audit:
+  type: file_regex
+  file_path: /etc/cassandra/cassandra.yaml
+  pattern: (?m)^server_encryption_options:[ \t]*\n(?:[ \t]*(?:#[^\n]*)?\n|[ \t]+[^\n]*\n)*?[ \t]+internode_encryption:[ \t]*['\x22]?(?:all|dc|rack)\b
+  requires_file:
+  - /etc/cassandra/cassandra.yaml
+remediation:
+  type: iac_patch
+  command: 'Build keystores/truststores, set server_encryption_options.internode_encryption: all in cassandra.yaml and rolling-restart all nodes.'

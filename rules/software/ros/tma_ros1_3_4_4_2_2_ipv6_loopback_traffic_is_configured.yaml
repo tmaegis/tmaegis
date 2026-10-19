@@ -1,0 +1,30 @@
+id: TMA-ROS1-3.4.4.2.2
+title: Ensure IPv6 loopback traffic is configured
+description: 'Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network (::1). Applies when ip6tables rules are persisted: the audit requires the INPUT lo accept, ::1 drop and OUTPUT lo accept rules, or IPv6 disabled. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.4.2.2 Ensure IPv6 loopback traffic is configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    grep -Eqs '^\s*linux.*ipv6\.disable=1' /boot/grub/grub.cfg && ! grep -E '^\s*linux' /boot/grub/grub.cfg | grep -qv 'ipv6.disable=1' && { echo compliant; exit 0; }
+    in=$(ip6tables -S INPUT 2>/dev/null) || exit 1
+    out=$(ip6tables -S OUTPUT 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$in" | grep -Eq -- '^-A INPUT -i lo( .*)? -j ACCEPT' || { echo 'missing -A INPUT -i lo -j ACCEPT'; bad=1; }
+    printf '%s\n' "$in" | grep -Eq -- '^-A INPUT -s ::1(/128)?( .*)? -j DROP' || { echo 'missing INPUT drop for loopback source'; bad=1; }
+    printf '%s\n' "$out" | grep -Eq -- '^-A OUTPUT -o lo( .*)? -j ACCEPT' || { echo 'missing -A OUTPUT -o lo -j ACCEPT'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/iptables/rules.v6
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # ip6tables -A INPUT -i lo -j ACCEPT # ip6tables -A OUTPUT -o lo -j ACCEPT # ip6tables -A INPUT -s ::1 -j DROP'

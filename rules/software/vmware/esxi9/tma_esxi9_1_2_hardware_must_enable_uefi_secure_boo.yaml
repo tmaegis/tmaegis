@@ -1,0 +1,20 @@
+id: TMA-ESXI9-1.2
+title: Host hardware must enable UEFI Secure Boot
+description: UEFI Secure Boot is a security feature of the Unified Extensible Firmware Interface (UEFI) specification. Its primary purpose is to ensure that only signed and trusted boot loaders and operating system kernels are allowed to execute during the system startup. The audit runs /usr/lib/vmware/secureboot/bin/secureBoot.py -s and expects "Enabled". Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: high
+tags:
+- vmware
+- esxi
+- hardware
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 1.2 Host hardware must enable UEFI Secure Boot
+audit:
+  type: command
+  command: |-
+    out=$(/usr/lib/vmware/secureboot/bin/secureBoot.py -s 2>/dev/null) || exit 1
+    case "$out" in Enabled*) echo compliant ;; *) echo "secure boot: $out" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'You must enable the physical server''s UEFI Secure Boot in the server BIOS/UEFI. 1. Put the non-compliant Host into maintenance mode: vim-cmd hostsvc/maintenance_mode_enter 2. Verify Secure Boot compatibility: /usr/lib/vmware/secureboot/bin/secureBoot.py -c 3. Restart the ESXi host with the reboot command. 4. on the ESXI physical host BIOS/UEFI configuration, ensure that "boot mode" is UEFI 5. Under Boot or Security menus, look for "Secure Boot" and set it to "Enabled". 6. Save all modified firmware changes and reboot the ESXi host. 7. Verify results.'

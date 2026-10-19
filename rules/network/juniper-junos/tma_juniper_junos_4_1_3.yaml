@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-4.1.3
+title: Ensure EBGP peers are set to use GTSM (BGP)
+description: GTSM should be used with all EBGP peers. Where it is deployed, External BGP routing is vital for normal operation of an organization's network infrastructure. Correct route information is required for routers to correctly direct traffic destined for external networks. Fails if BGP multihop is configured (use GTSM / adjacent peers). Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- routing
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.1.3 Ensure EBGP peers are set to use GTSM
+audit:
+  type: config_regex
+  pattern: (?m)^set protocols bgp [^\n]*\bmultihop\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have deployed multihop in your network but do not have any peers more then 1 hop away, disable multihop with the following command from the , or depending at which level you have configured multihop;
+    delete protocols bgp multihop To change the number of hops distance from which a route update can originate, enter the following command from the to apply multihop to a group or to apply multihop to a single neighbor;
+    set protocols bgp group <group name> multihop ttl <number of hops> Remember that, in both cases, more specific settings override less specific ones. So if multihop is set to 5 at the neighbor level, but the default of 1 at the global level, the neighbor level setting will apply for communications with that peer.

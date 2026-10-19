@@ -1,0 +1,17 @@
+id: TMA-M365-5.1.4.6
+title: Ensure users are restricted from recovering BitLocker keys
+description: This setting determines if users can self-service recover their BitLocker key(s). 'Yes' restricts non-admin users from being able to see the BitLocker key(s) for their owned devices if there are any. 'No' allows all users to recover their BitLocker key(s). The recommended state is Yes. Restricting user access to the self-service BitLocker recovery key portal helps mitigate the risk of recovery key exposure in the event of a compromised user account. If an attacker gains access to both the user’s credentials and the physical device, they could potentially retrieve the recovery key and decrypt sensitive data. The recovery key itself is also considered sensitive information.
+target: m365
+level: 2
+severity: low
+tags:
+- crypto
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.1.4.6 Ensure users are restricted from recovering BitLocker keys
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Devices and select Device settings. 3. Verify that Restrict users from recovering the BitLocker key(s) for their owned devices is set to Yes. To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.Read.All" 2. Run the following: (Get-MgPolicyAuthorizationPolicy).DefaultUserRolePermissions | fl 3. Verify that AllowedToReadBitlockerKeysForOwnedDevice is False.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Devices and select Device settings. 3. Set Restrict users from recovering the BitLocker key(s) for their owned devices to Yes. To remediate using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.ReadWrite.Authorization" 2. Run the following: $params = @{ defaultUserRolePermissions = @{ AllowedToReadBitlockerKeysForOwnedDevice = $false } } Update-MgPolicyAuthorizationPolicy -BodyParameter $params'

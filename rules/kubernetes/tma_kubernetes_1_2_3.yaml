@@ -1,0 +1,16 @@
+id: TMA-KUBERNETES-1.2.3
+title: Ensure that the DenyServiceExternalIPs is set
+description: This admission controller rejects all net-new usage of the Service field externalIPs. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- api-server
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.2.3 Ensure that the DenyServiceExternalIPs is set
+audit:
+  type: manual
+  command: 'Run the following command on the Control Plane node: ps -ef | grep kube-apiserver Verify that the `DenyServiceExternalIPs'' argument exist as a string value in --enable-admission-plugins.'
+remediation:
+  type: iac_patch
+  command: Edit the API server pod specification file /etc/kubernetes/manifests/kube-apiserver.yaml on the master node and append the Kubernetes API server flag --enable-admission-plugins with the DenyServiceExternalIPs plugin. Note, the Kubernetes API server flag --enable-admission-plugins takes a comma-delimited list of admission control plugins to be enabled, even if they are in the list of plugins enabled by default. kube-apiserver --enable-admission-plugins=DenyServiceExternalIPs

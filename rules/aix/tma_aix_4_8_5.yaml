@@ -1,0 +1,17 @@
+id: TMA-AIX-4.8.5
+title: Ensure root user path does not include current working directory
+description: 'This change removes any "." or "::" entries from the root PATH. If a "." or "::" is present the current working directory is included in the search path. Any "." and "::" will be removed from the root PATH. This means that any harmful programs placed in common PATH locations, would never be automatically executed. All directories must be explicitly defined within the PATH variable. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.8.5 Ensure root user path does not include current working directory
+audit:
+  type: command
+  command: 'p=$(su - root -c ''echo $PATH'' 2>/dev/null | tail -n 1); [ -n "$p" ] || exit 1; out=$(printf ''%s\n'' "$p" | awk ''/(^:)|(::)|(:$)|(^\.:)|(:\.:)|(:\.$)|(^\.$)/''); [ -z "$out" ] && echo compliant || echo "root PATH: $out"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Examine root''s PATH to see if it contains any "." or "::" entries: su - root -c ''echo ${PATH}'' |awk ''/((:[ \t]*:)|(:[ \t]*$)|(^[ \t]*:)|(^.:)|(:.$)|(:.:))/'' If the command above yields output, remove the "." and "::" entries from the relevant initialization files. The files to examine are dependant on the root users shell definition in /etc/passwd. Once the file or files have been identified remove the "." and "::" from the PATH variable vi <filename>'

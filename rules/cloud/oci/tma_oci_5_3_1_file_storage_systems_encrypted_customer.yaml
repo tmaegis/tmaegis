@@ -1,0 +1,31 @@
+id: TMA-OCI-5.3.1
+title: Ensure File Storage Systems are encrypted with Customer Managed Keys (CMK)
+description: Oracle Cloud Infrastructure File Storage service (FSS) provides a durable, scalable, secure, enterprise-grade network file system. By default, the Oracle service manages the keys that encrypt FSS file systems. FSS file systems can also be encrypted using a customer managed key. Encryption of FSS systems provides an additional level of security for your data. Management of encryption keys is critical to protecting and accessing protected data. Uses resource search for file systems in every subscribed region; each must have a non-empty kms-key-id. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 2
+severity: high
+tags:
+- oci
+- storage
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 5.3.1 Ensure File Storage Systems are encrypted with Customer Managed Keys (CMK)
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    rs=$(oci iam region-subscription list --tenancy-id "$t" --query 'data[?status==`"READY"`]."region-name"' --raw-output 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$rs" | grep -o '"[a-z0-9-]*"' | tr -d '"')
+    [ -n "$regions" ] || exit 1
+    for r in $regions; do
+      ids=$(oci search resource structured-search --region "$r" --query-text "query filesystem resources where lifeCycleState != 'TERMINATED' && lifeCycleState != 'DELETED'" --query 'data.items[].identifier' --raw-output 2>/dev/null) || exit 1
+      for i in $(printf '%s\n' "$ids" | grep -o 'ocid1\.[a-z]*\.[^"]*'); do
+        k=$(oci fs file-system get --file-system-id "$i" --region "$r" --query 'data."kms-key-id"' --raw-output 2>/dev/null) || exit 1
+        [ -n "$k" ] && [ "$k" != null ] || { echo "Oracle-managed key: $r $i"; bad=1; }
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: oci fs file-system update --file-system-id <ocid> --kms-key-id <vault-key-ocid> for each listed file system.

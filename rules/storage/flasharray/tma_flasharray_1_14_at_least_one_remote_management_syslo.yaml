@@ -1,0 +1,17 @@
+id: TMA-FLASHARRAY-1.14
+title: Ensure at least one remote management syslog server is configured
+description: 'FlashArray allows the creation of management syslog servers. These servers receive messages for administrative audit logs, administrative session logs, and alerts. Everpure recommends that you configure at least 1 management syslog server. Passes when at least one remote syslog server URI (udp://, tcp:// or tls://) is configured. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "purelog syslog list --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- access-control
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 1.14 Ensure at least one remote management syslog server is configured
+audit:
+  type: config_regex
+  pattern: (?im)\b(?:udp|tcp|tls)://[^\s,]+
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, configure at least one management syslog server to allow for real-time detection and response to unexpected events. From the GUI: ; Navigate to Settings > System. ; In the Syslog Servers panel, click the + (Create) icon. ; Enter the URI of your remote syslog server (e.g., tls://10.10.10.10:6514) and provide a name. ; Click Create to apply the configuration. From the CLI: ; Configure a remote syslog server destination using the purelog syslog create command. ; Command Syntax: purelog syslog create --uri <URI> <NAME> ; Example: purelog syslog create --uri tls://10.10.10.10:6514 syslog-server01'

@@ -1,0 +1,69 @@
+id: TMA-ROS1-3.4.2.5
+title: Ensure firewall rules exist for all open ports
+description: Any ports that have been opened on non-loopback addresses need firewall rules to govern traffic. Manual review against site policy. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.2.5 Ensure firewall rules exist for all open ports
+audit:
+  type: manual
+  command: 'Run the following command to determine open ports: # ss -4tuln Netid State Recv-Q Send-Q Local Address:Port Peer Address:Port udp UNCONN 0 0 127.0.0.53%lo:53 0.0.0.0:* udp UNCONN 0 0 10.105.106.117%enp1s0:68 0.0.0.0:* tcp LISTEN 0 128 127.0.0.53%lo:53 0.0.0.0:* tcp LISTEN 0 128 0.0.0.0:22 0.0.0.0:* Run the following command to determine firewall rules: # ufw status Status: active To Action From -- ------ ---- [ 1] Anywhere on lo ALLOW IN Anywhere [ 2] Anywhere ALLOW OUT Anywhere on lo (out) [ 3] Anywhere DENY IN 127.0.0.0/8 [ 4] 22/tcp ALLOW IN Anywhere [ 5] Anywhere ALLOW OUT Anywhere on ...'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    tma_listen() { # $1 = 4|6 ; prints "proto port" for non-loopback listeners
+      ss -$1tuln 2>/dev/null | awk 'NR>1{p=($1 ~ /^udp/)?"udp":"tcp"; a=$5; sub(/.*:/,"",$5); if (a ~ /^(127\.|\[?::1\]?:)/) next; if ($5 ~ /^[0-9]+$/) print p, $5}' | sort -u; }
+    tma_ipt_save() { b=$1; command -v "${b}-save" >/dev/null 2>&1 || return 0
+      if [ "$b" = iptables ]; then v=v4; s=iptables; else v=v6; s=ip6tables; fi
+      if [ -d /etc/iptables ]; then f=/etc/iptables/rules.$v; elif [ -d /etc/sysconfig ]; then f=/etc/sysconfig/$s; else return 0; fi
+      tma_bak "$f"; "${b}-save" > "$f"; }
+    tma_ipt_loop() { b=$1; command -v "$b" >/dev/null 2>&1 || tma_pkg_install iptables
+      $b -C INPUT -i lo -j ACCEPT 2>/dev/null || $b -I INPUT 1 -i lo -j ACCEPT
+      $b -C OUTPUT -o lo -j ACCEPT 2>/dev/null || $b -I OUTPUT 1 -o lo -j ACCEPT
+      if [ "$b" = iptables ]; then src=127.0.0.0/8; else src=::1; fi
+      $b -C INPUT -s $src -j DROP 2>/dev/null || $b -A INPUT -s $src -j DROP; }
+    tma_ipt_ports() { b=$1; if [ "$b" = iptables ]; then v=4; else v=6; fi
+      tma_listen $v | while read -r pr po; do
+        $b -C INPUT -p "$pr" --dport "$po" -m state --state NEW -j ACCEPT 2>/dev/null || $b -A INPUT -p "$pr" --dport "$po" -m state --state NEW -j ACCEPT
+      done; }
+    tma_ipt_policy() { b=$1; tma_ipt_loop $b
+      $b -C INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || $b -I INPUT 2 -m state --state ESTABLISHED,RELATED -j ACCEPT
+      for p in $(tma_ssh_ports); do $b -C INPUT -p tcp --dport "$p" -m state --state NEW -j ACCEPT 2>/dev/null || $b -A INPUT -p tcp --dport "$p" -m state --state NEW -j ACCEPT; done
+      tma_ipt_ports $b
+      if [ "$b" = ip6tables ]; then $b -C INPUT -p ipv6-icmp -j ACCEPT 2>/dev/null || $b -A INPUT -p ipv6-icmp -j ACCEPT
+        $b -C OUTPUT -p ipv6-icmp -j ACCEPT 2>/dev/null || $b -A OUTPUT -p ipv6-icmp -j ACCEPT; fi
+      for pr in tcp udp icmp; do [ "$b" = ip6tables ] && [ $pr = icmp ] && continue
+        $b -C OUTPUT -p $pr -m state --state NEW,ESTABLISHED -j ACCEPT 2>/dev/null || $b -A OUTPUT -p $pr -m state --state NEW,ESTABLISHED -j ACCEPT; done
+      $b -P INPUT DROP; $b -P OUTPUT DROP; $b -P FORWARD DROP; }
+    tma_ipt_policy iptables
+    tma_ipt_save iptables
+  guidance: "For each port identified in the audit which does not have a firewall rule establish a proper rule for accepting inbound connections: # ufw allow in <port>/<tcp or udp protocol> Be careful that you don't add the port used by rosmaster (11311 by default) to this list unless you specifically want to utilize distributed computing and you understand the risk."

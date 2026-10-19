@@ -1,0 +1,23 @@
+id: TMA-GITHUB-1.3.9
+title: Ensure an organization's identity is confirmed with a "Verified" badge
+description: 'Confirm the domains an organization owns with a "Verified" badge. Verifying the organization''s domain gives developers assurance that a given domain is truly the official home for a public organization. The organization must have is_verified true (verified domain badge). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.3.9 Ensure an organization's identity is confirmed with a "Verified" badge
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    O=${GH_ORG:-$(gh api 'repos/{owner}/{repo}' --jq .owner.login 2>/dev/null)}
+    [ -n "$O" ] || exit 1
+    v=$(gh api "orgs/$O" --jq '.is_verified == true' 2>/dev/null) || exit 1
+    [ "$v" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Verify the organization domain(s) (Organization Settings > Verified and approved domains) to obtain the Verified badge.

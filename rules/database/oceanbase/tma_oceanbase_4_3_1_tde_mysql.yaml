@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-4.3.1
+title: Use TDE for At-Rest Data Encryption
+description: OceanBase supports table-granularity transparent encryption to achieve secure data storage. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when tde_method is not none (e.g. internal or bkmi) on every OBServer for the tenant.
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- encryption
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.3.1 Use TDE for At-Rest Data Encryption
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN COUNT(*) > 0 AND SUM(CASE WHEN LOWER(value) <> 'none' THEN 0 ELSE 1 END) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM oceanbase.GV\$OB_PARAMETERS WHERE name = 'tde_method'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET tde_method = 'internal'; (or a KMS-backed method), confirm with SHOW PARAMETERS LIKE 'tde_method'; then create encrypted tablespaces / tables for sensitive data.

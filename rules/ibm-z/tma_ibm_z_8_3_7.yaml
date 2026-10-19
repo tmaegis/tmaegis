@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.3.7
+title: Ensure that access to JESJOBS MODIFY resources is controlled
+description: Resources with a MODIFY high-level qualifier in the JESJOBS resource class control the use of the modify job function of the job modify SSI 85. Modifying a job can change the attributes of a job such as the job class, service class, system affinity, and priority. Failure to properly control access to modifying jobs could result in unauthorized personnel disrupting normal system operations by modifying critical jobs.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.3.7 Ensure that access to JESJOBS MODIFY resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that JESJOBS appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that JESJOBS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the JESJOBS entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no MODIFY prefixed entries Request reports generated using IRRDBU00 output that will allow you to: Verify That a catch-all profile named MODIFY.* or MODIFY.** or MODIFY.*.** has been ... (full steps: CIS section 8.3.7)'
+remediation:
+  type: iac_patch
+  command: 'To activate the JESJOBS class use the RACF SETROPTS command: SETROPTS CLASSACT(JESJOBS) To enable generic profile checking for the JESJOBS class use the RACF SETROPTS command: SETROPTS GENERIC(JESJOBS) To create a JESJOBS profile use the RACF RDEFINE and PERMIT commands: RDEFINE JESJOBS MODIFY.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''CATCH-ALL PROFILE'') PERMIT MODIFY.** CLASS(JESJOBS) + ACCESS(UPDATE) ID(PRODCNTL OPERATOR SYSPROG) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER command: RALTER JESJOBS MODIFY.** + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(JESJOBS) + DELETE ID(<non-compliant>) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be
+    used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable ... (see CIS section 8.3.7)'

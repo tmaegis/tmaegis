@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.6.11.3
+title: Ensure 'Prohibit use of Internet Connection Sharing on your DNS domain network' is set to 'Enabled'
+description: 'Although this "legacy" setting traditionally applied to the use of Internet Connection Sharing (ICS) in Windows 2000, Windows XP & Server 2003, this setting now freshly applies to the Mobile Hotspot feature in Windows 10 & Server 2016. The recommended state for this setting is: Enabled. Warning: In order for Application Guard to function correctly, ICS must be enabled. If Application Guard is used in the environment, then an exception to this recommendation might be needed. To learn more on how to disable portions of ICS without breaking Application Guard, please visit: FAQ - Microsoft Defende'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.6.11.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkConnections'' -Name ''NC_ShowSharedAccessUI'' -ErrorAction SilentlyContinue).''NC_ShowSharedAccessUI''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''NC_ShowSharedAccessUI='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkConnections')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkConnections' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkConnections' -Name 'NC_ShowSharedAccessUI' -Value 0 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,17 @@
+id: TMA-NGINX-2.2.1
+title: Ensure that NGINX is run using a non-privileged, dedicated service account
+description: The NGINX master process typically runs as root to bind to privileged ports and manage resources, but it spawns worker processes to handle the actual client traffic. The user directive in the main configuration designates the operating system account under which these worker processes run. Compliant when the user directive names an account whose UID is not 0 and which is not in the root, wheel, sudo or admin groups (sudo rights are not checked). Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 1
+severity: high
+tags:
+- nginx
+- accounts
+reference: CIS NGINX Benchmark v3.0.0 - 2.2.1 Ensure that NGINX is run using a non-privileged, dedicated service account
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; u=$(printf '%s\n' "$out" | awk '$1=="user"{x=$2; sub(/;$/,"",x); print x; exit}'); [ -n "$u" ] || { echo noncompliant; exit 0; }; id=$(id -u "$u" 2>/dev/null) || { echo noncompliant; exit 0; }; g=$(id -Gn "$u" 2>/dev/null); [ "$id" != 0 ] && ! printf ' %s ' "$g" | grep -Eq ' (root|wheel|sudo|admin) ' && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a dedicated system account (e.g. useradd -r -s /sbin/nologin nginx), set 'user nginx;' in the main context of nginx.conf and remove the account from privileged groups. Then run nginx -t and reload nginx.

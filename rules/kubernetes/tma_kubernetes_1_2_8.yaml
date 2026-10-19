@@ -1,0 +1,105 @@
+id: TMA-KUBERNETES-1.2.8
+title: Ensure that the --authorization-mode argument includes RBAC
+description: Turn on Role Based Access Control. Audited on control-plane nodes from the running process arguments (falls back to the kubeadm static pod manifest); SKIPs on nodes without that manifest.
+target: kubernetes
+level: 1
+severity: high
+tags:
+- kubernetes
+- api-server
+- rbac
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.2.8 Ensure that the --authorization-mode argument includes RBAC
+audit:
+  type: command
+  command: |-
+    set -f
+    a=$(ps -eo args 2>/dev/null | grep -E '^([^ ]*/)?kube-apiserver( |$)' | head -n 1)
+    [ -n "$a" ] || a=$(sed -n 's/^[[:space:]]*-[[:space:]]*"\{0,1\}\(--[^"]*\)"\{0,1\}[[:space:]]*$/\1/p' /etc/kubernetes/manifests/kube-apiserver.yaml | tr '\n' ' ')
+    [ -n "$a" ] || exit 1
+    g() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    has() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++) if($i==k||index($i,k"=")==1) f=1} END{exit !f}'; }
+    ok=1
+    v=$(g authorization-mode); case ",$v," in *,RBAC,*) ;; *) echo "noncompliant: --authorization-mode=$v lacks RBAC"; ok=0;; esac
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/manifests/kube-apiserver.yaml
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=/etc/kubernetes/manifests/kube-apiserver.yaml
+    [ -f "$m" ] || { echo "static pod manifest $m not found; edit the component args where it is defined" >&2; exit 1; }
+
+    BK=/etc/kubernetes/tmaegis-backup
+    # tma_yset FILE dotted.path VALUE : set (or add) a nested key in a block-style YAML file
+    tma_yset() {
+      t="$1.tma.$$"; cp -p "$1" "$t" || return 1
+      awk -v want="$2" -v val="$3" '
+      { sub(/\r$/,""); L[NR]=$0 }
+      END {
+        n=0; found=0; best=0; bestd=0; bestind=0
+        for (i=1;i<=NR;i++) {
+          l=L[i]
+          if (l ~ /^[ \t]*(#|$)/ || l ~ /^[ \t]*-/) continue
+          match(l,/^ */); ind=RLENGTH; tx=substr(l,ind+1); c=index(tx,":"); if (c==0) continue
+          k=substr(tx,1,c-1); gsub(/"/,"",k)
+          while (n>0 && ind<=ids[n]) n--
+          n++; ids[n]=ind; keys[n]=k
+          p=keys[1]; for (j=2;j<=n;j++) p=p "." keys[j]
+          if (p==want) { found=i; fk=k; find=ind; break }
+          if (index(want ".", p ".")==1) { best=i; bestd=n; bestind=ind }
+        }
+        if (found) { L[found]=sprintf("%" find "s%s: %s","",fk,val); for (i=1;i<=NR;i++) print L[i]; exit }
+        np=split(want, parts, ".")
+        ci=best ? bestind+2 : 0
+        if (best) for (i=best+1;i<=NR;i++) { if (L[i] ~ /^[ \t]*(#|$)/) continue; match(L[i],/^ */); if (RLENGTH>bestind) ci=RLENGTH; break }
+        ins=""
+        for (j=bestd+1;j<=np;j++) { ind=(j==bestd+1)?ci:ci+2*(j-bestd-1); ins=ins sprintf("%" ind "s%s:%s\n","",parts[j],(j==np)?" " val:"") }
+        for (i=1;i<=NR;i++) { print L[i]; if (i==best) printf "%s", ins }
+        if (!best) printf "%s", ins
+      }' "$1" > "$t.n" && cat "$t.n" > "$1"; r=$?; rm -f "$t" "$t.n"; return $r
+    }
+    # --- static pod manifest flag helpers (args are YAML list entries "- --flag=value") ---
+    tma_getflag() { sed -n "s/^[[:space:]]*-[[:space:]]*\"\{0,1\}--$2=\([^\"]*\)\"\{0,1\}[[:space:]]*\$/\1/p" "$1" | tail -n 1; }
+    # tma_setflag FILE NAME VALUE ; empty VALUE deletes the flag
+    tma_setflag() {
+      t="$(dirname "$1")/.tma.$$"; cp -p "$1" "$t" || return 1
+      awk -v n="--$2" -v v="$3" '
+      { L[NR]=$0 }
+      END {
+        pat="^[ \t]*-[ \t]*\"?" n "(=|\"?[ \t]*$)"; f=0; a=0
+        for (i=1;i<=NR;i++) { if (L[i] ~ pat) f=i; if (!a && L[i] ~ /^[ \t]*-[ \t]*"?(kube-apiserver|kube-controller-manager|kube-scheduler|etcd)"?[ \t]*$/) a=i }
+        if (!f && !a) exit 3
+        for (i=1;i<=NR;i++) {
+          if (i==f) { ind=L[i]; sub(/-.*/,"",ind); if (v!="") print ind "- " n "=" v }
+          else print L[i]
+          if (!f && i==a) { ind=L[i]; sub(/-.*/,"",ind); if (v!="") print ind "- " n "=" v }
+        }
+      }' "$1" > "$t" && cat "$t" > "$1"; r=$?; rm -f "$t"
+      [ $r -eq 0 ] || { echo "cannot edit args of $1 (no 'command:' list entry found); edit it manually" >&2; exit 1; }
+    }
+    tma_listdel() { c=$(tma_getflag "$1" "$2"); [ -n "$c" ] || return 0
+      w=$(printf ',%s,' "$c" | sed "s/,$3,/,/g;s/,$3,/,/g;s/^,//;s/,\$//"); tma_setflag "$1" "$2" "$w"; }
+    tma_listadd() { c=$(tma_getflag "$1" "$2")
+      if [ -z "$c" ]; then tma_setflag "$1" "$2" "$3"; else case ",$c," in *,"$3",*) ;; *) tma_setflag "$1" "$2" "$c,$3";; esac; fi; }
+    tma_setmin() { c=$(tma_getflag "$1" "$2"); case "$c" in ""|*[!0-9]*) tma_setflag "$1" "$2" "$3";; *) [ "$c" -ge "$3" ] || tma_setflag "$1" "$2" "$3";; esac; }
+    tma_authz() { c=$(tma_getflag "$1" authorization-mode); [ -n "$c" ] || c=Node,RBAC
+      tma_setflag "$1" authorization-mode "$c"; tma_listdel "$1" authorization-mode AlwaysAllow
+      tma_listadd "$1" authorization-mode Node; tma_listadd "$1" authorization-mode RBAC; }
+
+    mkdir -p "$BK"; cp -p "$m" "$BK/$(basename "$m").$(date +%Y%m%d%H%M%S)"
+    tma_authz "$m"
+  guidance: "Edit the API server pod specification file /etc/kubernetes/manifests/kube-apiserver.yaml on the Control Plane node and set the --authorization-mode parameter to a value that includes RBAC, for example: --authorization-mode=Node,RBAC"

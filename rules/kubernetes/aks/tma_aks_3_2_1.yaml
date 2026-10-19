@@ -1,0 +1,25 @@
+id: TMA-AKS-3.2.1
+title: Ensure that the --anonymous-auth argument is set to false
+description: This setting applies to the worker node kubelet and ensures that --anonymous-auth is set to false, meaning the kubelet does not accept unauthenticated anonymous requests to its HTTPS endpoint. This helps reduce the risk of unauthorized access to node-level information and operations. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.
+target: aks
+level: 1
+severity: critical
+tags:
+- aks
+- worker-node
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.2.1 Ensure that the --anonymous-auth argument is set to false
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"anonymous":\{"enabled":false\}'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'If the --anonymous-auth parameter is not set to false and manual modification is required, review the following file, which contains the KUBELET_FLAGS values used to build the kubelet command-line parameters. /etc/default/kubelet Before editing anything, enter debug mode and run chroot to verify what your node is actually using: kubectl debug node/$NODE_NAME -it --image=$IMAGE --profile=general chroot /host systemctl cat kubelet If the service shows an EnvironmentFile=/etc/default/kubelet or references KUBELET_FLAGS, that is the file you would edit. If it does not, then the next place to check is the kubelet systemd unit or drop-in, such as: /etc/systemd/system/kubelet.service /etc/systemd/system/kubelet.service.d/*.conf After a changing the kubelet config file, restart the kubelet service and check status.'

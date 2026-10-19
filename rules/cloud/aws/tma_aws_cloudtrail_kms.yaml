@@ -1,0 +1,21 @@
+id: TMA-AWS-CLOUDTRAIL-KMS
+title: Ensure CloudTrail logs are encrypted at rest using KMS customer managed keys
+description: SSE-KMS adds a key policy layer so reading CloudTrail logs needs kms:Decrypt as well as S3 access. At least one trail must exist and every trail must have a KmsKeyId. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- logging
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Logging - CloudTrail SSE-KMS encryption (verify section number for your release)
+audit:
+  type: command
+  command: 'n=$(aws cloudtrail describe-trails --query ''length(trailList)'' --output text 2>/dev/null) || exit 1
+
+    out=$(aws cloudtrail describe-trails --query ''trailList[?KmsKeyId==`null`].Name'' --output text 2>/dev/null) || exit 1
+
+    [ "$n" -gt 0 ] && [ -z "$out" ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create a symmetric customer managed KMS key whose policy allows cloudtrail.amazonaws.com to encrypt, then aws cloudtrail update-trail --name <trail> --kms-key-id <key-arn> (Terraform: kms_key_id).'

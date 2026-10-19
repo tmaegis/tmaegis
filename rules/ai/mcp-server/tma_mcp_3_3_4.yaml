@@ -1,0 +1,19 @@
+id: TMA-MCP-3.3.4
+title: Ensure OAuth scopes are minimized and elevated progressively
+description: MCP servers advertise the minimal set of scopes needed for basic functionality in Protected Resource Metadata scopes_supported and do not expose an over-broad or wildcard scope surface. During initial authorization a client requests only the scopes indicated by the WWW-Authenticate challenge or, absent a challenge scope, the advertised scopes_supported. When a privileged operation returns an insufficient_scope challenge, the client elevates through a step-up flow, requesting the union of its previously requested scopes and the scopes named in the challenge, so previously granted permissions are preserved. A granted token may therefore carry more than the operation in progress requires, but every granted scope stays within an approved cumulative scope set that the deployment records in the capability baseline, together with the per-tool scopes that compose it. Broad wildcard scopes suc...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.3.4 Ensure OAuth scopes are minimized and elevated progressively
+audit:
+  type: manual
+  command: 'Inspect the Protected Resource Metadata for the scopes advertised in scopes_supported, then compare a token''s granted scopes against the approved cumulative scope set in the capability baseline. Run the following command to read the scopes on a token in use. The decode is padding-safe, and scopes may be in the scope or scp claim: TOKEN=''<JWT_ACCESS_TOKEN>'' seg=$(printf ''%s'' "$TOKEN" | cut -d. -f2 | tr ''_-'' ''/+'') pad=$(( (4 - ${#seg} % 4) % 4 )); seg="$seg$(printf ''=%.0s'' $(seq 1 $pad))" claims=$(printf ''%s'' "$seg" | base64 -d 2>/dev/null) [ -z "$claims" ] && { echo "ERROR: could not decode (opaque token? introspect instead)"; exit 0; } printf ''%s'' "$claims" | jq empty 2>/dev/null || { echo "ERROR: decoded payload is not JSON (opaque token? introspect instead)"; exit 0; } granted=$(echo "$claims" | jq -r ''(.scope // (.scp // [] | join(" ")))'') echo "granted_scopes: $granted" Set APPROVED to the deployment''s approved cumulative scope set from the capability baseline,
+    space-delimited (for example mcp:read mcp:write). Run the following command to flag any granted scope outside the approved set and any broad wildcard grant: APPROVED="<APPROVED_CUMULATIVE_SCOPES>" [ -z "$granted" ] &&...'
+remediation:
+  type: iac_patch
+  command: Trim the scopes advertised in Protected Resource Metadata scopes_supported to the minimal set the server's tools need, and do not advertise or grant broad wildcard scopes such as admin:* unless a documented exception approves them. Configure the authorization server so that a privileged operation returns an insufficient_scope challenge naming all required scopes in a single challenge rather than one at a time. Clients elevate through the step-up flow, requesting the union of previously requested scopes and the challenge scopes so accumulated permissions are preserved. Document the approved cumulative set, and the per-tool scopes that compose it, in the capability baseline using the same scope names the Audit reads. For servers with read and write tools, separate scope tiers (for example mcp:read, mcp:write, mcp:admin). Verify with the Audit.

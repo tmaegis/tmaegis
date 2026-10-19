@@ -1,0 +1,19 @@
+id: TMA-MARIADB-9.2
+title: Ensure 'MASTER_SSL_VERIFY_SERVER_CERT' is enabled
+description: 'On the MariaDB REPLICA, the setting MASTER_SSL_VERIFY_SERVER_CERT indicates whether the REPLICA should perform server certificate verification of the PRIMARY''s certificate. Checks every replication connection in SHOW ALL REPLICAS STATUS; passes on servers that are not replicas. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- replication
+- tls
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 9.2 Ensure 'MASTER_SSL_VERIFY_SERVER_CERT' is enabled
+audit:
+  type: sql_query
+  command: 'out=$(mariadb -Ee "SHOW ALL REPLICAS STATUS" 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk -F'': '' ''/Master_SSL_Verify_Server_Cert:/{if($2!="Yes")b++} END{print b?"noncompliant":"compliant"}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: STOP REPLICA; CHANGE MASTER TO MASTER_SSL_VERIFY_SERVER_CERT = 1; START REPLICA; (per connection name for multi-source replication).

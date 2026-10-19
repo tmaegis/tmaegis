@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-3.4
+title: Ensure Database Monitoring and Alerting Are in Place
+description: A robust monitoring and alerting system must be implemented for CockroachDB to continuously observe the health, performance, and security posture of the database cluster. CockroachDB exposes detailed metrics and events through its internal time- series database and provides a built-in Admin UI (DB Console) for visualization.
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- monitoring
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 3.4 Ensure Database Monitoring and Alerting Are in Place
+audit:
+  type: manual
+  command: Confirm Prometheus (or equivalent) scrapes every node (grep cockroach /etc/prometheus/prometheus.yml; curl -s http://<node>:8080/_status/vars | head), Grafana/DB Console dashboards show live data, and alert rules exist and are routed for node down >1 minute, disk capacity, clock offset, under-replicated ranges and certificate expiry.
+remediation:
+  type: iac_patch
+  command: '1. Integrate with Prometheus and Grafana: Configure Prometheus to scrape metrics from all CockroachDB nodes (default endpoint: http://<node>:8080/_status/vars). Example Prometheus job configuration: scrape_configs: - job_name: ''cockroachdb'' scrape_interval: 10s static_configs: - targets: [''node1:8080'', ''node2:8080'', ''node3:8080''] Import the official CockroachDB Grafana dashboard JSON from Cockroach Labs to visualize performance data. 2.'

@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-4.3
+title: Ensure 'Turn on connectivity logging' is set to 'True'
+description: A connectivity log is a record of the SMTP connection activity of the outbound message delivery queues to the destination Mailbox server, smart host, or domain. Connectivity logging can be configured with the transport service on Mailbox servers and Edge Transport servers. Prints the number of transport services where ConnectivityLogEnabled is not True (expected 0). Run on each Edge Transport and Mailbox server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- logging
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 4.3 Ensure 'Turn on connectivity logging' is set to 'True'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-TransportService -ErrorAction Stop | Where-Object { $_.ConnectivityLogEnabled -ne $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-TransportService '<server>' -ConnectivityLogEnabled $true

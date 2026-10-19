@@ -1,0 +1,20 @@
+id: TMA-INTUNE-DEFENDER-2.17
+title: 'Ensure ''ASR: Block JavaScript or VBScript from launching downloaded executable content'' is set to ''Block'''
+description: 'This rule prevents scripts from launching potentially malicious downloaded content. The recommended state for this setting is: Block. Audit: reads the Intune PolicyManager ASR rules value (via the WinningProvider GUID) and requires the rule entry d3e037e1-3eb8-44c8-a917-57927947596d=1 (Block).'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.17 Ensure ''ASR: Block JavaScript or VBScript from launching downloaded executable content'' is set to ''Block'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$p = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Defender'' -Name ''AttackSurfaceReductionRules_WinningProvider'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules_WinningProvider''; if (-not $p) { ''non-compliant: no ASR WinningProvider'' } else { $p = ([string]$p).Trim(''{}''); $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\'' + $p + ''\default\Device\Defender''; if (-not (Test-Path $k)) { $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\{'' + $p + ''}\default\Device\Defender'' }; $v = (Get-ItemProperty -Path $k -Name ''AttackSurfaceReductionRules'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules''; $have = @(([string]$v) -split ''\|'' | ForEach-Object { $_.Trim().ToLower() }); $want = @(''d3e037e1-3eb8-44c8-a917-57927947596d=1''); if (@($want | Where-Object { $have -contains $_ }).Count -gt 0) { ''compliant'' } else { ''non-compliant:
+    '' + $v } }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Block. Defender\Block JavaScript or VBScript from launching downloaded executable content

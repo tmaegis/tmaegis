@@ -1,0 +1,22 @@
+id: TMA-DEBIAN9-5.2.14
+title: Ensure only strong MAC algorithms are used
+description: This variable limits the types of MAC algorithms that SSH can use during communication.
+target: linux
+os_family:
+- debian-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 9 Benchmark v1.0.1 ARCHIVE - 5.2.14
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v sshd >/dev/null 2>&1 || { echo "step1: sshd not installed"; return 1; }; o=$(bash -c ''sshd -T | grep -i "MACs"'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Weak MAC algorithms:'' || { echo step1: missing ''Weak MAC algorithms:''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-md5 || { echo step1: missing hmac-md5; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-md5-96 || { echo step1: missing hmac-md5-96; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-ripemd160 || { echo step1: missing hmac-ripemd160; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-sha1 || { echo step1: missing hmac-sha1; return 1; }; printf ''%s\n''
+    "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-sha1-96 || { echo step1: missing hmac-sha1-96; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- umac-64@openssh.com || { echo step1: missing umac-64@openssh.com; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- umac-128@openssh.com || { echo step1: missing umac-128@openssh.com; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-md5-etm@openssh.com || { echo step1: missing hmac-md5-etm@openssh.com; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-md5-96-etm@openssh.com || { echo step1: missing hmac-md5-96-etm@openssh.com; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-ripemd160-etm@openssh.com || { echo step1: missing hmac-ripemd160-etm@openssh.com; return 1; }; printf
+    ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-sha1-etm@openssh.com || { echo step1: missing hmac-sha1-etm@openssh.com; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- hmac-sha1-96-etm@openssh.com || { echo step1: missing hmac-sha1-96-etm@openssh.com; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- umac-64-etm@openssh.com || { echo step1: missing umac-64-etm@openssh.com; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- umac-128-etm@openssh.com || { echo step1: missing umac-128-etm@openssh.com; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/ssh/sshd_config file and add/modify the MACs line to contain a comma separated list of the site approved MACs Example: MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2- 512,hmac-sha2-256'

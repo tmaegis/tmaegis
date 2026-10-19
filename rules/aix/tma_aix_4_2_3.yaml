@@ -1,0 +1,17 @@
+id: TMA-AIX-4.2.3
+title: Ensure legacy NIS markers are removed
+description: 'If NIS has been de-installed in the environment, or has historically been used, ensure the + markers are removed from/etc/passwd and /etc/group. The + entries in /etc/passwd and /etc/group were used as markers to insert data from a NIS map. These entries may provide an avenue for attackers to gain privileged access on the system. The + entries must be deleted if they still exist. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.2.3 Ensure legacy NIS markers are removed
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; out=$( { grep "^+" /etc/passwd /etc/group ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Examine the /etc/passwd and /etc/group files: grep "^+" /etc/passwd /etc/group If the above command yields output, delete the + line: vi /etc/passwd vi /etc/group'

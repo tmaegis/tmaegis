@@ -1,0 +1,16 @@
+id: TMA-APACHE-4.2
+title: Ensure Appropriate Access to Web Content Is Allowed
+description: 'In order to serve Web content, either the Apache Allow directive or the Require directive will need to be used to allow for appropriate access to directories, locations and virtual hosts that contain web content. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- access-control
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 4.2 Ensure Appropriate Access to Web Content Is Allowed
+audit:
+  type: manual
+  command: 'Perform the following to determine if the recommended state is implemented: 1. Search the Apache configuration files (httpd.conf and any included configuration files) to find all <Directory> and <Location> elements. 2. Ensure that either one of the following two methods are configured: Use the deprecated Order/Deny/Allow method: 1. Ensure there is a single Order directive with the value of Deny,Allow for each. 2. Ensure the Allow and Deny directives, have values that are appropriate for the purposes of the directory. Use the Require method: 3.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: 1. Search the Apache configuration files (httpd.conf and any included configuration files) to find all <Directory> and <Location> elements. There should be one for the document root and any special purpose directories or locations. There are likely to be other access control directives in other contexts, such as virtual hosts or special elements like <Proxy>. 2. Include the appropriate Require directives, with values that are appropriate for the purposes of the directory. The configurations below are just a few possible examples. <Directory "/var/www/html/"> Require ip 192.169. </Directory> <Directory "/var/www/html/"> Require all granted </Directory> <Location /usage> Require local </Location> <Location /portal> Require valid-user </Location>'

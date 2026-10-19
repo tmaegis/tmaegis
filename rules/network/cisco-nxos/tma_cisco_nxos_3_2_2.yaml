@@ -1,0 +1,18 @@
+id: TMA-CISCO-NXOS-3.2.2
+title: Disable ICMP Redirects on all Layer 3 Interfaces
+description: A redirect packet basically informs the host that there is a better way to get to the destination host or network. This route is then cached on the (victim) host. For instance, if the default gateway of a host is the NX-OS switch, and the victim host sends a packet to an internet or WAN IP, the NX-OS switch will inform the host that the firewall or WAN router will be a better path. Fails if any Vlan/Ethernet/port-channel interface with an IP address lacks 'no ip redirects'. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.2.2 Disable ICMP Redirects on all Layer 3 Interfaces
+audit:
+  type: config_regex
+  pattern: (?m)^interface (?:[Vv]lan|Ethernet|port-channel)[^\n]*\n(?:[ \t]+(?:$|[^n \t\n]|n(?:$|[^o\n]|o(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^t\n]|t(?:$|[^s\n])))))))))))))))[^\n]*\n)*[ \t]+ip address [^\n]*\n(?:[ \t]+(?:$|[^n \t\n]|n(?:$|[^o\n]|o(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^t\n]|t(?:$|[^s\n])))))))))))))))[^\n]*\n)*(?:[^ \t]|\z)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: It is recommended that you perform this task on all Layer 3 Interfaces which have both a primary and a backup routed path to any destination. In particular, the next hop will need to be in the same subnet as the potential victim hosts. The corollary to this is that if the network is architected such that all layer 3 egress paths are on dedicated or "point to point" segments (with no other hosts on those segments), then the ip redirect issue will never arise. switch(config-if) no ip redirects

@@ -1,0 +1,23 @@
+id: TMA-DOCKER-7.3
+title: Ensure that all Docker swarm overlay networks are encrypted
+description: Overlay network traffic between swarm nodes is unencrypted by default. On an active swarm node every overlay network must have the encrypted option; compliant when swarm mode is inactive.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- swarm
+- network
+reference: CIS Docker Benchmark v1.9.0 - 7.3 Ensure that all Docker swarm overlay networks are encrypted
+audit:
+  type: command
+  command: 'st=$(docker info --format ''{{.Swarm.LocalNodeState}}'') || exit 1; [ "$st" = active ] || { echo compliant; exit 0; }; ns=$(docker network ls --filter driver=overlay --quiet) || exit 1; [ -z "$ns" ] && { echo compliant; exit 0; }; out=$(docker network inspect --format ''{{.Name}} {{index .Options "encrypted"}}'' $ns) || exit 1; bad=$(printf ''%s\n'' "$out" | awk ''NF<2 {print $1}''); [ -z "$bad" ] && echo compliant || printf ''unencrypted overlay: %s\n'' $bad'
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Create overlay networks with --opt encrypted (docker network create -d overlay --opt encrypted <name>) and move services onto them.

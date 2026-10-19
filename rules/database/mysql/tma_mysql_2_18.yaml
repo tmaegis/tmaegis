@@ -1,0 +1,18 @@
+id: TMA-MYSQL-2.18
+title: Implement Connection Delays to Limit Failed Login Attempts
+description: 'MySQL Server can enable administrators to introduce an increasing delay in server response to clients after a certain number of consecutive failed connection attempts. Requires both connection_control plugins ACTIVE, threshold >= 5, min delay >= 60000 ms, max delay >= 1920000 ms, and FAILED_LOGIN_ATTEMPTS configured on every unlocked non-reserved account (the benchmark uses 12). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- authentication
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.18 Implement Connection Delays to Limit Failed Login Attempts
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF((SELECT COUNT(*) FROM information_schema.PLUGINS WHERE PLUGIN_NAME IN ('CONNECTION_CONTROL','CONNECTION_CONTROL_FAILED_LOGIN_ATTEMPTS') AND PLUGIN_STATUS = 'ACTIVE') = 2 AND (SELECT VARIABLE_VALUE FROM performance_schema.global_variables WHERE LOWER(VARIABLE_NAME) = 'connection_control_failed_connections_threshold') >= 5 AND (SELECT VARIABLE_VALUE FROM performance_schema.global_variables WHERE LOWER(VARIABLE_NAME) = 'connection_control_min_connection_delay') >= 60000 AND (SELECT VARIABLE_VALUE FROM performance_schema.global_variables WHERE LOWER(VARIABLE_NAME) = 'connection_control_max_connection_delay') >= 1920000 AND (SELECT COUNT(*) FROM mysql.user WHERE user NOT IN ('mysql.infoschema','mysql.session','mysql.sys') AND account_locked = 'N' AND IFNULL(JSON_EXTRACT(user_attributes, '\$.Password_locking.failed_login_attempts'), 0) = 0) = 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add under [mysqld]: plugin-load-add=connection_control.so, connection-control=FORCE_PLUS_PERMANENT, connection-control-failed-login-attempts=FORCE_PLUS_PERMANENT, connection_control_failed_connections_threshold=5, connection_control_min_connection_delay=60000, connection_control_max_connection_delay=1920000; restart, then ALTER USER <user> FAILED_LOGIN_ATTEMPTS 12 PASSWORD_LOCK_TIME UNBOUNDED; for each account.'

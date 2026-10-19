@@ -1,0 +1,18 @@
+id: TMA-FLASHARRAY-2.7
+title: Ensure SNMP, if enabled, uses SNMPv3 with SHA authentication and AES privacy
+description: 'FlashArray supports configuring the simple network management protocol (SNMP). An SNMP agent can be configured on the array, allowing external clients to query the array using SNMP for information such as performance metrics and array details. SNMP managers can also be configured to receive alerts. Fails when the SNMP agent (localhost) or any manager uses v1/v2c, MD5 authentication or DES privacy; confirm v3 with SHA and AES and passphrases of 8+ characters. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "puresnmp list --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- encryption
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 2.7 Ensure SNMP, if enabled, uses SNMPv3 with SHA authentication and AES privacy
+audit:
+  type: config_regex
+  pattern: (?i)(?:\bv1\b|\bv2c\b|\bMD5\b|\bDES\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, update your SNMP configuration to utilize SNMPv3 with strong authentication and privacy protocols, and ensure passphrases meet the 8-character minimum complexity requirement. From the GUI: ; Navigate to Settings > System. ; In the SNMP panel, click the menu icon and select Add SNMP Manager (or click Edit for an existing manager). ; Complete the following fields in the dialog box: ; SNMP Version: Select v3. ; User: Enter the recognized User ID. ; Auth Protocol: Select SHA. ; Auth Passphrase: Enter a complex passphrase of at least 8 characters. ; Privacy Protocol: Select AES. ; Privacy Passphrase: Enter a complex passphrase of at least 8 characters.'

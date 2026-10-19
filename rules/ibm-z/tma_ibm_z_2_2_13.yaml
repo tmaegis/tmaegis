@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.2.13
+title: Ensure that access to System REXX IRRPWREX exit is controlled
+description: Ensure that read access is restricted to security administrators, systems programmers, and auditors. Unauthorized access could result in the compromise of passwords, the operating system environment, RACF, and customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.2.13 Ensure that access to System REXX IRRPWREX exit is controlled
+audit:
+  type: manual
+  command: 'Note: Refer to the zOS system REXXLIB concatenation found in SYS1.PARMLIB(AXR) for the data set that contains the Rexx for the password exit named IRRPWREX and the defined AXRUSER. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering the dataset containing IRRPWREX Request reports generated using IRRDBU00 output that will allow you to: Verify That the dataset containing IRRPWREX is secured by a profile in the DATASET class that: Has UACC of ... (full steps: CIS section 2.2.13)'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''SYSTEM REXX LIBRARY'') PERMIT ''<profile>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''<profile>'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated
+    GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

@@ -1,0 +1,25 @@
+id: TMA-PALOALTO-5.1
+title: Ensure that WildFire file size upload limits are maximized
+description: The default file size limits on the firewall are designed to include the majority of malware in the wild (which is smaller than the default size limits) and to exclude large files that are very unlikely to be malicious and that can impact WildFire file-forwarding capacity.
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 5.1 Ensure that WildFire file size upload limits are maximized
+audit:
+  type: manual
+  command: 'Device > Setup > WildFire > General Settings: confirm every file-type size limit is at least the default (pe 16MB, apk 10MB, pdf 3072KB, ms-office 16384KB, jar 5MB, flash 5MB, MacOSX 10MB, archive 50MB, linux 50MB, script 20KB) and ideally near the maximum (pe/apk/MacOSX 50MB, pdf/ms-office 51200KB, jar 20MB, flash 10MB, script 4096KB). CLI: show deviceconfig setting wildfire file-size-limit.'
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig setting wildfire file-size-limit pe size-limit 50
+    set deviceconfig setting wildfire file-size-limit pdf size-limit 51200
+    set deviceconfig setting wildfire file-size-limit ms-office size-limit 51200
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > WildFire. Click the General Settings edit icon. Set the maximum size for each file type are larger than the defaults, to a size that is as large enough to account for "large" files, but not large enough to affect performance of the hardware. In PAN-OS 9.x and higher, the default file sizes for WildFire are:
+    pe (Portable Executable) - 16MB apk (Android Application)- 10MB pdf (Portable Document Format) - 3072KB ms-office (Microsoft Office) — 16384KB jar (Packaged Java class file) — 5MB flash (Adobe Flash) — 5MB MacOSX (DMG/MAC-APP/MACH-O PKG files) — 10MB archive (RAR and 7z files) — 50MB linux (ELF files) — 50MB script (JScript, VBScript, PowerShell, and Shell Script)- 20KB In PAN-OS 9.x and higher, the maximum file sizes for Wildfire are:
+    pe (Portable Executable) - 50MB apk (Android Application)- 50MB pdf (Portable Document Format) - 51200KB ms-office (Microsoft Office) — 51200KB jar (Packaged Java class file) — 20MB flash (Adobe Flash) — 10MB MacOSX (DMG/MAC-APP/MACH-O PKG files) — 50MB archive (RAR and 7z files) — 50MB linux (ELF files) — 50MB script (JScript, VBScript, PowerShell, and Shell Script)- 4096KB

@@ -1,0 +1,20 @@
+id: TMA-CISCO-IOS-1.5.5
+title: Set the ACL for each 'snmp-server community'
+description: 'This feature specifies a list of IP addresses that are allowed to use the community string to gain access to the SNMP agent. If ACLs are not applied, then anyone with a valid SNMP community string can potentially monitor and manage the router. An ACL should be defined and applied for all SNMP access to limit access to a small number of authorized management stations segmented in a ... CIS marks this Manual; automated here: fails if a community line ends without an ACL name or number. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'' or ''show startup-config'').'
+target: cisco-ios
+level: 1
+severity: high
+tags:
+- cisco-ios
+- network
+- snmp
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.5.5 Set the ACL for each 'snmp-server community'
+audit:
+  type: config_regex
+  pattern: '(?m)(?i)^snmp-server community \S+(?: view \S+)?(?: (?:RO|RW))?[ \t\r]*$'
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure authorized SNMP community string and restrict access to authorized management systems.
+    snmp-server community <community_string> ro {snmp_access-list_number | snmp_access-list_name}

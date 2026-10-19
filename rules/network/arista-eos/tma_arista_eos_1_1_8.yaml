@@ -1,0 +1,21 @@
+id: TMA-ARISTA-EOS-1.1.8
+title: VLAN Management
+description: VLAN 1 is a special VLAN that tags and handles most of the control plane traffic. VLAN 1 is enabled on all trunks and ports by default. Ensure VLAN1 is pruned from all trunk and access ports that do not require it. Instability in one part of the network could affect VLAN 1, thereby influencing control-plane stability and therefore STP stability for all other VLANs. Checks that VLAN 1 is suspended; trunk allowed lists still need manual review. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: medium
+tags:
+- arista-eos
+- network
+- management-plane
+reference: CIS Arista EOS Benchmark v1.0.0 - 1.1.8 VLAN Management
+audit:
+  type: config_regex
+  pattern: (?m)^vlan 1\r?$[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+state suspend\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! vlan 1
+    state suspend
+    interface Ethernet[X]
+    switchport trunk allowed vlan except 1

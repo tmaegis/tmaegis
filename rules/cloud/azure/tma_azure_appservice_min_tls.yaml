@@ -1,0 +1,17 @@
+id: TMA-AZURE-APPSERVICE-MIN-TLS
+title: Ensure App Service web apps use TLS 1.2 or higher
+description: Older TLS versions are deprecated and weak. Every web app's site configuration must have minTlsVersion 1.2 or 1.3. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- appservice
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - App Service - minimum TLS version (verify section number for your release)
+audit:
+  type: command
+  command: "ids=$(az webapp list --query '[].id' -o tsv 2>/dev/null) || exit 1\nbad=0\nfor id in $ids; do\n  v=$(az webapp config show --ids \"$id\" --query minTlsVersion -o tsv 2>/dev/null) || exit 1\n  case \"$v\" in\n    1.2|1.3) ;;\n    *) echo \"min TLS $v: $id\"; bad=1 ;;\n  esac\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'az webapp config set --ids <app-id> --min-tls-version 1.2 (Terraform: site_config { minimum_tls_version = "1.2" }).'

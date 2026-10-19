@@ -1,0 +1,21 @@
+id: TMA-MCP-7.2.2
+title: Ensure notifications/cancelled and notifications/progress messages are monitored for behavioral anomalies
+description: 'Cancellation and progress signals are monitored for anomalous patterns, with cancellation, progress, and task lifecycle kept distinct and each correlated by the identifier the protocol defines for it. Cancellation depends on the transport: on stdio it is a notifications/cancelled message keyed by params.requestId, while Streamable HTTP has no such message and cancellation appears as a response- stream close or abort seen at the server or gateway. Progress is correlated by the progressToken carried in _meta, and task lifecycle, where the Tasks extension is in use, is a separate mechanism using a server-generated taskId. Per-server baselines for cancellation rate, stream-close rate, and progress frequency and payload volume are established over a learning period. An alert is raised when a server deviates from its baseline in a rolling window, or when a cancellation requestId or progress...'
+target: mcp-server
+level: 2
+severity: low
+tags:
+- ai
+- mcp
+- mcp-server
+- monitoring
+reference: CIS MCP Server Benchmark v1.0.0 - 7.2.2 Ensure notifications/cancelled and notifications/progress messages are monitored for behavioral anomalies
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_7_2_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 7.2.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure structured logging to record issued requests with their JSON-RPC id and, where progress is requested, their progressToken, and to capture cancellation and progress notifications with server identity. On stdio, capture notifications/cancelled and correlate it by params.requestId. On Streamable HTTP, capture response-stream close and abort events, which are the cancellation signal there, and correlate each to its originating request. Capture notifications/progress and correlate it by params.progressToken. Where the Tasks extension is in use, capture task lifecycle separately by taskId. Establish per- server baselines over a learning period. Then add SIEM rules that alert on three conditions: a per-server cancellation or stream-close rate above a baseline-derived threshold, progress frequency or payload volume outside baseline, and any cancellation requestId or progress progressToken that references no originating request. Exclude requests re-issued after a broken stream
+    from the anomaly logic. Route alerts to the security operations team. The exact rule syntax is platform-specific.'

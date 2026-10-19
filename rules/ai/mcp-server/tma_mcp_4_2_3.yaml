@@ -1,0 +1,19 @@
+id: TMA-MCP-4.2.3
+title: Ensure untrusted Resource URIs are not directly dereferenced outside MCP without scheme and destination policy
+description: The host does not directly dereference an untrusted Resource URI or resource link through the browser, an OS protocol handler, or an arbitrary network fetcher unless the scheme and destination are explicitly permitted. A Resource URI is an identifier, and its scheme does not authorize local action. A file:// Resource URI identifies a resource that behaves like a filesystem but need not map to a physical local file, so the host reads it through the server with resources/read rather than opening a local path. The host distinguishes three handling paths. For MCP-mediated resource access, the host sends the URI to the MCP server in a resources/read request and does not dereference it locally. For direct external fetch or navigation, which the specification allows for https:// resources a client can load on its own, the host applies a scheme and destination allowlist, requires user confirm...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.2.3 Ensure untrusted Resource URIs are not directly dereferenced outside MCP without scheme and destination policy
+audit:
+  type: manual
+  command: 'Where the host exposes a direct-open surface for URIs, confirm it rejects a disallowed scheme while handling an approved one, so the rejection is attributable to scheme filtering. This tests the host''s direct-navigation policy, it does not test resources/read, and it does not imply that file:// Resource URIs are invalid. Run the following command against a host direct-open surface, which probes both an approved https URI and a disallowed file: URI and sends each URI as a percent- encoded query parameter so a query-based scheme filter such as the nginx example in the remediation can inspect it: CTRL="<HOST_RESOURCE_OPEN_URL>" APPROVED_URI="<APPROVED_HTTPS_URI>" DISALLOWED_URI="file:///etc/passwd" allow=$(curl -sS -G --connect-timeout 3 -m 6 -o /dev/null -w ''%{http_code}'' --data- urlencode "uri=$APPROVED_URI" "$CTRL") deny=$(curl -sS -G --connect-timeout 3 -m 6 -o /dev/null -w ''%{http_code}'' --data- urlencode "uri=$DISALLOWED_URI" "$CTRL") if [ "$allow" = "000" ] || [ "$deny"
+    = "000" ]; then echo "ERROR: control surface unreachable (cannot verify)" elif printf ''%s'' "$deny" | grep -qE ''^2''; then echo "FAIL: disallowed scheme accepted (file: returned $deny)" elif printf ''%s'' "$allow...'
+remediation:
+  type: iac_patch
+  command: 'Configure the host so that direct dereferencing of a Resource URI is governed by a scheme and destination allowlist covering only what legitimate workflows require (typically https only), and so that the host prompts for user confirmation on any external navigation that is not pre-approved. This is client configuration, and there is no portable command. Do not restrict the Resource URI identifier itself, which the host reads through the server with resources/read. The allowlist must cover both resource URIs returned directly by the server and URIs the model or client may construct from tool outputs. Where direct navigation is proxied through a gateway, a scheme filter can be added there as a coarse backstop that does not replace the client- side allowlist. The following nginx example rejects non-HTTP(S) direct-navigation requests, with the location path set to the site''s actual direct-navigation route: map $arg_uri $uri_scheme_ok { default 0; "~*^https?(://|%3a%2f%2f)" 1; }
+    location /resource-navigation/ { if ($uri_scheme_ok = 0) { return 400; } } For a gateway that percent-decodes the argument before matching, for example through njs or a decode module, the literal "~*^https?:/...'

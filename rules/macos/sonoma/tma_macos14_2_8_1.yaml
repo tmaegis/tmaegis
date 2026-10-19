@@ -1,0 +1,19 @@
+id: TMA-MACOS14-2.8.1
+title: Audit Universal Control Settings
+description: Universal Control is an Apple feature that allows Mac users to control multiple other Macs and iPads with the same keyboard, mouse, and trackpad using the same Apple Account. The technology relies on already available iCloud services, particularly Handoff. Universal Control simplifies the use of iCloud connectivity of multiple computers using the same Apple Account. This may simplify data transfer from organizationally-managed and personal devices. The use of the same iCloud account and Handoff is the underlying concern that should be evaluated. The use of the same keyboard or mouse across multiple devices does not by itself decrease organizational security. Universal Clipboard, a feature of Universal Control, allows any device using the same Apple Account to access the clipboard of any other devices using the same Apple Account. The use of devices together when some are organizationa...
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: low
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.8.1 Audit Universal Control Settings
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to verify a profile is installed that configures Universal Control: 1. Open System Settings 2. Select General 3. Select Device Management 4. Verify that an installed profile has with com.apple.universalcontrol in Settings and has Disable set to your organization''s parameters. Terminal Method: Run the following command to verify that a profile is installed that sets Universal Control to your organization''s parameters: % /usr/bin/sudo /usr/bin/osascript -l JavaScript << EOS $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.universalcontrol'')\ .objectForKey(''Disable'').js EOS If the output is true, Universal Control is disabled. If it is false, then Universal Control is enabled.'
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.universalcontrol 2. The key to include is Disable 3. Set the key to <true/> or <false/> based on your organization''s requirements Note: Since the profile method sets a system-wide setting and not a user-level one, the profile method is the preferred method. It is always better to set system-wide than per user. Note: If your organization is allowing Universal Control, your organization can still disable Universal Clipboard via a profile. To disable Universal Clipboard, create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.coreservices.useractivityd 2. The key to include is ClipboardSharingEnabled 3. Set the key to <false/>'

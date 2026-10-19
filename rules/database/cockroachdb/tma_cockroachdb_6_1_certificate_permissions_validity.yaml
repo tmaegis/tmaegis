@@ -1,0 +1,18 @@
+id: TMA-COCKROACHDB-6.1
+title: Ensure Certificate File Permissions and Validity
+description: 'While Control 1.3 ensures the cluster operates with TLS enabled, this control focuses on the security and maintenance of the certificate files residing on the node''s file system. Critical security artifacts, specifically private keys (node.key, client.root.key), must be protected with strict OS-level file permissions to prevent unauthorized local users from reading the keys. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Checks ${COCKROACH_CERTS_DIR:-/var/lib/cockroach/certs}: every *.key must be 600/400 (no group/other access) and every *.crt must be unexpired. Also confirm the files are owned by the cockroach user and renew certificates nearing expiry.'
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- tls
+- permissions
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 6.1 Ensure Certificate File Permissions and Validity
+audit:
+  type: command
+  command: d=${COCKROACH_CERTS_DIR:-/var/lib/cockroach/certs}; [ -d "$d" ] || exit 1; command -v openssl >/dev/null 2>&1 || exit 1; bad=0; for k in "$d"/*.key; do [ -e "$k" ] || continue; p=$(stat -c %a "$k") || bad=1; [ $((0$p & 077)) -eq 0 ] || bad=1; done; for c in "$d"/*.crt; do [ -e "$c" ] || continue; openssl x509 -noout -checkend 0 -in "$c" >/dev/null 2>&1 || bad=1; done; [ $bad -eq 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chmod 600 <certs>/*.key; chown -R cockroach:cockroach <certs>; regenerate expired or expiring certificates on the CA workstation (cockroach cert create-node / create-client) and reload them (SIGHUP or rolling restart).

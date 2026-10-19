@@ -1,0 +1,21 @@
+id: TMA-EKS-4.1.6
+title: Ensure that Service Account Tokens are only mounted where necessary
+description: Service account tokens in EKS should be mounted only for Pods that require Kubernetes API access or an explicitly configured workload identity flow. EKS supports disabling automatic token mounting at the Pod or ServiceAccount level, and workloads that need AWS access through IRSA or EKS Pod Identity should use a dedicated service account rather than relying on broad default token mounting. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Reports pods with an auto-mounted service account token (kube-api-access-* volume).
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.1.6 Ensure that Service Account Tokens are only mounted where necessary
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}}{{range .spec.volumes}} {{.name}}{{end}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($0 ~ / kube-api-access-/)')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Apply the following steps to reduce unnecessary service account token mounting in EKS: • Set automountServiceAccountToken to false for Pods and ServiceAccounts that do not require Kubernetes API access. This reduces unnecessary default token auto-mounting. • Update workloads to use a dedicated serviceAccountName only where a service account token is operationally required, instead of inheriting token behavior from the namespace default service account. Each application should use its own dedicated service account. • For workloads that need AWS access, use IRSA or EKS Pod Identity with a dedicated service account rather than broad default token mounting. Both models associate AWS permissions to a Kubernetes service account for a specific workload boundary.'

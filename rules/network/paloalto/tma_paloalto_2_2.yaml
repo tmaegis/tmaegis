@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-2.2
+title: Ensure that WMI probing is disabled
+description: 'Disable WMI probing if it is not required for User-ID functionality in the environment. FAILs if User-ID WMI probing (enable-probing yes) is configured anywhere. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 2
+severity: medium
+tags:
+- paloalto
+- hardening
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 2.2 Ensure that WMI probing is disabled
+audit:
+  type: config_regex
+  pattern: (?m)^set [^\n]*\benable-probing yes[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set user-id-collector setting enable-probing no
+    commit
+    # CIS guidance:
+    Navigate to Device > User Identification > User Mapping > Palo Alto Networks User ID Agent Setup. Set Enable Probing so it is unchecked.

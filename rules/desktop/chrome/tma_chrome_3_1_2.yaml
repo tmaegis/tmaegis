@@ -1,0 +1,18 @@
+id: TMA-CHROME-3.1.2
+title: 'Ensure ''Default geolocation setting'' is set to ''Enabled: Do not allow any site to track the users'' physical location'''
+description: "Google Chrome supports tracking a user's physical location using GPS, data about nearby Wi-Fi access points or cellular signal sites/towers (even if you\u2019re not using them), and your computer\u2019s IP. Rationale: From a privacy point of view it is not desirable to submit indicators regarding the location of the device, since the processing of this information cannot be determined. Furthermore, this may leak information about the network infrastructure around the device. Audit reads the Group Policy registry value and prints 'compliant', 'unset' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\\SOFTWARE\\Policies\\Google\\Chrome:DefaultGeolocationSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it."
+target: chrome
+level: 1
+severity: low
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 3.1.2 Ensure ''Default geolocation setting'' is set to ''Enabled: Do not allow any site to track the users'' physical location'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultGeolocationSetting'' -ErrorAction SilentlyContinue).''DefaultGeolocationSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultGeolocationSetting' -Value 2 -PropertyType DWord -Force | Out-Null

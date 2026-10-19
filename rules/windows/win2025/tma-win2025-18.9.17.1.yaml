@@ -1,0 +1,21 @@
+id: TMA-WIN2025-18.9.17.1
+title: Ensure 'Enable / disable CLFS logfile authentication' is set to 'Enabled'
+description: 'This policy setting configures Common Log File System (CLFS) logfile authentication. Logfile authentication provides the ability for the CLFS driver to detect malicious modifications made to logfiles. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.9.17.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies'' -Name ''ClfsAuthenticationChecking'' -ErrorAction SilentlyContinue).''ClfsAuthenticationChecking''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''ClfsAuthenticationChecking='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Policies' -Name 'ClfsAuthenticationChecking' -Value 1 -PropertyType DWord -Force | Out-Null

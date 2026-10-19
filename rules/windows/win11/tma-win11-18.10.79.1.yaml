@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.79.1
+title: Ensure 'Enables or disables Windows Game Recording and Broadcasting' is set to 'Disabled'
+description: 'This setting enables or disables the Windows Game Recording and Broadcasting features. This feature allows users to record gameplay, take screenshots, and capture audio. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.79.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR'' -Name ''AllowGameDVR'' -ErrorAction SilentlyContinue).''AllowGameDVR''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowGameDVR='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\GameDVR' -Name 'AllowGameDVR' -Value 0 -PropertyType DWord -Force | Out-Null

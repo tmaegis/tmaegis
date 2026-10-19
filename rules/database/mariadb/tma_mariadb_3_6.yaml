@@ -1,0 +1,20 @@
+id: TMA-MARIADB-3.6
+title: Ensure 'general_log_file' Has Appropriate Permissions
+description: 'MariaDB can operate using a variety of log files, each used for different purposes. These are the binary log (which can be encrypted), error log, slow query log, relay log (which can be encrypted), general log, and in the enterprise edition, the audit log (which can be encrypted). Passes when the general log is off and no old file remains, or when it is on and the file is -rw------- mysql:mysql. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- filesystem
+- permissions
+- logging
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 3.6 Ensure 'general_log_file' Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mariadb -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; on=$(mariadb -NBe "SELECT IFNULL(@@global.general_log + 0, '''')" 2>/dev/null) || exit 1; f=$(mariadb -NBe "SELECT IFNULL(@@global.general_log_file, '''')" 2>/dev/null) || exit 1; case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; if [ "$on" = 0 ]; then [ -e "$f" ] && echo "general log disabled but old file $f exists" || echo compliant; exit 0; fi; s=$(stat -c ''%a %U %G'' "$f" 2>/dev/null) || exit 1; [ "$s" = "600 mysql mysql" ] && echo compliant || echo "$s"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Disable the general log (SET GLOBAL general_log = OFF and general_log=0 under [mariadbd]) and remove old general log files; if it must stay on: chmod 600 <general_log_file> && chown mysql:mysql <general_log_file>.'

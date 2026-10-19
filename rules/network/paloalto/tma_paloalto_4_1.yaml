@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-4.1
+title: Ensure 'Antivirus Update Schedule' is set to download and install updates hourly
+description: 'Set Antivirus Update Schedule to download and install updates hourly. PASS requires the anti-virus update schedule to be hourly with action download-and-install. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 4.1 Ensure 'Antivirus Update Schedule' is set to download and install updates hourly
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig system update-schedule anti-virus recurring hourly action download-and-install[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system update-schedule anti-virus recurring hourly at 5
+    set deviceconfig system update-schedule anti-virus recurring hourly action download-and-install
+    commit
+    # CIS guidance:
+    Navigate to Device > Dynamic Updates > Antivirus Update Schedule. Set Action to Download and Install. Set Recurrence to Hourly.

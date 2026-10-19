@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-3.1.11
+title: Ensure syslog messages are not suppressed
+description: When logging to Syslog and syslog_sequence_numbers is on, then each message will be prefixed by an increasing sequence number (such as [2]). Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- logging
+- syslog
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.11 Ensure syslog messages are not suppressed
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SHOW syslog_sequence_numbers" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'on'
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET syslog_sequence_numbers = 'on'" -c "SELECT pg_reload_conf()"

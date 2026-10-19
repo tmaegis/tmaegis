@@ -1,0 +1,17 @@
+id: TMA-AWS-COMPUTE-3.3
+title: Ensure Amazon ECS task definitions do not have 'pidMode' set to 'host'
+description: 'A process ID (PID) namespace isolates processes, preventing system processes from being visible to containers and allowing for PID reuse. Ensure that Amazon ECS task definitions are not configured to share a host''s process namespace with their containers. Note: This recommendation assumes that only the latest active revision of a task definition is in use. If older revisions are in use, apply the audit and remediation procedures to those revisions as needed. Setting the pidMode parameter to host shares the host''s PID namespace with containers, allowing them to view and interact with all host processes. This reduces isolation and may lead to unauthorized access and manipulation of host processes by malicious or compromised containers.'
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 3.3 Ensure Amazon ECS task definitions do not have 'pidMode' set to 'host'
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. Click JSON. 6. If the pidMode parameter is present, ensure it is not set to host. 7. Repeat steps 1-6 for each task definition. From Command Line: Run the following command to list task definitions: aws ecs list-task-definitions For the latest revision of a task definition, run the following command: aws ecs describe-task-definition --task-definition <task-definition-arn> -- query ''taskDefinition.pidMode'' Ensure that the command does not return "host". Repeat for each task definition.'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. Click Create new revision. 6. Click Create new revision with JSON. 7. Set pidMode to task, or remove the pidMode parameter as appropriate. 8. Click Create. 9. Repeat steps 1-8 for each task definition requiring remediation. Note: When a task definition is updated, running tasks launched from the previous task definition remain unchanged. Updating a running task requires redeploying it with the new task definition.'

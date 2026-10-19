@@ -1,0 +1,17 @@
+id: TMA-AWS-2.15
+title: Ensure a support role has been created to manage incidents with AWS Support
+description: AWS provides a Support Center that can be used for incident notification and response, as well as technical support and customer service. Create an IAM role with the appropriate policy assigned to allow authorized users to manage incidents with AWS Support. Following the principle of least privilege, an IAM role should be used with a scoped policy to allow access to AWS Support. This ensures only authorized users can manage support cases without requiring broad administrative access.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- iam
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.15 Ensure a support role has been created to manage incidents with AWS Support
+audit:
+  type: manual
+  command: 'From Console: 1. Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/iam 2. In the left navigation pane, under Access management, select Policies 3. In the policy search field, enter AWSSupportAccess 4. Select the policy 5. Click the Entities attached tab 6. Ensure at least one IAM Role is attached From Command Line: 1. Identify the AWS managed support policy: aws iam list-policies --query "Policies[?PolicyName==''AWSSupportAccess''].Arn" --output text 2. Check if it is attached to any roles: aws iam list-entities-for-policy --policy-arn arn:aws:iam::aws:policy/AWSSupportAccess 3. Ensure that at least one role is listed under PolicyRoles'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Sign in to the AWS Management Console and open the IAM console 2. Navigate to Roles 3. Click Create role 4. Configure the trusted entity (e.g., your AWS account or identity provider) 5. Attach the AWSSupportAccess policy 6. Complete role creation 7. Assign the role to appropriate users or groups From Command Line: 1. Create a trust policy (example): { "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Principal": { "AWS": "arn:aws:iam::<account-id>:root" }, "Action": "sts:AssumeRole" } ] } 2. Create the role: aws iam create-role --role-name <role-name> --assume-role-policy-document file://trust-policy.json 3. Attach the AWS Support policy: aws iam attach-role-policy --policy-arn arn:aws:iam::aws:policy/AWSSupportAccess --role-name <role-name>'

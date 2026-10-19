@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-6.10.1.7
+title: Ensure Only Suite B Ciphers are set for SSH
+description: SSH should be configured with Ciphers based on the Suite B Standard. SSH (Secure Shell) is the defacto standard protocol used for remote administration of network devices and Unix servers, providing an encrypted and authenticated alternative to Telnet. Fails if ciphers are not restricted or any non-GCM cipher is configured. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.1.7 Ensure Only Suite B Ciphers are set for SSH
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^h\n]|h(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^s\n])))))))))))))))))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^h\n]|h(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^s\n])))))))))))))))))))))))))))))))[^\n]*)?\z)|(?:^set system services ssh ciphers [^\n]*\b(?:3des-cbc|aes(?:128|192|256)-(?:cbc|ctr)|arcfour\S*|blowfish-cbc|cast128-cbc|chacha20-poly1305@openssh\.com))
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To remove a single insecure cipher, issue the following command from the hierarchy;
+    delete system services ssh ciphers <cipher suite name> If multiple insecure Ciphers were set, it will generally be easier to delete all the Cipher restrictions with the following command:
+    delete system services ssh ciphers Once all insecure Ciphers have been removed, add one or more of the AES-GCM ciphers.
+    set system services ssh ciphers [ aes128-gcm@openssh.com aes256-gcm@openssh.com ]

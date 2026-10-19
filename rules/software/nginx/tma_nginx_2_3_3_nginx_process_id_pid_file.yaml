@@ -1,0 +1,37 @@
+id: TMA-NGINX-2.3.3
+title: Ensure the NGINX process ID (PID) file is secured
+description: The PID file stores the main process ID of the nginx process. This file should be protected from unauthorized modification. Locates the PID file from the pid directive (default /run/nginx.pid or /var/run/nginx.pid); it must be owned by root:root with mode 644 or stricter. Fails when NGINX is not running (no PID file). Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 1
+severity: low
+tags:
+- nginx
+- permissions
+reference: CIS NGINX Benchmark v3.0.0 - 2.3.3 Ensure the NGINX process ID (PID) file is secured
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; p=$(printf '%s\n' "$out" | awk '$1=="pid"{x=$2; sub(/;$/,"",x); print x; exit}'); if [ -z "$p" ]; then for f in /run/nginx.pid /var/run/nginx.pid; do [ -e "$f" ] && { p=$f; break; }; done; fi; [ -e "$p" ] || exit 1; o=$(stat -Lc '%U:%G' "$p") || exit 1; [ "$o" = root:root ] && [ -z "$(find -L "$p" -perm /133)" ] && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v nginx >/dev/null 2>&1 || exit 0
+    out=$(nginx -T 2>/dev/null) || exit 1
+    p=$(printf '%s\n' "$out" | awk '$1=="pid"{x=$2; sub(/;$/,"",x); print x; exit}')
+    if [ -z "$p" ]; then for f in /run/nginx.pid /var/run/nginx.pid; do [ -e "$f" ] && { p=$f; break; }; done; fi
+    [ -e "$p" ] || exit 0
+    chown root:root "$p"; chmod u-x,go-wx "$p"
+  guidance: "chown root:root <pid file> && chmod 644 <pid file>"

@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.7
+title: Ensure 'log_truncate_on_rotation' is enabled
+description: Enabling the log_truncate_on_rotation setting when logging_collector is enabled causes PostgreSQL to truncate (overwrite) existing log files with the same name during log rotation instead of appending to them. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- logging
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.7 Ensure 'log_truncate_on_rotation' is enabled
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SHOW log_truncate_on_rotation" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'on'
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET log_truncate_on_rotation = 'on'" -c "SELECT pg_reload_conf()"

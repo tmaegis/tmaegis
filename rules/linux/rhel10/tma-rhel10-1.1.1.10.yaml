@@ -1,0 +1,41 @@
+id: TMA-RHEL10-1.1.1.10
+title: Ensure usb-storage kernel module is not available
+description: USB storage provides a means to transfer and store files ensuring persistence and availability of the files independent of network connection status. Its popularity and utility has led to USB-based malware being a simple and common means for network infiltration and a first step to establishing a persistent threat within a networked environment.
+target: linux
+os_family:
+- rhel-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- kernel
+- linux
+- modules
+reference: CIS Red Hat Enterprise Linux 10 Benchmark v1.0.1 - 1.1.1.10
+audit:
+  type: command
+  shell: bash
+  command: m=usb-storage; found=$(find /lib/modules/$(uname -r)/kernel /usr/lib/modules/$(uname -r)/kernel -path "*/usb/storage*" 2>/dev/null | head -n1); if [ -z "$found" ]; then echo compliant; exit 0; fi; lsmod | awk '{print $1}' | grep -Fxq -- "${m//-/_}" && { echo "$m is loaded"; exit 0; }; cfg=$(modprobe --showconfig 2>/dev/null); printf '%s\n' "$cfg" | grep -Pq -- "^\h*blacklist\h+${m//-/_}\b" || { echo "$m is not blacklisted"; exit 0; }; printf '%s\n' "$cfg" | grep -Pq -- "^\h*install\h+${m//-/_}\h+(/usr)?/bin/(true|false)\b" || { echo "$m install is not disabled"; exit 0; }; echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=usb_storage
+    mkdir -p /etc/modprobe.d
+    f=/etc/modprobe.d/60-$m.conf
+    printf 'install %s /bin/false\nblacklist %s\n' "$m" "$m" > "$f"
+    modprobe -r "$m" 2>/dev/null; rmmod "$m" 2>/dev/null; true
+  guidance: "Unload and disable the usb-storage kernel module. 1. Run the following commands to unload the usb-storage kernel module: # modprobe -r usb-storage 2>/dev/null # rmmod usb-storage 2>/dev/null 2. Perform the following to disable the usb-storage kernel module: Create a file ending in .conf with install usb_storage /bin/false in the /etc/modprobe.d/ directory Example: # printf '%s\\n' \"\" \"install usb_storage /bin/false\" >> /etc/modprobe.d/60- usb-storage.conf Create a file ending in .conf with blacklist usb_storage in the /etc/modprobe.d/ directory Example: # printf '%s\\n' \"\" \"blacklist usb_storage\" >> /etc/modprobe.d/60-usb- storage.conf"

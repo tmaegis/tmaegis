@@ -1,0 +1,25 @@
+id: TMA-EXTREME-SLX-2.6.2
+title: Enable Accounting
+description: 'AAA accounting, a crucial component of the AAA framework, stands for Authentication, Authorization, and Accounting. Here''s a breakdown of what AAA accounting entails: Tracking User Activities: AAA accounting monitors and records user activities on a network, such as login attempts, resource access, and changes to system configurations. Usage Auditing: It helps in auditing the usage of network resources by keeping detailed logs of user interactions with the system, which can be vital for both security and performance analysis. PASS requires exec and command accounting (aaa accounting exec/commands default start-stop). Audited against SLX-OS ''show running-config'' output (saved in full).'
+target: extreme-slx
+level: 1
+severity: medium
+tags:
+- extreme-slx
+- authentication
+reference: CIS ExtremeNetworks SLX-OS 20.X.X Benchmark v1.0.1 - 2.6.2 Enable Accounting
+audit:
+  type: config_regex
+  pattern: (?m)(?:^aaa accounting exec default start-stop\b(?s:.*?)^aaa accounting commands default start-stop\b|^aaa accounting commands default start-stop\b(?s:.*?)^aaa accounting exec default start-stop\b)
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+    aaa accounting exec default start-stop tacacs+
+    aaa accounting commands default start-stop tacacs+
+    end
+    # CIS guidance:
+    aaa authentication login local
+    aaa accounting exec default start-stop none
+    aaa accounting commands default start-stop none
+    aaa authorization command none

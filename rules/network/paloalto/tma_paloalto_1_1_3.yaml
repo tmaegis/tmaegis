@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-1.1.3
+title: Ensure 'Enable Log on High DP Load' is enabled
+description: 'Enable the option ''Enable Log on High DP Load'' feature. When this option is selected, a system log entry is created when the device''s packet processing load reaches 100% utilization. PASS requires enable-log-high-dp-load yes. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- logging
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.1.3 Ensure 'Enable Log on High DP Load' is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig setting management enable-log-high-dp-load yes[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig setting management enable-log-high-dp-load yes
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Management > Logging and Reporting Settings > Log Export and Reporting. Set the Enable Log on High DP Load box to checked.

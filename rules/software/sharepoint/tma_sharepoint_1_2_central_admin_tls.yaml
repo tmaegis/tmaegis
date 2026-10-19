@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-1.2
+title: Ensure that the SharePoint Central Administration Site is TLS- enabled
+description: Transport Layer Security (TLS) provides protection when communicating over the internet. Traffic is encrypted for portions of information transportation. Ensure that the Central Administration site is configured to be used with TLS. Manual review.
+target: sharepoint
+level: 1
+severity: high
+tags:
+- sharepoint
+- tls
+- central-admin
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 1.2 Ensure that the SharePoint Central Administration Site is TLS- enabled
+audit:
+  type: manual
+  command: In IIS Manager select 'SharePoint Central Administration v4' > Bindings. Verify an HTTPS binding exists with Port, Host name and a valid SSL certificate set (and no plain HTTP binding is used). Get-SPWebApplication -IncludeCentralAdministration shows the CA URL.
+remediation:
+  type: iac_patch
+  command: 'Acquire a certificate, then Set-SPCentralAdministration -Port <port> -SecureSocketsLayer; if the certificate is for an FQDN: Set-SPAlternateUrl -Identity https://servername:443 -Url https://fqdn:443 -Zone Default; bind the certificate in IIS.'

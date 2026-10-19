@@ -1,0 +1,25 @@
+id: TMA-KUBERNETES-1.1.18
+title: Ensure that the controller-manager.conf file ownership is set to root:root
+description: Ensure that the controller-manager.conf file ownership is set to root:root.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- control-plane
+- file-permissions
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.1.18 Ensure that the controller-manager.conf file ownership is set to root:root
+audit:
+  type: command
+  command: |-
+    set -f
+    f=""; for x in /etc/kubernetes/controller-manager.conf; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    o=$(stat -Lc %U:%G "$f") || exit 1
+    if [ "$o" = "root:root" ]; then echo compliant; else echo "noncompliant: $f $o"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/controller-manager.conf
+remediation:
+  type: command
+  command: chown root:root /etc/kubernetes/controller-manager.conf

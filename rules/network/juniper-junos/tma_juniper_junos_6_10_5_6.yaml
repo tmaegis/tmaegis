@@ -1,0 +1,19 @@
+id: TMA-JUNIPER-JUNOS-6.10.5.6
+title: Ensure REST HTTPS Cipher List is Set to Suite B Only
+description: The REST API should only be accessed using HTTPS with secure Cipher Suites. The JUNOS REST API can be configured for access using either HTTP or HTTPS for connections. When configured to use HTTPS, the device supports a wide range of Cipher Suites which define the Encryption, Hashing and Key Exchange methods and algorithms. Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.5.6 Ensure REST HTTPS Cipher List is Set to Suite B Only
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. To check whether REST HTTPS is configured to use insecure Cipher Suites, enter the following command from the [edit system services rest] hierarchy: First, confirm that the two accepted Cipher Suites are configured [edit system services rest] user@host# show https cipher-suites | display set | match "ecdhe-rsa-with-aes-128-gcm-SHA256|ecdhe-rsa-with-aes-256-gcm-SHA384" | count A line count of 1 or 2 should be returned if one or both of the acceptable Suites are configured. Then, confirm that no other Cipher Suites are permitted.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To restrict the Cipher Suites used REST over HTTPS, enter the following command from the hierarchy:
+    set system services rest https cipher-list [ ecdhe-rsa-with-aes-128-gcm-SHA256 ecdhe-rsa-with-aes-256-gcm-SHA384 ] Either Cipher Suite may be omitted, but at least one of these Cipher Suites must be set. No other Cipher Suites may be used.

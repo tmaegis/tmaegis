@@ -1,0 +1,22 @@
+id: TMA-F5-BIGIP-3.2
+title: Ensure access to Configuration utility by clients using TLS version 1.2 or later
+description: 'TLSv1.2 should be used for GUI connections PASS requires sys httpd ssl-protocol "TLSv1.2" (optionally with TLSv1.3). Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: high
+tags:
+- f5-bigip
+- crypto
+reference: CIS F5 Networks Benchmark v1.0.0 - 3.2 Ensure access to Configuration utility by clients using TLS version 1.2 or later
+audit:
+  type: config_regex
+  pattern: (?m)^sys httpd \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+ssl-protocol "?(?:TLSv1\.2|TLSv1\.2 TLSv1\.3)"?[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys httpd ssl-protocol "TLSv1.2"
+    tmsh save sys config
+    # CIS guidance:
+    If the value is different, execute the following command to modify the protocol used to access GUI:
+    tmsh modify /sys httpd ssl-protocol "TLSv1.2"
+    tmsh save sys config

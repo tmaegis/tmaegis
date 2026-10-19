@@ -1,0 +1,21 @@
+id: TMA-WIN2022-2.3.11.8
+title: 'Ensure ''Network security: LDAP client signing requirements'' is set to ''Negotiate signing'' or higher'
+description: 'This policy setting determines the level of data signing that is requested on behalf of clients that issue LDAP BIND requests. The recommended state for this setting is: Negotiate signing. Configuring this setting to Require signing also conforms to the benchmark. Note: This policy setting does not have any impact on LDAP simple bind (ldap_simple_bind) or LDAP simple bind through SSL (ldap_simple_bind_s). No Microsoft LDAP clients that are included with Windows XP Professional use ldap_simple_bind or ldap_simple_bind_s to communicate with a Domain Controller.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 2.3.11.8
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LDAP'' -Name ''LDAPClientIntegrity'' -ErrorAction SilentlyContinue).''LDAPClientIntegrity''; if (-not ($null -ne $v -and @(1,2) -contains [int64]$v)) { $bad += ''LDAPClientIntegrity='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LDAP')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LDAP' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\LDAP' -Name 'LDAPClientIntegrity' -Value 1 -PropertyType DWord -Force | Out-Null

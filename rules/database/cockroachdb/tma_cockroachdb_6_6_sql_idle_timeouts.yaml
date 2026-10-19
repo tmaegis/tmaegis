@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-6.6
+title: Ensure SQL Session Idle Timeouts Are Configured for SQL Roles
+description: CockroachDB allows administrators to define role-level SQL session idle timeouts using the idle_in_session_timeout session variable. This setting ensures that any session authenticated under a given SQL role is automatically terminated after a defined period of inactivity. Configuring idle session timeouts for SQL roles provides a more granular control model than cluster-wide settings.
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- session
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 6.6 Ensure SQL Session Idle Timeouts Are Configured for SQL Roles
+audit:
+  type: manual
+  command: For every SQL role run SHOW DEFAULT SESSION VARIABLES FOR ROLE <role_name>; idle_in_session_timeout must appear with a non-zero value aligned with policy (e.g. 10m-30m for administrative roles, up to 1h for application roles with documented justification). Roles without it are a finding.
+remediation:
+  type: iac_patch
+  command: '1. Set idle timeout for a SQL role: Set a reasonable timeout for idle connections: ALTER ROLE <role_name> SET idle_in_session_timeout = ''<duration>''; -- Example - set 30-minute idle timeout for a read-only role: ALTER ROLE table_reader SET idle_in_session_timeout = ''30m'';'

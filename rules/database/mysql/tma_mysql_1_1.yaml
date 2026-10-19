@@ -1,0 +1,18 @@
+id: TMA-MYSQL-1.1
+title: Place Databases on Non-System Partitions
+description: It is generally accepted that host operating systems should include different filesystem partitions for different purposes. One set of filesystems is typically called system partitions, and these are generally reserved for host system/application operation.
+target: mysql
+level: 1
+severity: low
+tags:
+- mysql
+- database
+- filesystem
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 1.1 Place Databases on Non-System Partitions
+audit:
+  type: manual
+  command: 'Find the data and log locations: SELECT VARIABLE_NAME, VARIABLE_VALUE FROM performance_schema.global_variables WHERE (VARIABLE_NAME LIKE ''%dir'' OR VARIABLE_NAME LIKE ''%file'') AND VARIABLE_NAME NOT LIKE ''%core%''; then run df -h <directory> for datadir and the others. They must not be on the root (/), /var or /usr partitions.'
+remediation:
+  type: iac_patch
+  command: Create a dedicated partition/volume for the data, stop MySQL, move datadir there (copy preserving ownership mysql:mysql), update datadir in /etc/my.cnf (or /etc/mysql/mysql.conf.d/mysqld.cnf) and any SELinux/AppArmor policy, then start MySQL.

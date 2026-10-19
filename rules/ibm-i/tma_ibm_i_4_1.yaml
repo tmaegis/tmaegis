@@ -1,0 +1,16 @@
+id: TMA-IBM-I-4.1
+title: User Profile (*USRPRF) Access Controls (*PUBLIC authority)
+description: Resource security is an important aspect of your system security and defines which users are allowed to use objects on the system and what operations they are allowed to perform on those objects. Granting *PUBLIC authority of *USE or greater to any *USRPRF object allows an attacker to swap with these profiles and use their privileges and authorizations without their passwords or credentials outside of designed application access requirements from ...
+target: ibm-i
+level: 1
+severity: medium
+tags:
+- ibm-i
+- accounts
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 4.1 User Profile (*USRPRF) Access Controls (*PUBLIC authority)
+audit:
+  type: manual
+  command: On a command line, type STRSQL and press Enter Copy or type the following SQL statement to the terminal and press Enter. SELECT ALL SYS_ONAME, OBJTYPE, USER_NAME, OBJ_AUTH FROM QSYS2/OBJ_PRIV T01 WHERE OBJTYPE = '*USRPRF' AND SYS_ONAME NOT IN ('QDBSHR', 'QDBSHRDO', 'QTMPLPD') AND USER_NAME = '*PUBLIC' AND OBJ_AUTH <> '*EXCLUDE' Verify that the display returns no *PUBLIC authorized objects.
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration, change any *USRPRF objects identified in the audit to the default shipped and creation value *EXCLUDE to secure all user profiles from malicious use. GRTOBJAUT OBJ(<xxxxxx>) OBJTYPE(*USRPRF) USER(*PUBLIC) AUT(*EXCLUDE) REPLACE(*YES)

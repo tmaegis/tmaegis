@@ -1,0 +1,23 @@
+id: TMA-JUNIPER-JUNOS-NO-LEGACY-SERVICES
+title: Ensure legacy clear-text services (finger, rlogin, rsh, xnm-clear-text) are disabled
+description: These services have no encryption and are not needed on modern deployments. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark - System Services / Legacy Services (verify section number for your release)
+audit:
+  type: config_regex
+  pattern: (?m)^set system services (?:finger|rlogin|rsh|xnm-clear-text)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    delete system services finger
+    delete system services rlogin
+    delete system services rsh
+    delete system services xnm-clear-text
+    commit

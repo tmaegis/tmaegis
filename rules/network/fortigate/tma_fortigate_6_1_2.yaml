@@ -1,0 +1,28 @@
+id: TMA-FORTIGATE-6.1.2
+title: Enable Limited TLS Versions for SSL VPN
+description: Enable and disable TLS versions and Cipher suites for more granular control of SSL VPN connections and enforcing more secure connections. PASS requires ssl-max-proto-ver tls1-3, ssl-min-proto-ver tls1-2 and algorithm high. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: high
+tags:
+- fortigate
+- crypto
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 6.1.2 Enable Limited TLS Versions for SSL VPN
+audit:
+  type: config_regex
+  pattern: (?m)^config vpn ssl settings\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-max-proto-ver tls1-3[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-min-proto-ver tls1-2[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set algorithm high[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-max-proto-ver tls1-3[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set algorithm high[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-min-proto-ver tls1-2[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-min-proto-ver tls1-2[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-max-proto-ver tls1-3[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set algorithm high[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-min-proto-ver tls1-2[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set algorithm high[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-max-proto-ver tls1-3[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set algorithm high[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-max-proto-ver tls1-3[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-min-proto-ver tls1-2[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set algorithm high[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set
+    ssl-min-proto-ver tls1-2[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ssl-max-proto-ver tls1-3[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config vpn ssl settings
+        set ssl-max-proto-ver tls1-3
+        set ssl-min-proto-ver tls1-2
+        set algorithm high
+    end
+    # CIS guidance:
+    CLI:
+    config vpn ssl settings
+        set ssl-max-proto-ver tls1-3
+        set ssl-min-proto-ver tls1-2
+        set algorithm high

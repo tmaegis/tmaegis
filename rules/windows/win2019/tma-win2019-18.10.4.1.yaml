@@ -1,0 +1,21 @@
+id: TMA-WIN2019-18.10.4.1
+title: Ensure 'Allow a Windows app to share application data between users' is set to 'Disabled'
+description: 'Manages a Windows app''s ability to share data between users who have installed the app. Data is shared through the SharedLocal folder. This folder is available through the Windows.Storage API. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 18.10.4.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\AppModel\StateManager'' -Name ''AllowSharedLocalAppData'' -ErrorAction SilentlyContinue).''AllowSharedLocalAppData''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowSharedLocalAppData='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\AppModel\StateManager')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\AppModel\StateManager' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\AppModel\StateManager' -Name 'AllowSharedLocalAppData' -Value 0 -PropertyType DWord -Force | Out-Null

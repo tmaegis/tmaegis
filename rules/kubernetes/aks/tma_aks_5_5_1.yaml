@@ -1,0 +1,17 @@
+id: TMA-AKS-5.5.1
+title: Manage Kubernetes RBAC users and groups with Microsoft Entra ID
+description: Using Microsoft Entra ID for AKS user access helps ensure that Kubernetes permissions are tied to centrally managed enterprise identities and groups instead of disconnected, cluster-local user handling. At a high level, this improves control over who can authenticate to the cluster and lets access decisions follow the organization’s normal identity lifecycle, such as user onboarding, group membership changes, and access removal. The benchmark marks this recommendation Manual.
+target: aks
+level: 2
+severity: medium
+tags:
+- aks
+- managed-services
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.5.1 Manage Kubernetes RBAC users and groups with Microsoft Entra ID
+audit:
+  type: manual
+  command: Review the AKS cluster configuration to confirm user authentication is integrated with Microsoft Entra ID and that cluster authorization is being managed through Kubernetes RBAC bindings for Entra users or groups, rather than relying on local cluster credentials. A brief audit should verify that AKS-managed Entra integration is enabled, that appropriate Entra admin group object IDs are configured, and that local accounts are disabled where the security standard requires removal of the alternate --admin access path.
+remediation:
+  type: iac_patch
+  command: If the cluster isn’t using AKS-managed Microsoft Entra integration with Kubernetes RBAC, enable that identity model and assign access through approved Entra groups that are then mapped to Kubernetes Roles and ClusterRoles by RoleBinding or ClusterRoleBinding. Where the goal is to ensure all human access is Entra-governed, also disable local accounts so static local admin credentials don’t remain available as a parallel access method; AKS guidance notes that if local accounts are disabled on an existing cluster, cluster certificates should be rotated to revoke previously issued local-account credentials.

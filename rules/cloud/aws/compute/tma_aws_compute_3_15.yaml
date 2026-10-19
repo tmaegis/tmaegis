@@ -1,0 +1,20 @@
+id: TMA-AWS-COMPUTE-3.15
+title: Ensure ECS task definitions use awsvpc network mode
+description: 'ECS task definitions support four network modes: awsvpc, bridge, host, and none. In awsvpc mode, each task gets its own elastic network interface (ENI) with a private IP address, providing network-level isolation between tasks. In bridge and host modes, containers share the host''s network namespace and can communicate with other containers on the same instance directly. Tasks using the Fargate launch type are always awsvpc and are inherently compliant; this control applies to EC2 launch-type tasks. When tasks use bridge or host network mode, containers share the host''s network stack. A compromised container can reach other containers on the same host via localhost and mapped ports, access services listening on the host network, and intercept network traffic. The awsvpc network mode provides each task with its own ENI and security group, enabling per-task network policies and preventin...'
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- compute
+- network
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 3.15 Ensure ECS task definitions use awsvpc network mode
+audit:
+  type: manual
+  command: 'The audit prioritizes task definitions currently in use by services or running tasks. aws ecs list-task-definitions --status ACTIVE returns every revision ever registered (commonly hundreds or thousands per account), most of which no workload is actually launching anymore — auditing them all produces noise. Steps 1–3 cover what is in use; Step 5 is an optional secondary sweep for orphan revisions that should be deregistered. 1. List all ECS clusters in the region: aws ecs list-clusters --region $AWS_REGION --query ''clusterArns[]'' --output table 2. For each cluster returned above, list the task definitions referenced by its services and by its running tasks: # Services in the cluster — note their taskDefinition aws ecs list-services --cluster <cluster-arn> --region $AWS_REGION --query ''serviceArns[]'' --output table aws ecs describe-services --cluster <cluster-arn> --services <service-arn> -- region $AWS_REGION \ --query ''services[].{Service:serviceName,TaskDefinition:taskDefinition}''
+    -- output table # Running tasks in the cluster — note their taskDefinitionArn aws ecs list-tasks --cluster <cluster-arn> --region $AWS_REGION --query ''taskArns[]'' --output table aws ecs describe-task...'
+remediation:
+  type: iac_patch
+  command: 'Migrating a task from bridge/host to ''awsvpc'' is more involved than re-registering the task definition — port mappings and other configurations all change with the network model. Validate in non-production first. 1. Retrieve the existing container definitions: aws ecs describe-task-definition --task-definition <task-family> --region $AWS_REGION \ --query ''taskDefinition.containerDefinitions'' --output json > /tmp/containers.json 2. If the source task definition is bridge mode and has any ''portMappings'', edit ''/tmp/containers.json'' before re-registering. In awsvpc mode every ''hostPort'' must equal its ''containerPort'', but bridge mode commonly uses ''hostPort: 0'' (random port assigned at runtime) or a custom host port. Without this edit the next step fails. - For each port mapping, either set ''hostPort'' to match ''containerPort'', or delete the ''hostPort'' line so it defaults correctly. - You can leave container-level memory in place — awsvpc'' accepts it as-is. 3.
+    Register the new revision: aws ecs register-task-definition --family <task-family> --region $AWS_REGION \ --network-mode awsvpc \ --container-definitions file:///tmp/containers.json \ --requires-compatibilities <launch-type> -...'

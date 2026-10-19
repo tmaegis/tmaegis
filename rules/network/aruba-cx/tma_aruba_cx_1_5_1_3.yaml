@@ -1,0 +1,30 @@
+id: TMA-ARUBA-CX-1.5.1.3
+title: RadSec Server Configuration
+description: 'RadSec Server: RadSec (RADIUS over TLS) is a secure extension of RADIUS that encrypts RADIUS communication using TLS. It provides secure authentication, authorization (through RBAC) and accounting for AOS-CX switches over untrusted networks like the WANs. PASS requires a RadSec (radius-server host ... tls) server. Audited against AOS-CX ''show running-config'' output (saved in full); context blocks such as ''password complexity'' or ''cli-session'' are matched by their indented member lines.'
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- hardening
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.5.1.3 RadSec Server Configuration
+audit:
+  type: config_regex
+  pattern: (?m)^radius-server host \S+ [^\n]*\btls\b
+remediation:
+  type: iac_patch
+  command: |-
+    crypto pki application radsec-client certificate <cert>
+    radius-server host radius1.example.com tls vrf mgmt
+    aaa group server radius radsec1
+        server radius1.example.com tls vrf mgmt
+    # CIS guidance:
+    Prerequisite for TLS - The RadSec connection between the switch and RadSec server requires TLS with mutual authentication. The switch and RadSec servers exchange digital certificates as a part of TLS mutual authentication. Also, RadSec mandates validating server certificates SAN/CN while establishing connections. To associate the Leaf Certificate for RadSec -
+    crypto pki application radsec-client certificate
+    <certificate-name> To Configure RadSec Server -
+    radius-server host {<FQDN> | <IPV4> | <IPV6>} tls [vrf <VRF-
+    ]
+    To Associate RadSec Server to the group -
+    aaa group server radius <group-name>
+    server <FQDN | IPv4 | IPv6> tls vrf <vrf>
+    exit

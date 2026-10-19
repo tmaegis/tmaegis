@@ -1,0 +1,17 @@
+id: TMA-AIX-4.6.2.2
+title: Ensure ftpd login banner is configured
+description: 'Set an ftpd login banner which displays the acceptable usage policy. The message in banner.msg is displayed for FTP logins. Banners display necessary warnings to users trying to gain unauthorized access to the system and are required for legal purposes. The recommendation is to set the banner as: "Authorized uses only. Audit: only evaluated when ftp is enabled in /etc/inetd.conf.'
+target: aix
+level: 1
+severity: low
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.6.2.2 Ensure ftpd login banner is configured
+audit:
+  type: command
+  command: 'if grep -q "^ftp[[:blank:]]" /etc/inetd.conf 2>/dev/null; then command -v dspcat >/dev/null 2>&1 || exit 1; m=$(dspcat /usr/lib/nls/msg/en_US/ftpd.cat 1 9 2>/dev/null); case "$m" in *"Authorized uses only"*) echo compliant;; *) echo "ftpd banner: $m";; esac; else echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Ensure that the bos.msg.en_US.net.tcp.client fileset is installed: lslpp -L "bos.msg.en_US.net.tcp.client" NOTE: If the fileset is not installed, install it from the AIX media or another software repository. The fileset should reflect the language used on the server. Once installed set the ftp AUP banner: dspcat -g /usr/lib/nls/msg/en_US/ftpd.cat > /tmp/ftpd.tmp sed "s/\"\%s FTP server (\%s) ready.\"/\"\%s Authorized uses only. All activity may be monitored and reported\"/" /tmp/ftpd.tmp > /tmp/ftpd.msg gencat /usr/lib/nls/msg/en_US/ftpd.cat /tmp/ftpd.msg rm /tmp/ftpd.tmp /tmp/ftpd.msg'

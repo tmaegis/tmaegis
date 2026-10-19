@@ -1,0 +1,18 @@
+id: TMA-AZURE-7.14
+title: Ensure Request Body Inspection is Enabled in Azure Web Application Firewall policy on Azure Application Gateway
+description: Enable request body inspection so that the Web Application Firewall evaluates the contents of HTTP message bodies for potential threats. Enabling request body inspection strengthens security by allowing the Web Application Firewall to detect common attacks, such as SQL injection and cross-site scripting.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- network
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 7.14 Ensure Request Body Inspection is Enabled in Azure Web Application Firewall policy on Azure Application Gateway
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Application gateways. 2. Click the name of an application gateway. 3. Under Settings, click Web application firewall. 4. Under Associated web application firewall policy, click the policy name. 5. Under Settings, click Policy settings. 6. Ensure the box next to Enforce request body inspection is checked. 7. Repeat steps 1-6 for each application gateway. Audit from Azure CLI Run the following command to list application gateways: az network application-gateway list For each application gateway, run the following command to get the firewall policy id: az network application-gateway show --resource-group <resource-group> --name <application-gateway> --query firewallPolicy.id For each firewall policy, run the following command to get the request body inspection setting: az network application-gateway waf-policy show --ids <firewall-policy> -- query policySettings.requestBodyCheck Ensure true is returned. Audit from Azure Policy If referencing a digital
+    copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure....'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Application gateways. 2. Click the name of an application gateway. 3. Under Settings, click Web application firewall. 4. Under Associated web application firewall policy, click the policy name. 5. Under Settings, click Policy settings. 6. Check the box next to Enforce request body inspection. 7. Click Save. 8. Repeat steps 1-7 for each application gateway and firewall policy requiring remediation. Remediate from Azure CLI For each firewall policy requiring remediation, run the following command to enable request body inspection: az network application-gateway waf-policy update --ids <firewall-policy> -- policy-settings request-body-check=true'

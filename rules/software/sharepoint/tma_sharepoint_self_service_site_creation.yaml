@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-SELF-SERVICE-SITES
+title: Ensure self-service site creation is disabled
+description: Self-service site creation lets any user create site collections, bypassing governance and permission review. Prints the number of web applications with it enabled (expected 0). Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 2
+severity: medium
+tags:
+- sharepoint
+- governance
+reference: CIS Microsoft SharePoint Server Benchmark - Web applications / Self-service site creation (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $bad = @(Get-SPWebApplication -ErrorAction Stop | Where-Object { $_.SelfServiceSiteCreationEnabled -eq $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Central Administration > Application Management > Manage web applications > select web application > Self-Service Site Creation > Off (or $wa.SelfServiceSiteCreationEnabled = $false; $wa.Update()).

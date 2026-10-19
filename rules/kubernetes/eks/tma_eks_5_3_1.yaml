@@ -1,0 +1,17 @@
+id: TMA-EKS-5.3.1
+title: Use customer managed KMS keys for EKS envelope encryption of Kubernetes secrets
+description: Using customer managed KMS keys for EKS envelope encryption adds a customer-controlled protection layer for Kubernetes secrets stored through the Kubernetes API. This strengthens data-at-rest protection while allowing organizations to manage key ownership, rotation, policy, and audit visibility for the key used to protect secret data. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- managed-services
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.3.1 Use customer managed KMS keys for EKS envelope encryption of Kubernetes secrets
+audit:
+  type: manual
+  command: Review the EKS cluster configuration and verify that Kubernetes secrets are protected with a customer managed KMS key, not only the default AWS-owned envelope-encryption key. For this control, the important check is whether the cluster is associated with a customer managed key for EKS envelope encryption. Also verify that the key is usable by the cluster, is in the same Region, and has not been disabled, deleted, or stripped of required grants or permissions.
+remediation:
+  type: iac_patch
+  command: Configure the EKS cluster to use a customer managed KMS key for envelope encryption of Kubernetes secrets so secret data stored through the Kubernetes API is protected with a customer-controlled key encryption key in AWS KMS. This requires an existing symmetric KMS key in the same Region as the cluster, with key policy and grant permissions that allow EKS to use the key. The associate-encryption-config operation does not create a KMS key and does not encrypt arbitrary data directly. It associates an existing customer managed KMS key to the cluster so EKS can use it for envelope encryption of Kubernetes secrets. After the association is made, the cluster update must complete successfully and the key must remain enabled and accessible. Disabling, deleting, or breaking access to the associated key can place the cluster in a degraded or unrecoverable state.

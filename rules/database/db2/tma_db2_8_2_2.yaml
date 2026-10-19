@@ -1,0 +1,17 @@
+id: TMA-DB2-8.2.2
+title: Do Not Use Encryption Algorithms that are Not Secure
+description: Encryption can be performed with various algorithms, some of which are outdated and should no longer be used.
+target: db2
+level: 2
+severity: low
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.2.2 Do Not Use Encryption Algorithms that are Not Secure
+audit:
+  type: manual
+  command: Check that you are not using an outdated algorithm (like 3DES) by looking at the configuration settings.
+remediation:
+  type: iac_patch
+  command: 'To determine what encryption options used to encrypt the database you can run the following command: db2 => get db cfg | grep -i encrypt Encryption Library for Backup (ENCRLIB) = libdb2encr.so Encryption Options for Backup (ENCROPTS) = CIPHER=AES:MODE=CBC:KEY LENGTH=256 Encrypted database = YES ENCROPTS should not contain CIPHER=3DES algorithm, because 3DES is not secure. CIPHER=AES is secure. You can also check the current database encryption settings: db2 => SELECT * FROM TABLE(SYSPROC.ADMIN_GET_ENCRYPTION_INFO()) You must be connected to the database to run this command. From the information retrieved, the ALGORITHM should not be 3DES.'

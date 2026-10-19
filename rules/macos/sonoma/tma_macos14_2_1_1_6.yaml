@@ -1,0 +1,20 @@
+id: TMA-MACOS14-2.1.1.6
+title: Audit Find My Mac
+description: Find My is Apple's consumer solution for device tracking of your devices. This allows a user to track the location of devices associated with their Apple Account. This is a great solution for consumer or user device management and tracking, but it is not meant to be an enterprise management solution to device tracking and information management on enterprise managed devices. There are multiple enterprise MDM solutions for managing organizational devices. An enterprise solution should be used for tracking and information management of all devices, including Apple devices. Apple's Find My solution only handles Apple devices. If no enterprise solution is available, Find My provides capabilities for a user to manage and track Apple devices. It is not designed as an enterprise solution, and should not be used as one. It is better to allow the user to track devices that use their Apple Acco...
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.1.1.6 Audit Find My Mac
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to verify if Security Keys is set to your organization''s requirements: 1. Open System Settings 2. Select Apple Account 3. Select iCloud 4. Select Show More Apps.. 5. Verify that Find My Mac is set to your organization''s requirements Terminal Method: Run the following command to verify that a profile is installed that disables iCloud Document and Desktop Sync: % /usr/bin/sudo /usr/bin/osascript -l JavaScript << EOS $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.applicationaccess'')\ .objectForKey(''allowFindMyDevice'').js EOS The output will either be true, Find My Device is enabled, or false, Find My Device is disabled depending on your organizations requirements.'
+remediation:
+  type: iac_patch
+  command: 'Graphical Method: Perform the following steps to set Security Keys is set to your organization''s requirements: 1. Open System Settings 2. Select Apple Account 3. Select iCloud 4. Select Show More Apps.. 5. Set Find My Mac is set to your organization''s requirements Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.applicationaccess 2. The key to include is allowFindMyDevice 3. The key must be set to <<true/>or<false/>> depending on your organization''s requirements Note: Find My Device should only be disabled if your organization is using an enterprise solution for tracking devices. Note: This key does not fully disable Find My Device. It removes the Device tab in the Find My... app. The key allowFindMyFriends can also be used to disable the Friends tab in the app as well. The DisableFMMiCloudSetting key in the com.apple.icloud.managed PaylodType can disable the Find My setting, but does not disable
+    it if it is already enabled.'

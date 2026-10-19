@@ -1,0 +1,21 @@
+id: TMA-VMWARE-4.2
+title: Host must transmit system logs to a remote log collector
+description: Transmitting system logs to a remote log collector ensures that ESXi logs are stored in a secure and centralized manner. This centralization not only allows for the streamlined monitoring of all hosts through a single tool but also facilitates aggregate analysis and searching capabilities. The audit reads Syslog.global.logHost with esxcli and requires it to be set. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 4.2 Host must transmit system logs to a remote log collector
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Syslog/global/logHost 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^ *String Value: *//p' | head -n 1)
+    [ -n "$v" ] && echo compliant || echo 'Syslog.global.logHost is empty'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To configure remote logging properly, perform the following from the vSphere web client: 1. Select the host 2. Click Configure then expand System then select Advanced System Settings. 3. Select Edit then enter Syslog.global.logHost in the filter. 4. Set the Syslog.global.logHost to the hostname or IP address of the central log server. 5. Click OK. Alternately, run the following PowerCLI command: # Set Syslog.global.logHost for each host Get-VMHost | Foreach { Set-AdvancedSetting -VMHost $_ -Name Syslog.global.logHost -Value "<NewLocation>" } Note: When setting a remote log host, it is also recommended to set the "Syslog.global.logDirUnique" to true.'

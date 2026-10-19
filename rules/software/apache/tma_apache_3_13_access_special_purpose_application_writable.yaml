@@ -1,0 +1,16 @@
+id: TMA-APACHE-3.13
+title: Ensure Access to Special Purpose Application Writable Directories is Properly Restricted
+description: 'When the Apache webserver includes application software such as PHP, Java and many others, it is common for the application to require a writable directory. The writable directory may be needed for file uploads, application data, user session state information or many other purposes. It is important such directories have a single purpose, and have access properly secured to prevent a variety of possible exploits. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- accounts
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 3.13 Ensure Access to Special Purpose Application Writable Directories is Properly Restricted
+audit:
+  type: manual
+  command: 'Perform the following to determine if the recommended state is implemented: 1. Single Purpose Directory - For each application writable directory review the documented purpose for the directory to confirm the directory serves a single purpose. 2. Outside the Configured Web DocumentRoot - For each writable directory and it''s corresponding DocumentRoot perform the following. No output from the find command indicates the directory is not within the DocumentRoot.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following: 1. Single Purpose Directory - Create separate directories of the multipurpose directory, and adjust the application configuration and directory ownership and permissions appropriately. 2. Outside the Configured Web DocumentRoot - Move the writable directory to a more suitable location NOT under the DocumentRoot directory. A location within the /var/ filesystem may be a good choice for changeable data. 3. Owned by the root User or an Administrator Account - Change the ownership to root or an administrator. chown root $WR_DIR 4. Not writable by Other - Remove the other write permissions, use group write or ACLs to provide the least privileges necessary. chmod o-w $WR_DIR'

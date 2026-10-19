@@ -1,0 +1,36 @@
+id: TMA-OL10-2.1.13
+title: Ensure samba file server services are not in use
+description: The Samba daemon allows system administrators to configure their Linux systems to share file systems and directories with Windows desktops. Samba will advertise the file systems and directories via the Server Message Block (SMB) protocol. Windows desktop users will be able to mount these directories and file systems as letter drives on their systems.
+target: linux
+os_family:
+- ol-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 10 Benchmark v1.0.0 - 2.1.13
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v rpm >/dev/null 2>&1 || { echo "step1: rpm not installed"; return 1; }; o=$(bash -c ''rpm -q samba'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''package samba is not installed'' || { echo step1: missing ''package samba is not installed''; return 1; }; }; alt1() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled smb.service 2>/dev/null | grep ''"''"''enabled''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active smb.service 2>/dev/null | grep ''"''"''^active''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2:
+    $o" | head -c 300; return 1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_svc_off smb.service smbd.service
+  guidance: "Run the following command to stop smb.service and remove samba package: # systemctl stop smb.service # dnf remove samba - OR - - IF - the samba package is required as a dependency: Run the following commands to stop and mask the smb.service: # systemctl stop smb.service # systemctl mask smb.service"

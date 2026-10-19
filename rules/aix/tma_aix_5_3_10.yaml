@@ -1,0 +1,16 @@
+id: TMA-AIX-5.3.10
+title: Ensure System Accounts cannot access system using ftp.
+description: If ftp is active on the system, the file /etc/ftpusers is a deny list used by ftp daemon containing a list of users who are not allowed to access the system via ftp. The /etc/ftpusers file contains a list of users who are not allowed to access the system via ftp. All users with a UID less than 200 should typically be added into the file.
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.3.10 Ensure System Accounts cannot access system using ftp.
+audit:
+  type: manual
+  command: 'If ftp is active on the system, review the content of /etc/ftpusers and ensure there are no duplicate entries: cat /etc/ftpusers'
+remediation:
+  type: iac_patch
+  command: 'List all users with a UID less than 200 to the /etc/ftpusers file: lsuser -c ALL | grep -v ^#name |grep -v root | cut -f1 -d: | while read NAME; do if [ `lsuser -f $NAME | grep id | cut -f2 -d=` -lt 200 ] > /dev/null 2>&1; then echo "Would add $NAME to /etc/ftpusers" fi done NOTE: Review the list of users Add all relevant users with a UID of less that 200 to the /etc/ftpusers file: lsuser -c ALL | grep -v ^#name |grep -v root | cut -f1 -d: | while read NAME; do if [ `lsuser -f $NAME | grep id | cut -f2 -d=` -lt 200 ] > /dev/null 2>&1; then echo $NAME >> /etc/ftpusers fi done'

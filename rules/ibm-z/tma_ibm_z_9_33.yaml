@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.33
+title: Ensure that no file systems are mounted with security disabled
+description: If a file system is mounted with the NOSECURITY option, everyone has all access to every object in the file system. In a production environment, no file system should be mounted with this option. Mounting a file system in NOSECURITY mode completely nullifies any access control established within it, opening the data for reading and writing to everyone.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.33 Ensure that no file systems are mounted with security disabled
+audit:
+  type: manual
+  command: 'The UNIX shell command named df displays a list of the currently mounted file systems, by mount point (UNIX directory path) and data set name. Using the verbose option, yields additional information, including the mount mode. Issue the following shell command: df -v The presence of the string No Security indicates the file system is mounted with the NOSECURITY option. If it is mounted with the default of SECURITY, no option is displayed. Verify that zFS file systems are mounted with SECURITY.'
+remediation:
+  type: iac_patch
+  command: For each file system mounted with the NOSECURITY option, plan to remount it without the NOSECURITY option as application availability allows and update the BPXPRMxx member of SYS1.PARMLIB to make the change effective at the next IPL.

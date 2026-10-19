@@ -1,0 +1,24 @@
+id: TMA-FORTIGATE-2.1.11
+title: Ensure CDN is enabled for improved GUI performance
+description: To improve GUI performance, an option is added to enable loading static GUI artifacts cached in CDN (content delivery network) servers closer to the user rather than from the FortiGate. On failure, the files can fall back to loading from the FortiGate. PASS requires set gui-cdn-usage enable. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: low
+tags:
+- fortigate
+- management
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.1.11 Ensure CDN is enabled for improved GUI performance
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set gui-cdn-usage enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set gui-cdn-usage enable
+    end
+    # CIS guidance:
+    On CLI:
+    config system global
+        set gui-cdn-usage enable
+    end

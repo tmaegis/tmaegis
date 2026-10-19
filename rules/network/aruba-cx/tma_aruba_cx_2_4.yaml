@@ -1,0 +1,23 @@
+id: TMA-ARUBA-CX-2.4
+title: IP Directed Broadcast
+description: IP Directed Broadcast is a feature by which remote administration tasks such as backups and wake-on-LAN (WOL) application can be achieved by sending directed broadcast packets for hosts and servers residing on a different subnets. IP Directed Broadcast is supported on ROP, SVI and L3LAG interfaces. It is disabled by default. Disabling IP directed broadcast on unused interfaces in AOS-CX switches prevents the switch from converting directed broadcast packets into Layer 2 broadcasts on a destination subnet. This configuration ensures that such traffic is dropped rather than propagated further into the network. FAILs if ip directed-broadcast is enabled on any interface. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- layer2
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 2.4 IP Directed Broadcast
+audit:
+  type: config_regex
+  pattern: (?m)^[ \t]+ip directed-broadcast\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    interface <ID>
+        no ip directed-broadcast
+    # CIS guidance:
+    IP Directed broadcast is disabled by default on all interface , to disable it incase if its enabled by mistake -
+    interface <ID>
+    no ip directed-broadcast

@@ -1,0 +1,23 @@
+id: TMA-PFSENSE-1.8
+title: Ensure Web Management is Set to use HTTPS
+description: Web Admin Management Portal should only be accessed using HTTPS Protocol. PASS requires <protocol>https</protocol> inside <system><webgui>. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: high
+tags:
+- pfsense
+- management
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 1.8 Ensure Web Management is Set to use HTTPS
+audit:
+  type: config_regex
+  pattern: <webgui>(?:[^<]|<[^/<]|</[^w<]|</w[^e<]|</we[^b<]|</web[^g<]|</webg[^u<]|</webgu[^i<]|</webgui[^><])*?<protocol>https</protocol>
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: System > Advanced > Admin Access > webConfigurator > Protocol = HTTPS (SSL/TLS), select a certificate, Save.
+    # CIS guidance:
+    In the GUI:
+    -
+    Navigate to System > Advanced > Admin Access
+    - Select 'HTTPS' in the 'webConfigurator'.
+    - CLIck 'Save'

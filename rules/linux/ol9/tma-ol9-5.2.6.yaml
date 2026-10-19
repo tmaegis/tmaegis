@@ -1,0 +1,20 @@
+id: TMA-OL9-5.2.6
+title: Ensure users must provide password for escalation
+description: sudo can be configured to require users to authenticate before running commands with elevated privileges. The NOPASSWD tag, where present in the sudoers configuration, lets a user run sudo commands without entering a password; without it, sudo prompts for the user's password before escalating privileges.
+target: linux
+os_family:
+- ol-9
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 9 Benchmark v3.0.0 - 5.2.6
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -r "^[^#].*NOPASSWD" /etc/sudoers /etc/sudoers.d/'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the outcome of the audit procedure, use visudo -f <PATH TO FILE> to edit the relevant sudoers file. Remove any line with occurrences of NOPASSWD tags in the file. Because sudo applies the last matching Defaults (and per-rule) definition, ensure no later-parsed file in /etc/sudoers.d re-introduces a NOPASSWD tag; see this section's overview for how the sudoers files combine.

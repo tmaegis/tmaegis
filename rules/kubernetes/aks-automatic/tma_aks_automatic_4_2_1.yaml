@@ -1,0 +1,21 @@
+id: TMA-AKS-AUTOMATIC-4.2.1
+title: Minimize the admission of privileged containers
+description: Minimize the admission of privileged containers by restricting the ability to create Pods whose containers, init containers, or ephemeral containers run with securityContext.privileged=true, and reserve that capability for narrowly approved platform scenarios only. AKS Automatic enables Deployment Safeguards and baseline Pod Security Standards in Enforce mode by default, providing built in admission controls for privileged workloads. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.
+target: aks-automatic
+level: 1
+severity: critical
+tags:
+- aks-automatic
+- policies
+- pod-security
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.2.1 Minimize the admission of privileged containers
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex && ($4=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'AKS Automatic already enforces baseline Pod Security Standards and Deployment Safeguards. Remove privileged mode from user workloads rather than adding another admission policy. To enforce the restricted Pod Security Standard for a namespace, set the pod-security.kubernetes.io/enforce label: kubectl label --overwrite ns NAMESPACE pod-security.kubernetes.io/enforce=restricted The command enforces the restricted policy for the specified namespace. Where an exception is required, use an approved namespace exclusion and limit who can manage it. Deployment Safeguards are already enabled in Enforce mode. Use Azure Policy only when additional centralized policy requirements are needed.'

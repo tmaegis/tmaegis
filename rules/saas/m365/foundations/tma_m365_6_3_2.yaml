@@ -1,0 +1,16 @@
+id: TMA-M365-6.3.2
+title: Ensure the ability to add personal email accounts and calendars is disabled
+description: 'Outlook on the web (OWA) mailbox policies include two settings that control personal account integration in Outlook. PersonalAccountsEnabled controls whether users can add personal email accounts (e.g., Outlook.com, Gmail, Yahoo) in the new Outlook for Windows. PersonalAccountCalendarsEnabled controls whether users can connect personal Outlook.com or Google calendars in Outlook on the web. Neither setting applies to classic Outlook for Windows, Outlook for Mac, or Outlook mobile apps. The recommended state for the default OWA Mailbox Policy is: - PersonalAccountsEnabled is set to False - PersonalAccountCalendarsEnabled is set to False Personal email accounts are not subject to corporate security controls such as anti- malware scanning, data loss prevention (DLP), Safe Links, or audit logging. Allowing personal accounts alongside the corporate mailbox enables side-channel data exfiltra...'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 6.3.2 Ensure the ability to add personal email accounts and calendars is disabled
+audit:
+  type: manual
+  command: 'Note: The default OWA Mailbox Policy is the only policy required for compliance with this control. Other mailbox policies are discretionary and left up to the organization to audit as needed. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following: Get-OwaMailboxPolicy | Where-Object { $_.IsDefault } | Format-List PersonalAccountsEnabled, PersonalAccountCalendarsEnabled 3. Verify the output matches the following: PersonalAccountsEnabled : False PersonalAccountCalendarsEnabled : False'
+remediation:
+  type: iac_patch
+  command: 'To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following: $DefaultPolicy = Get-OwaMailboxPolicy | Where-Object { $_.IsDefault } Set-OwaMailboxPolicy -Identity $DefaultPolicy.Identity - PersonalAccountsEnabled $false -PersonalAccountCalendarsEnabled $false'

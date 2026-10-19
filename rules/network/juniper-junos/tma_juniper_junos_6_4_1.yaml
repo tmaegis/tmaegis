@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.4.1
+title: Ensure Authentication is configured for Diagnostic Ports
+description: An encrypted password should be set for access to the routers diagnostic ports. Most high end Juniper network devices contain Diagnostic Ports on one or more of the control boards installed in the system, such as FEB (Forwarding Engine Board) in M5 or M10 routers or SSB (System Switching Board) in M20 routers. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.4.1 Ensure Authentication is configured for Diagnostic Ports
+audit:
+  type: config_regex
+  pattern: (?m)^set system diag-port-authentication encrypted-password \S
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure a password for the diagnostic ports using one of the following commands under the hierarchy; To enter a new password in plain text:
+    set system diag-port-authentication plain-text-password You will be prompted to enter the new password, which JUNOS will then hash with MD5 before placing the command in the candidate configuration. To enter an existing password hash which you have taken from an existing configuration file, type the following :
+    set system diag-port-authentication encrypted-password "<MD5 Hash>"

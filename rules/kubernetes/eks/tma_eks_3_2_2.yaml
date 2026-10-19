@@ -1,0 +1,26 @@
+id: TMA-EKS-3.2.2
+title: Ensure kubelet authorization mode is set to Webhook
+description: In EKS, the available kubelet authorization modes are AlwaysAllow and Webhook. For worker nodes, the recommended setting is Webhook, which uses the Kubernetes authorization flow to evaluate access to the kubelet API. in contrast, AlwaysAllow is not optimal because it bypasses that authorization decision and permits kubelet requests without a webhook-based access check. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- worker-node
+- kubelet
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.2.2 Ensure kubelet authorization mode is set to Webhook
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"authorization":\{"mode":"Webhook"'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns AlwaysAllow, the worker node is permitting kubelet requests without webhook-based authorization and should be treated as noncompliant. If the result is null or the field is missing, first confirm the configz response is complete, because Kubernetes identifies that endpoint as the view of the kubelet’s final actuated configuration. Once the result is validated, remediation in EKS should be performed through the supported node provisioning or node update workflow, not by directly editing the kubelet config file on the host. AWS documents that EKS merges managed node bootstrap user data, treats kubelet authorization as a managed field in EKS tooling, and applies launch template updates to running managed node groups by recycling nodes.

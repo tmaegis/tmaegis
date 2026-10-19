@@ -1,0 +1,21 @@
+id: TMA-AKS-4.2.5
+title: Minimize the admission of containers with allowPrivilegeEscalation
+description: 'Minimize the admission of containers with allowPrivilegeEscalation=true so that users, groups, and service accounts with deployment rights cannot broadly create pods, init containers, or other workload objects that permit a process to gain more privileges than its parent. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Containers with allowPrivilegeEscalation: true are reported.'
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- pod-security
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.2.5 Minimize the admission of containers with allowPrivilegeEscalation
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex && ($4=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add policies to each namespace in the cluster which has user workloads to restrict the admission of containers with .spec.allowPrivilegeEscalation set to true. Pod Security Policies and Assignments can be found by searching for Policies in the Azure Portal. A detailed step-by-step guide can be found here: https://learn.microsoft.com/en-us/azure/governance/policy/concepts/policy-for-kubernetes'

@@ -1,0 +1,17 @@
+id: TMA-M365-5.2.3.5
+title: Ensure weak authentication methods are disabled
+description: 'Authentication methods support a wide variety of scenarios for signing in to Microsoft 365 resources. Some of these methods are inherently more secure than others but require more investment in time to get users enrolled and operational. SMS and Voice Call rely on telephony carrier communication methods to deliver the authenticating factor. The recommended state is to Disable these methods: - SMS - Voice Call Traditional MFA methods such as SMS codes, email-based OTPs, and push notifications are becoming less effective against today’s attackers. Sophisticated phishing campaigns have demonstrated that second factors can be intercepted or spoofed. Attackers now exploit social engineering, man-in-the-middle tactics, and user fatigue (e.g., MFA bombing) to bypass these mechanisms. These risks are amplified in distributed, cloud-first organizations with hybrid workforces and varied device...'
+target: m365
+level: 1
+severity: high
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.3.5 Ensure weak authentication methods are disabled
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Authentication methods and select Policies. 3. Verify that the following methods in the Enabled column are set to No. o Method: SMS o Method: Voice call To audit using Powershell: 1. Connect to Graph using Connect-MgGraph -Scopes "Policy.Read.All" 2. Run the following: (Get-MgPolicyAuthenticationMethodPolicy).AuthenticationMethodConfigurations 3. Verify that Sms and Voice are disabled.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Authentication methods and select Policies. 3. Inspect each method that is out of compliance and remediate: o Click on the method to open it. o Change the Enable toggle to the off position. o Click Save. Note: If the save button remains greyed out after toggling a method off, then first turn it back on and then change the position of the Target selection (all users or select groups). Turn the method off again and save. This was observed to be a bug in the UI at the time this document was published. To remediate using Powershell: 1. Connect to Graph using Connect-MgGraph -Scopes "Policy.ReadWrite.AuthenticationMethod" 2. Run the following to disable both authentication methods: $params = @( @{ Id = "Sms"; State = "disabled" }, @{ Id = "Voice"; State = "disabled" } ) Update-MgPolicyAuthenticationMethodPolicy -AuthenticationMethodConfigurations $params'

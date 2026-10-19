@@ -1,0 +1,20 @@
+id: TMA-GKE-5.1.1
+title: Enable Artifact Analysis scanning for Artifact Registry container images
+description: Enable Artifact Analysis vulnerability scanning for container images stored in Artifact Registry and used by GKE Standard workloads. This verifies that container images are scanned at the registry layer before deployment to identify known vulnerabilities in image packages, dependencies, and software components. Requires gcloud (serviceusage.services.list) for GKE_PROJECT or the default project. Repository-level scanning exclusions still need review.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+- registry
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.1.1 Enable Artifact Analysis scanning for Artifact Registry container images
+audit:
+  type: command
+  command: |-
+    v=$(gcloud services list --enabled ${GKE_PROJECT:+--project=$GKE_PROJECT} --filter='config.name=containerscanning.googleapis.com' --format='value(config.name)') || exit 1
+    if [ "$v" = containerscanning.googleapis.com ]; then echo compliant; else echo "noncompliant: Container Scanning API disabled"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable Artifact Analysis automatic vulnerability scanning for container images stored in Artifact Registry and used by GKE workloads. Enabling the Container Scanning API activates automatic scanning for images pushed to standard and remote Docker repositories in Artifact Registry, and it also enables the Container Analysis API for vulnerability metadata storage and retrieval. Enable the required project APIs: gcloud services enable artifactregistry.googleapis.com containerscanning.googleapis.com \ --project=$PROJECT_ID If scanning was disabled on a specific Artifact Registry repository, update the repository to allow vulnerability scanning: gcloud artifacts repositories update $REPOSITORY \ --project=$PROJECT_ID \ --location=$LOCATION \ --allow-vulnerability-scanning Note: Repeat the repository update command for each Docker repository that stores images deployed to GKE Standard ...'

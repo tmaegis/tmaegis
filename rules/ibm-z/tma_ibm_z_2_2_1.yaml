@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.2.1
+title: Ensure that the access to update system dynamic lists is controlled
+description: Dynamic lists provide a method of making z/OS system changes without interrupting the availability of the operating system. Failure to control access to these facilities could result in unauthorized personnel modifying sensitive z/OS lists.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.2.1 Ensure that the access to update system dynamic lists is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering resources prefixed with: o CSVAPF o CSVDYLPA o CSVDYNEX o CSVDYNL ... (full steps: CIS section 2.2.1)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To create a FACILITY profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE FACILITY CSV*.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''ACCESS TO MAKE DYNAMIC CHANGES TO - LLA, APF, LPA, EXITS, AND LINKLIST'') PERMIT CSV*.** CLASS(FACILITY) + ACCESS(READ) ID(SYSPROG) RDEFINE FACILITY CSVDYNEX.LIST + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + DATA(''LIST INFORMATION ABOUT DYNAMIC EXITS'') PERMIT CSVDYNEX.LIST CLASS(FACILITY) + ACCESS(UPDATE) ID(SYSPROG) PERMIT CSVDYNEX.LIST CLASS(FACILITY) + ACCESS(READ) ID(AUDITOR) SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER FACILITY CSV*.** + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING RALTER FACILITY CSVDYNEX.LIST +
+    UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant access list entry use the RACF PERMIT and SETROPTS commands ... (see CIS section 2.2.1)'

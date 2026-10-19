@@ -1,0 +1,19 @@
+id: TMA-AZURE-DB-9.8
+title: Ensure 'Minimum TLS Version' is set to 'TLS 1.2' or higher
+description: 'Note: It is no longer possible to set the minimal TLS version of SQL server to lower than 1.2. Azure ended support for TLS 1.0 and 1.1 in August 2025. Setting the ''Minimum TLS version'' to ''TLS 1.2'' or higher reduces TLS protocol vulnerabilities by preventing the use of significantly outdated versions of TLS. The Secure Sockets Layer (SSL) protocol encrypts network traffic transiting between server and client. Using only the most recent versions of SSL protocols (TLS version 1.2 and higher) eliminates susceptibility to known exploited vulnerabilities of outdated versions of TLS. If TLS 1.2 does not provide additional granular configuration options for supported cipher suites, there''s a chance that default ciphers which employ Cipher Block Chaining (CBC) mode may be enabled which would introduce Padding Oracle types of vulnerabilities. TLS 1.3 does not support CBC mode ciphers by defaul...'
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- database
+- tls
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 9.8 Ensure 'Minimum TLS Version' is set to 'TLS 1.2' or higher
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to SQL servers. 2. Select the name of a SQL server. 3. Under Security, select Networking. 4. Select Connectivity. 5. Under Encryption in transit, ensure Minimum TLS version is set to TLS 1.2 or higher. 6. Repeat steps 1-5 for each SQL server. Audit from Azure CLI Run the following command to list SQL servers: az sql server list For each SQL server, run the following command to get the minimalTlsVersion setting: az sql server show --resource-group <resource-group> --name <sql-server> -- query minimalTlsVersion Ensure "1.2" or higher is returned. Audit from PowerShell Run the following command to list SQL servers: Get-AzSqlServer Run the following command to get the server in a resource group with a given name: $server = Get-AzSqlServer -ResourceGroupName <resource-group> -ServerName <sql-server> Run the following command to get the MinimalTlsVersion: $server.MinimalTlsVersion Ensure 1.2 or higher is returned. Repeat for each SQL server Audit From
+    Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to SQL servers. 2. Select the name of a SQL server. 3. Under Security, select Networking. 4. Select Connectivity. 5. Under Encryption in transit, select TLS 1.2 or higher from the dropdown menu next to Minimum TLS version. 6. Select Save. 7. Repeat steps 1-6 for each SQL server requiring remediation. Remediate from Azure CLI For each SQL server requiring remediation, run the following command to set minimalTlsVersion to 1.2 or higher: az sql server update --resource-group <resource-group> --name <sql-server> -- minimal-tls-version 1.2 Remediate from PowerShell For each SQL server requiring remediation, run the following command to set MinimalTlsVersion to 1.2 or higher: Set-AzSqlServer -ServerName <sql-server> -ResourceGroupName <resource-group> -MinimalTlsVersion 1.2'

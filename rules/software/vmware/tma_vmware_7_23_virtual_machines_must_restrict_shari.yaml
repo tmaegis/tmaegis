@@ -1,0 +1,17 @@
+id: TMA-VMWARE-7.23
+title: Virtual machines must restrict sharing of memory pages with other VMs
+description: 'Configuring virtual machines with the sched.mem.pshare.salt option restricts Transparent Page Sharing (TPS) among different VMs, mitigating the risk of unauthorized data access under certain conditions. By doing so, each VM operates with a distinct memory sharing pool, thereby enhancing isolation and security. The parameter governing this behavior is sched.mem.pshare.salt. Manual review: the check needs vCenter/PowerCLI, firmware or guest access, or an organization-specific value.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- virtual-machine
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 7.23 Virtual machines must restrict sharing of memory pages with other VMs
+audit:
+  type: manual
+  command: From an administrative PowerCLI session 1. Execute Get-VM | Get-AdvancedSetting -Name sched.mem.pshare.salt 2. Verify that any explicitly configured salt does not intentionally enable cross-VM sharing; review cluster/host TPS policy and confirm inter-VM transparent page sharing is restricted.
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, remove legacy settings that deliberately use a common salt across VMs. Where an explicit salt is required, configure a unique value per VM and maintain the ESXi default behavior that prevents inter-VM page sharing.

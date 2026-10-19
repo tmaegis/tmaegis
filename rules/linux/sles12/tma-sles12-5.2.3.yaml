@@ -1,0 +1,49 @@
+id: TMA-SLES12-5.2.3
+title: Ensure permissions on SSH public host key files are configured
+description: An SSH public key is one of two files used in SSH public key authentication. In this authentication method, a public key is a key that can be used for verifying digital signatures generated using a corresponding private key. Only a public key that corresponds to a private key will be able to authenticate successfully.
+target: linux
+os_family:
+- sles-12
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 12 Benchmark v3.2.0 - 5.2.3
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   l_skgn=\"$(grep -Po -- '\"'\"'^(ssh_keys|_?ssh)\\b'\"'\"' /etc/group)\" # Group designated to own openSSH public keys\n   l_skgid=\"$(awk -F: '\"'\"'($1 == \"'\"'\"'\"$l_skgn\"'\"'\"'\"){print $3}'\"'\"' /etc/group)\" # Get gid of group\n   [ -n \"$l_skgid\" ] && l_agroup=\"(root|$l_skgn)\" || l_agroup=\"root\"\n   if command -v ssh-keygen &>/dev/null; then\n      unset a_skarr && a_skarr=() # Clear and initialize array\n      if [ -d \"/etc/ssh\" ]; then\n         while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_file; do # Loop to populate array\n            if grep -Pq -- '\"'\"'\\h+no\\h+comment\\b'\"'\"' <<< \"$(ssh-keygen -l -f 2>/dev/null \"$l_file\")\"; then\n               a_skarr+=(\"$(stat -Lc '\"'\"'%n^%#a^%U^%G^%g'\"'\"' \"$l_file\")\")\n            fi\n         done < <(find -L /etc/ssh -xdev -type f -print0)\n         if (( ${#a_skarr[@]} > 0 )); then\n            while IFS=\"^\" read\
+    \ -r l_file l_mode l_owner l_group l_gid; do\n            echo \"File: \\\"$l_file\\\" Mode: \\\"$l_mode\\\" Owner: \\\"$l_owner\\\" Group: \\\"$l_group\\\" GID: \\\"$l_gid\\\"\"\n               l_out2=\"\"\n               l_pmask=\"0133\"\n               l_maxperm=\"$( printf '\"'\"'%o'\"'\"' $(( 0777 & ~$l_pmask )) )\"\n               if [ $(( $l_mode & $l_pmask )) -gt 0 ]; then\n                  l_out2=\"$l_out2\\n  - Mode: \\\"$l_mode\\\" should be mode: \\\"$l_maxperm\\\" or more restrictive\"\n               fi\n               if [ \"$l_owner\" != \"root\" ]; then\n                  l_out2=\"$l_out2\\n  - Owned by: \\\"$l_owner\\\" should be owned by \\\"root\\\"\"\n               fi\n               if [[ ! \"$l_group\" =~ $l_agroup ]]; then\n                  l_out2=\"$l_out2\\n  - Owned by group \\\"$l_group\\\" should be group owned by: \\\"${l_agroup//|/ or }\\\"\"\n               fi\n               if [ -n \"$l_out2\" ]; then\n                  l_output2=\"$l_output2\\n -\
+    \ File: \\\"$l_file\\\"$l_out2\"\n               else\n                  l_output=\"$l_output\\n - File: \\\"$l_file\\\"\\n  - Correct: mode ($l_mode), owner ($l_owner), and group owner ($l_group) configured\"\n               fi\n            done <<< \"$(printf '\"'\"'%s\\n'\"'\"' \"${a_skarr[@]}\")\"\n         else\n            l_output=\"  - No public keys found in \\\"/etc/ssh\\\"\"\n         fi\n      else\n         l_output=\"- ssh directory not found on the system\"\n      fi\n      unset a_skarr\n   else\n      l_output2=\"  - ssh-keygen command not found\\n  - manual check may be required\"\n   fi\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  *** PASS ***\\n- * Correctly set * :\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - * Reasons for audit failure * :\\n$l_output2\\n\"\n      [ -n \"$l_output\" ] && echo -e \" - * Correctly set * :\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS\
+    \ \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -d /etc/ssh ] || exit 0
+    grp=root; grep -q '^ssh_keys:' /etc/group && grp_keys=ssh_keys || grp_keys=
+    for f in $(find /etc/ssh -xdev -maxdepth 1 -type f -name 'ssh_host_*'); do
+      case "$f" in
+        *.pub) chown root:root "$f"; m=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$m & 8#0644)))" "$f";;
+        *)
+          g=$(stat -Lc %G "$f"); m=$(stat -Lc %a "$f")
+          if [ -n "$grp_keys" ] && [ "$g" = ssh_keys ]; then chown root:ssh_keys "$f"; chmod "$(printf '%o' $((8#$m & 8#0640)))" "$f"
+          else chown root:root "$f"; chmod "$(printf '%o' $((8#$m & 8#0600)))" "$f"; fi;;
+      esac
+    done
+    exit 0
+  guidance: "Run the following script to set mode, ownership, and group on the public SSH host key files: #!/usr/bin/env bash { l_output=\"\" l_output2=\"\" l_skgn=\"$(grep -Po -- '^(ssh_keys|_?ssh)\\b' /etc/group)\" # Group designated to own openSSH keys l_skgid=\"$(awk -F: '($1 == \"'\"$l_skgn\"'\"){print $3}' /etc/group)\" # Get gid of group l_mfix=\"u-x,go-wx\" if command -v ssh-keygen &>/dev/null; then unset a_skarr && a_skarr=() # Clear and initialize array if [ -d /etc/ssh ]; then while IFS= read -r -d $'\\0' l_file; do # Loop to populate array if grep -Pq -- '\\h+no\\h+comment\\b' <<< \"$(ssh-keygen -l -f 2>/dev/null \"$l_file\")\"; then a_skarr+=(\"$(stat -Lc '%n^%#a^%U^%G^%g' \"$l_file\")\") fi done < <(find -L /etc/ssh …"

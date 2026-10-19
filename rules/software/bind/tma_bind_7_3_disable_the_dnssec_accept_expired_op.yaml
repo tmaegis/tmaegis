@@ -1,0 +1,54 @@
+id: TMA-BIND-7.3
+title: Disable the dnssec-accept-expired Option
+description: The dnssec-accept-expired option allows BIND to accept expired signatures during validation. The option should be disabled so that expired signatures will not be accepted. The audit fails when dnssec-accept-expired is set to yes (absent or no is compliant). The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 7.3 Disable the dnssec-accept-expired Option
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    printf '%s\n' "$flat" | grep -Eq '[{; ]dnssec-accept-expired yes;' && echo 'dnssec-accept-expired yes' || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    files=$(for p in /etc/named.conf /etc/bind/named.conf /etc/named /etc/bind /var/named/chroot/etc/named.conf; do [ -e "$p" ] && echo "$p"; done)
+    [ -n "$files" ] || exit 0
+    bk=$(mktemp -d) || exit 1
+    all=$(find -L $files -type f \( -name '*.conf' -o -name 'named.conf*' -o -name '*.options' \) 2>/dev/null | sort -u)
+    tma_cp() { cp -p "$1" "$2" 2>/dev/null || cp "$1" "$2"; }
+    for f in $all; do mkdir -p "$bk$(dirname "$f")"; tma_cp "$f" "$bk$f"; done
+    tma_sedi() { f=$1; shift; sed "$@" "$f" > "$f.tma.new" && cat "$f.tma.new" > "$f"; rm -f "$f.tma.new"; }
+    tma_check() { if command -v named-checkconf >/dev/null 2>&1; then
+        c=/etc/named.conf; [ -f "$c" ] || c=/etc/bind/named.conf; named-checkconf "$c" >/dev/null 2>&1; else true; fi; }
+    tma_done() { if tma_check; then rm -rf "$bk"; (rndc reload || systemctl reload named || systemctl reload bind9) >/dev/null 2>&1; true
+      else for f in $all; do tma_cp "$bk$f" "$f"; done; echo "named-checkconf failed, change rolled back" >&2; exit 1; fi; }
+    for f in $all; do tma_sedi "$f" -E 's/(dnssec-accept-expired[[:space:]]+)yes[[:space:]]*;/\1no;/'; done
+    tma_done
+  guidance: "Change the dnssec-accept-expired option to have a value of no, or remove the option from the configuration files."

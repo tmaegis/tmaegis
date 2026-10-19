@@ -1,0 +1,36 @@
+id: TMA-UBUNTU2004-2.1.18
+title: Ensure web server services are not in use
+description: Web servers provide the ability to host web site content.
+target: linux
+os_family:
+- ubuntu-20.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 2.1.18
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -s apache2 &>/dev/null && echo "apache2 is installed"'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v dpkg-query >/dev/null 2>&1 || { echo "step2: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -s nginx &>/dev/null && echo "nginx is installed"'' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; alt1() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled apache2.socket apache2.service nginx.service 2>/dev/null | grep ''"''"''enabled''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command
+    -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active apache2.socket apache2.service nginx.service 2>/dev/null | grep ''"''"''^active''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_svc_off httpd.socket httpd.service nginx.service apache2.service
+  guidance: "Run the following commands to stop httpd.socket, httpd.service, and nginx.service, and remove apache2 and nginx packages: # systemctl stop apache2.socket apache2.service nginx.service # apt purge apache2 nginx - OR - - IF - a package is installed and is required for dependencies: Run the following commands to stop and mask apache2.socket, apache2.service, and nginx.service: # systemctl stop apache2.socket apache2.service nginx.service # systemctl mask apache2.socket apache2.service nginx.service Note: Other web server packages may exist. If not required and authorized by local site policy, they should also be removed. If the package is required for a dependency, the service and socket should…"

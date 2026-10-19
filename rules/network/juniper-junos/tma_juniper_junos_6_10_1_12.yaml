@@ -1,0 +1,23 @@
+id: TMA-JUNIPER-JUNOS-6.10.1.12
+title: Ensure Only Suite B Based Key Signing Algorithms are set for SSH
+description: SSH should be configured with Suite B based key signing algorithms. SSH (Secure Shell) is the defacto standard protocol used for remote administration of network devices and Unix servers, providing an encrypted and authenticated alternative to Telnet. Requires no-ssh-dss, no-ssh-rsa and no-ssh-ed25519. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.1.12 Ensure Only Suite B Based Key Signing Algorithms are set for SSH
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-dss\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-rsa\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-ed25519\b)|(?s:^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-dss\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-ed25519\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-rsa\b)|(?s:^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-rsa\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-dss\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-ed25519\b)|(?s:^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-rsa\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-ed25519\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-dss\b)|(?s:^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-ed25519\b.*^set
+    system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-dss\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-rsa\b)|(?s:^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-ed25519\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-rsa\b.*^set system services ssh hostkey-algorithm (?:\[ [^\n]*)?\bno-ssh-dss\b)
+remediation:
+  type: iac_patch
+  command: |-
+    ! To explicitly disable DSA, RSA and ED25519 signatures, type the following commands at the hierarchy:
+    set system services ssh hostkey-algorithm no-ssh-dss
+    set system services ssh hostkey-algorithm no-ssh-rsa
+    set system services ssh hostkey-algorithm no-ssh-ed25519 Enable ECDSA for SSH Public Keys using the following commands:
+    set system services ssh hostkey-algorithm ssh-ecdsa

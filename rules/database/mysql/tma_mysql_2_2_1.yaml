@@ -1,0 +1,19 @@
+id: TMA-MYSQL-2.2.1
+title: Ensure Binary and Relay Logs are Encrypted
+description: 'The binlog_encryption system variable may be used to configure encryption of the binary and relay logs. This may be configured to ON even if binary logging is not enabled in order to encrypt relay log files. Requires a keyring component/plugin to be loaded before it can be enabled. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- encryption
+- binlog
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.2.1 Ensure Binary and Relay Logs are Encrypted
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.binlog_encryption = 1, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST binlog_encryption = ON"

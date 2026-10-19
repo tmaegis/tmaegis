@@ -1,0 +1,24 @@
+id: TMA-FORTISWITCH-1.2.1
+title: Ensure management GUI listens on secure TLS version
+description: As we move towards better encryption capabilities, we need to also ensure GUI access is properly secured. TLS 1.3 is currently the most secure SSL/TLS supported version for SSL-encrypted administrator access (at this time of writing). PASS requires https-ssl-versions to be exactly tlsv1-3 in config system web. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: high
+tags:
+- fortiswitch
+- crypto
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.2.1 Ensure management GUI listens on secure TLS version
+audit:
+  type: config_regex
+  pattern: (?m)^config system web\n(?:[ \t]+[^\n]*\n)*?[ \t]+set https-ssl-versions tlsv1-3[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system web
+        set https-ssl-versions tlsv1-3
+    end
+    # CIS guidance:
+    CLI:
+    config system web
+        set https-ssl-versions tlsv1-3
+    end

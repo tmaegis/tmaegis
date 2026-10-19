@@ -1,0 +1,23 @@
+id: TMA-OPENSHIFT-VIRT-1.3
+title: Disable persistentReservations feature gate
+description: 'Persistentreservations are used to reserve a shared LUN among multiple virtual machines. This feature is required when the Windows guest makes use of the Windows Shared Cluster Filesystem. Enabling persistent reservations introduces additional complexity and overhead, as it requires calculated management of resource allocation and monitoring to ensure that reservations are not overcommitted and do not impact the overall performance of the system. Enabling the persistent reservations feature introduces and relies upon an optional component with elevated privileges (qemu - pr - helper). ... Audit: Passes when .spec.featureGates.persistentReservation is false or unset (the default is disabled). Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- feature-gates
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.3 Disable persistentReservations feature gate
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; v=$(oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.spec.featureGates.persistentReservation}') || exit 1; [ "$v" = true ] && echo noncompliant || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: 'Disable the persistent reservations feature by setting to persistentReservations False for applicable hyperconverged resources. $ oc patch hyperconverged kubevirt - hyperconverged - n openshift - cnv -- type=''json'' -p=''[ {"op": "replace", "path": "/spec/featureGates/persistentReservation", "value": false }, ]'''

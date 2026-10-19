@@ -1,0 +1,19 @@
+id: TMA-IIS-2.5
+title: Ensure 'cookie protection mode' is configured for forms authentication
+description: 'The cookie protection mode defines the protection Forms Authentication cookies will be given within a configured application. The four cookie protection modes that can be defined are: Encryption and validation - Specifies that the application use both data validation and encryption to help protect the cookie; this option uses the configured data validation algorithm (based on the machine key) and triple-DES ... Wherever forms authentication is used, forms protection must be All (encryption and validation). Compliant when forms authentication is not used. PowerShell 5.1 with the WebAdministration module; run elevated.'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- authentication
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 2.5 Ensure 'cookie protection mode' is configured for forms authentication
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $a = Get-WebConfiguration -Filter 'system.web/authentication' -PSPath $_; $f = Get-WebConfiguration -Filter 'system.web/authentication/forms' -PSPath $_; [string]$a.mode -eq 'Forms' -and ([string]$f.protection -ne 'All') }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST/<site>' -Filter system.web/authentication/forms -Name protection -Value All

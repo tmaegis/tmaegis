@@ -1,0 +1,31 @@
+id: TMA-ALIBABA-1.4
+title: Ensure that multi-factor authentication is enabled for all RAM users that have a console password
+description: Multi-Factor Authentication (MFA) adds an extra layer of protection on top of a username and password. With MFA enabled, when a user logs on to Alibaba Cloud, they will be prompted for their user name and password followed by an authentication code from their virtual MFA device. MFA requires users to verify their identities by entering two authentication factors. When MFA is enabled, an attacker faces at least two different authentication mechanisms. Every RAM user with a login profile (console access) must have an MFA device (GetUserMFAInfo). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- ram
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 1.4 Ensure that multi-factor authentication is enabled for all RAM users that have a console password
+audit:
+  type: command
+  command: |-
+    out=$(aliyun ram ListUsers --MaxItems 1000 2>/dev/null) || exit 1
+    users=$(printf '%s\n' "$out" | sed -n 's/.*"UserName"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    bad=0
+    for u in $users; do
+      if err=$(aliyun ram GetLoginProfile --UserName "$u" 2>&1); then
+        if ! err=$(aliyun ram GetUserMFAInfo --UserName "$u" 2>&1); then
+          printf '%s\n' "$err" | grep -q EntityNotExist || exit 1
+          echo "no MFA: $u"; bad=1
+        fi
+      else
+        printf '%s\n' "$err" | grep -q EntityNotExist || exit 1
+      fi
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Have each listed user bind a virtual MFA device (RAM console > Identities > Users > Authentication > Enable MFA) and require it: aliyun ram UpdateLoginProfile --UserName <u> --MFABindRequired true.'

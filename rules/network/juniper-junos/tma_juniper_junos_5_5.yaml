@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-5.5
+title: Ensure SNMP Write Access is not set
+description: Do not allow Read-Write SNMP access. SNMP can be used to read and write configuration information from a router using your Network Management Systems; however the inherently insecure design of the older SNMP V1, V2 and V2C standards, which do not use encryption to protect community strings, make ... Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- snmp
+reference: CIS Juniper OS Benchmark v2.1.0 - 5.5 Ensure SNMP Write Access is not set
+audit:
+  type: config_regex
+  pattern: (?m)^set snmp [^\n]*\b(?:read-write|write-view)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have deployed SNMP below Version 3 on your router with Read-Write access, delete the associated community using the following command under the hierarchy;
+    delete snmp community <community> Alternatively you can set the communities authorization level to Read Only with the following command from the hierarchy;
+    set snmp community <community> authorization read-only If you have deployed SNMP Version 3 on your router with Write access, delete the write view using the following command under the hierarchy;
+    delete snmp v3 vacm access group <group name> default-context-prefix security-model <security model> security-level <security level> write-view Complete the sections in <> with the details configured for your group/s. This command will leave any read or notify views for the group in place. If only a write-view is configured, the group can be deleted instead.

@@ -1,0 +1,41 @@
+id: TMA-RHEL9-1.1.2.2.1
+title: Ensure /dev/shm is tmpfs or a separate partition
+description: The /dev/shm directory is a world-writable directory that can function as shared memory that facilitates inter process communication (IPC).
+target: linux
+os_family:
+- rhel-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS Red Hat Enterprise Linux 9 Benchmark v3.0.0 - 1.1.2.2.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /dev/shm >/dev/null 2>&1; then echo compliant; else echo /dev/shm' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    if ! grep -qE '^[^#][^[:space:]]*[[:space:]]+/dev/shm[[:space:]]' /etc/fstab; then
+      cp -a /etc/fstab /etc/fstab.tmaegis.bak.$(date +%Y%m%d%H%M%S)
+      echo 'tmpfs /dev/shm tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0' >> /etc/fstab
+    fi
+    if findmnt -kn /dev/shm >/dev/null 2>&1; then mount -o remount,nosuid,nodev,noexec /dev/shm 2>/dev/null
+    else mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime tmpfs /dev/shm; fi; true
+  guidance: "For specific configuration requirements of the /dev/shm mount for your environment, modify /etc/fstab. Example: tmpfs /dev/shm tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0 Note: Using Btrfs subvolumes instead of traditional disk partitions changes how disk space is allocated and enforced, quotas may need to be configured to enforce storage limits and prevent resource exhaustion."

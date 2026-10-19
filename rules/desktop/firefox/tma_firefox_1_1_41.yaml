@@ -1,0 +1,18 @@
+id: TMA-FIREFOX-1.1.41
+title: Ensure 'Offer to save logins' is set to 'Disabled'
+description: 'Firefox allows for credentials to be stored in its credential store for certain websites. The recommended state for this setting is: Disabled. Rationale: Stored credentials may be harvested by an adversary that gains local privileges equal to or greater than the principal running Firefox, which may increase the scope and impact of a breach. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Mozilla\Firefox:OfferToSaveLogins (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: firefox
+level: 1
+severity: medium
+tags:
+- firefox
+- browser
+- cis-l1
+reference: CIS Mozilla Firefox ESR GPO Benchmark v1.0.0 - 1.1.41 Ensure 'Offer to save logins' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Mozilla\Firefox'' -Name ''OfferToSaveLogins'' -ErrorAction SilentlyContinue).''OfferToSaveLogins''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Mozilla\Firefox'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'OfferToSaveLogins' -Value 0 -PropertyType DWord -Force | Out-Null

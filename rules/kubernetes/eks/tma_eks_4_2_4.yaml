@@ -1,0 +1,22 @@
+id: TMA-EKS-4.2.4
+title: Minimize the admission of containers wishing to share the host network namespace
+description: 'Minimize the admission of pods that request spec.hostNetwork: true in EKS so that sharing the host network namespace is limited to tightly controlled, explicitly approved platform scenarios. In EKS, AWS recommends applying Kubernetes Pod Security Standards with the built-in Pod Security Admission controller or a policy engine, using at least the baseline profile cluster-wide and the restricted profile for workload namespaces. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.'
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- pod-security
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.2.4 Minimize the admission of containers wishing to share the host network namespace
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.hostNetwork}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($3=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure Pod Security Admission on workload namespaces so pods that request spec.hostNetwork: true are denied at admission time. Use enforce on workload namespaces with restricted, or at minimum baseline, and reserve any exceptions for narrowly approved platform workloads. After updating namespace enforcement, remove hostNetwork: true from affected manifests and redeploy those workloads so new pods are evaluated under the enforced policy. AWS also notes that pods with hostNetwork: true always have IMDS access on EKS EC2 nodes, which is another reason to minimize this setting. • Label each workload namespace to enforce restricted. kubectl label ns NAMESPACE pod-security.kubernetes.io/enforce=restricted --overwrite • Add warn and audit during rollout if you want visibility into violations, but do not rely on them for remediation because they do not block pod creation.'

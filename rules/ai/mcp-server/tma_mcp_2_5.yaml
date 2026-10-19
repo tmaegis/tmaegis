@@ -1,0 +1,20 @@
+id: TMA-MCP-2.5
+title: Ensure Origin header is validated on all Streamable HTTP requests to prevent DNS rebinding attacks
+description: Streamable HTTP servers validate the Origin header on every incoming request. When the Origin header is present and is not on the operator-configured allowlist, the server returns HTTP 403. This is enforced on the request itself, not only on a CORS preflight. Because non-browser MCP clients routinely send no Origin, the specification does not require an absent Origin to be rejected, and a server may accept it or, under a stricter local policy, reject it. The control targets a present, hostile Origin, which is the DNS- rebinding shape. For locally bound servers, bind to localhost and reject non-localhost Origins. DNS rebinding lets a remote web page re-resolve its own domain to a loopback address and then issue requests to a locally bound MCP server, which is why developer-facing localhost deployments are the prime target. Without Origin validation the server cannot distinguish a legit...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 2.5 Ensure Origin header is validated on all Streamable HTTP requests to prevent DNS rebinding attacks
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_2_5"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 2.5"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure the MCP server to validate the Origin header on every Streamable HTTP request and return HTTP 403 for any present Origin not on an explicit allowlist, logging the rejection as a security event. For locally bound servers, bind to localhost and reject non-localhost Origins. As layered defense, the gateway can enforce the allowlist. The following nginx example is illustrative: map $http_origin $cis_mcp_origin_ok { default 0; "https://app.example.com" 1; } server { location /mcp { if ($cis_mcp_origin_ok) { set $cis_block 0; } if ($http_origin) { set $cis_block "${cis_block}1"; } if ($cis_block = 1) { return 403; } proxy_pass http://mcp_upstream; } } The gateway enforces the allowlist for present Origins but does not replace server-side validation, which the specification requires. Where a web UI is served alongside the MCP endpoint, set an explicit Access-Control-Allow-Origin allowlist, do not combine Access-Control-Allow-Credentials: true with a wildcard origin, and set
+    a restrictive Content-Security-Policy: frame-ancestors.'

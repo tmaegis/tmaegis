@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.2.2.12
+title: 'Ensure ''Excel 97-2003 workbooks and templates'' is set to ''Enabled: Open/Save Blocked, Use Open Policy'''
+description: 'This policy setting determines whether users can open, view, edit, or save Excel files with Excel 97-2003 workbooks and templates file format. Open/Save blocked, use open policy: Both opening and saving of the file type will be blocked. The file will open based on the policy setting configured in the "default file block behavior" key. Note: Use Open Policy action is defined by the Set default file block behavior policy setting which is included in this benchmark. The recommended state for this setting is: Enabled: Open/Save blocked, use open policy. Audit: reads the registry value(s) xl97workbooksandtemplates that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.2.2.12 Ensure ''Excel 97-2003 workbooks and templates'' is set to ''Enabled: Open/Save Blocked, Use Open Policy'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\security\fileblock'') -Name ''xl97workbooksandtemplates'' -ErrorAction SilentlyContinue).''xl97workbooksandtemplates''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $_.PSChildName + '':xl97workbooksandtemplates='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Open/Save blocked, use open policy. Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 97-2003 workbooks and templates'

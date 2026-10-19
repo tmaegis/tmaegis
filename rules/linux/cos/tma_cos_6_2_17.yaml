@@ -1,0 +1,18 @@
+id: TMA-COS-6.2.17
+title: Ensure no duplicate GIDs exist
+description: Although the groupadd program will not let you create a duplicate Group ID (GID), it is possible for an administrator to manually edit the /etc/group file and change the GID field. User groups must be assigned unique GIDs for accountability and to ensure appropriate access protections.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 6.2.17 Ensure no duplicate GIDs exist
+audit:
+  type: command
+  shell: bash
+  command: 'cut -d: -f3 /etc/group | sort | uniq -d | grep -q . && echo noncompliant || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique GIDs and review all files owned by the shared GID to determine which group they are supposed to belong to.

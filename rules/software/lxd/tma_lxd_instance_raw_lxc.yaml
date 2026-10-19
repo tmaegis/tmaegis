@@ -1,0 +1,23 @@
+id: TMA-LXD-INSTANCE-RAW-LXC
+title: Ensure LXD instances do not use raw.lxc or raw.apparmor overrides
+description: 'raw.lxc and raw.apparmor inject low-level LXC/AppArmor directives that bypass LXD security defaults (for example lxc.apparmor.profile=unconfined or extra mounts). The audit loops over instances from "lxc list --format csv -c n" (default project) and fails if any expanded configuration contains these keys.'
+target: lxd
+level: 2
+severity: medium
+tags: [lxd, containers, isolation]
+reference: CIS-style LXD hardening guidance - Raw configuration overrides (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: command
+  command: |-
+    lxc info >/dev/null 2>&1 || exit 1
+    names=$(lxc list --format csv -c n 2>/dev/null) || exit 1
+    bad=0
+    for n in $names; do
+      cfg=$(lxc config show --expanded "$n" 2>/dev/null) || exit 1
+      if printf '%s\n' "$cfg" | grep -Eq '^[[:space:]]*raw\.(lxc|apparmor):'; then echo "raw override: $n"; bad=1; fi
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Review the directives, then lxc config unset <instance> raw.lxc / raw.apparmor (or remove them from the profile) and express any genuine need with supported keys (devices, security.syscalls.*). Restart the instance.'

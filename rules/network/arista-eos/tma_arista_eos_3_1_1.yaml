@@ -1,0 +1,18 @@
+id: TMA-ARISTA-EOS-3.1.1
+title: OSPF Interface Authentication
+description: OSPF authentication secures routing updates by verifying the identity of neighboring routers, preventing malicious devices from injecting false routing information. The OSPFv2 Secure Hash Algorithms (SHA) Authentication support as defined in RFC 5709 supports the configuration of SHA1, SHA256, SHA384 and SHA512 Message-Digest authentication as an alternative to the MD5 Message-Digest authentication. Because a routing protocol contains information that need not be kept secret, privacy is not a requirement. However, authentication of the messages within the protocol is of interest in order to reduce the risk of an adversary compromising the routing system ... Passes when OSPF is not configured. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 2
+severity: high
+tags:
+- arista-eos
+- network
+- aaa
+reference: CIS Arista EOS Benchmark v1.0.0 - 3.1.1 OSPF Interface Authentication
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^i \t\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^f\n]|f(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]))))))))))))))))))))))[^\n]*\n)*[ \t]*router ospf [^\n]*(?:\n(?:[ \t]*(?:$|[^i \t\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^f\n]|f(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: Configure OSPF authentication on interfaces connected to OSPF neighbors interface {interface-name} ip ospf authentication message-digest ip ospf authentication message-digest-key {number} sha256 {key text}

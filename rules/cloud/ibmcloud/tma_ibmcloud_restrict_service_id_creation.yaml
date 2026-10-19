@@ -1,0 +1,21 @@
+id: TMA-IBMCLOUD-RESTRICT-SERVICE-ID-CREATION
+title: Ensure creation of service IDs is restricted
+description: Restricting service ID creation keeps machine identities under central control. restrict_create_service_id must be RESTRICTED. Read-only ibmcloud CLI calls using the current CLI session and targeted region (ibmcloud login, or IBMCLOUD_API_KEY); JSON output is parsed with grep/sed/awk. A missing CLI, plugin or session fails the check.
+target: ibmcloud
+level: 2
+severity: medium
+tags:
+- ibmcloud
+- iam
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - Identity and Access Management - restrict service ID creation (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(ibmcloud iam account-settings --output json 2>/dev/null) || exit 1
+
+    v=$(printf ''%s\n'' "$out" | sed -n ''s/.*"restrict_create_service_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'' | head -n 1)
+
+    [ "$v" = RESTRICTED ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ibmcloud iam account-settings-update --restrict-create-service-id RESTRICTED, then grant 'Service ID creator' only where needed.

@@ -1,0 +1,50 @@
+id: TMA-FREEBSD-2.2.8
+title: Ensure telnet server services are not in use
+description: 'The freebsd-telnetd package contains the telnet daemon, which accepts connections from users from other systems via the telnet protocol. The telnet protocol is insecure and unencrypted. The use of an unencrypted transmission medium could allow a user with access to sniff network traffic the ability to steal credentials. The ssh service provides an encrypted session and stronger security. Audit: telnet must not be enabled in /etc/inetd.conf (or freebsd-telnetd is not installed).'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- network
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 2.2.8 Ensure telnet server services are not in use
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; out=$( { grep -E "^telnet[[:space:]]" /etc/inetd.conf ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    tma_comment /etc/inetd.conf '^telnet[[:space:]]'
+    service inetd status >/dev/null 2>&1 && service inetd reload >/dev/null 2>&1 || true
+  guidance: "Run the following commands to stop and disable telnet: # sed -i '' -e 's|^telnet|#telnet|g' /etc/inetd.conf # service inetd restart -AND- -IF- a package is installed and is required for dependencies: Run the following commands to remove the freebsd-telnetd package: # pkg remove freebsd-telnetd"

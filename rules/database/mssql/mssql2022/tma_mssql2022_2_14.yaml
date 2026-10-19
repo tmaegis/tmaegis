@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-2.14
+title: Ensure the 'sa' Login Account has been renamed
+description: The sa account is a widely known and often widely used SQL Server login with sysadmin privileges. The sa login is the original login created during installation and always has principal_id=1 and sid=0x01. It is more difficult to launch password-guessing and brute-force attacks against the sa login if the name is not known.
+target: mssql
+level: 1
+severity: medium
+tags:
+- logging
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.14 Ensure the 'sa' Login Account has been renamed
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN name = 'sa' THEN 'noncompliant' ELSE 'compliant' END FROM sys.server_principals WHERE sid = 0x01;"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Replace the <different_user> value within the below syntax and execute to rename the sa login. ALTER LOGIN sa WITH NAME = <different_user>;

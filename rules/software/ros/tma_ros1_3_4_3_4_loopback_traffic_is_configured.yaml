@@ -1,0 +1,28 @@
+id: TMA-ROS1-3.4.3.4
+title: Ensure loopback traffic is configured
+description: 'Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network Applies when nftables is installed: the audit requires iif "lo" accept and drops for 127.0.0.0/8 and ::1 in the input chain. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.3.4 Ensure loopback traffic is configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    r=$(nft list ruleset 2>/dev/null | awk '/hook input/,/}/') || exit 1
+    bad=0
+    printf '%s\n' "$r" | grep -q 'iif "lo" accept' || { echo 'missing iif "lo" accept'; bad=1; }
+    printf '%s\n' "$r" | grep -Eq 'ip saddr 127\.0\.0\.0/8 .*drop' || { echo 'missing ip saddr 127.0.0.0/8 drop'; bad=1; }
+    [ -d /proc/sys/net/ipv6 ] && { printf '%s\n' "$r" | grep -Eq 'ip6 saddr ::1 .*drop' || { echo 'missing ip6 saddr ::1 drop'; bad=1; }; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/nftables.conf
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # nft add rule inet filter input iif lo accept # nft create rule inet filter input ip saddr 127.0.0.0/8 counter drop # nft add rule inet filter input ip6 saddr ::1 counter drop'

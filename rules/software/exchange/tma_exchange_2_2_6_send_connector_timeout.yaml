@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.2.6
+title: Ensure 'Send connector timeout' is set to '10'
+description: 'This parameter controls the number of idle minutes before the connection to the Send connector is dropped, even if data is being actively transmitted. Note: The ConnectionTimeout parameter must be higher than the ConnectionInactivityTimeout parameter. Prints the number of Send connectors whose ConnectionInactivityTimeOut is longer than 00:10:00 (expected 0). Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.'
+target: exchange
+level: 1
+severity: low
+tags:
+- exchange
+- transport
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.2.6 Ensure 'Send connector timeout' is set to '10'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $ts = { param($v) $s = "$v"; if (-not $s -or $s -eq 'Unlimited') { $null } else { [timespan]$s } }; $bad = @(Get-SendConnector -ErrorAction Stop | Where-Object { $t = & $ts $_.ConnectionInactivityTimeOut; $null -eq $t -or $t.TotalMinutes -gt 10 }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-SendConnector -Identity '<connector>' -ConnectionInactivityTimeOut 00:10:00

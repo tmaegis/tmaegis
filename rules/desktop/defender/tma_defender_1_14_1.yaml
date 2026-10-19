@@ -1,0 +1,19 @@
+id: TMA-DEFENDER-1.14.1
+title: 'Ensure ''Specify the interval to check for security intelligence updates'' is set to ''Enabled: 4'' or fewer, but not ''0'''
+description: 'This policy setting configures an interval at which to check for security intelligence updates. Security intelligence updates are the continuously updated packages that Microsoft Defender Antivirus uses to recognize, classify, and block the latest malware, spyware, unwanted software, and potentially harmful behaviors. The recommended state for this setting is: Enabled: 4 or fewer, but not 0. Rationale: A malware scan is only as effective as the threat definitions it uses. Running a scan with outdated intelligence significantly reduces detection accuracy and can create a false sense of security. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\SignatureUpdates:SignatureUpdateInterval (REG_DWORD); compliant when it is 4 or 3 or 2 or 1. Remediation writes 4 locally; in a domain set it through the ADMX so Group Policy
+  does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.14.1 Ensure ''Specify the interval to check for security intelligence updates'' is set to ''Enabled: 4'' or fewer, but not ''0'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\SignatureUpdates'' -Name ''SignatureUpdateInterval'' -ErrorAction SilentlyContinue).''SignatureUpdateInterval''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(4,3,2,1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\SignatureUpdates'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SignatureUpdateInterval' -Value 4 -PropertyType DWord -Force | Out-Null

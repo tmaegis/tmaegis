@@ -1,0 +1,24 @@
+id: TMA-PALOALTO-6.6
+title: Ensure a Vulnerability Protection Profile is set to block attacks against critical and high vulnerabilities, and set to default on medium, low, and informational vulnerabilities
+description: 'Configure a Vulnerability Protection Profile set to block attacks against any critical or high vulnerabilities, at minimum, and set to default on any medium, low, or informational vulnerabilities. Configuring an alert action for low and informational, instead of default, will produce additional information at the expense of greater log utilization. PASS requires a vulnerability protection profile rule with a blocking action; confirm it covers critical and high and that medium/low/informational use default. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.6 Ensure a Vulnerability Protection Profile is set to block attacks against critical and high vulnerabilities, and set to default on medium, low, and informational vulnerabilities
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles vulnerability (?:"[^"\n]*"|\S+) rules (?:"[^"\n]*"|\S+) action (?:reset-both|reset-client|reset-server|drop|block-ip)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles vulnerability <profile> rules block-crit-high severity [ critical high ]
+    set profiles vulnerability <profile> rules block-crit-high action reset-both
+    set profiles vulnerability <profile> rules default-med-low severity [ medium low informational ]
+    set profiles vulnerability <profile> rules default-med-low action default
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > Vulnerability Protection. Set a Vulnerability Protection Profile to block attacks against any critical or high vulnerabilities (minimum), and to default on attacks against any medium, low, or informational vulnerabilities.

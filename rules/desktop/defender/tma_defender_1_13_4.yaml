@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.13.4
+title: Ensure 'Scan packed executables' is set to 'Enabled'
+description: 'This policy setting manages whether Microsoft Defender Antivirus scans packed executables. Packed executables are executable files that contain compressed code. The recommended state for this setting is: Enabled. Rationale: Packing executables is a way to compress and create smaller files and can make it difficult to access and analyze the code associated with the executable. This is a common method to obfuscate malicious executables by bad actors. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Scan:DisablePackedExeScanning (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.13.4 Ensure 'Scan packed executables' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''DisablePackedExeScanning'' -ErrorAction SilentlyContinue).''DisablePackedExeScanning''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DisablePackedExeScanning' -Value 0 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,18 @@
+id: TMA-EXCHANGE-2.3.6
+title: Ensure 'Require client MAPI encryption' is set to 'True'
+description: 'This policy setting specifies whether encryption is required for Remote Procedure call (RPC) client connections. Note: This recommendation only applies if RPC over HTTP is enabled in the organization. In Exchange 2019 MAPI over HTTP is enabled by default. Prints the number of RPC client access configurations where EncryptionRequired is not True (expected 0). Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.'
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- client-access
+- encryption
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.3.6 Ensure 'Require client MAPI encryption' is set to 'True'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-RpcClientAccess -ErrorAction Stop | Where-Object { $_.EncryptionRequired -ne $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-RpcClientAccess -Server '<server>' -EncryptionRequired $true

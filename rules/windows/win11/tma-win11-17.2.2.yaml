@@ -1,0 +1,20 @@
+id: TMA-WIN11-17.2.2
+title: Ensure 'Audit Security Group Management' is set to include 'Success'
+description: 'This subcategory reports each event of security group management, such as when a security group is created, changed, or deleted or when a member is added to or removed from a security group. If you enable this Audit policy setting, administrators can track events to detect malicious, accidental, and authorized creation of security group accounts. Events for this subcategory include: • 4727: A security-enabled global group was created. • 4728: A member was added to a security-enabled global group. • 4729: A member was removed from a security-enabled global group. • 4730: A security-enabled glob'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 17.2.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9237-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9237-69ae-11d9-bed3-505054503030}' /success:enable

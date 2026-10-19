@@ -1,0 +1,21 @@
+id: TMA-GKE-5.3.1
+title: Enable application-layer Secrets encryption with Cloud KMS keys
+description: Enable application layer Secrets encryption for GKE Standard clusters using a Cloud KMS key. This control adds customer managed encryption for Kubernetes Secret resources stored in the cluster state database, providing an additional protection layer beyond Google managed encryption at rest. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 2
+severity: high
+tags:
+- gke
+- managed-services
+- secrets
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.3.1 Enable application-layer Secrets encryption with Cloud KMS keys
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(databaseEncryption.state,databaseEncryption.currentState,databaseEncryption.keyName)') || exit 1
+    set -- $(printf '%s' "$out" | tr '\t' ' ')
+    if [ "${1:-}" = ALL_OBJECTS_ENCRYPTION_ENABLED ] && [ "${2:-}" = CURRENT_STATE_ALL_OBJECTS_ENCRYPTION_ENABLED ] && [ -n "${3:-}" ]; then echo compliant; else echo "noncompliant: $out"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable application layer encryption on the GKE Standard cluster when the audit shows that databaseEncryption.state is not ALL_OBJECTS_ENCRYPTION_ENABLED, databaseEncryption.currentState is not CURRENT_STATE_ALL_OBJECTS_ENCRYPTION_ENABLED, or databaseEncryption.keyName does not reference the approved Cloud KMS CryptoKey. In the Google Cloud console: • Open the GKE cluster • Select Edit and then go to the Security section • Edit Application-layer Secrets Encryption • Check Encrypt secrets at the application layer • Choose the approved Cloud KMS key.'

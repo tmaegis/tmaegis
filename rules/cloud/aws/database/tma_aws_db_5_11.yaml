@@ -1,0 +1,18 @@
+id: TMA-AWS-DB-5.11
+title: Ensure ElastiCache has Cluster Mode Enabled
+description: Cluster Mode Enabled for ElastiCache distributes data across multiple shards, enabling horizontal scaling, higher availability, and isolating potential failures or resource exhaustion to a subset of the data set, rather than the entire cluster. Enabling Cluster Mode reduces the risk of service outage from node failures, hardware limits, or scaling bottlenecks. Data partitioning across shards allows zero-downtime horizontal scaling, automated failover, and better resource utilization in production workloads, especially under high load or large data sets.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- cloud
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 5.11 Ensure ElastiCache has Cluster Mode Enabled
+audit:
+  type: manual
+  command: 'List Cluster Mode Status for All Replication Groups aws elasticache describe-replication-groups \ --query "ReplicationGroups[*].{ReplicationGroupId:ReplicationGroupId, ClusterModeEnabled:ClusterEnabled}" - This will output a concise list showing each cluster''s ID and whether Cluster Mode is enabled (true) or not (false). - Review and flag any replication group entries where "ClusterModeEnabled": false.'
+remediation:
+  type: iac_patch
+  command: 'Migration from Cluster Mode Disabled (CMD) to Cluster Mode Enabled (CME) is possible via the cluster mode compatible feature provided by AWS. 1. Pre-requisites: - The cluster may only have keys in database 0 only. - Applications must use a Valkey or Redis OSS client that is capable of using Cluster protocol and use a configuration endpoint. - Auto-failover must be enabled on the cluster with a minimum of 1 replica. - The minimum engine version required for migration is Valkey 7.2 and above, or Redis OSS 7.0 and above. 2. Modify Cluster Mode to Compatible - Change the existing replication group cluster mode from disabled to Compatible: aws elasticache modify-replication-group \ --replication-group-id <your-replication-group-id> \ --cluster-mode compatible \ --apply-immediately - In this mode, ElastiCache behaves as a single shard cluster but supports both cluster mode enabled and disabled client connections. 3. Migrate All Clients to Cluster Mode Enabled - Update your application
+    clients to support the cluster protocol using the cluster configuration endpoint. - Validate application behavior in this intermediate compatible mode. - This allows your client applications to start tra...'

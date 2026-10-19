@@ -1,0 +1,18 @@
+id: TMA-OCEANBASE-5.2.1
+title: Public Role Privileges
+description: The unnecessary privileges should be revoked from default public role to minimize security risks and adhere to the principle of least privilege. Oracle-mode tenant. Passes when PUBLIC holds no system, role or object privileges; any grant that is returned must be justified by organisational need. Runs obclient against an Oracle-mode tenant using the connection options in OB_ORA_CONN (default "-h127.0.0.1 -P2881 -uSYS@oracle"); supply the password via OB_ORA_CONN (-p...) or ~/.my.cnf.
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- privileges
+- oracle-mode
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 5.2.1 Public Role Privileges
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_ORA_CONN:--h127.0.0.1 -P2881 -uSYS@oracle} -N -B -e "SELECT (SELECT COUNT(*) FROM DBA_SYS_PRIVS WHERE GRANTEE = 'PUBLIC') + (SELECT COUNT(*) FROM DBA_ROLE_PRIVS WHERE GRANTEE = 'PUBLIC') + (SELECT COUNT(*) FROM USER_TAB_PRIVS WHERE GRANTEE = 'PUBLIC') FROM DUAL" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: REVOKE <role> FROM PUBLIC; REVOKE <system_privilege> FROM PUBLIC; REVOKE <privilege> ON <object> FROM PUBLIC; for every unnecessary grant.

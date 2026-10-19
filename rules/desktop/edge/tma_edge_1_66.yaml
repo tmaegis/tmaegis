@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.66
+title: 'Ensure ''Automatically import another browser''s data and settings at first run'' is set to ''Enabled: Disables automatic import, and the import section of the first-run experience is skipped'''
+description: 'This policy setting controls whether settings are imported from another browser into Microsoft Edge. The recommended state for this setting is: Enabled: Disables automatic import, and the import section of the first-run experience is skipped. Note: The browser data from Microsoft Edge Legacy will always be silently migrated at the first run, irrespective of the value of this policy. Rationale: Having settings automatically imported from another browser into Microsoft Edge could potentially allow for non-recommended settings to be applied temporarily creating a potential security risk. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:AutoImportAtFirstRun (REG_DWORD); compliant when it is 4. Remediation writes 4 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: low
+tags:
+- edge
+- browser
+- cis-l1
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.66 Ensure ''Automatically import another browser''s data and settings at first run'' is set to ''Enabled: Disables automatic import, and the import section of the first-run experience is skipped'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''AutoImportAtFirstRun'' -ErrorAction SilentlyContinue).''AutoImportAtFirstRun''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(4) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'AutoImportAtFirstRun' -Value 4 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,17 @@
+id: TMA-TDSQL-8.3
+title: Ensure Binary Log Encryption Is Enabled
+description: Binary logs record all data modifications and may contain sensitive business data. Enabling binlog_encryption ensures binlog files at rest are encrypted, preventing data leakage if files are exfiltrated. This feature is available in TDSQL 10.3.22.3 and later. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Passes when binlog_encryption is ON; also confirm SHOW BINARY LOGS reports recent files as encrypted.
+target: tdsql
+level: 2
+severity: medium
+tags:
+- tdsql
+- encryption
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 8.3 Ensure Binary Log Encryption Is Enabled
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT @@global.binlog_encryption" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '1'
+remediation:
+  type: iac_patch
+  command: After KMS and instance data encryption are enabled (8.1), SET GLOBAL binlog_encryption = ON; and persist it in the parameter template.

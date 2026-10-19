@@ -1,0 +1,42 @@
+id: TMA-ALMA10-1.1.2.1.1
+title: Ensure /tmp is tmpfs or a separate partition
+description: 'The /tmp directory is a world-writable directory used for temporary storage by all users and some applications. Note: If an entry for /tmp exists in /etc/fstab it will take precedence over entries in a systemd unit file. There is an exception to this when a system is diskless and connected to iSCSI, entries in /etc/fstab may not take precedence over a systemd unit file.'
+target: linux
+os_family:
+- almalinux-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS AlmaLinux OS 10 Benchmark v1.0.0 - 1.1.2.1.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /tmp >/dev/null 2>&1; then echo compliant; else echo /tmp' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    findmnt -kn /tmp >/dev/null 2>&1 && exit 0
+    if ! grep -qE '^[^#][^[:space:]]*[[:space:]]+/tmp[[:space:]]' /etc/fstab; then
+      cp -a /etc/fstab /etc/fstab.tmaegis.bak.$(date +%Y%m%d%H%M%S)
+      echo 'tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0' >> /etc/fstab
+    fi
+    systemctl unmask tmp.mount 2>/dev/null; systemctl daemon-reload 2>/dev/null
+    mount /tmp 2>/dev/null || mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime tmpfs /tmp; true
+  guidance: "First ensure that systemd is correctly configured to ensure that /tmp will be mounted at boot time. # systemctl unmask tmp.mount For specific configuration requirements of the /tmp mount for your environment, modify /etc/fstab. Example of using tmpfs with specific mount options: tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0 Note: the size=2G is an example of setting a specific size for tmpfs. Example of using a volume or disk with specific mount options. The source location of the volume or disk will vary depending on your environment: <device> /tmp <fstype> defaults,nodev,nosuid,noexec 0 0"

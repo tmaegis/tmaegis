@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-3.2.5
+title: Ensure public network access on Recovery Services vaults is Disabled
+description: Disable public network access on Recovery Services vaults to prevent exposure to the internet and reduce the risk of unauthorized access. Use private endpoints and Azure Role-Based Access Control (RBAC) to securely manage access within trusted networks. Disabling public network access improves security by ensuring that a Recovery Services vault is not exposed on the public internet.
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- network
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.2.5 Ensure public network access on Recovery Services vaults is Disabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a vault. 3. Under Settings, click Networking. 4. Under Public access, ensure that Public network access is set to Deny. 5. Repeat steps 1-4 for each Recovery Services vault. Audit from Azure CLI Run the following command to list Recovery Services vaults: az backup vault list For each Recovery Services vault, run the following command: az backup vault show --resource-group <resource-group> --name <recovery- services-vault> Ensure that under properties, publicNetworkAccess is set to Disabled. Audit from PowerShell Run the following command to list Recovery Services vaults: Get-AzRecoveryServicesVault Run the following command to get the vault in a resource group with a given name: $vault = Get-AzRecoveryServicesVault -ResourceGroupName <resource-group> - Name <recovery-services-vault> Run the following command to get the public network access setting for the vault: $vault.Properties.PublicNetworkAccess
+    Ensure that the command returns Disabled. Repeat for each Recovery Services vault. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the as...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a vault. 3. Under Settings, click Networking. 4. Under Public access, click the radio button next to Deny. 5. Click Apply. 6. Repeat steps 1-5 for each Recovery Services vault requiring remediation. Remediate from Azure CLI For each Recovery Services vault requiring remediation, run the following command to disable public network access: az backup vault update --resource-group <resource-group> --name <recovery- services-vault> --public-network-access Disable Remediate from PowerShell For each Recovery Services vault requiring remediation, run the following command to disable public network access: Update-AzRecoveryServicesVault -ResourceGroupName <resource-group> -Name <recovery-services-vault> -PublicNetworkAccess "Disabled"'

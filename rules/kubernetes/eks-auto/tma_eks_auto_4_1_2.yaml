@@ -1,0 +1,18 @@
+id: TMA-EKS-AUTO-4.1.2
+title: Ensure access to Secrets is minimized and granted only where required
+description: Verify that access to Kubernetes Secret objects in EKS Auto Mode is granted only to IAM principals, Kubernetes users or groups, and workload identities with a defined operational or application need. The review should cover EKS access entries and associated access policies, Kubernetes RBAC roles and bindings, and workload access paths tied to Kubernetes service accounts and EKS Pod Identity. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- rbac
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.1.2 Ensure access to Secrets is minimized and granted only where required
+audit:
+  type: manual
+  command: Review every path that can grant access to Kubernetes Secrets in an EKS Auto Mode cluster. Start with EKS access entries and associated access policies, because Auto Mode uses the EKS API access-entry model. Then review Kubernetes RBAC, service accounts, Pod Identity associations for workloads that access AWS secret stores, and legacy aws-auth mappings only if the cluster uses API_AND_CONFIG_MAP. Effective access can come from overlapping EKS access policies, Kubernetes groups, and RBAC bindings, and access policy scope can be either cluster or namespace.
+remediation:
+  type: iac_patch
+  command: Start with EKS access entries and associated access policies, because EKS policies can grant Secrets access without native RBAC objects, and policies such as AmazonEKSAdminViewPolicy, AmazonEKSSecretReaderPolicy, and broader administrative policies can expose Secrets depending on scope. Then reduce unnecessary access in Kubernetes RBAC, service accounts, and any remaining legacy aws-auth mappings, and replace broad permissions with the narrowest namespace or workload scope that still supports the required function. • Remove or narrow EKS access policy associations that expose Secrets, and prefer namespace access within the cluster wherever possible. If AWS managed access policies are still broader than required, use access entries with Kubernetes group assignments and custom Kubernetes RBAC to grant the exact permissions needed.

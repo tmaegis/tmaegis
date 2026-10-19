@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.4.5
+title: 'Ensure ''Control use of the File System API for reading'' is set to ''Enabled: Don''t allow any site to request read access to files and directories via the File System API'''
+description: "This policy setting determines whether websites can ask for read access to the host operating system\xB4s file system using the File System API. The recommended state for this setting is: Enabled: Don't allow any site to request read access to files and directories via the File System API. Rationale: There is a large category of attack vectors that are opened by allowing web applications access to files. By setting this policy to Enabled: Don't allow any site to request read access to files and directories implements additional protections to safeguard against accidental sharing of sensitive inf... Audit reads the Group Policy registry value and prints 'compliant', 'unset' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge:DefaultFileSystemReadGuardSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it."
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.4.5 Ensure ''Control use of the File System API for reading'' is set to ''Enabled: Don''t allow any site to request read access to files and directories via the File System API'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''DefaultFileSystemReadGuardSetting'' -ErrorAction SilentlyContinue).''DefaultFileSystemReadGuardSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultFileSystemReadGuardSetting' -Value 2 -PropertyType DWord -Force | Out-Null

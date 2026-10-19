@@ -1,0 +1,19 @@
+id: TMA-IIS-2.3
+title: Ensure 'forms authentication' require SSL
+description: Forms-based authentication can pass credentials across the network in clear text. It is therefore imperative that the traffic between client and server be encrypted using SSL, especially in cases where the site is publicly accessible. It is recommended that communications with any portion of a site using Forms Authentication be encrypted using SSL. Wherever forms authentication is the mode (root web.config and each site), forms requireSSL must be true. Compliant when forms authentication is not used. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- authentication
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 2.3 Ensure 'forms authentication' require SSL
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $a = Get-WebConfiguration -Filter 'system.web/authentication' -PSPath $_; $f = Get-WebConfiguration -Filter 'system.web/authentication/forms' -PSPath $_; [string]$a.mode -eq 'Forms' -and ($f.requireSSL -ne $true) }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST/<site>' -Filter system.web/authentication/forms -Name requireSSL -Value True

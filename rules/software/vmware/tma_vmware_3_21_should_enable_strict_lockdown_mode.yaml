@@ -1,0 +1,20 @@
+id: TMA-VMWARE-3.21
+title: Host should enable strict lockdown mode
+description: Enabling lockdown mode disables direct local access to an ESXi host, requiring the host be managed remotely from vCenter Server. There are some operations, such as backup and troubleshooting, that require direct access to the host. In these cases, lockdown mode can be disabled on a temporary basis for specific hosts as needed, and then re-enabled when the task is completed. The audit runs vim-cmd -U dcui vimsvc/auth/lockdown_mode and requires lockdownStrict. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 2
+severity: low
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.21 Host should enable strict lockdown mode
+audit:
+  type: command
+  command: |-
+    out=$(vim-cmd -U dcui vimsvc/auth/lockdown_mode 2>/dev/null) || exit 1
+    case "$out" in *lockdownStrict*) echo compliant ;; *) echo "lockdown: $out" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enable lockdown mode, perform the following from the vSphere web client: 1. From the vSphere Web Client, select the host. 2. Select Configure then expand System and select Security Profile. 3. Across from Lockdown Mode click on Edit. 4. Click the radio button for Strict. 5. Click OK. Alternately, run the following PowerCLI command: # Enable lockdown mode for each host Get-VMHost | Foreach { $_.EnterLockdownMode() }'

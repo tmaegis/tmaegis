@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-7.1.2
+title: Ensure that the STARTED resource class is used to assign user IDs with proper parameters to ICSF started tasks
+description: ICSF can be started via a started task. On z/OS, a started task should have a protection profile in the STARTED class that has neither the PRIVILEGED nor TRUSTED attribute, and the user ID identified in the STDATA field is neither UID(0) nor SPECIAL. As a started task on a z/OS system, the ICSF started task must have a protection profile in the STARTED class to limit its abilities to impact other tasks running on the system.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.1.2 Ensure that the STARTED resource class is used to assign user IDs with proper parameters to ICSF started tasks
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that STARTED appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that STARTED appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that STARTED appears. Request the following DSMON report: FUNCTION SYSTEM RACSPT Verify that: The ICSF started task(s) appear in the FROM PROFILES IN THE STARTED CLASS: section and not the FROM THE STARTED PROCEDURES TABLE (ICHRIN03): section. The TRUSTED and ... (full steps: CIS section 7.1.2)'
+remediation:
+  type: iac_patch
+  command: 'To activate the STARTED class use the RACF SETROPTS command: SETROPTS CLASSACT(STARTED) To enable generic profile checking for the STARTED class use the RACF SETROPTS command: SETROPTS GENERIC(STARTED) To RACLIST the STARTED class use the RACF SETROPTS command: SETROPTS RACLIST(STARTED) To create a STARTED profile use the RACF RDEFINE and SETROPTS commands: RDEFINE STARTED CSF.* + UACC(NONE) + DATA(''INTEGRATED CRYPTO SERVICE FACILITY'') + STDATA( + USER(<icsf-user>) + ) SETROPTS REFRESH RACLIST(STARTED) To modify a STARTED profile use the RACF RALTER and SETROPTS commands: RALTER STARTED CSF.* + STDATA( + NOPRIVILEGED + NOTRUSTED + ) SETROPTS REFRESH RACLIST(STARTED) To make a user ID PROTECTED use the RACF ALTUSER command: ALTUSER <icsf-id> + NOPASSWORD + NOPHRASE + NOOIDCARD To remove the SPECIAL attribute use the RACF ALTUSER command: ALTUSER <icsf-id> NOSPECIAL To modify the OMVS segment for a user ID use the RACF ALTUSER command: ALTUSER <icsf-id> + OMVS( + UID(1) + ) Notes:
+    1. If the security administrator has defined the SHARED.IDS profile in the UNIXPRIV class, the UID value must be unique. Use the SHARED keyword in addition to UID to assign a ... (see CIS section 7.1.2)'

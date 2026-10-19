@@ -1,0 +1,20 @@
+id: TMA-AWS-DB-4.9
+title: Ensure Database has Backup enabled
+description: 'Ensure your DynamoDB tables have backups enabled to protect against accidental data loss or corruption. This can be achieved in two ways: by enabling Point-in-Time Recovery (PITR), which provides continuous backups for up to 35 days, and by configuring on-demand backups that can be automated using the AWS Backup service. Backups are essential for restoring data after accidental deletions, application errors or malicious events. Enabling both continuous and scheduled backups maximizes data resilience while meeting recovery point objectives (RPO) and compliance mandates.'
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- backup
+- cloud
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 4.9 Ensure Database has Backup enabled
+audit:
+  type: manual
+  command: '1. Check if Point-in-Time Recovery (PITR) is enabled Use the following steps on the AWS console to verify if PITR is enabled for your DynamoDB table and also conform the number of days its retained for: 1.1 Log in to the AWS Management Console. 1.2 Navigate to DynamoDB in the AWS Services menu. - Select "Tables" from the left sidebar. 1.3 Click on the specific table name that you want to audit. 1.4 Go to the “Backups” tab in the table’s navigation bar. 1.5 Under the “Point-in-time recovery (PITR)” section: - Verify that “Status” is “On”, which means PITR is enabled. - Check the “Backup recovery period” value, this displays the configured retention period in days. - Optionally, review the Earliest restore point and Latest restore point timestamps to confirm the exact window for recovery. 2. Check if automated backups are enabled via AWS Backup Service AWS Backup allows scheduled, automated backups of DynamoDB tables (if integrated). To confirm backup plan settings, list backup
+    plans and recovery points: 2.1 Check if Table is Assigned to a Backup Plan - List backup plans: aws backup list-backup-plans --query "BackupPlansList[].BackupPlanName" -- output table - For each backup plan...'
+remediation:
+  type: iac_patch
+  command: '1. Create Backup Plan with 2 Rules (Continuous and Scheduled Snapshots) aws backup create-backup-plan --backup-plan ''{ "BackupPlanName": "<BackupPlanName>", "Rules": [ { "RuleName": "Continuous-PITR", "TargetBackupVaultName": "Default", "ScheduleExpression": "cron(0 * * * ? *)", "StartWindowMinutes": 60, "CompletionWindowMinutes": 180, "Lifecycle": { "DeleteAfterDays": 35 }, "RecoveryPointTags": { "BackupType": "Continuous" }, "EnableContinuousBackup": true }, { "RuleName": "Scheduled-OnDemand-Snapshots", "TargetBackupVaultName": "Default", "ScheduleExpression": "cron(0 3 ? * SUN *)", "StartWindowMinutes": 120, "CompletionWindowMinutes": 360, "Lifecycle": { "DeleteAfterDays": 90 }, "RecoveryPointTags": { "BackupType": "OnDemand" } } ] }'' - Replace "BackupPlanName" with your backup plan name - Replace "Default" with your actual backup vault name if different - Update the "ScheduleExpression", "StartWindowMinutes" based on your unique backup schedule. Note, this schedule is ignored
+    for PITR as that is continuous backup. - Replace "35" with your retention time for PITR if shorter - Replace "90" with your retention time for Snapshots if different This command outputs the BackupPlanI...'

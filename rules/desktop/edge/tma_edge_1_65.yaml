@@ -1,0 +1,19 @@
+id: TMA-EDGE-1.65
+title: Ensure 'AutoLaunch Protocols Component Enabled' is set to 'Disabled'
+description: 'This policy setting controls the AutoLaunch Protocols Component. This component allows Microsoft to provide a list similar to the AutoLaunchProtocolsFromOrigins (Define a list of Protocols that can launch an external application from listed origins without prompting the user) policy, which allows certain external Protocols to launch without prompt or blocking certain Protocols (on specified origins). Rationale: Allowing applications to AutoLaunch without prompting users for websites in Microsoft Edge could open an organization up to malicious sites that may capture proprietary information through the browser app. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:AutoLaunchProtocolsComponentEnabled (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not
+  revert it.'
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.65 Ensure 'AutoLaunch Protocols Component Enabled' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''AutoLaunchProtocolsComponentEnabled'' -ErrorAction SilentlyContinue).''AutoLaunchProtocolsComponentEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'AutoLaunchProtocolsComponentEnabled' -Value 0 -PropertyType DWord -Force | Out-Null

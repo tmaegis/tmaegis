@@ -1,0 +1,18 @@
+id: TMA-DB2-3.3.3
+title: Set umask Value in the Db2 Instance Owner's .profile
+description: The Db2 instance owner's .profile file in Linux sets the environment variables and the settings for the user. This file is specific to the Korn shell and BASH shell, and other shells may have a different file. Checks the instance owner's ~/.profile (run as the instance owner); confirm with 'umask' in a login shell that 022 is in effect. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance's configuration.
+target: db2
+level: 1
+severity: low
+tags:
+- db2
+- database
+- filesystem
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.3.3 Set umask Value in the Db2 Instance Owner's .profile
+audit:
+  type: command
+  command: 'f="$HOME/.profile"; [ -f "$f" ] || { echo "noncompliant: $f not found"; exit 0; }; if grep -Eq ''^[[:space:]]*umask[[:space:]]+0?022([[:space:]]|$)'' "$f"; then echo compliant; else echo "noncompliant: no umask 022 in $f"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add umask 022 to the .profile file.

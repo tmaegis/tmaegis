@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.23
+title: Ensure 'log_hostname' is set correctly
+description: Enabling the log_hostname setting causes the hostname of the connecting host to be logged in addition to the host's IP address for connection log messages. Disabling the setting causes only the connecting host's IP address to be logged, and not the hostname. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- logging
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.23 Ensure 'log_hostname' is set correctly
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SHOW log_hostname" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'off'
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET log_hostname = 'off'" -c "SELECT pg_reload_conf()"

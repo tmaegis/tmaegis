@@ -1,0 +1,25 @@
+id: TMA-ARUBA-CX-1.5.5
+title: Per User Management Interface Enablement
+description: 'By default, authenticated users are enabled for accessing the switch through all these available management interfaces: ssh, telnet, https-server, console. Additionally fine- grained command authorization can be performed using RBAC , but it is applicable only for the CLIs not for Web-UI/REST API requests . Hence it is recommended to enable the specific management interfaces for the users based on the user type using below ways - 1. Local Per-User Management interface Enablement using CLI 2. Remote AAA Servers (Radius/ RadSec/ TACACS+) using VSA'
+target: aruba-cx
+level: 2
+severity: medium
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.5.5 Per User Management Interface Enablement
+audit:
+  type: manual
+  command: Run 'show user-list management-interface' and confirm each local user is enabled only on the management interfaces it needs (ssh, telnet, https-server, console). For TACACS+/RADIUS users check the Aruba-User-Mgmt-Interface VSA on the server.
+remediation:
+  type: iac_patch
+  command: |-
+    Local per-user management interface enablement is performed with CLI command . Example of disabling the SSH management interface for local user admin1 -
+    no user admin1 management-interface ssh
+    For remote TACACS+ and RADIUS/RadSec servers, per-user management interface enablement is performed by configuring the AOS-CX VSA Aruba-User-Mgmt-Interface (ID = 69 , type = string). On the TACACS+ or RADIUS/RadSec server, the AOS-CX VSA Aruba-User-Mgmt-Interface must be set to a comma-separated list of management interface names for which login is permitted by the associated user. Management interfaces omitted from the list are disabled for the associated user. A maximum of four management interface names are allowed, with each management interface name given once. Permitted management interface names (always lowercase) are as follows:
+    1. ssh
+    2. telnet
+    3. https-server
+    4. console The VSA has a maximum length of 32 characters. The VSA is ignored by the switch if longer than 32 characters. When a user login fails because of an attempt to use a management interface that is not allowed, an event log is available indicating the enabled management interfaces as received in the TACACS+ or RADIUS/RadSec VSA. Example Remote server VSA value that enables the two named management interfaces (ssh, telnet) while disabling the two unnamed management interfaces (https-server, console):
+    Aruba-User-Mgmt-Interface = "ssh,telnet" Example Remote server VSA value that enables all four management interfaces:
+    Aruba-User-Mgmt-Interface = "ssh,telnet,https-server,console"

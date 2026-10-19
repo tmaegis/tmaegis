@@ -1,0 +1,17 @@
+id: TMA-NGINX-3.4
+title: Ensure proxies pass source IP information
+description: When NGINX acts as a reverse proxy or load balancer, it terminates the client connection and opens a new connection to the upstream application server. By default, the upstream server sees the NGINX server's internal IP address as the source, obscuring the original client IP. When proxy_pass is used, proxy_set_header X-Forwarded-For and X-Real-IP must both be configured. Per-location inheritance is not evaluated; compliant when NGINX proxies nothing. Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 1
+severity: low
+tags:
+- nginx
+- logging
+reference: CIS NGINX Benchmark v3.0.0 - 3.4 Ensure proxies pass source IP information
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '{l=$0; o=""; q=""; for(i=1;i<=length(l);i++){c=substr(l,i,1); if(q!=""){o=o c; if(c==q) q=""; continue} if(c=="\""||c=="\047"){q=c; o=o c; continue} if(c=="#") break; if(c==";"||c=="{"){print o c; o=""; continue} if(c=="}"){if(o~/[^[:space:]]/) print o; print "}"; o=""; continue} o=o c} if(o~/[^[:space:]]/) print o}' | awk 'function a(i,  x){x=$i; sub(/;$/,"",x); gsub(/["\047]/,"",x); return x} function inb(n,  i){for(i=1;i<=sp;i++) if(st[i]==n) return 1; return 0} $1=="proxy_pass"{p=1} $1=="proxy_set_header"{h=tolower(a(2)); if(h=="x-forwarded-for") xf=1; if(h=="x-real-ip") xr=1} {o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); while(o-->0){sp++; b=$1; sub(/\{.*/,"",b); st[sp]=b} while(c-->0 && sp>0) sp--} END{print (!p||(xf&&xr))?"compliant":"noncompliant"}'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add 'proxy_set_header X-Real-IP $remote_addr;' and 'proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' to each proxied location. Then run nginx -t and reload nginx.

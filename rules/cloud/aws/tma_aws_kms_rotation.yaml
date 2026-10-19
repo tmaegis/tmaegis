@@ -1,0 +1,17 @@
+id: TMA-AWS-KMS-ROTATION
+title: Ensure rotation is enabled for customer managed symmetric KMS keys
+description: Automatic rotation limits the amount of data protected by one key version. Every enabled, customer managed SYMMETRIC_DEFAULT key with AWS_KMS key material, in every enabled region, must have rotation enabled. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- kms
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Logging - KMS customer managed key rotation (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  keys=$(aws kms list-keys --region \"$r\" --query 'Keys[].KeyId' --output text 2>/dev/null) || exit 1\n  for k in $keys; do\n    m=$(aws kms describe-key --region \"$r\" --key-id \"$k\" --query 'KeyMetadata.[KeyManager,KeySpec,KeyState,Origin]' --output text 2>/dev/null) || exit 1\n    set -- $m\n    [ \"$1\" = CUSTOMER ] && [ \"$2\" = SYMMETRIC_DEFAULT ] && [ \"$3\" = Enabled ] && [ \"$4\" = AWS_KMS ] || continue\n    s=$(aws kms get-key-rotation-status --region \"$r\" --key-id \"$k\" --query KeyRotationEnabled --output text 2>/dev/null) || exit 1\n    [ \"$s\" = True ] || { echo \"rotation off: $r $k\"; bad=1; }\n  done\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'aws kms enable-key-rotation --key-id <key-id> --region <region> for each listed key (Terraform: enable_key_rotation = true).'

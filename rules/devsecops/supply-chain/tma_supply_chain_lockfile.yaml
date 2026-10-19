@@ -1,0 +1,19 @@
+id: TMA-SUPPLY-CHAIN-LOCKFILE
+title: Ensure a dependency lockfile is committed for each detected package ecosystem
+description: Lockfiles pin the exact (and, for most ecosystems, hash-verified) versions of direct and transitive dependencies so builds are reproducible and a newly published malicious version is not pulled in silently. The audit inspects package manifests at the repository root (npm/yarn/pnpm/bun, Go, Cargo, Bundler, Composer, Pipenv, Python pyproject, Gradle, SwiftPM, Dart, Mix) and requires the matching lockfile to be tracked by git. Passes with a note when no supported manifest exists. Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.
+target: supply-chain
+level: 1
+severity: high
+tags:
+- supply-chain
+- dependencies
+- lockfile
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Dependencies - pin and lock third-party dependencies (verify section number for your release)
+audit:
+  type: command
+  command: "top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1\ncd \"$top\" || exit 1\nfiles=$(git ls-files 2>/dev/null) || exit 1\nmissing=\nfound=0\nchk() {\n  if printf '%s\\n' \"$files\" | grep -qxE \"$1\"; then\n    found=1\n    printf '%s\\n' \"$files\" | grep -qxE \"$2\" || missing=\"$missing $3\"\n  fi\n}\nchk 'package\\.json' '(package-lock\\.json|npm-shrinkwrap\\.json|yarn\\.lock|pnpm-lock\\.yaml|bun\\.lockb?)' npm\nchk 'go\\.mod' 'go\\.sum' go\nchk 'Cargo\\.toml' 'Cargo\\.lock' cargo\nchk 'Gemfile' 'Gemfile\\.lock' bundler\nchk 'composer\\.json' 'composer\\.lock' composer\nchk 'Pipfile' 'Pipfile\\.lock' pipenv\nchk 'pyproject\\.toml' '(poetry\\.lock|uv\\.lock|pdm\\.lock|pylock(\\.[^/]+)?\\.toml|Pipfile\\.lock)' python\nchk 'build\\.gradle(\\.kts)?' '(gradle\\.lockfile|gradle/dependency-locks/.*\\.lockfile)' gradle\nchk 'Package\\.swift' 'Package\\.resolved' swiftpm\nchk 'pubspec\\.yaml' 'pubspec\\.lock' dart\nchk 'mix\\.exs' 'mix\\.lock' mix\nif [ -n \"$missing\" ]; then\n\
+    \  echo \"no committed lockfile for:$missing\"\nelif [ \"$found\" -eq 0 ]; then\n  echo compliant\n  echo \"no supported package manifest at the repository root\"\nelse\n  echo compliant\nfi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Generate and commit the lockfile: npm install --package-lock-only / yarn install / pnpm install; go mod tidy (go.sum); cargo generate-lockfile; bundle lock; composer update --lock; pipenv lock; poetry lock or uv lock; gradle dependencies --write-locks. Use frozen installs in CI (npm ci, yarn --immutable, pip --require-hashes).'

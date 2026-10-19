@@ -1,0 +1,17 @@
+id: TMA-TDSQL-4.3
+title: Ensure `secure_file_priv` Is Correctly Configured
+description: secure_file_priv restricts the directory for file operations by LOAD DATA INFILE, SELECT ... INTO OUTFILE, and the LOAD_FILE() function. If unset or empty, MySQL can access arbitrary paths on the filesystem. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Passes when secure_file_priv names a specific directory or is NULL (import/export disabled); an empty string fails.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- hardening
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.3 Ensure `secure_file_priv` Is Correctly Configured
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT CASE WHEN @@global.secure_file_priv IS NULL THEN 'compliant' WHEN @@global.secure_file_priv = '' THEN 'empty' ELSE 'compliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set secure_file_priv = /data/tdsql/secure/ (or NULL when import/export is not needed) in the [mysqld] section of my.cnf / the parameter template and restart the instance.

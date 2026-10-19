@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-7.1.4
+title: Ensure 'Public Endpoint Access' is set to 'Disabled' for File Shares (Microsoft.FileShares)
+description: 'Note: This recommendation applies to NFS file shares created with the Microsoft.FileShares provider. Public Endpoint Access (Public Network Access) controls whether the file share is reachable from the public internet. Disabling it limits connectivity to private endpoints, reducing the share''s exposure. A file share reachable over the public internet presents a larger attack surface and is exposed to unauthorized access attempts and network-based attacks. Disabling public network access and using private endpoints only ensures that only trusted networks can reach the share.'
+target: azure
+level: 2
+severity: low
+tags:
+- access-control
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 7.1.4 Ensure 'Public Endpoint Access' is set to 'Disabled' for File Shares (Microsoft.FileShares)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to audit. 3. Under the share''s Settings, select Networking. 4. Confirm that Public endpoint access is Disabled. If it is Enabled, the file share is non-compliant. 5. Repeat for each Microsoft.FileShares NFS file share. Audit from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share, run the following command: az fileshare show --resource-group <resource-group> --name <file-share-name> --query publicNetworkAccess A compliant share returns Disabled. A value of Enabled is non-compliant. Audit from PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share, run the following command: Get-AzFileShare -ResourceGroupName <resource-group> -ResourceName <file- share-name> | Select-Object -ExpandProperty PublicNetworkAccess A compliant
+    share returns Disabled. A value of Enabled is non-compliant.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to remediate. 3. Under the share''s Settings, select Networking. 4. Set Public endpoint access to Disabled. 5. Select Save. 6. Repeat for each file share requiring remediation. Remediate from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share requiring remediation, run: az fileshare update --resource-group <resource-group> --name <file-share- name> --public-network-access Disabled Remediate from PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share requiring remediation, run: Update-AzFileShare -ResourceName <file-share-name> -ResourceGroupName <resource-group> -PublicNetworkAccess Disabled'

@@ -1,0 +1,28 @@
+id: TMA-FORTIGATE-2.4.4
+title: Ensure Admin idle timeout time is configured
+description: The idle timeout period is the amount of time that an administrator will stay logged in to the GUI without any activity. PASS requires admintimeout between 1 and 5 minutes. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- authentication
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.4.4 Ensure Admin idle timeout time is configured
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set admintimeout [1-5][ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set admintimeout 5
+    end
+    # CIS guidance:
+    To change the idle timeout in the GUI:
+    1) Login to FortiGate with Super Admin privileges
+    2) Go to 'System' > 'Settings'.
+    3) In the 'Administration Settings' section, set the 'Idle timeout' value to five minutes by typing 5.
+    4) Click Apply. To change the idle timeout in the CLI:
+    config system global
+        set admintimeout 5
+    end

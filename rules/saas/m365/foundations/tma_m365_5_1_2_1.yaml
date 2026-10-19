@@ -1,0 +1,17 @@
+id: TMA-M365-5.1.2.1
+title: Ensure 'Per-user MFA' is disabled
+description: Legacy per-user Multi-Factor Authentication (MFA) can be configured to require individual users to provide multiple authentication factors, such as passwords and additional verification codes, to access their accounts. It was introduced in earlier versions of Office 365, prior to the more comprehensive implementation of Conditional Access (CA). Both security defaults and conditional access with security defaults turned off are not compatible with per-user multi-factor authentication (MFA), which can lead to undesirable user authentication states. The CIS Microsoft 365 Benchmark explicitly employs Conditional Access for MFA as an enhancement over security defaults and as a replacement for the outdated per-user MFA. To ensure a consistent authentication state disable per-user MFA on all accounts.
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- mfa
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.1.2.1 Ensure 'Per-user MFA' is disabled
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Users and select All users. 3. Click on Per-user MFA on the top row. 4. Verify that the Multi-factor Auth Status column shows Disabled for each account. To audit using Microsoft Graph 1. Determine the id or userPrincipalName of the user being audited. 2. Execute a GET request to the following relative URI: beta/users/{id | userPrincipalName}/authentication/requirements # Example https://graph.microsoft.com/beta/users/071cc716-8147-4397-a5ba- b2105951cc0b/authentication/requirements 3. Verify that the perUserMfaState property is set to disabled. 4. Repeat this process for all users within the tenant. Note: This API is in beta and does not support a list operation. To prevent server-side throttling, clients should implement batching and client-side rate limiting when auditing medium to large sized environments.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Users and select All users. 3. Click on Per-user MFA on the top row. 4. Click the empty box next to Display Name to select all accounts. 5. On the far right under quick steps click Disable.'

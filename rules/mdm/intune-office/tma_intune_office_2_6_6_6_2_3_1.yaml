@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.6.6.6.2.3.1
+title: Ensure 'Allow Trusted Locations on the network' is set to 'Disabled'
+description: 'This policy setting controls whether trusted locations on the network can be used. Trusted locations specified in the Trust Center are used to define file locations that are assumed to be safe by the application opening the file. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) allownetworklocations that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.6.6.6.2.3.1 Ensure 'Allow Trusted Locations on the network' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\powerpoint\security\trusted locations'') -Name ''allownetworklocations'' -ErrorAction SilentlyContinue).''allownetworklocations''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':allownetworklocations='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled. Microsoft PowerPoint 2016\PowerPoint Options\Security\Trust Center\Trusted Locations\Allow Trusted Locations on the network

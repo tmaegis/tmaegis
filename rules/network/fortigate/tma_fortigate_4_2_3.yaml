@@ -1,0 +1,27 @@
+id: TMA-FORTIGATE-4.2.3
+title: Enable Outbreak Prevention Database
+description: Ensure FortiGate AV inspection uses outbreak prevention database as an added layer of protection on top of antivirus' signature-based detection. FAILs if any antivirus profile protocol has outbreak-prevention disable or monitor (block is required). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: medium
+tags:
+- fortigate
+- threat-prevention
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.2.3 Enable Outbreak Prevention Database
+audit:
+  type: config_regex
+  pattern: (?m)^config antivirus profile\n(?:[ \t]+[^\n]*\n)*?[ \t]+set outbreak-prevention (?:disable|monitor)[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config antivirus profile
+        edit "<profile>"
+            config http
+                set outbreak-prevention block
+            end
+            (repeat for ftp, imap, pop3, smtp, mapi, nntp, cifs, ssh)
+        next
+    end
+    # CIS guidance:
+    Review Antivirus Security Profiles and validate that "Use FortiGuard outbreak prevention database" is enabled.

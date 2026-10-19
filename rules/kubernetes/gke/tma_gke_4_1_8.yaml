@@ -1,0 +1,21 @@
+id: TMA-GKE-4.1.8
+title: Avoid binding RBAC roles to unauthenticated users and groups
+description: Avoid RoleBinding or ClusterRoleBinding objects that grant permissions to the system:anonymous user or the related system:unauthenticated group. These subjects represent unauthenticated Kubernetes API requests and should not receive RBAC access to cluster resources. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. The built-in system:public-info-viewer binding is ignored.
+target: gke
+level: 2
+severity: critical
+tags:
+- gke
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.8 Avoid binding RBAC roles to unauthenticated users and groups
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get clusterrolebindings,rolebindings -A -o go-template='{{range .items}}{{$b:=.metadata.name}}{{range .subjects}}{{if eq .name "system:anonymous"}}{{$b}}{{"\n"}}{{end}}{{if eq .name "system:unauthenticated"}}{{$b}}{{"\n"}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | grep -v '^$' | grep -Evx 'system:public-info-viewer' | sort -u)
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remediate any RoleBinding or ClusterRoleBinding returned by the audit by removing unauthenticated access and replacing it with authenticated, least privilege RBAC access. Bindings to system:anonymous or system:unauthenticated should not be used for normal cluster operations because they can grant Kubernetes API permissions to unauthenticated requests. • Review each returned binding and identify the referenced Role or ClusterRole, including the API groups, resources, and verbs granted • Delete unnecessary bindings to system:anonymous or system:unauthenticated after confirming they are not required for cluster operation.

@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.3.2
+title: Ensure filesystem integrity is regularly checked
+description: 'Periodic checking of the filesystem integrity is needed to detect changes to the filesystem. Periodic file checking allows the system administrator to determine on a regular basis if critical files have been changed in an unauthorized fashion. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- permissions
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.3.2 Ensure filesystem integrity is regularly checked
+audit:
+  type: command
+  command: '{ crontab -l -u root 2>/dev/null; cat /etc/crontab /etc/cron.d/* 2>/dev/null; } | grep -v "^[[:space:]]*#" | grep -Eq "aide[[:space:]].*--(check|update)" && echo compliant || echo "no aide --check cron job"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command: # crontab -u root -e Add the following line to the crontab: @daily /usr/bin/lockf -s -t 0 /var/run/aide.lock /usr/local/bin/aide --check'

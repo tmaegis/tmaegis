@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.16
+title: Ensure minupperalpha is configured
+description: 'Defines the minimum number of upper case alphabetic characters in a password. In setting the minupperalpha attribute, the password must contain an upper case alphabetic character when it is changed by the user. Audit: reads `lssec -f /etc/security/user -s default -a minupperalpha`.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.16 Ensure minupperalpha is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a minupperalpha 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*minupperalpha=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 1 ]; then echo compliant; else echo "minupperalpha=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a minupperalpha=1

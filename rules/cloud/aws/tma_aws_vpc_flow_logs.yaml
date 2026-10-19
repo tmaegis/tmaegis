@@ -1,0 +1,17 @@
+id: TMA-AWS-VPC-FLOW-LOGS
+title: Ensure VPC flow logging is enabled in all VPCs
+description: Flow logs provide network traffic records for detecting anomalous traffic and for incident response. Every VPC in every enabled region must have an ACTIVE flow log. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- network
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Logging - VPC flow logging enabled in all VPCs (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  vpcs=$(aws ec2 describe-vpcs --region \"$r\" --query 'Vpcs[].VpcId' --output text 2>/dev/null) || exit 1\n  fl=$(aws ec2 describe-flow-logs --region \"$r\" --query 'FlowLogs[?FlowLogStatus==`\"ACTIVE\"`].ResourceId' --output text 2>/dev/null) || exit 1\n  for v in $vpcs; do\n    printf '%s\\n' \"$fl\" | tr '\\t' '\\n' | grep -qx \"$v\" || { echo \"no flow log: $r $v\"; bad=1; }\n  done\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'aws ec2 create-flow-logs --resource-type VPC --resource-ids <vpc-id> --traffic-type REJECT (or ALL) --log-destination-type cloud-watch-logs|s3 ... for each listed VPC (Terraform: aws_flow_log).'

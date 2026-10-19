@@ -1,0 +1,19 @@
+id: TMA-M365-5.2.2.16
+title: Ensure Token Protection is enforced for session tokens
+description: Token Protection is a Conditional Access session control that attempts to reduce token replay attacks by ensuring only device bound sign-in session tokens, like Primary Refresh Tokens (PRTs), are accepted by Microsoft Entra ID when applications request access to protected resources. When a user registers a supported device with Microsoft Entra, a PRT is issued and cryptographically bound to that device. This binding ensures that even if a threat actor steals the token, it can't be used from another device. With Token Protection enforced, Microsoft Entra validates that only these bound sign-in session tokens are used by supported applications. The recommended state is to enforce Token Protection for Office 365 Exchange Online, Office 365 SharePoint Online and Microsoft Teams Services. When properly configured, Conditional Access can aid in preventing attacks involving token theft, via...
+target: m365
+level: 2
+severity: medium
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.16 Ensure Token Protection is enforced for session tokens
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria: o Under Users or agents (Preview) verify that None is not selected. o Verify that only documented exclusions exist and that they are reviewed annually o Under Target resources select Select resources and verify at minimum the following are checked: ▪ Office 365 Exchange Online ▪ Office 365 SharePoint Online ▪ Microsoft Teams Services 4. Under Conditions > Device Platforms: verify that Configure is set to Yes and Include indicates Windows platforms. 5. Under Conditions > Client Apps: verify that Configure is set to Yes and only Mobile Apps and Desktop Clients is selected. 6. Under Access controls > Session, verify that Require token protection for sign-in sessions (Generally available
+    for Windows. Preview for MacOS, iOS) is selected. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. Filter to...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Select New policy. 4. Select Users or agents (Preview): 1. Under Include, select the users or groups to apply this policy. 2. Under Exclude exclude any break-glass accounts. 5. Select Target resources > Resources > Include > Select resources 1. Under Select specific resources, select the following applications: 1. Office 365 Exchange Online 2. Office 365 SharePoint Online 3. Microsoft Teams Services 2. Choose Select 6. Select Conditions: 1. Under Device platforms 1. Set Configure to Yes. 2. Include > Select device platforms > Windows. 3. Select Done. 2. Under Client apps: 1. Set Configure to Yes 2. Under Modern authentication clients, only select Mobile apps and desktop clients. 3. Select Done 7. Under Access controls > Session, select Require token protection for sign-in sessions (Generally available for Windows.
+    Preview for MacOS, iOS) and click Select. 8. Under Enable policy set it to Report-only. 9. Click Create. 10. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in...'

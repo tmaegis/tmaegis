@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-4.2
+title: Enable Auditing of Incoming Network Connections
+description: 'The Solaris Audit service can be configured to record incoming network connections to any listening service running on the system. This recommendation will provide an audit trail that contains information related to incoming network connections. Audit: each listed event must carry the cis class in /etc/security/audit_event.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- audit
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 4.2 Enable Auditing of Incoming Network Connections
+audit:
+  type: command
+  command: '[ -r /etc/security/audit_event ] || exit 1; r=compliant; for e in AUE_ACCEPT AUE_CONNECT AUE_SOCKACCEPT AUE_SOCKCONNECT AUE_inetd_connect; do awk -F: -v e="$e" ''$2==e && $4 ~ /(^|,)cis(,|$)/ {f=1} END {exit !f}'' /etc/security/audit_event || r="$e not assigned to the cis class"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enforce this setting, run the following commands to modify the /etc/security/audit_event file and add the cis audit class to the following audit events: # cp /etc/security/audit_event /etc/security/audit_event.orig # awk ''BEGIN{FS=":"; OFS=":"} {if ($2 ~ /AUE_ACCEPT|AUE_CONNECT|AUE_SOCKACCEPT|AUE_SOCKCONNECT|AUE_inetd_connect/) $4=$4",cis";} {print} '' /etc/security/audit_event > /etc/security/audit_event.out # cp /etc/security/audit_event.out /etc/security/audit_event'

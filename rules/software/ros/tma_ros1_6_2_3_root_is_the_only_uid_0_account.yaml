@@ -1,0 +1,22 @@
+id: TMA-ROS1-6.2.3
+title: Ensure root is the only UID 0 account
+description: Any account with UID 0 has superuser privileges on the system. The audit requires root to be the only UID 0 account. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: high
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.3 Ensure root is the only UID 0 account
+audit:
+  type: command
+  shell: bash
+  command: |-
+    u=$(awk -F: '($3 == 0) {print $1}' /etc/passwd) || exit 1
+    [ "$u" = root ] && echo compliant || echo "UID 0 accounts: $(printf '%s ' $u)"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove any users other than root with UID 0 or assign them a new UID if appropriate.

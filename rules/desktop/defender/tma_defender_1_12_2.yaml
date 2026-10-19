@@ -1,0 +1,19 @@
+id: TMA-DEFENDER-1.12.2
+title: Ensure 'Configure whether to report Dynamic Signature dropped events' is set to 'Enabled'
+description: 'This policy setting configures whether to report Dynamic Signature dropped events. Dynamic Signature events are Microsoft Defender Antivirus log events that relate to cloud-delivered, on-demand threat signatures that Microsoft pushes to endpoints outside of the normal scheduled signature update cycle. The recommended state for this setting is: Enabled. Rationale: Microsoft Defender Antivirus logs Dynamic Signature dropped events when it blocks or removes a file using a dynamically delivered signature, but the signature is not fully processed or applied and is subsequently discarded. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Reporting:EnableDynamicSignatureDroppedEventReporting (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not
+  revert it.'
+target: defender
+level: 1
+severity: high
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.12.2 Ensure 'Configure whether to report Dynamic Signature dropped events' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Reporting'' -Name ''EnableDynamicSignatureDroppedEventReporting'' -ErrorAction SilentlyContinue).''EnableDynamicSignatureDroppedEventReporting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Reporting'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'EnableDynamicSignatureDroppedEventReporting' -Value 1 -PropertyType DWord -Force | Out-Null

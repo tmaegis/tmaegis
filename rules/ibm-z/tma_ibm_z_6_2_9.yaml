@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-6.2.9
+title: Ensure access to FTP server FTP.DATA data sets is controlled
+description: The FTP Server daemon uses privileged functions and accesses sensitive data. The data sets the FTP daemon relies upon for its configuration, runtime environment and operation must be properly protected from unauthorized modifications or retrieval to ensure system integrity and privacy of sensitive data.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- network
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 6.2.9 Ensure access to FTP server FTP.DATA data sets is controlled
+audit:
+  type: manual
+  command: 'Request a list of the FTP server FTP.DATA data sets for any site FTP server started tasks. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering FTP server FTP.DATA configuration data sets Request reports generated using IRRDBU00 output that will allow you to: Verify That the FTP server FTP.DATA configuration data sets are secured by profiles in the DATASET class that: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of SUCCESS(UPDATE) ... (full steps: CIS section 6.2.9)'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + DATA(''FTP SERVER CONFIGURATION'') PERMIT ''<profile>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''<profile>'' GENERIC + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''<profile>'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need
+    to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

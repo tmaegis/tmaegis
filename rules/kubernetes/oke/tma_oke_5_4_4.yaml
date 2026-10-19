@@ -1,0 +1,17 @@
+id: TMA-OKE-5.4.4
+title: Ensure Network Policy is Enabled and set as appropriate
+description: Implementing Kubernetes NetworkPolicies in an Oracle Kubernetes Engine (OKE) cluster is a critical security measure for controlling and segregating Pod to Pod communication. By default, all pods in a Kubernetes cluster can freely communicate with each other, which increases the risk of lateral movement if a single workload is compromised. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- managed-services
+- network
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.4.4 Ensure Network Policy is Enabled and set as appropriate
+audit:
+  type: manual
+  command: 'Below is a command line statement to check whether NetworkPolicies are configured in your Oracle Kubernetes Engine (OKE) cluster: echo -e "NAMESPACE\tNETWORK_POLICY_COUNT" && \ for ns in $(kubectl get ns -o jsonpath=''{.items[*].metadata.name}''); do count=$(kubectl get networkpolicy -n "$ns" --no-headers 2>/dev/null | wc -l | tr -d '' '') echo -e "${ns}\t${count}" done Sample Output NAMESPACE NETWORK_POLICY_COUNT default 2 kube-node-lease 3 kube-public 5 kube-system 0 A count of 0 means no NetworkPolicy objects exist in that namespace and pods that are not selected by any NetworkPolicy ...'
+remediation:
+  type: iac_patch
+  command: For OKE, do not use an isNetworkPolicyEnabled cluster flag. Configure NetworkPolicy enforcement by using a supported enforcement solution and then create the required Kubernetes NetworkPolicy resources. If the cluster uses the OCI CNI plugin, install and configure the Calico network policy engine using Oracle’s documented process, then apply NetworkPolicy resources to workload namespaces. If the cluster uses flannel and NetworkPolicy enforcement is required, follow Oracle’s documented approach to replace flannel with Calico for new nodes, or create a replacement cluster design that supports the required policy enforcement. Do not install Calico alongside flannel. • Define namespace level NetworkPolicies after enforcement is available, and apply a restrictive default policy to each workload namespace where required.

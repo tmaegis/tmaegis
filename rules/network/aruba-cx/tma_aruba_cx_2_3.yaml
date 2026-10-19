@@ -1,0 +1,27 @@
+id: TMA-ARUBA-CX-2.3
+title: Proxy ARP
+description: Proxy ARP is a technique by which a device on a given network answers the ARP queries for a network address that is not on that network. The ARP proxy is aware of the location of the traffic's destination, and offers its own MAC address as the final destination. Proxy ARP is supported on L3 physical and VLAN interfaces. It is disabled by default. Disabling Proxy ARP on unused interfaces in AOS-CX switches prevents the switch from responding to ARP requests on behalf of other devices, ensuring that it does not act as a proxy for IP address resolution on inactive ports. FAILs if proxy ARP or local proxy ND is enabled on any interface. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- layer2
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 2.3 Proxy ARP
+audit:
+  type: config_regex
+  pattern: (?m)^[ \t]+(?:ip (?:local-)?proxy-arp|ipv6 local-proxy-nd)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    interface <ID>
+        no ip proxy-arp
+        no ip local-proxy-arp
+        no ipv6 local-proxy-nd
+    # CIS guidance:
+    Proxy ARP is disabled on all interfaces by default. Proxy ARP appears in the configuration only if it is enabled (which is usually undesirable). Disable this on an interface if it is enabled using below Configuration -
+    interface <ID>
+    no ip proxy-arp
+    no ip local-proxy-arp
+    no ipv6 local-proxy-nd

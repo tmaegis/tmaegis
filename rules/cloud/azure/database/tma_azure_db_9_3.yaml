@@ -1,0 +1,20 @@
+id: TMA-AZURE-DB-9.3
+title: Ensure no Azure SQL Database firewall rule is overly permissive
+description: Ensure that no SQL Databases have overly permissive firewall rules (e.g. rule allowing traffic with start IP address of 0.0.0.0 and end IP address of 255.255.255.255, or other combinations allowing large swathes of IP addresses). The preferred setting for Public Network Access is disabled. If Public Network Access is disabled, this recommendation is moot. In general, the use of well architected Private Endpoints for network traffic management is strongly preferred to allowing any public network access. Where Public Network Access must be allowed as an exception, Azure SQL Server provides a firewall to explicitly define traffic allowance and denial. In order to reduce the potential attack surface for a SQL server, firewall rules should be reviewed from time to time to ensure that no rule is overly permissive, and all included rules are justified through association with known and trust...
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- database
+- network
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 9.3 Ensure no Azure SQL Database firewall rule is overly permissive
+audit:
+  type: manual
+  command: Audit from Azure Portal 1. Search for and open SQL servers 2. For each SQL server listed, click on the server name to open the resource management window 3. Expand the Security section, then click on Networking 4. On the 'Public access' tab, if public network access is set to "Selected Networks," scroll down to review the Firewall rules Ensure that no firewall rule exists which allows traffic with a source of 0.0.0.0 or other combinations which permit access to/from wider public IP ranges. Audit from Azure CLI List all SQL servers az sql server list For each SQL server run the following command az sql server firewall-rule list --resource-group <resource group name> -- server <sql server name> Ensure the output does not contain any firewall allow rules with a source of 0.0.0.0 or other combinations which allows access to wider public IP ranges Audit from PowerShell Get the list of all SQL Servers Get-AzSqlServer For each Server Get-AzSqlServerFirewallRule -ResourceGroupName <resource
+    group name> - ServerName <server name> Ensure that StartIpAddress is not set to 0.0.0.0, /0 or other combinations which allows access to wider public IP ranges including Azure IP ranges.
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Search for and open SQL servers 2. For each SQL server listed, click on the server name to open the resource management window 3. Expand the Security section, then click on Networking 4. On the ''Public access'' tab, if public network access is set to "Selected Networks," scroll down to the Firewall Rules section 5. Remove overly permissive firewall rules and ensure that any remaining rules contain only source and destination IPs which are trusted. Remediate from Azure CLI Identify the resource group, server name, and firewall rule name which are overly permissive, then delete the identified rule with the following command: az sql server firewall-rule delete --resource-group <resource_group> --server <sql_server_name> --name <firewall_rule_name> For trusted IP addresses, use these commands to create or updates rules as needed: Create a firewall rule: az sql server firewall-rule create --resource-group <resource_group> --server <sql_server_name>
+    --name <firewall_rule_name> --start-ip-address "<IP Address other than 0.0.0.0>" --end-ip-address "<IP Address other than 0.0.0.0 or 255.255.255.255>" Update a firewall rule: az sql server firewall-rule update...'

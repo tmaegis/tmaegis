@@ -1,0 +1,19 @@
+id: TMA-GCP-NO-DEFAULT-SA-FULL-SCOPE
+title: Ensure instances do not use the default compute service account with full access to all Cloud APIs
+description: The default compute service account has Editor on the project; with the cloud-platform scope any process on the VM can use it everywhere. GKE nodes (gke-*) are excluded. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: high
+tags:
+- gcp
+- compute
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Virtual Machines - default service account not used with full API access (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud compute instances list --format=''value(name,serviceAccounts[0].email,serviceAccounts[0].scopes.list())'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''NF && $1 !~ /^gke-/ && $2 ~ /-compute@developer\.gserviceaccount\.com$/ && $3 ~ /cloud-platform/ { n++; print "default SA full scope: " $1 } END { if (!n) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Stop the instance and gcloud compute instances set-service-account <instance> --zone <zone> --service-account=<dedicated-sa> --scopes=cloud-platform (with least-privilege IAM on the dedicated account), then start it.

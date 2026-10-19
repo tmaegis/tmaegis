@@ -1,0 +1,18 @@
+id: TMA-MARIADB-5.5
+title: Ensure 'SHUTDOWN' is Not Granted to Non-Administrative Users
+description: The SHUTDOWN privilege simply enables use of the shutdown option to the mysqladmin command, which allows a user with the SHUTDOWN privilege the ability to shut down the MariaDB server.
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- authorization
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 5.5 Ensure 'SHUTDOWN' is Not Granted to Non-Administrative Users
+audit:
+  type: manual
+  command: Run SELECT GRANTEE FROM INFORMATION_SCHEMA.USER_PRIVILEGES WHERE PRIVILEGE_TYPE = 'SHUTDOWN'; Ensure only administrative users are returned in the result set.
+remediation:
+  type: iac_patch
+  command: REVOKE SHUTDOWN ON *.* FROM '<user>'@'<host>'; for each non-administrative grantee.

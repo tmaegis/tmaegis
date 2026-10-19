@@ -1,0 +1,25 @@
+id: TMA-JUNIPER-JUNOS-6.10.2.2
+title: Ensure Web-Management is Set to use HTTPS
+description: JWeb should only be accessed using HTTPS. JWeb can be configured to provide a Web GUI over either HTTP or HTTPS. HTTP transmits all data (including passwords) in clear text over the network and provides no assurance of the identity of the hosts involved. Passes when 'set system services web-management' is not configured; otherwise requires 'set system services web-management https'. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.2.2 Ensure Web-Management is Set to use HTTPS
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^w\n]|w(?:$|[^e\n]|e(?:$|[^b\n]|b(?:$|[^\-\n]|-(?:$|[^m\n]|m(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^a\n]|a(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]))))))))))))))))))))))))))))))))))))))))[^\n]*\n)*[ \t]*set system services web-management (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n])))))[^\n]*(?:\n(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^w\n]|w(?:$|[^e\n]|e(?:$|[^b\n]|b(?:$|[^\-\n]|-(?:$|[^m\n]|m(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^a\n]|a(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^
+    \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]))))))))))))))))))))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To enable HTTPS access using the System Generated "Self Signed" Certificate, issue the following command from the hierarchy;
+    set system services web-management https system-generated-certificate Alternatively, you may which to use a Local Certificate which is stored in the device's Configuration File:
+    set system services web-management https local-certificate <Certificate Name> <Certificate Name> should match an X.509 Certificate loaded under the hierarchy as shown below:
+    set security certificates <Certificate Name> load-key-file <File Name/URL> Where <File Name/URL> is either the name and path of a local Certificate and Key Pair file, or the URL from which the file can be fetched. Note
+    - This method leaves the Certificate and Private Key as part of the devices Configuration file, potentially exposing them. This is not the preferred method to configure a certificate in most instances. Finally, you can configure JUNOS to use a PKI-Certificate:
+    set system services web-management https pki-local-certificate <Certificate Name> Where <Certificate Name> is an X.509 Certificate which has already been loaded to the JUNOS device's local PKI store.

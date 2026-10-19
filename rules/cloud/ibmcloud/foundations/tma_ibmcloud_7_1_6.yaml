@@ -1,0 +1,18 @@
+id: TMA-IBMCLOUD-7.1.6
+title: Ensure IBM Cloud Kubernetes Service clusters have the logging service enabled
+description: 'The following recommendation should be considered optional, as while adhering to it would provide enhanced security, IBM Cloud Logs is a costed option. By default, logs are generated and written locally for all the following IBM Cloud Kubernetes Service cluster components: worker nodes, containers, applications, persistent storage, Ingress application load balancer, Kubernetes API, and the kube- system namespace. IBM Cloud Logs supports integration with common workload environments on IBM Cloud - including IBM Cloud Kubernetes Service - and provides observability services so you can view, analyze, and alert on activity tracking events and logging activity. A logging agent collects logs with the extension *.log and extensionless files that are stored in the /var/log/containers directory of your pod from all namespaces, including kube-system. The agent then forwards the logs to your ser...'
+target: ibmcloud
+level: 2
+severity: low
+tags:
+- cloud
+- ibmcloud
+- logging
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 7.1.6 Ensure IBM Cloud Kubernetes Service clusters have the logging service enabled
+audit:
+  type: manual
+  command: 'From Console: 1. Log in to the IBM Cloud console. 2. To view a list of your clusters, go to Menu, Containers, Clusters. 3. From the Clusters page, select your cluster. 4. Select the Overview tab 5. Under Integrations, the Logging item should have a button to Launch the IBM Cloud Log dashboard. If instead the button is labelled Connect, then logging is not enabled. From Command Line: 1. Check that a daemonset logs-agent exists in the namespace ibm-observe. kubectl get ds -n ibm-observe 2. Verify the log agents are started. kubectl -n ibm-observe get ds logs-agent 3. Verify that a logs-agent pod is ready for each node in your cluster. kubectl get pods -n ibm-observe -o wide 4. Optionally: view the logs of a pod. kubectl logs <POD_NAME>> -n ibm-observe'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Log in to the IBM Cloud console. 2. To view a list of your clusters, go to Menu, Containers, Clusters. 3. From the Clusters page, select your cluster. 4. Select the Overview tab 5. Under Integrations, go to the Logging item and click Connect. 6. Select the IBM Cloud Logs instance that you want to use (or create a new instance). Click Connect. From Command Line: The following steps deploy the agent using a service ID API key. You can also deploy the agent using a trusted profile. For more information, see Deploying the Logging agent for Kubernetes clusters using a Helm chart. 1. If required, follow the steps at create some buckets to store your data to create new IBM Cloud Object Storage buckets. 2. If required, follow the steps in provisioning an instance to set up an IBM Cloud Logs instance. 3. Create a service ID. ibmcloud iam service-id-create kubernetes-logs-agent --description "Service ID for sending logs from IKS" 4. Grant the Sender role for IBM Cloud
+    Logs to the created service ID. ibmcloud iam service-policy-create kubernetes-logs-agent --service-name logs --roles Sender 5. Create an IAM API key by running the following command. You can customize the ke...'

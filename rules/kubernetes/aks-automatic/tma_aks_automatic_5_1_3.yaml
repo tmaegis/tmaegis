@@ -1,0 +1,18 @@
+id: TMA-AKS-AUTOMATIC-5.1.3
+title: Limit AKS access to pull images from Azure Container Registry (ACR)
+description: Configure AKS Automatic with pull only access to ACR so the cluster can pull the images it needs to run workloads without being able to modify registry content. This is implemented by granting the kubelet managed identity only the required pull permission, typically AcrPull for registries using RBAC only, or Container Registry Repository Reader for ABAC enabled registries, so cluster access is limited to image retrieval rather than push, delete, ... The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: medium
+tags:
+- aks-automatic
+- managed-services
+- rbac
+- registry
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 5.1.3 Limit AKS access to pull images from Azure Container Registry (ACR)
+audit:
+  type: manual
+  command: Review AKS Automatic access to ACR to confirm the cluster is limited to image pull access and does not have broader registry permissions. Identify the registry authorization mode, confirm the kubelet managed identity is used for ACR access, and verify that the cluster has only the minimum read role required for image pulls. • Determine whether the registry uses RBAC Registry Permissions or RBAC Registry + ABAC Repository Permissions, because this affects the expected pull role and access model.
+remediation:
+  type: iac_patch
+  command: 'Restrict AKS Automatic access to ACR so the cluster can only pull images needed for workload startup and cannot push, delete, or administer registry content. Use the kubelet managed identity for registry authentication and assign only the minimum pull role required by the registry authorization mode: AcrPull for registries using RBAC only or Container Registry Repository Reader for ABAC enabled registries. Do not use --attach-acr with an ABAC enabled registry. Assign Container Registry Repository Reader manually to the kubelet managed identity. 1. Configure AKS Automatic to use the kubelet managed identity for ACR access rather than shared registry credentials. 2. Assign only the required pull role to the kubelet identity: AcrPull for registries using RBAC only, or Container Registry Repository Reader for ABAC enabled registries. 3.'

@@ -1,0 +1,22 @@
+id: TMA-F5-BIGIP-4.3
+title: Ensure 'Idle timeout' is less than or equal to 10 minutes for tmsh sessions
+description: 'To set an idle timeout for tmsh sessions PASS requires cli global-settings idle-timeout between 1 and 10 minutes. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- management
+reference: CIS F5 Networks Benchmark v1.0.0 - 4.3 Ensure 'Idle timeout' is less than or equal to 10 minutes for tmsh sessions
+audit:
+  type: config_regex
+  pattern: (?m)^cli global-settings \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+idle-timeout (?:[1-9]|10)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify cli global-settings idle-timeout 10
+    tmsh save sys config
+    # CIS guidance:
+    1.Log in to tmsh by typing the following command: tmsh
+    2.To configure an automatic logout idle time for tmsh sessions, use the following command syntax: modify /cli global-settings idle-timeout 10
+    3.Save the change by typing the following command: save /sys config

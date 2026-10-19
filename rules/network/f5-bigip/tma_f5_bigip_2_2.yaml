@@ -1,0 +1,28 @@
+id: TMA-F5-BIGIP-2.2
+title: Ensure redundant remote authentication servers are configured
+description: 'Having multiple points of authentication is important in the event that the primary remote authentication source goes down. PASS requires the system-auth RADIUS configuration to reference at least two servers (primary and secondary). Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 2
+severity: high
+tags:
+- f5-bigip
+- authentication
+reference: CIS F5 Networks Benchmark v1.0.0 - 2.2 Ensure redundant remote authentication servers are configured
+audit:
+  type: config_regex
+  pattern: (?m)^auth radius (?:/Common/)?system-auth \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+servers \{ \S+ \S+[^\n]*\}[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh create auth radius-server system_auth_name2 server 10.0.0.12 secret <secret>
+    tmsh modify auth radius system-auth servers replace-all-with { system_auth_name1 system_auth_name2 }
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to the Configuration utility using the administrator account.
+    2-Navigate to System > Users > Authentication.
+    3-In the Authentication section, click Change.
+    4-Select Remote - RADIUS from the User Directory drop-down menu.
+    5-Define the RADIUS server configuration settings, including the port and shared secret settings:
+    6-For "Service Type": select "Authentication Only"
+    7-This should be completed for Primary RADIUS server as well as for Secondary RADIUS server.
+    8-Click Finished.

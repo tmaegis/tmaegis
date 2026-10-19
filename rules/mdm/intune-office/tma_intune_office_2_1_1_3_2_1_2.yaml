@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.1.1.3.2.1.2
+title: Ensure 'Disable all trusted locations' is set to 'Enabled'
+description: 'This policy setting allows administrators to disable all trusted locations in the specified applications. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) alllocationsdisabled that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 2
+severity: low
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.1.1.3.2.1.2 Ensure 'Disable all trusted locations' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\access\security\trusted locations'') -Name ''alllocationsdisabled'' -ErrorAction SilentlyContinue).''alllocationsdisabled''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':alllocationsdisabled='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft Access 2016\Application Settings\Security\Trust Center\Trusted Locations\Disable all trusted locations

@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-5.4
+title: Ensure “Default Restrict” is set in all client lists
+description: Limit clients to access SNMP. Even when limited to read only access, SNMP can provide an attacker with a wealth of information about your router and network topology. To limit the potential for attacks against your routers SNMP service your client lists should be configured to deny any ... Passes when no client-list exists; otherwise requires 'default restrict'. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 5.4 Ensure “Default Restrict” is set in all client lists
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))))[^\n]*|[ \t]*set snmp client-list (?:(?:[^d \t\n][^ \t\n]*|d(?:|[^e \t\n][^ \t\n]*|e(?:|[^f \t\n][^ \t\n]*|f(?:|[^a \t\n][^ \t\n]*|a(?:|[^u \t\n][^ \t\n]*|u(?:|[^l \t\n][^ \t\n]*|l(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*))))))))[ \t]+)*(?:(?:[^d \t\n][^ \t\n]*|d(?:|[^e \t\n][^ \t\n]*|e(?:|[^f \t\n][^ \t\n]*|f(?:|[^a \t\n][^ \t\n]*|a(?:|[^u \t\n][^ \t\n]*|u(?:|[^l \t\n][^ \t\n]*|l(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*)))))))))?)\n)*[ \t]*set snmp client-list (?:(?:[^d \t\n][^ \t\n]*|d(?:|[^e \t\n][^ \t\n]*|e(?:|[^f \t\n][^ \t\n]*|f(?:|[^a \t\n][^ \t\n]*|a(?:|[^u \t\n][^ \t\n]*|u(?:|[^l \t\n][^ \t\n]*|l(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*))))))))[ \t]+)*(?:(?:[^d
+    \t\n][^ \t\n]*|d(?:|[^e \t\n][^ \t\n]*|e(?:|[^f \t\n][^ \t\n]*|f(?:|[^a \t\n][^ \t\n]*|a(?:|[^u \t\n][^ \t\n]*|u(?:|[^l \t\n][^ \t\n]*|l(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*)))))))))?(?:\n(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))))[^\n]*|[ \t]*set snmp client-list (?:(?:[^d \t\n][^ \t\n]*|d(?:|[^e \t\n][^ \t\n]*|e(?:|[^f \t\n][^ \t\n]*|f(?:|[^a \t\n][^ \t\n]*|a(?:|[^u \t\n][^ \t\n]*|u(?:|[^l \t\n][^ \t\n]*|l(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*))))))))[ \t]+)*(?:(?:[^d \t\n][^ \t\n]*|d(?:|[^e \t\n][^ \t\n]*|e(?:|[^f \t\n][^ \t\n]*|f(?:|[^a \t\n][^ \t\n]*|a(?:|[^u \t\n][^ \t\n]*|u(?:|[^l \t\n][^ \t\n]*|l(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*)))))))))?)))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To configure a client list issue the following command under the hierarchy;
+    set snmp client-list <client list name> default restrict Note
+    - Client-lists may also be defined directly under the hierarchy for use within the specified community with the same effect, but for ease of management and audit, the first method is preferred.

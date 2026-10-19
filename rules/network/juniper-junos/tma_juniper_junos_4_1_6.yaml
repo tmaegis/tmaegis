@@ -1,0 +1,24 @@
+id: TMA-JUNIPER-JUNOS-4.1.6
+title: Ensure RPKI is set for Origin Validation of EBGP peers
+description: 'Use RPKI for Origin Validation on Public BGP Peering. In addition to filtering Bogon and Maritan routes JUNOS routers peering with eBGP neighbors should also apply Ingress Filtering to prevent the router processing bad updates sent from the neighbor router, either maliciously or by accident. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- routing
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.1.6 Ensure RPKI is set for Origin Validation of EBGP peers
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Because a policy may be applied at one or more different levels depending on the requirements of a specific organization, it is not possible to automatically score this recommendation. You can confirm a RPKI Validator Server is configured by issuing the following command from the [edit routing-options] configuration hierachy: [edit routing-options] user@host# show validation If a RPKI Validator is configured, details will be returned.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configuration and deployment of an RPKI Validator and a full discussion of all configuration options is beyond the scope of this Benchmark. To configure an RPKI Validator Server, issue following commands from the configuration hierarchy:
+    set routing-options validation group <group-name> session <RPKI Server IP> port <RPKI Server Port> local-address <Local IP> Where: - <group-name> is a descriptive name chosen for the RPKI Server - <RPKI Server IP> is the IP address used on the RPKI Validator for the RPKI-RTR protocol - <RPKI Server Port> is the port configured on RPKI Validator for the RPKI-RTR protocol - <Local IP> is a Local Interface address that the Router should use as the source for RPKI-RTR sessions Note
+    - If multiple Logical Systems are configured, RPKI Validation will need to be configured separately for all LSYS being used for Public BGP Peering. Next create a Routing Policy to accept or reject routes based on the RPKI Validation Database, using the following commands for each term from the heirachy:
+    set policy-options policy-statement <policy-name> term <term-name> from protocol bgp
+    set policy-options policy-statement <policy-name> term <term-name> from validation-database <RPKI Database Result>
+    set policy-options policy-statement <policy-name> term <term-name> then validation-state <RPKI State>
+    ! ... see the benchmark for the full procedure

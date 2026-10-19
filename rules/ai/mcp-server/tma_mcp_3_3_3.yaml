@@ -1,0 +1,18 @@
+id: TMA-MCP-3.3.3
+title: Ensure shared downstream service account identities are prohibited across multiple MCP tools or servers
+description: Each MCP server, and each tool that accesses backend systems or downstream APIs, uses a dedicated downstream service identity with the minimum permissions required for that function. Sharing a service account, workload identity, or API credential across multiple tools or servers is prohibited. An exception is allowed only when explicitly approved with a documented justification, an identified owner, a defined expiry date, and compensating controls on file, and approved exceptions are reviewed at least annually. The MCP specification does not mandate per-tool service identities, so this Recommendation is a hardening measure the specification leaves open. Shared service accounts undermine both attribution and blast-radius containment. When multiple tools or servers share one downstream identity, downstream audit logs cannot attribute an action to a specific tool or server, and compromis...
+target: mcp-server
+level: 2
+severity: low
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.3.3 Ensure shared downstream service account identities are prohibited across multiple MCP tools or servers
+audit:
+  type: manual
+  command: 'Review the identity mapping inventory as the authoritative evidence, with the credential- reuse scan below as a supplementary check. In the inventory, confirm each MCP server and tool maps to a distinct downstream service principal or workload identity, and that any shared identity has a documented, time-bound exception with an owner and compensating controls. The scan extracts credential-bearing values, hashes them so the value is never printed, and flags a hash appearing in more than one file. An empty extraction can mean workload identity federation is in use with no literal credentials to scan, or that the configuration directory or search pattern is wrong, so it is inconclusive on its own. Run the following command to detect literal credential values reused across distinct configuration files: CONF_DIR="<MCP_SERVERS_CONFIG_DIR>" command -v sha256sum >/dev/null 2>&1 || { echo "ERROR: sha256sum unavailable, cannot scan for duplicate literal credentials"; exit 0; } tmp=$(mktemp)
+    grep -rEn ''service_account|client_id|api_key|client_secret'' "$CONF_DIR" 2>/dev/null \ | sed -E ''s/^([^:]+:[0- 9]+):.*(service_account|client_id|api_key|client_secret)[=: ]+["''"''"'']?([^"''"''"'' ]+). */\1|...'
+remediation:
+  type: iac_patch
+  command: This is IAM and documentation work with no portable command. Maintain an identity mapping inventory that records, for each server and tool, the downstream system it reaches, the service principal or workload identity it uses, and the permissions granted. Configure each MCP tool and server to use a dedicated downstream service identity, and for each shared-identity case create a least-privilege dedicated identity and update each configuration to use its own. Use workload identity federation and per-workload IAM roles for cloud deployments, and separate OS user accounts or container identities per stdio server. Prohibit sharing absent a documented, time-bound exception, and record any case where separation is not yet feasible as an approved exception with owner, justification, expiry, and compensating controls, reviewed at least annually. Verify with the Audit.

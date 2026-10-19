@@ -1,0 +1,21 @@
+id: TMA-MACOS14-6.3.5
+title: Audit Hide IP Address in Safari Setting
+description: Public (Routable) IP addresses can be used to track people to their current location, including home and business addresses. While a valid IP address is necessary to load the site, the valid address does not need to be provided to known trackers and should be hidden. Trackers can correlate your visits through various applications, including websites, and are a threat to your privacy.
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 6.3.5 Audit Hide IP Address in Safari Setting
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to verify the setting for hiding IP addresses from trackers in Safari: 1. Open Safari 2. Select Safari from the menu bar 3. Select Settings 4. Select Privacy 5. Verify that Hide IP address from trackers is set to your organization''s requirement Terminal Method: Run the following command to verify if IP addresses are hidden from trackers in Safari: % /usr/bin/sudo -u <username> /usr/bin/defaults read /Users/<username>/Library/Containers/com.apple.Safari/Data/Library/Preference s/com.apple.Safari WBSPrivacyProxyAvailabilityTraffic The output will be either 33422560 if hide IP address from trackers is disabled, 33422564 if enabled from Trackers Only, or 33422572 if enabled from Trackers and Websites. example: % /usr/bin/sudo -u firstuser /usr/bin/defaults read /Users/firstuser/Library/Containers/com.apple.Safari/Data/Library/Preferences /com.apple.Safari WBSPrivacyProxyAvailabilityTraffic 130272 % /usr/bin/sudo -u seconduser /usr/bin/defaults
+    read /Users/seconduser/Library/Containers/com.apple.Safari/Data/Library/Preference s/com.apple.Safari WBSPrivacyProxyAvailabilityTraffic 130276 In the above example the firstuser has hide ip addres...'
+remediation:
+  type: iac_patch
+  command: 'Graphical Method: Perform the following steps to set Safari whether or not to hide IP addresses from trackers: 1. Open Safari 2. Select Safari from the menu bar 3. Select Settings 4. Select Privacy 5. Set Hide IP address from trackers to your organization''s requirements Terminal Method: Run the following command to enable or disable hiding IP addresses from trackers in Safari: % /usr/bin/sudo -u <username> /usr/bin/defaults write /Users/<username>/Library/Containers/com.apple.Safari/Data/Library/Preference s/com.apple.Safari WBSPrivacyProxyAvailabilityTraffic -int <130272/130276> 33422560 will set hide IP address from trackers to disabled. 33422564 will enable from Trackers Only, and 33422572 will enabled from Trackers and Websites. example: % /usr/bin/sudo -u firstuser /usr/bin/defaults write /Users/firstuser/Library/Containers/com.apple.Safari/Data/Library/Preferences /com.apple.Safari WBSPrivacyProxyAvailabilityTraffic -int 33422560 % /usr/bin/sudo -u seconduser /usr/bin/defaults
+    write /Users/seconduser/Library/Containers/com.apple.Safari/Data/Library/Preference s/com.apple.Safari WBSPrivacyProxyAvailabilityTraffic -int 33422564 % /usr/bin/sudo -u thirduser /usr/bin/defaults...'

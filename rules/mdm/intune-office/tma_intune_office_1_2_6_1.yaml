@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-1.2.6.1
+title: Ensure 'Enable Automatic Updates' is set to 'Enabled'
+description: 'This policy setting controls whether the Office automatic updates are enabled or disabled for all Office products installed by using Click-to-Run. Note: This policy has no effect on Office products installed via Windows Installer. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) enableautomaticupdates that the Intune policy writes under HKEY_LOCAL_MACHINE and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 1.2.6.1 Ensure 'Enable Automatic Updates' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\officeupdate'' -Name ''enableautomaticupdates'' -ErrorAction SilentlyContinue).''enableautomaticupdates''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''enableautomaticupdates='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft Office 2016 (Machine)\Updates\Enable Automatic Updates

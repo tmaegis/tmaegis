@@ -1,0 +1,19 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.1.1
+title: Ensure scheduled tasks use systemd timers
+description: Azure Container Linux does not ship cronie or any cron daemon; no crontab or cron directories exist. All scheduled tasks are implemented as systemd timer units. This recommendation is the ACL equivalent of the CIS cron controls (formerly 5.1.1-5.1.9) and verifies that the systemd timer subsystem used in place of cron is active, enabled, and that timer unit files have secure ownership and permissions.
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- cis-converted
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.1.1 Ensure scheduled tasks use systemd timers
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl show -p ActiveState systemd-tmpfiles-clean.timer'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ActiveState=active || { echo step1: missing ActiveState=active; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl show -p UnitFileState logrotate.timer'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- UnitFileState=enabled || { echo step2: missing UnitFileState=enabled; return 1; }; command -v stat >/dev/null 2>&1 || { echo "step3: stat not installed"; return 1; }; o=$(bash -c ''stat -c "%U %G %a" /usr/lib/systemd/system/*.timer'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''root root 644'' || { echo step3: missing ''root root 644''; return 1; };
+    }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Ensure the required timers are enabled and active, and that timer unit files are owned by root:root with mode 644: # systemctl enable --now systemd-tmpfiles-clean.timer # systemctl enable logrotate.timer # chown root:root /usr/lib/systemd/system/*.timer # chmod 644 /usr/lib/systemd/system/*.timer On an immutable ACL image these properties are set at build time; correct them in the image build rather than at runtime.'

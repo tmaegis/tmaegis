@@ -1,0 +1,21 @@
+id: TMA-WIN2022-2.3.1.3
+title: 'Configure ''Accounts: Rename administrator account'''
+description: This policy setting enables the ability to rename the built-in local administrator account. This account is a well-known account that is known to be targeted by threat actors. It is recommended to choose another name for this account, and to avoid names that denote administrative or elevated access accounts. Be sure to also change the default description for the local administrator (through the Computer Management console).
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- secedit
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 2.3.1.3
+audit:
+  type: command
+  command: '$f = Join-Path $env:TEMP (''tmaegis-'' + [guid]::NewGuid().ToString() + ''.inf''); secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null; $c = Get-Content $f -ErrorAction SilentlyContinue; Remove-Item $f -Force -ErrorAction SilentlyContinue; $line = $c | Where-Object { $_ -match ''^\s*NewAdministratorName\s*='' } | Select-Object -First 1; $v = if ($line) { ($line -split ''='', 2)[1].Trim().Trim(''"'') } else { $null }; if ($null -ne $v -and $v -ne ''Administrator'') { ''compliant'' } else { ''non-compliant: '' + $v }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set through Group Policy (domain policy for domain members): Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Accounts: Rename administrator account'

@@ -1,0 +1,20 @@
+id: TMA-MYSQL-3.7
+title: Ensure SSL Key Files Have Appropriate Permissions
+description: 'When configured to use SSL/TLS, MySQL relies on Secure Sockets Layer (SSL) key files, which are stored on the host''s filesystem. These SSL key files are subject to the host''s permissions and ownership structure. Every file named by an ssl_ca/ssl_cert/ssl_key/ssl_crl variable must be -r-------- mysql:mysql (directories in ssl_capath/ssl_crlpath are skipped). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- filesystem
+- permissions
+- tls
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 3.7 Ensure SSL Key Files Have Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; l=$(mysql -NBe "SELECT VARIABLE_VALUE FROM performance_schema.global_variables WHERE LOWER(VARIABLE_NAME) REGEXP ''^.*ssl_(ca|capath|cert|crl|crlpath|key)\$'' AND VARIABLE_VALUE <> ''''" 2>/dev/null) || exit 1; n=0; for f in $l; do case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; [ -f "$f" ] || continue; [ "$(stat -c ''%a %U %G'' "$f")" = "400 mysql mysql" ] || n=$((n+1)); done; [ "$n" -eq 0 ] && echo compliant || echo "$n noncompliant files"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chown mysql:mysql <ssl_file> && chmod 400 <ssl_file> for every ssl_ca/ssl_cert/ssl_key/ssl_crl file in use.

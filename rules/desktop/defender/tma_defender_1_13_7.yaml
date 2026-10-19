@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.13.7
+title: 'Ensure ''Specify the scan type to use for a scheduled scan'' is set to ''Enabled: Quick Scan (default)'' or higher'
+description: 'This policy setting configures the scan type to use during a scheduled scan. The recommended state for this setting is: Enabled: Quick Scan (default). Configuring this setting to Full Scan also conforms to the benchmark. Rationale: Preforming antivirus scans helps protect systems, data, and users from a wide range of security threats. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Scan:ScanParameters (REG_DWORD); compliant when it is 1 or 2. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.13.7 Ensure ''Specify the scan type to use for a scheduled scan'' is set to ''Enabled: Quick Scan (default)'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''ScanParameters'' -ErrorAction SilentlyContinue).''ScanParameters''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1,2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ScanParameters' -Value 1 -PropertyType DWord -Force | Out-Null

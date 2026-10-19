@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-5.1
+title: Do Not Specify Passwords in the Command Line
+description: When a command is executed on the command line, for example ; psql postgresql://postgres:PASSWORD@host the password may be visible in the user's shell/command history or in the process list, thus exposing the password to other entities on the server.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- credentials
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 5.1 Do Not Specify Passwords in the Command Line
+audit:
+  type: manual
+  command: Check the process list (sudo ps -few) and shell histories (history, ~/.bash_history) for psql/pg_dump invocations that contain a password, e.g. in a connection string (password=...). Any visible password is a fail.
+remediation:
+  type: iac_patch
+  command: Do not pass passwords on the command line; use ~/.pgpass (mode 0600), a service file without passwords, or certificate authentication, and clear exposed history entries.

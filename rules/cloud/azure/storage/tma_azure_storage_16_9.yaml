@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-16.9
+title: Ensure storage logging is Enabled for Blob Service for 'Read', 'Write', and 'Delete' requests
+description: 'The Storage Blob service provides scalable, cost-efficient object storage in the cloud. Storage Logging happens server-side and allows details for both successful and failed requests to be recorded in the storage account. These logs allow users to see the details of read, write, and delete operations against the blobs. Storage Logging log entries contain the following information about individual requests: timing information such as start time, end-to-end latency, and server latency; authentication details; concurrency information; and the sizes of the request and response messages. Storage Analytics logs contain detailed information about successful and failed requests to a storage service. This information can be used to monitor each individual request to a storage service for increased security or diagnostics. Requests are logged on a best- effort basis. Storage Analytics logging i...'
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- logging
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.9 Ensure storage logging is Enabled for Blob Service for 'Read', 'Write', and 'Delete' requests
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Monitoring, select Diagnostic settings. 3. Select the blob resource listed beneath the storage account. 4. Confirm at least one diagnostic setting has StorageRead, StorageWrite, and StorageDelete selected under Logs, routed to an appropriate destination (Log Analytics workspace, storage account, or event hub). Audit from Azure CLI The Audit must check the same Azure Monitor diagnostic settings the Portal configures. The previously used classic Storage Analytics logging mechanism was retired in August 2023 and does not reflect diagnostic settings. For each storage account, list the diagnostic settings on the blob service: az monitor diagnostic-settings list \ --resource "/subscriptions/<subscription-id>/resourceGroups/<resource- group>/providers/Microsoft.Storage/storageAccounts/<storage- account>/blobServices/default" The output should contain a setting whose logs array enables StorageRead,
+    StorageWrite, and StorageDelete (enabled: true). No diagnostic setting, or any of the three categories disabled or absent, is non-compliant.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Monitoring, select Diagnostic settings. 3. Select the blob resource listed beneath the storage account. 4. Select + Add diagnostic setting (or Edit setting on an existing one). 5. Check StorageRead, StorageWrite, and StorageDelete. 6. Select an appropriate destination and select Save. Remediate from Azure CLI Create a diagnostic setting on the blob service enabling all three log categories (example routes to a Log Analytics workspace): az monitor diagnostic-settings create \ --name <diagnostic-setting-name> \ --resource "/subscriptions/<subscription-id>/resourceGroups/<resource- group>/providers/Microsoft.Storage/storageAccounts/<storage- account>/blobServices/default" \ --workspace <log-analytics-workspace-resource-id> \ --logs ''[{"category":"StorageRead","enabled":true},{"category":"StorageWrite","enabl ed":true},{"category":"StorageDelete","enabled":true}]'''

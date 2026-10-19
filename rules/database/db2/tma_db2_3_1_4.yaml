@@ -1,0 +1,17 @@
+id: TMA-DB2-3.1.4
+title: Secure Permissions for All Diagnostic Logs (DIAGPATH)
+description: The DIAGPATH parameter specifies the location of the diagnostic files for the Db2 instance. The directory at this location should be secured so that users have read and execute privileges only (no write privileges). All Db2 administrators should have full access to the directory. Marked Automated in the benchmark, but the benchmark gives conflicting target permissions (read/execute for others vs chmod -R 3777), so it is reviewed manually.
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.1.4 Secure Permissions for All Diagnostic Logs (DIAGPATH)
+audit:
+  type: manual
+  command: 'For both Windows and Linux Perform the following Db2 commands to obtain the location of the directory: 1. Attach to the Db2 instance. db2 => attach to <db2instance> 2. Run the following command: db2 => get database manager configuration 3. Locate the DIAGPATH value in the output: Diagnostic data directory path (DIAGPATH) = <valid directory> Additional steps for Windows: 1. Connect to the Db2 host 2. Right-click over the diagnostic log directory 3. Choose Properties 4. Select the Security tab 5. Review the access for all accounts Additional steps for Linux: 1. Connect to the Db2 host 2. ...'
+remediation:
+  type: iac_patch
+  command: 'For Windows and Linux To change the directory for the diagnostic logs: 1. Attach to the Db2 instance db2 => attach to <db2instance> 2. Run the following command: db2 => update database manager configuration using diagpath <valid directory> Additional steps for Windows: 1. Connect to the Db2 host 2. Right-click over the diagnostic log directory 3. Choose Properties 4. Select the Security tab 5. Grant the Full Control authority to all Db2 administrator accounts 6. Grant only read and execute privileges to all other accounts (revoke any other privileges) Additional steps for Linux: 1. Connect to the Db2 host 2. Change to the diagnostic log directory 3. Change the permissions of the directory $ chmod -R 3777 .'

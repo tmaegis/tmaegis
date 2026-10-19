@@ -1,0 +1,21 @@
+id: TMA-WIN2022-2.3.6.1
+title: 'Ensure ''Domain member: Digitally encrypt or sign secure channel data (always)'' is set to ''Enabled'''
+description: 'This policy setting determines whether all secure channel traffic that is initiated by the domain member must be signed or encrypted. The recommended state for this setting is: Enabled. Note: Certain policy settings must be configured in the Default Domain Controller Policy to ensure they are applied globally to domain controllers. Exercise caution when modifying these policies, as improper changes can negatively impact the environment.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 2.3.6.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters'' -Name ''RequireSignOrSeal'' -ErrorAction SilentlyContinue).''RequireSignOrSeal''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RequireSignOrSeal='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Name 'RequireSignOrSeal' -Value 1 -PropertyType DWord -Force | Out-Null

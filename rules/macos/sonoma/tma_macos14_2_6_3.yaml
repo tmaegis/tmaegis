@@ -1,0 +1,19 @@
+id: TMA-MACOS14-2.6.3
+title: Ensure Sending Diagnostic and Usage Data to Apple Is Disabled
+description: Apple provides a mechanism to send diagnostic and analytics data back to Apple to help them improve the platform. Information sent to Apple may contain internal organizational information that should be controlled and not available for processing by Apple. Turn off all Analytics and Improvements sharing. Share Mac Analytics (Share with App Developers dependent on Mac Analytic sharing) - Includes diagnostics, usage and location data Share iCloud Analytics - Includes iCloud data and usage information Organizations should have knowledge of what is shared with the vendor and that this setting automatically forwards information to Apple.
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.6.3 Ensure Sending Diagnostic and Usage Data to Apple Is Disabled
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to verify that diagnostic data is not being send to Apple: 1. Open System Settings 2. Open Privacy & Security 3. Select Profiles 4. Verify that an installed profile has Allow Diagnostic Submission set to False 5. Also verify that an installed profile has Auto Submit set to False 6. Also verify that an installed profile has Siri Data Sharing Opt-In Status set to 2 Terminal Method: Run the following command to verify that a profile is installed that disables sending diagnostic and usage data to Apple: % /usr/bin/osascript -l JavaScript << EOS function run() { let pref1 = $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.SubmitDiagInfo'')\ .objectForKey(''AutoSubmit'').js let pref2 = $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.applicationaccess'')\ .objectForKey(''allowDiagnosticSubmission'').js let pref3 = $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.assistant.support'')\ .objectForKey(''Siri Data Sharing Opt-In
+    Status'').js if ( pref1 == false && pref2 == false && pref3 == 2){ return("true") } else { return("false") } } EOS true'
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.applicationaccess 2. The key to include is allowDiagnosticSubmission 3. The key must be set to <false/> 4. There must also be a second PayloadType string of com.apple.SubmitDiagInfo 5. The key to include is AutoSubmit 6. The key must be set to <false/> 7. There must also be a third PayloadType string of com.apple.assistant.support 8. The key to also include is Siri Data Sharing Opt-In Status 9. The key must be set to <integer>2<integer/>'

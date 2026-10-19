@@ -1,0 +1,30 @@
+id: TMA-ROS1-4.1.5
+title: Ensure events that modify the system's network environment are collected
+description: Record changes to network environment files or system calls. The below parameters monitor the sethostname (set the systems host name) or setdomainname (set the systems domainname) system calls, and write an audit event on system call exit. The audit inspects the loaded rules (auditctl -l, 64-bit syscalls). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.5 Ensure events that modify the system's network environment are collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)system-locale( |$)' | grep -Fq -- '-w /etc/issue ' || { echo 'missing watch: -w /etc/issue -k system-locale'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)system-locale( |$)' | grep -Fq -- '-w /etc/issue.net ' || { echo 'missing watch: -w /etc/issue.net -k system-locale'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)system-locale( |$)' | grep -Fq -- '-w /etc/hosts ' || { echo 'missing watch: -w /etc/hosts -k system-locale'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)system-locale( |$)' | grep -Fq -- '-w /etc/network ' || { echo 'missing watch: -w /etc/network -k system-locale'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)system-locale( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?sethostname(,| |$)' || { echo 'missing b64 syscall rule: sethostname -k system-locale'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)system-locale( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?setdomainname(,| |$)' || { echo 'missing b64 syscall rule: setdomainname -k system-locale'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For 32 bit systems Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/system-locale.rules and add the following lines: -a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale -w /etc/issue -p wa -k system-locale -w /etc/issue.net -p wa -k system-locale -w /etc/hosts -p wa -k system-locale -w /etc/network -p wa -k system-locale For 64 bit systems Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/system-locale.rules and add the following lines: -a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale -a always,exit -F arch=b32 -S sethostname ...'

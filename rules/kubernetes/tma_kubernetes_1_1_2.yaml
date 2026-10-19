@@ -1,0 +1,26 @@
+id: TMA-KUBERNETES-1.1.2
+title: Ensure that the API server pod specification file ownership is set to root:root
+description: Ensure that the API server pod specification file ownership is set to root:root.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- control-plane
+- file-permissions
+- api-server
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.1.2 Ensure that the API server pod specification file ownership is set to root:root
+audit:
+  type: command
+  command: |-
+    set -f
+    f=""; for x in /etc/kubernetes/manifests/kube-apiserver.yaml; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    o=$(stat -Lc %U:%G "$f") || exit 1
+    if [ "$o" = "root:root" ]; then echo compliant; else echo "noncompliant: $f $o"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/manifests/kube-apiserver.yaml
+remediation:
+  type: command
+  command: chown root:root /etc/kubernetes/manifests/kube-apiserver.yaml

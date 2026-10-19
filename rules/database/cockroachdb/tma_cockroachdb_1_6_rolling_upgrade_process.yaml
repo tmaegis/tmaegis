@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-1.6
+title: Establish a Process for Rolling Upgrades to Apply Security Patches Without Downtime
+description: CockroachDB supports rolling upgrades, allowing administrators to apply security patches, minor version updates, and configuration changes without cluster downtime. A rolling upgrade updates one node at a time, while the remaining nodes continue serving traffic and maintaining quorum.
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- patching
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 1.6 Establish a Process for Rolling Upgrades to Apply Security Patches Without Downtime
+audit:
+  type: manual
+  command: 'Confirm a documented or automated rolling-upgrade procedure exists (one node at a time with cockroach node drain --shutdown, pre/post health checks, defined rollback plan, reference to Cockroach Labs upgrade docs). Run cockroach node status --all before upgrades: all nodes live, same version, no under-replicated ranges.'
+remediation:
+  type: iac_patch
+  command: '1. Prepare for rolling upgrade: - Confirm cluster health and full replication: cockroach node status --certs-dir=/var/lib/cockroach/certs --host=<node> cockroach node status --certs-dir=/var/lib/cockroach/certs --all Backups are strongly recommended before upgrades. 2. Upgrade CockroachDB binary on each node (one at a time): - Use cockroach node drain with --shutdown to gracefully drain and then terminate the node''s process.'

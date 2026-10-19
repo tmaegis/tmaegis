@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.8
+title: Ensure root path integrity
+description: 'The root user can execute any command on the system and could be fooled into executing programs unintentionally if the PATH is not set correctly. Including the current working directory (.) or other writable directory in root''s executable path makes it likely that an attacker can gain superuser access by forcing an administrator operating as root to execute a Trojan horse program. Audit: root''s login PATH must not contain ::, a trailing :, ''.'', non-directories, or directories not owned by root or writable by group/other.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.8 Ensure root path integrity
+audit:
+  type: command
+  command: 'p=$(su - root -c ''echo $PATH'' 2>/dev/null | tail -n 1); [ -n "$p" ] || exit 1; r=compliant; case "$p" in *::*) r="PATH contains an empty directory (::)";; *:) r="PATH has a trailing :";; esac; IFS=:; set -- $p; unset IFS; for d in "$@"; do [ "$d" = . ] && r="PATH contains ."; if [ -d "$d" ]; then s=$(ls -ld "$d/" | awk ''substr($1,6,1)=="w" || substr($1,9,1)=="w" || $3!="root" {print $1, $3}''); [ -z "$s" ] || r="$d: $s"; elif [ -n "$d" ]; then r="$d is not a directory"; fi; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Correct or justify any: Locations that are not directories Empty directories (::) Trailing (:) Current working directory (.) Non root owned directories Directories that less restrictive than mode 0755'

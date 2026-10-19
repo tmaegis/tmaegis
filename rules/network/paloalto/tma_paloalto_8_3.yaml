@@ -1,0 +1,19 @@
+id: TMA-PALOALTO-8.3
+title: Ensure that the Certificate used for Decryption is Trusted
+description: 'The CA Certificate used for in-line HTTP Man in the Middle should be trusted by target users. For SSL Forward Proxy configurations, there are classes of users that need to be considered. 1: Users that are members of the organization, users of machines under control of the organization. For these people and machines, ensure that the CA Certificate is in one of the Trusted CA certificate stores. This is easily done in Active Directory, using Group Policies for instance. A MDM (Mobile Device Manager) can be used to accomplish the same task for mobile devices such as telephones or tablets.'
+target: paloalto
+level: 2
+severity: high
+tags:
+- paloalto
+- crypto
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 8.3 Ensure that the Certificate used for Decryption is Trusted
+audit:
+  type: manual
+  command: 'Verify the CA Certificate(s): Navigate to Device > Certificate Management > Certificates Verify that appropriate internal certificates are imported, and that all certificates in the list are valid. In particular, verify the Subject, Issuer, CA, Expires, Algorithm and Usage fields Alternatively, if an internal CA is implemented on the firewall, verify that target clients have the root certificate for this CA imported into their list of trusted certificate authorities. (Full steps: CIS 8.3.)'
+remediation:
+  type: iac_patch
+  command: |-
+    Set the CA Certificate(s):
+    Navigate to Device > Certificate Management > Certificates. Import the appropriate CA Certificates from any internal Certificate Authorities. Alternatively, generate a self-signed certificate for an internal CA on the firewall, and then import the root certificate for that CA into the trusted CA list of target clients. In an Active Directory environment this can be facilitated using a Group Policy. Set the Certificate Profile needed for the SSL Forward Proxy:
+    Navigate to Device > Certificate Management > Certificate Profile. Set the decryption profile to include the settings described in the SSL Forward Proxy guidance in this document

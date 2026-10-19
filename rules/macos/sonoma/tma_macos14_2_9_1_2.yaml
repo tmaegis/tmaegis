@@ -1,0 +1,54 @@
+id: TMA-MACOS14-2.9.1.2
+title: Ensure Sleep and Display Sleep Is Enabled on Apple Silicon Devices
+description: 'MacBooks should be set so that the sleep is 15 minutes or less and the display should sleep at 10 minutes or less. This setting should allow laptop users in most cases to stay within physically secured areas while going to a conference room, auditorium, or other internal location without having to unlock the encryption. When the user goes home at night, the laptop will auto-sleep after 15 minutes and to log back into the system when it resumes. Note: If the screen saver is properly configured to the benchmark (15 minutes or less), then this recommendation will also pass no matter the sleep and displaysleep setting. Laptops should sleep 15 minutes or less after sleeping.'
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: medium
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.9.1.2 Ensure Sleep and Display Sleep Is Enabled on Apple Silicon Devices
+audit:
+  type: command
+  command: '[ -x /usr/sbin/ioreg ] || exit 1
+
+    m=$(/usr/sbin/ioreg -k product-name | /usr/bin/awk -F ''"'' ''/product-name/ { if ( $0 ~ "MacBook" ) { print $4 } }'')
+
+    [ -n "$m" ] || { echo compliant; exit 0; }
+
+    /usr/sbin/sysctl -n machdep.cpu.brand_string | /usr/bin/grep -q Apple || { echo compliant; exit 0; }
+
+    s=$(/usr/bin/pmset -b -g | /usr/bin/awk ''$1 == "sleep" {print $2}'')
+
+    d=$(/usr/bin/pmset -b -g | /usr/bin/awk ''$1 == "displaysleep" {print $2}'')
+
+    if [ -n "$s" ] && [ -n "$d" ] && [ "$s" -le 15 ] && [ "$d" -le 10 ] && [ "$d" -le "$s" ]; then echo compliant; else echo "sleep=$s displaysleep=$d"; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=$(/usr/sbin/ioreg -k product-name | /usr/bin/awk -F '"' '/product-name/ { if ( $0 ~ "MacBook" ) { print $4 } }')
+    [ -n "$m" ] || exit 0
+    /usr/sbin/sysctl -n machdep.cpu.brand_string | /usr/bin/grep -q Apple || exit 0
+    s=$(/usr/bin/pmset -b -g | /usr/bin/awk '$1 == "sleep" {print $2}'); d=$(/usr/bin/pmset -b -g | /usr/bin/awk '$1 == "displaysleep" {print $2}')
+    s=${s:-0}; d=${d:-0}
+    if [ "$s" -eq 0 ] || [ "$s" -gt 15 ]; then s=15; fi
+    if [ "$d" -eq 0 ] || [ "$d" -gt 10 ]; then d=10; fi
+    if [ "$d" -gt "$s" ]; then d=$s; fi
+    /usr/bin/pmset -b sleep "$s" displaysleep "$d"
+  guidance: "Terminal Method: Run the following command to set the sleep time and hibernate mode: % /usr/bin/sudo /usr/bin/pmset -a sleep <value≤15> % /usr/bin/sudo /usr/bin/pmset -a displaysleep <value≤10 & < value of sleep> example: % /usr/bin/sudo /usr/bin/pmset -a sleep 15 % /usr/bin/sudo /usr/bin/pmset -a displaysleep 10"

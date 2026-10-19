@@ -1,0 +1,19 @@
+id: TMA-AZURE-COMPUTE-2.1.9
+title: Ensure end-to-end TLS encryption is enabled
+description: 'End-to-end (E2E) TLS encryption ensures that front-end to worker communication within App Service apps is encrypted using TLS. Without this feature, while incoming HTTPS requests are encrypted to the front ends, the traffic from front ends to workers running the application workloads would travel unencrypted inside Azure’s infrastructure. E2E TLS helps ensure full encryption of traffic between: - Clients and front ends - Front ends and worker processes hosting the application'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+- encryption
+- tls
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.1.9 Ensure end-to-end TLS encryption is enabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Platform settings, ensure that Enable end-to-end TLS encryption is set to On. 5. Repeat steps 1-4 for each app. Audit from Azure CLI Run the following command to list apps: az webapp list For each app, run the following command to get the end-to-end TLS encryption setting: az webapp show --resource-group <resource-group-name> --name <app-name> -- query endToEndEncryptionEnabled Ensure that the command returns true. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: af1d7e88-c1c8-4ea8-be1f-87bff0df9101 - Name: ''App Service apps should enable end to end encryption'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Platform settings, next to Enable end-to-end TLS encryption, click the radio button next to On. 5. Click Save. 6. Click Continue. 7. Repeat steps 1-6 for each app requiring remediation. Remediate from Azure CLI For each app requiring remediation, run the following command to enable end-to-end TLS encryption: az resource update --resource-group <resource-group-name> --name <app-name> - -resource-type "Microsoft.Web/sites" --set properties.endToEndEncryptionEnabled=true'

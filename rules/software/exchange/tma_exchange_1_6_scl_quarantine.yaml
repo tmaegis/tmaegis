@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-1.6
+title: Ensure 'SCL Quarantine' is 'Enabled'
+description: Spam Confidence Level (SCL) is a rating assigned to incoming email messages by the Content Filter agent in Exchange Server. It is a measure of the likelihood that an email is spam based on various content analysis techniques and spam detection algorithms. The SCL value ranges from 0 to 9, with 9 being the highest level of confidence that the email is spam. Ensure SCLQuarantineEnabled is set to... Prints compliant when SCLQuarantineEnabled is True and SCLQuarantineThreshold is 6 or lower. Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- antispam
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.6 Ensure 'SCL Quarantine' is 'Enabled'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $c = Get-ContentFilterConfig -ErrorAction Stop; if ($c.SCLQuarantineEnabled -eq $true -and $null -ne $c.SCLQuarantineThreshold -and [int]$c.SCLQuarantineThreshold -le 6) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-ContentFilterConfig -SCLQuarantineEnabled $true -SCLRejectThreshold 8 -SCLQuarantineThreshold 6 (SCLRejectThreshold must be greater than SCLQuarantineThreshold).

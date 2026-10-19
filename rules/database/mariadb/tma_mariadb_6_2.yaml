@@ -1,0 +1,19 @@
+id: TMA-MARIADB-6.2
+title: Ensure Log Files are Stored on a Non-System Partition
+description: 'MariaDB log files can be set in the MariaDB configuration to exist anywhere on the filesystem. It is common practice to ensure that the system filesystem is left uncluttered by application logs. System filesystems include the root (/), /var, or /usr. Fails when log_bin_basename is under /var or /usr or on the root filesystem; passes when binary logging is off. Run on the database host. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: low
+tags:
+- mariadb
+- database
+- logging
+- filesystem
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 6.2 Ensure Log Files are Stored on a Non-System Partition
+audit:
+  type: command
+  command: 'd=$(mariadb -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; b=$(mariadb -NBe "SELECT IFNULL(@@global.log_bin_basename, '''')" 2>/dev/null) || exit 1; [ -n "$b" ] || { echo compliant; exit 0; }; case "$b" in /*) ;; *) b="$d/${b#./}" ;; esac; case "$b" in /var/*|/usr/*) echo "under /var or /usr: $b"; exit 0 ;; esac; m=$(df -P "$(dirname "$b")" 2>/dev/null | awk ''NR==2{print $6}''); [ -n "$m" ] || exit 1; [ "$m" = / ] && echo "on the root filesystem: $b" || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set log_bin=<path on a dedicated, non-system partition> under [mariadbd] in /etc/mysql/mariadb.conf.d/50-server.cnf (or /etc/my.cnf.d/server.cnf), then restart MariaDB.

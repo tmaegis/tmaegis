@@ -1,0 +1,21 @@
+id: TMA-AZURE-COMPUTE-20.5
+title: Ensure that 'Enable Data Access Authentication Mode' is 'Checked'
+description: Data Access Authentication Mode provides a method of uploading or exporting Virtual Machine Disks. Enabling data access authentication mode adds a layer of protection using an Entra ID role to further restrict users from creating and using Secure Access Signature (SAS) tokens for exporting a detached managed disk or virtual machine state. Users will need the Data operator for managed disk role within Entra ID in order to download a VHD or VM Guest state using a secure URL.
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- auth
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 20.5 Ensure that 'Enable Data Access Authentication Mode' is 'Checked'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal Part A. Select the Virtual Machine to Evaluate 1. Using the search bar, search for and open the Virtual Machines service. 2. Click on the name of the Virtual Machine to be audited. Part B. Evaluate each Virtual Machine Disk individually 1. From the selected Virtual Machine resource window, expand the Settings menu item and click Disks. 2. For each disk, click the name of the disk to open the disk resource window. 3. From the selected Disk resource window, expand the Settings menu item, and click Disk Export. Ensure that Enable Data Access Authentication Mode is checked. Repeat Part B for each Disk attached to a VM. Repeat Parts A and B to evaluate all Disks in all VMs. Audit from PowerShell Run the following command for each disk: Get-AzDisk -ResourceGroupName <resource_group_name> -DiskName <disk_name> Ensure the DataAccessAuthMode setting displays AzureActiveDirectory next to it. Audit from Azure CLI Run the following command for each disk: az disk show
+    --disk-name <disk_name> --resource-group <resource_group_name> Ensure the dataAccessAuthMode setting is set to AzureActiveDirectory'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal Part A. Select the Virtual Machine to Remediate 1. Using the search bar, search for and open the Virtual Machines service. 2. Click on the name of the Virtual Machine to be remediated. Part B. Remediate each Virtual Machine Disk individually 1. From the selected Virtual Machine resource window, expand the Settings menu item and click Disks. 2. For each disk, click the name of the disk to open the disk resource window. 3. From the selected Disk resource window, expand the Settings menu item, and click Disk Export. check the checkbox next to Enable Data Access Authentication Mode. Repeat Part B for each Disk attached to a VM. Repeat Parts A and B to remediate all Disks in all VMs. Remediate from PowerShell Ensure that each disk is detached from its associated Virtual Machine before proceeding. Once detached, run the following for each disk: $disk = Get-AzDisk -ResourceGroupName <resource_group_name> -DiskName <disk_name> $disk.DataAccessAuthMode = ''AzureActiveDirectory''
+    Update-AzDisk -ResourceGroup <resource_group_name> -DiskName $disk.Name -Disk $disk Remediate from Azure CLI Ensure that each disk is detached from its associated Virtual Machine before...'

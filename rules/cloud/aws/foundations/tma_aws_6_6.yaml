@@ -1,0 +1,18 @@
+id: TMA-AWS-6.6
+title: Ensure routing tables for VPC peering are "least access"
+description: Once a VPC peering connection is established, routing tables must be updated to enable any connections between the peered VPCs. These routes can be as specific as desired, even allowing for the peering of a VPC to only a single host on the other side of the connection. Being highly selective in peering routing tables is a very effective way to minimize the impact of a breach, as resources outside of these routes are inaccessible to the peered VPC.
+target: aws
+level: 2
+severity: low
+tags:
+- access-control
+- aws
+- cloud
+- network
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 6.6 Ensure routing tables for VPC peering are "least access"
+audit:
+  type: manual
+  command: 'Review the routing tables of peered VPCs to determine whether they route all subnets of each VPC and whether this is necessary to accomplish the intended purposes of peering the VPCs. From Command Line: 1. List all the route tables from a VPC and check if the "GatewayId" is pointing to a <peering-connection-id> (e.g., pcx-1a2b3c4d) and if the "DestinationCidrBlock" is as specific as desired: aws ec2 describe-route-tables --filter "Name=vpc-id,Values=<vpc-id>" --query "RouteTables[*].{RouteTableId:RouteTableId, VpcId:VpcId, Routes:Routes, AssociatedSubnets:Associations[*].SubnetId}" 2. Alternatively, the following command can be used for improved readability: aws ec2 describe-route-tables --query "RouteTables[].{RouteTableId:RouteTableId, VpcId:VpcId, Routes:Routes, AssociatedSubnets:Associations[].SubnetId}" --output table'
+remediation:
+  type: iac_patch
+  command: 'Remove and add route table entries to ensure that the least number of subnets or hosts required to accomplish the purpose of peering are routable. From Command Line: 1. For each <route-table-id> that contains routes that are non-compliant with your routing policy (granting more access than desired), delete the non-compliant route: aws ec2 delete-route --route-table-id <route-table-id> --destination-cidr- block <non-compliant-destination-cidr> 2. Create a new compliant route: aws ec2 create-route --route-table-id <route-table-id> --destination-cidr- block <compliant-destination-cidr> --vpc-peering-connection-id <peering- connection-id>'

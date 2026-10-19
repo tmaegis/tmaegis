@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-2.2
+title: Disable overcommitting guest memory
+description: The overcommitGuestOverhead configuration option enables the request for additional virtual machine management memory inside the virt - launcher pod. The overcommit feature is used to increase virtual machine density on the node, as long as the virtual machine doesn’t request all the memory that it would need if fully loaded. However, if the VM were to use all of the memory it could, this would lead to the OpenShift Scheduler killing the workload. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 2.2 Disable overcommitting guest memory
+audit:
+  type: manual
+  command: 'Verify that no virtual machines are using the overcommitGuestOverhead setting: $ oc get vm - ojson - A |jq ''.items[] | select(.spec.template.spec.domain.resources.overcommitGuestOverhead == true)| .metadata.namespace + "/" + .metadata.name'''
+remediation:
+  type: iac_patch
+  command: 'Stop any guest with this flag enabled and remove the flag before restarting. This flag can be removed on a given VM with the following command: $ oc patch vm <vm-name> --type=''json'' -p=''[ {"op": "remove", "path": "/spec/template/spec/domain/resources/overcommitGuestOverhead"}, ]'''

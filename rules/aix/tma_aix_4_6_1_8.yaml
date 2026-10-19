@@ -1,0 +1,18 @@
+id: TMA-AIX-4.6.1.8
+title: Ensure CDE login screen hostname is masked
+description: 'The Dtlogin*greeting.labelString parameter is the message displayed in the first dialogue box on the CDE login screen. This is where the username is entered. The Dtlogin*greeting.persLabelString is the message displayed in the second dialogue box on the CDE login screen. This is where the password is entered. Audit: compliant when CDE is not installed.'
+target: aix
+level: 1
+severity: low
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.6.1.8 Ensure CDE login screen hostname is masked
+audit:
+  type: command
+  command: 'r=compliant; for file in /usr/dt/config/*/Xresources; do [ -f "$file" ] || continue; e=$(echo "$file" | sed -e s/usr/etc/); if [ ! -f "$e" ]; then r="missing $e"; else grep -q "Dtlogin\*greeting.labelString:" "$e" || r="$e: missing greeting.labelString"; grep -q "Dtlogin\*greeting.persLabelString:" "$e" || r="$e: missing greeting.persLabelString"; fi; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Copy the files from /usr/dt/config/*/Xresources to /etc/dt/config/*/Xresources and add the Dtlogin*greeting.labelString and Dtlogin*greeting.persLabelString parameters to all copied Xresources files: for file in /usr/dt/config/*/Xesources; do etc_file=`echo $file | sed -e s/usr/etc/` echo "\nupdating config file "$etc_file"..." if [[ ! -f $etc_file ]]; then dir=`dirname $file | sed -e s/usr/etc/` mkdir -p $dir cp $file $etc_file fi WARN="Authorized uses only. All activity may be monitored and reported." cp $etc_file $etc_file.bak grep -v ''Dtlogin\*greeting.labelString:'' $etc_file > $etc_file.sav grep -v ''Dtlogin\*greeting.persLabelString:'' $etc_file.sav > $etc_file echo "Dtlogin*greeting.labelString: $WARN" >> $etc_file echo "Dtlogin*greeting.persLabelString: $WARN" >> $etc_file rm $etc_file.sav done WARN="Authorized uses only. All activity may be monitored and reported." echo "Dtlogin*greeting.labelString: $WARN" >> $dir/Xresources echo "Dtlogin*greeting.persLabelString:
+    $WARN" >> $dir/Xresources done'

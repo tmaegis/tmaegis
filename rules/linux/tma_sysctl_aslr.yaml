@@ -1,0 +1,24 @@
+id: TMA-LNX-KERN-ASLR
+title: Ensure address space layout randomization is enabled
+description: Kernel parameter kernel.randomize_va_space should be 2.
+target: linux
+os_family:
+- ubuntu-22.04
+- ubuntu-24.04
+- rocky-9
+level: 1
+severity: high
+tags:
+- kernel
+- sysctl
+- network
+reference: CIS Linux Benchmark - Network Configuration / Kernel Parameters (verify section number for your distro release)
+audit:
+  type: command
+  command: sysctl -n kernel.randomize_va_space
+  expected_output: '2'
+remediation:
+  type: command
+  command: sysctl -w kernel.randomize_va_space=2 && printf 'kernel.randomize_va_space = 2\n' > /etc/sysctl.d/60-tmaegis-kernel_randomize_va_space.conf
+  backup_files:
+  - /etc/sysctl.d/60-tmaegis-kernel_randomize_va_space.conf

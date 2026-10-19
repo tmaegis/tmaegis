@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.8.1
+title: Ensure 'Convert warn verdict to block' is set to 'Enabled'
+description: 'This policy setting controls whether Microsoft Defender Antivirus network protection will display a warning, or block network traffic. The recommended state for this setting is: Enabled. Rationale: Potentially suspicious network traffic should be blocked until it has been reviewed, and an exception has been granted. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\NIS:EnableConvertWarnToBlock (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 2
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l2
+reference: CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.8.1 Ensure 'Convert warn verdict to block' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\NIS'' -Name ''EnableConvertWarnToBlock'' -ErrorAction SilentlyContinue).''EnableConvertWarnToBlock''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\NIS'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'EnableConvertWarnToBlock' -Value 1 -PropertyType DWord -Force | Out-Null

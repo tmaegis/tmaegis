@@ -1,0 +1,51 @@
+id: TMA-AIX-4.3.2.1
+title: Ensure inetd daemon is disabled when no additional services are required
+description: 'When none of the services run and managed by inetd are required then disable the inetd daemon itself. This is the preferred state. When no inetd managed services are required there is no need to start the daemon at boot time. An administrator can manually start the inetd service post-IPL, should any of the inetd supported services are/become required. Audit: the inetd start line in /etc/rc.tcpip must be commented out and the inetd subsystem must not be active.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- services
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.3.2.1 Ensure inetd daemon is disabled when no additional services are required
+audit:
+  type: command
+  command: command -v lssrc >/dev/null 2>&1 || exit 1; [ -r /etc/rc.tcpip ] || exit 1; out=$( { grep -E "^[[:blank:]]*start[[:blank:]]+/usr/(sbin|lib)/inetd([[:blank:]]|$)" /etc/rc.tcpip; lssrc -s inetd | awk 'NR>1 && $NF=="active"' ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    tma_comment /etc/rc.tcpip '^[[:blank:]]*start[[:blank:]]+/usr/(sbin|lib)/inetd([[:blank:]]|$)'
+    lssrc -s inetd 2>/dev/null | awk 'NR>1 && $NF=="active"' | grep -q . && stopsrc -s inetd >/dev/null 2>&1
+    true
+  guidance: "Review any active inetd services: refresh -s inetd lssrc -ls inetd NOTE: If there are active services and the services are required, do not disable inetd. Skip to the next section and consider the implementation of TCP Wrappers to secure access to these active services. If the active services are not required disable them via the chsubserver command. Disable inetd if there are no active services: chrctcp -d inetd stopsrc -s inetd"

@@ -1,0 +1,19 @@
+id: TMA-MYSQL-2.7
+title: Ensure 'password_lifetime' is Less Than or Equal to '365'
+description: 'Password expiration provides users with a unique time bounded password lifetime. Fails when default_password_lifetime exceeds 365 or any account overrides it with 0 (never) or more than 365 days (fix those with ALTER USER ... PASSWORD EXPIRE INTERVAL 365 DAY). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- authentication
+- password
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.7 Ensure 'password_lifetime' is Less Than or Equal to '365'
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(IFNULL(@@global.default_password_lifetime, 0) <= 365 AND (SELECT COUNT(*) FROM mysql.user WHERE password_lifetime = 0 OR password_lifetime > 365) = 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST default_password_lifetime = 365"

@@ -1,0 +1,17 @@
+id: TMA-ESXI9-6.3.2
+title: Host iSCSI client, if enabled, must employ unique CHAP authentication secrets
+description: 'Challenge-Handshake Authentication Protocol (CHAP) requires both client and host to know a secret to establish a connection. It is essential to employ unique CHAP authentication secrets for each iSCSI session to ensure secure communications. The parameter governing this behavior is outlined in the iSCSI or iSER storage adapter configuration under CHAP settings. Manual review: the check needs vCenter/PowerCLI, firmware or guest access, or an organization-specific value.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- services
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 6.3.2 Host iSCSI client, if enabled, must employ unique CHAP authentication secrets
+audit:
+  type: manual
+  command: 'To verify the CHAP secrets are unique, run the following to list all iSCSI adapters and their corresponding CHAP configuration: # List Iscsi Initiator and CHAP Name if defined Get-VMHost | Get-VMHostHba | Where {$_.Type -eq "Iscsi"} | Select VMHost, Device, ChapType, @{N="CHAPName";E={$_.AuthenticationProperties.ChapName}}'
+remediation:
+  type: iac_patch
+  command: 'To change the values of CHAP secrets so they are unique, perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand Storage. 3. Select Storage Adapters then select the iSCSI Adapter. 4. Under Properties click on Edit next to Authentication. 5. Next to Authentication Method specify the authentication method from the dropdown. None Use unidirectional CHAP if required by target Use unidirectional CHAP unless prohibited by target Use unidirectional CHAP Use bidirectional CHAP 6. Specify the outgoing CHAP name. Make sure that the name you specify matches the name configured on the storage side.'

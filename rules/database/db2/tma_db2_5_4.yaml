@@ -1,0 +1,17 @@
+id: TMA-DB2-5.4
+title: 'Database Manager Configuration Parameter: TRUST_ALLCLNTS'
+description: This database manager configuration parameter is only active when the authentication parameter is set to CLIENT which is not a recommended setting as discussed in the [authentication parameter section](#specify-a-secure-authentication- type-authentication). If the parameter is set to YES, the server assumes that the client side is handling authentication to the database. If the parameter is ...
+target: db2
+level: 1
+severity: high
+tags:
+- db2
+- database
+- manual
+reference: 'CIS IBM Db2 12.1 Benchmark v1.0.0 - 5.4 Database Manager Configuration Parameter: TRUST_ALLCLNTS'
+audit:
+  type: manual
+  command: '1. Attach to the Db2 instance. db2 => attach to <db2instance> 2. Run the following command: db2 => get database manager configuration 3. Locate the AUTHENTICATION and SRVCON_AUTH values in the output. Server Connection Authentication (SRVCON_AUTH) = NOT_SPECIFIED Database manager authentication (AUTHENTICATION) = SERVER If SRVCON_AUTH does not equal CLIENT, or SRVCON_AUTH equals NOT_SPECIFIED and AUTHENTICATION does not equal CLIENT, then this is a PASS and you do not need to follow the remediation step. Otherwise one of SRVCON_AUTH or AUTHENTICATION equaled CLIENT, and the following step ...'
+remediation:
+  type: iac_patch
+  command: '1. Attach to the Db2 instance. db2 => attach to <db2instance> 2. Run the following command: db2 => update database manager configuration parameter using trust_allclnts no 3. Restart the Db2 instance. db2 => db2stop db2 => db2start'

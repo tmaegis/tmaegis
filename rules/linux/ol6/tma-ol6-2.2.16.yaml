@@ -1,0 +1,20 @@
+id: TMA-OL6-2.2.16
+title: Ensure nfs-utils is not installed or the nfs-server service is disabled
+description: The Network File System (NFS) is one of the first and most widely distributed file systems in the UNIX environment. It provides the ability for systems to mount file systems of other servers through the network.
+target: linux
+os_family:
+- ol-6
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 6 Benchmark v2.0.0 - 2.2.16
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v rpm >/dev/null 2>&1 || { echo "step1: rpm not installed"; return 1; }; o=$(bash -c ''rpm -q nfs-utils'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''package nfs-utils is not installed'' || { echo step1: missing ''package nfs-utils is not installed''; return 1; }; }; alt1() { command -v chkconfig >/dev/null 2>&1 || { echo "step1: chkconfig not installed"; return 1; }; o=$(bash -c ''chkconfig --list nfs'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''nfs 0:off 1:off 2:off 3:off 4:off 5:off 6:off'' || { echo step1: missing ''nfs 0:off 1:off 2:off 3:off 4:off 5:off 6:off''; return 1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to remove nfs-utils: # yum remove nfs-utils OR if the nfs-package is required as a dependency: Run the following commands to disable nfs-server service: # chkconfig nfs off'

@@ -1,0 +1,19 @@
+id: TMA-IBMCLOUD-7.1.3
+title: Ensure IBM Cloud Kubernetes Service worker nodes are updated to the latest version to ensure patching of vulnerabilities
+description: 'Update the worker nodes in a cluster to the latest patch version so that security fixes are applied to those worker nodes. As security updates and patches are put in place for the API server and other master components, you must be sure that the worker nodes remain in sync. You can make two types of updates: updating only the patch version, or updating the major.minor version with the patch version. This benchmark is only in relation to updating the patch version, not the major or minor versions. Updating the patch version in a timely manner ensures patching of known vulnerabilities and will keep your worker nodes more secure.'
+target: ibmcloud
+level: 1
+severity: medium
+tags:
+- cloud
+- ibmcloud
+- patching
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 7.1.3 Ensure IBM Cloud Kubernetes Service worker nodes are updated to the latest version to ensure patching of vulnerabilities
+audit:
+  type: manual
+  command: 'Using Console: 1. Log in to the IBM Cloud console. 2. To view a list of your clusters, go to Menu, Containers, Clusters. 3. From the Clusters page, select your cluster. 4. Select the Worker Nodes tab. 5. For each listed worker node, ensure that next to the Version no information icon is present indicating that an update is available. If there is an information icon indicating there is an update available, then the worker node is not running the latest available image. Using Command Line: 1. List the clusters in your IBM Cloud account ibmcloud ks cluster ls 2. List the workers for a given cluster. ibmcloud ks workers -c <cluster_name_or_ID> 3. Ensure that next to the version for a worker node no asterisk (*) is present indicating that an update is available. Here is an example output for a VPC cluster that shows that there is an available update for a worker node: ibmcloud ks worker -c mykubecluster OK ID Primary IP Flavor State Status Zone Version Operating System kube- btdsgk5d0t1lpluh7f40-mykubeclust-default-000000d1
+    12.345.678.90 gx3.16x80.l4 normal Ready ca-tor-3 1.31.11_1559* UBUNTU_24_64 * To update to 1.31.11_1560 version, run ''ibmcloud ks worker replace''. Review and make...'
+remediation:
+  type: iac_patch
+  command: 'Using Console: 1. Complete the prerequisite steps for VPC worker nodes. 2. Log in to the IBM Cloud console. 3. Optional: Add capacity to your cluster by resizing the worker pool. The pods on the worker node can be rescheduled and continue running on the added worker nodes during the update. 4. To view a list of your clusters, go to Menu, Containers, Clusters. 5. From the clusters page, select your cluster. 6. Select the Worker Nodes tab. 7. Select the checkbox for each worker node that you want to update. An action bar is displayed over the table header row. 8. From the action bar, click Update. Using Command Line: 1. Complete the prerequisite steps for VPC worker nodes. 2. Optional: Add capacity to your cluster by resizing the worker pool. The pods on the worker node can be rescheduled and continue running on the added worker nodes during the update. 3. List the worker nodes in your cluster and note the note the details of the worker node that you want to update. ibmcloud ks
+    worker ls --cluster <cluster_name_or_ID> 4. Replace the worker node to update the worker node to the latest patch version at the same major.minor version (such as from 1.31.8_1530 to 1.31.9_1533).. ibmcloud...'

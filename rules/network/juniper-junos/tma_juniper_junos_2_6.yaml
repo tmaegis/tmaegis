@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-2.6
+title: Ensure firewall filters contain explicit deny and log term
+description: 'Filters should include a final Deny and Log term. Firewall filters are built up of one or more terms, which are evaluated in order until either one is matched (at which point the terms then action is taken) or the final term has been evaluated, at which point the default action is to discard the packet. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 2.6 Ensure firewall filters contain explicit deny and log term
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options available as to Filter Name, Term Name, terms and the use of the filter; it is not possible to score this recommendation. Firewall filters may be viewed by issuing the following command: [edit] user@host#show firewall Note - In Junos, Firewall Filters may be used for a wide range of purposes in addition to actually filtering traffic in or out of interfaces. This could include Quality of Service (QoS) Classifiers, Packet Capture & Analysis or Filter Based Forwarding/Policy Based Routing.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To create a firewall filter term enter the following command from the hierarchy.
+    set firewall family inet filter <filter name> term <term name> then discard
+    set firewall family inet filter <filter name> term <term name> then syslog
+    set firewall family inet filter <filter name> term <term name> then log

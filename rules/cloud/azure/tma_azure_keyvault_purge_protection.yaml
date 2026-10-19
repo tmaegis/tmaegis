@@ -1,0 +1,17 @@
+id: TMA-AZURE-KEYVAULT-PURGE-PROTECTION
+title: Ensure Key Vaults have soft delete and purge protection enabled
+description: Purge protection prevents a deleted vault or secret from being permanently purged during the retention period, protecting against malicious or accidental key loss. Every vault must have enablePurgeProtection true. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- keyvault
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Key Vault - purge protection (verify section number for your release)
+audit:
+  type: command
+  command: "ids=$(az keyvault list --query '[?type==`\"Microsoft.KeyVault/vaults\"`].id' -o tsv 2>/dev/null) || exit 1\nbad=0\nfor id in $ids; do\n  v=$(az resource show --ids \"$id\" --query properties.enablePurgeProtection -o tsv 2>/dev/null) || exit 1\n  [ \"$v\" = true ] || { echo \"no purge protection: $id\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'az keyvault update --name <vault> --enable-purge-protection true (irreversible; Terraform: purge_protection_enabled = true).'

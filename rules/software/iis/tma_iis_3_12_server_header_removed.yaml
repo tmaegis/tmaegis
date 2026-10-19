@@ -1,0 +1,19 @@
+id: TMA-IIS-3.12
+title: Ensure Server Header is removed
+description: The server header headers specify the underlying technology used by the application. requestFiltering removeServerHeader must be true at server level (IIS 10 1709 or later). PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- information-disclosure
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.12 Ensure Server Header is removed
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.webServer/security/requestFiltering' -PSPath 'MACHINE/WEBROOT/APPHOST'; if ($c.removeServerHeader -eq $true) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/requestFiltering -Name removeServerHeader -Value True

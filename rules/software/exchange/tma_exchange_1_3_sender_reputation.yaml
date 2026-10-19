@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-1.3
+title: Ensure 'Sender reputation' is configured
+description: 'Sender reputation filters all messages from all receive connectors on that system and only messages from external sources are filtered. External sources are defined as non- authenticated sources, which are considered anonymous internet sources. This recommendation configures several parameters: • Enabled parameter enables or disables sender reputation on the Exchange server. •... Prints compliant when SenderBlockingEnabled and OpenProxyDetectionEnabled are True and SrlBlockThreshold is 6. Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.'
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- antispam
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.3 Ensure 'Sender reputation' is configured
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $c = Get-SenderReputationConfig -ErrorAction Stop; if ($c.SenderBlockingEnabled -eq $true -and $c.OpenProxyDetectionEnabled -eq $true -and [int]$c.SrlBlockThreshold -eq 6) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-SenderReputationConfig -Enabled $true -SenderBlockingEnabled $true -OpenProxyDetectionEnabled $true -SrlBlockThreshold 6

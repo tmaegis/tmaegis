@@ -1,0 +1,21 @@
+id: TMA-AKS-AUTOMATIC-4.2.3
+title: Minimize the admission of containers wishing to share the host IPC namespace
+description: Minimize the admission of Pods that request spec.hostIPC=true so that only tightly controlled, explicitly approved platform workloads can share the host IPC namespace in AKS. Users, groups, and service accounts with deployment rights should not be able to create or update workloads that use host IPC sharing without an approved exception. AKS Automatic enables Deployment Safeguards and baseline Pod Security Standards in Enforce mode by default. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.
+target: aks-automatic
+level: 1
+severity: high
+tags:
+- aks-automatic
+- policies
+- pod-security
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.2.3 Minimize the admission of containers wishing to share the host IPC namespace
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.hostIPC}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex && ($3=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'AKS Automatic already enforces baseline Pod Security Standards and Deployment Safeguards. Remove spec.hostIPC: true from user workloads that do not have an approved exception. Where an exception is required, use an approved namespace exclusion and limit who can manage it. Deployment Safeguards are already enabled in Enforce mode. Use Azure Policy only when additional centralized policy requirements are needed. Validate required workloads after making changes.'

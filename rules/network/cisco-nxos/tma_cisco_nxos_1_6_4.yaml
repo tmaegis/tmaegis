@@ -1,0 +1,23 @@
+id: TMA-CISCO-NXOS-1.6.4
+title: Configure NTP Authentication
+description: 'By default, NTP is a clear text, unauthenticated protocol. However, it can be configured to authenticate time sources. NTP authentication is an upstream protocol only -authenticated clients have assurance that they are receiving correct time, that the ntp packets have not been tampered with. Configuring authentication ensures that if the server key does not match the key configured on the NTP client, that the client will drop any NTP replies from that server. If multiple keys are configured,. CIS marks this Manual; automated: requires ''ntp authenticate'', an authentication-key, a trusted-key and a key on every ''ntp server''. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 2
+severity: high
+tags:
+- cisco-nxos
+- network
+- ntp
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.6.4 Configure NTP Authentication
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^n \t\n]|n(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^e\n]))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^n \t\n]|n(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^e\n]))))))))))))))))[^\n]*)?\z)|(?:\A(?:[ \t]*(?:$|[^n \t\n]|n(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^\-\n]|-(?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^ \n])))))))))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^n \t\n]|n(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^\-\n]|-(?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^
+    \n])))))))))))))))))))))))[^\n]*)?\z)|(?:\A(?:[ \t]*(?:$|[^n \t\n]|n(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^t\n]|t(?:$|[^r\n]|r(?:$|[^u\n]|u(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^d\n]|d(?:$|[^\-\n]|-(?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^ \n]))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^n \t\n]|n(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^t\n]|t(?:$|[^r\n]|r(?:$|[^u\n]|u(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^d\n]|d(?:$|[^\-\n]|-(?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^ \n]))))))))))))))))[^\n]*)?\z)|(?:^ntp server (?:(?:[^k \t\n][^ \t\n]*|k(?:|[^e \t\n][^ \t\n]*|e(?:|[^y \t\n][^ \t\n]*|y(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^k \t\n][^ \t\n]*|k(?:|[^e \t\n][^ \t\n]*|e(?:|[^y \t\n][^ \t\n]*|y(?:[^ \t\n][^ \t\n]*)))))?$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ntp authenticate
+    ntp authentication-key 42 md5 my-ntp-key
+    ntp trusted-key 42
+    ntp server 132.246.11.231 use-vrf management key 42

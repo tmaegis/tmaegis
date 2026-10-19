@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.1.3
+title: Minimize wildcard use in Roles and ClusterRoles
+description: Verify that Kubernetes Role and ClusterRole definitions in AKS do not use wildcard entries such as * for verbs, resources, or apiGroups unless a documented administrative need exists. This is particularly relevant for service accounts because their authorization continues to rely on Kubernetes RBAC. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: medium
+tags:
+- aks-automatic
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.3 Minimize wildcard use in Roles and ClusterRoles
+audit:
+  type: manual
+  command: Review Kubernetes Role and ClusterRole definitions in the AKS cluster for wildcard use in verbs, resources, or apiGroups, and identify any RoleBinding or ClusterRoleBinding that assigns those roles to users, groups, or service accounts. Retrieve the roles defined across all namespaces in the cluster and review for wildcards. kubectl get roles --all-namespaces -o yaml Retrieve the cluster roles defined in the cluster and review for wildcards kubectl get clusterroles -o yaml
+remediation:
+  type: iac_patch
+  command: Replace wildcard entries in Role and ClusterRole objects with only the specific verbs, resources, and apiGroups required for the workload or administrator function. Prefer Role and RoleBinding objects within the required namespace instead of permissions throughout the cluster wherever possible. This is particularly important for service accounts and controllers because wildcard Kubernetes RBAC rules can still grant excessive permissions to workloads even when human user access is managed through Microsoft Entra ID authorization for the Kubernetes API.

@@ -1,0 +1,56 @@
+id: TMA-CHROME-1.26
+title: Ensure 'Origins or hostname patterns for which restrictions on insecure origins should not apply' is set to 'Disabled'
+description: 'Google Chrome can use a list of origins (URLs) or hostname patterns (such as "*.example.com") for which security restrictions on insecure origins will not apply and are prevented from being labeled as "Not Secure" in the omnibox. The recommended state for this setting is: Disabled (0) Rationale: Insecure contexts shall always be labeled as insecure. The policy is Disabled when it is not present: the audit prints ''absent'' when the list key HKLM\SOFTWARE\Policies\Google\Chrome\OverrideSecurityRestrictionsOnInsecureOrigin is missing or empty, otherwise the configured entries.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 1.26 Ensure 'Origins or hostname patterns for which restrictions on insecure origins should not apply' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$l = @((Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\OverrideSecurityRestrictionsOnInsecureOrigin'' -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike ''PS*'' } | ForEach-Object { "$($_.Value)" }); if ($l.Count -eq 0) { ''absent'' } else { ''configured: '' + ($l -join '', '') }'
+  expected_output: absent
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    $tmaBk = Join-Path $env:ProgramData 'TMAegis\backup'
+    function Backup-TmaKey([string]$p) {
+      try {
+        if (Test-Path -LiteralPath $p) {
+          $k = $p -replace '^Registry::', ''
+          New-Item -ItemType Directory -Force -Path $tmaBk | Out-Null
+          $f = Join-Path $tmaBk (($k -replace '[\\/:*?"<>|]', '_') + '.reg')
+          if (-not (Test-Path -LiteralPath $f)) { & reg.exe export $k $f | Out-Null }
+        }
+      } catch { }
+    }
+    function Set-TmaReg([string]$p, [string]$n, $v, [string]$t) {
+      Backup-TmaKey $p
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      New-ItemProperty -LiteralPath $p -Name $n -Value $v -PropertyType $t -Force | Out-Null
+    }
+    function Remove-TmaValue([string]$p, [string]$n) {
+      if ((Test-Path -LiteralPath $p) -and ($null -ne (Get-ItemProperty -LiteralPath $p -Name $n -ErrorAction SilentlyContinue))) {
+        Backup-TmaKey $p
+        Remove-ItemProperty -LiteralPath $p -Name $n -Force
+      }
+    }
+    function Remove-TmaKey([string]$p) {
+      if (Test-Path -LiteralPath $p) { Backup-TmaKey $p; Remove-Item -LiteralPath $p -Recurse -Force }
+    }
+    function Set-TmaList([string]$p, [string[]]$items, [bool]$replace) {
+      Backup-TmaKey $p
+      if ($replace) { Remove-TmaKey $p }
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      $have = @((Get-ItemProperty -LiteralPath $p -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Value)" })
+      $n = [int](@((Get-Item -LiteralPath $p).GetValueNames()) | ForEach-Object { $x = 0; if ([int]::TryParse($_, [ref]$x)) { $x } else { 0 } } | Measure-Object -Maximum).Maximum
+      foreach ($i in $items) {
+        if ($have -notcontains $i) { $n++; New-ItemProperty -LiteralPath $p -Name "$n" -Value $i -PropertyType String -Force | Out-Null }
+      }
+    }
+    Remove-TmaKey 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\OverrideSecurityRestrictionsOnInsecureOrigin'
+  guidance: "Configure through Group Policy: Computer Configuration\\Policies\\Administrative Templates\\Google\\Google Chrome\\Origins or hostname patterns for which restrictions on insecure origins should not apply = Disabled. Locally, remove the policy entries at HKLM\\SOFTWARE\\Policies\\Google\\Chrome\\OverrideSecurityRestrictionsOnInsecureOrigin after reviewing them."

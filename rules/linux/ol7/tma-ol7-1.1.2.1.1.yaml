@@ -1,0 +1,21 @@
+id: TMA-OL7-1.1.2.1.1
+title: Ensure /tmp is a separate partition
+description: 'The /tmp directory is a world-writable directory used for temporary storage by all users and some applications. -IF- an entry for /tmp exists in /etc/fstab it will take precedence over entries in systemd default unit file. Note: In an environment where the main system is diskless and connected to iSCSI, entries in /etc/fstab may not take precedence. /tmp can be configured to use tmpfs. tmpfs puts everything into the kernel internal caches and grows and shrinks to accommodate the files it contains and is able to swap unneeded pages out to swap space. It has maximum size limits which can be adju'
+target: linux
+os_family:
+- ol-7
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS Oracle Linux 7 Benchmark v4.0.0 - 1.1.2.1.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /tmp >/dev/null 2>&1; then echo compliant; else echo /tmp' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create or update an entry for /tmp in /etc/fstab: _ Example:_ tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0 Run the following command to remount /tmp # mount -o remount,noexec,nodev,nosuid /tmp - OR - if /tmp is not already mounted, run the following command to mount /tmp: # mount /tmp'

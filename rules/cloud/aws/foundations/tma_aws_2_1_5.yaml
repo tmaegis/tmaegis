@@ -1,0 +1,18 @@
+id: TMA-AWS-2.1.5
+title: Ensure delegated admin manages AWS Organizations policies
+description: Ensure that a dedicated member account is configured as a delegated administrator for AWS Organizations to manage organization policies (SCPs, RCPs, tag policies, backup policies, AI opt-out policies) and other Organizations features, instead of performing these tasks directly from the management account. The delegated administrator for AWS Organizations is configured via a resource-based delegation policy in the management account, which grants specific member accounts limited permissions to perform Organizations policy and account management actions across the organization. This allows policy management, OU operations, and other governance tasks to be handled from purpose-built accounts without requiring broad access to the management account. The management account has unique and high privileges to manage AWS Organizations (for example, creating/deleting accounts, managing org stru...
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.1.5 Ensure delegated admin manages AWS Organizations policies
+audit:
+  type: manual
+  command: '1. Sign in to the AWS Organizations console. From the AWS Accounts section, verify that this is the management account for the organization. 2. In the AWS Organizations console, navigate to Settings. Scroll to the Delegated administrator for AWS Organizations section 3. Review the delegation policy status: - If a delegation policy is configured and shows one or more member accounts registered to manage Organizations policies, proceed to step 4. - If no delegation policy is configured or the section shows No delegated administrator (or equivalent), the audit fails because Organizations management is performed directly from the management account. 4. In the Delegated administrator section, note the account IDs registered for Organizations policy management. Confirm that the delegated accounts are purpose-built governance, security, or policy management accounts, not general workload, sandbox, or development accounts. 5. View the delegation policy details to confirm it grants appropriate
+    least-privilege permissions for policy types (for example, SCPs, tag policies, backup policies) and actions (CreatePolicy, AttachPolicy, UpdatePolicy, etc.).'
+remediation:
+  type: iac_patch
+  command: 1. Identify a dedicated member account for governance/policy management (for example, create a new “Policy Management” account or use an existing Security account) 2. You must be in the management account with permissions to manage Organizations resource policies. Navigate to AWS Organizations console, then click on Settings and browse to "Delegated administrator for AWS Organizations" section. 3. If no policy exists, click on Delegate. If a policy exists, choose Edit policy. - In the policy editor, paste or construct a delegation policy statement mentioning the Principal as the AWS account Root which is being delegated access to, and the Actions with the list of least-privileged permissions that could be performed by the delegated AWS account. - Save and validate the delegation policy. 4. Sign in to the delegated administrator account and open the AWS Organizations console. - Confirm that policy management (Policies, Attach/Detach, etc.) is accessible and that users/roles in
+    this account can perform Organizations tasks without management-account access. 5. Grant IAM roles/users in the delegated admin account only the permissions needed for Organizations policy management. 6. Up...

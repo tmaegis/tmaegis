@@ -1,0 +1,45 @@
+id: TMA-MACOS15-1.6
+title: Ensure Software Update Deferment Is Less Than or Equal to 30 Days
+description: 'Apple provides the capability to manage software updates on Apple devices through mobile device management. Part of those capabilities permit organizations to defer software updates and allow for testing. Many organizations have specialized software and configurations that may be negatively impacted by Apple updates. If software updates are deferred, they should not be deferred for more than 30 days. Audit: No deferral profile (no value) passes, as the benchmark states.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- software-update
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 1.6 Ensure Software Update Deferment Is Less Than or Equal to 30 Days
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    /usr/bin/osascript -l JavaScript <<'EOS'
+    function run() {
+      let delay = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.applicationaccess').objectForKey('enforcedSoftwareUpdateDelay'))
+      if ( delay == null || delay <= 30 ) {
+        return("true")
+      } else {
+        return("false")
+      }
+    }
+    EOS
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults delete /Library/Preferences/com.apple.applicationaccess enforcedSoftwareUpdateDelay 2>/dev/null
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile (preferred): com.apple.applicationaccess enforcedSoftwareUpdateDelay = <integer><1-30></integer>."

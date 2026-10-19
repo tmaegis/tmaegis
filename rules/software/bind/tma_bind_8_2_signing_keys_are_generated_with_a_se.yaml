@@ -1,0 +1,30 @@
+id: TMA-BIND-8.2
+title: Ensure Signing Keys are Generated with a Secure Algorithm
+description: 'When Zone Signing Keys (ZSK) or Key Signing Keys (KSK) are generated there are several secure DNSSEC digital signature algorithms that are recommended. The algorithms are listed below with the standard DNSSEC algorithm number followed by the common name, and then the BIND 9 mnemonic name used by dnssec-keygen. The audit reads the Algorithm: line of every K*.private key file under $BIND_HOME and requires RSASHA256 (8), RSASHA512 (10), ECDSAP256SHA256 (13), ECDSAP384SHA384 (14) or ED25519 (15).'
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 8.2 Ensure Signing Keys are Generated with a Secure Algorithm
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    keys=$(find $BH /etc/bind/keys -name 'K*.private' -type f 2>/dev/null | sort -u)
+    [ -n "$keys" ] || { echo compliant; exit 0; }
+    bad=$(for k in $keys; do a=$(awk '/^Algorithm:/{print $2; exit}' "$k"); case "$a" in 8|10|13|14|15) ;; *) echo "$k: algorithm ${a:-unknown}" ;; esac; done)
+    [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: 'To remediate a weak key, perform the following: ; Generate a new key to replace the weak key using dnssec-keygen and one of the recommended algorithms. Examples commands are shown below. # dnssec-keygen -a RSASHA256 -b 2048 example.com # dnssec-keygen -a ECDSAP384SHA384 cisecurity.org ; Implement a rollover period to phase out the weak key and replace it with the newly generated key. ; Once the key is fully deleted from active use, remove the file.'

@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.10.29.2
+title: Ensure 'Do not apply the Mark of the Web tag to files copied from insecure sources' is set to 'Disabled'
+description: 'This policy setting determines whether files that are sourced from insecure locations are tagged with Mark of the Web (MOTW). The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.10.29.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer'' -Name ''DisableMotWOnInsecurePathCopy'' -ErrorAction SilentlyContinue).''DisableMotWOnInsecurePathCopy''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''DisableMotWOnInsecurePathCopy='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer' -Name 'DisableMotWOnInsecurePathCopy' -Value 0 -PropertyType DWord -Force | Out-Null

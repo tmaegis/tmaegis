@@ -1,0 +1,16 @@
+id: TMA-TDSQL-12.11
+title: Ensure Manager Resource Monitoring Thresholds Are Configured
+description: 'The TDSQL Agent provides proactive resource monitoring (mysqlagent_template.xml): <myisam open="1" interval="3600"/> - check whether MyISAM tables have been created <long_trx open="1" interval="60"/> - monitor long transactions <no_primarykey open="1" interval="3600"/> - monitor tables without a primary key <checkdisk open="1" interval="10"/> - disk space check <checklog open="1" interval="..."/> - monitor critical ...'
+target: tdsql
+level: 2
+severity: low
+tags:
+- tdsql
+- monitoring
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 12.11 Ensure Manager Resource Monitoring Thresholds Are Configured
+audit:
+  type: manual
+  command: Run grep -A20 '<monitor>' <tdsql>/agent/conf/mysqlagent.xml (and the HeartBeat section). The myisam, long_trx, no_primarykey, checkdisk and checklog items and binlog_checksum must each have open="1" with suitable intervals; any disabled item is a finding.
+remediation:
+  type: iac_patch
+  command: <monitor> <myisam open="1" interval="3600"/> <long_trx open="1" interval="60"/> <no_primarykey open="1" interval="3600"/> <checkdisk open="1" interval="10"/> <checklog open="1" interval="60"/> </monitor> <HeartBeat> <Other switch="1" interval="3"> <binlog_checksum open="1" err_count="-1" err_time="10"/> </Other> </HeartBeat>

@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-4.1
+title: Ensure Interactive Login is Disabled
+description: When created, the PostgreSQL user may have interactive access to the operating system, which means that the PostgreSQL user could login to the host as any other user would.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authentication
+- os
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.1 Ensure Interactive Login is Disabled
+audit:
+  type: manual
+  command: 'Run sudo grep postgres /etc/shadow | cut -d: -f1-2. Unless the output is postgres:!<something> (locked password), interactive login is possible and this is a fail.'
+remediation:
+  type: iac_patch
+  command: 'Lock the account password: passwd -l postgres (and optionally set its shell to /sbin/nologin if no one uses sudo -iu postgres). Administrators then use sudo -iu postgres.'

@@ -1,0 +1,48 @@
+id: TMA-MACOS15-2.3.4.1
+title: Ensure Backup Automatically is Enabled If Time Machine Is Enabled
+description: 'Backup solutions are only effective if the backups run on a regular basis. The time to check for backups is before the hard drive fails or the computer goes missing. In order to simplify the user experience so that backups are more likely to occur, Time Machine should be on and set to Back Up Automatically whenever the target volume is available. Audit: Passes when Time Machine is not configured (preference not set) or AutoBackup is enabled.'
+target: macos
+level: 2
+severity: medium
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.3.4.1 Ensure Backup Automatically is Enabled If Time Machine Is Enabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    /usr/bin/osascript -l JavaScript <<'EOS'
+    function run() {
+      let pref1 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.TimeMachine').objectForKey('AutoBackup'))
+      if ( pref1 == null || pref1 == 1 ) {
+        return("true")
+      } else {
+        return("false")
+      }
+    }
+    EOS
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    v=$(/usr/bin/defaults read /Library/Preferences/com.apple.TimeMachine AutoBackup 2>/dev/null)
+    if [ -n "$v" ] && [ "$v" != 1 ]; then
+      /usr/bin/defaults write "/Library/Preferences/com.apple.TimeMachine" 'AutoBackup' -bool true
+    fi
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile (preferred): com.apple.MCX.TimeMachine AutoBackup = <true/>. GUI: System Settings > General > Time Machine > Options > Set Back up frequency to Automatically <every hour/every day/every week>."

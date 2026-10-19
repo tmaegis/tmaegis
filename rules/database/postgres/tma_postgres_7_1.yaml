@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-7.1
+title: Ensure a replication-only user is created and used for streaming replication
+description: Create a new user specifically for use by streaming replication instead of using the superuser account.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- replication
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 7.1 Ensure a replication-only user is created and used for streaming replication
+audit:
+  type: manual
+  command: Run SELECT rolname FROM pg_roles WHERE rolreplication IS TRUE; Streaming replication must use a dedicated, non-superuser role with only the REPLICATION attribute; replication via postgres or another superuser is a fail.
+remediation:
+  type: iac_patch
+  command: CREATE ROLE replication_user WITH LOGIN REPLICATION PASSWORD '<pw>'; and add a 'hostssl replication replication_user <standby_ip>/32 scram-sha-256' line to pg_hba.conf, then reload.

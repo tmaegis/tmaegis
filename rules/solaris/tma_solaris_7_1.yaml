@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-7.1
+title: Set Password Expiration Parameters on Active Accounts
+description: 'The characteristics of an operating system that make ''user identification'' via password a secure and workable solution is the combination of settings chosen. The commands for this item set all active accounts (except the root account) to force password changes every 91 days (13 weeks), and then prevent password changes for seven days (one week), thereafter. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- password-policy
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 7.1 Set Password Expiration Parameters on Active Accounts
+audit:
+  type: command
+  command: 'command -v logins >/dev/null 2>&1 || exit 1; out=$( { logins -ox | awk -F: ''( $1 != "root" && $8 != "LK" && $8 != "NL" && ( $10 < 7 || $11 > 91 || $12 < 7 )) { print }''; grep -q "^MAXWEEKS=13$" /etc/default/passwd || echo "MAXWEEKS is not 13"; grep -q "^MINWEEKS=1$" /etc/default/passwd || echo "MINWEEKS is not 1"; grep -q "^WARNWEEKS=4$" /etc/default/passwd || echo "WARNWEEKS is not 4" ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # logins -ox | awk -F: ''($1 == "root" || $8 == "LK" || $8 == "NL") { next } ; { cmd = "passwd" } ; ($11 < 91) { cmd = cmd " -x 91" } ($10 < 7) { cmd = cmd " -n 7" } ($12 < 28) { cmd = cmd " -w 28" } (cmd != "passwd") { print cmd " " $1 }'' > /etc/CISupd_accounts # /sbin/sh /etc/CISupd_accounts # rm -f /etc/CISupd_accounts # cd /etc/default # cp passwd passwd.orig # grep -v WEEKS passwd > passwd.CIS # cat <<EODefaults >> passwd.CIS MAXWEEKS=13 MINWEEKS=1 WARNWEEKS=1 EODefaults # mv passwd.CIS passwd'

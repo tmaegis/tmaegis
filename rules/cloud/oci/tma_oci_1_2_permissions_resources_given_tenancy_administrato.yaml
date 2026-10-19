@@ -1,0 +1,23 @@
+id: TMA-OCI-1.2
+title: Ensure permissions on all resources are given only to the tenancy administrator group
+description: 'There is a built-in OCI IAM policy enabling the Administrators group to perform any action within a tenancy. In the OCI IAM console, this policy reads: Allow group Administrators to manage all-resources in tenancy Administrators create more users, groups, and policies to provide appropriate access to other groups. Permission to manage all resources in a tenancy should be limited to a small number of users in the Administrators group for break-glass situations and to set up users/groups/policies when a tenancy is created. Lists the root-compartment policy statements and flags any "to manage all-resources in tenancy" grant that is not for the Administrators group. Read-only OCI CLI calls; credentials and home region come from the CLI''s normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.'
+target: oci
+level: 1
+severity: high
+tags:
+- oci
+- iam
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 1.2 Ensure permissions on all resources are given only to the tenancy administrator group
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    out=$(oci iam policy list --compartment-id "$t" --all --query 'data[].statements[]' --raw-output 2>/dev/null) || exit 1
+    b=$(printf '%s\n' "$out" | grep -i 'to manage all-resources in tenancy' | grep -Eiv "allow[[:space:]]+group[[:space:]]+('?default'?/)?'?administrators'?[[:space:]]+to" || true)
+    [ -z "$b" ] && echo compliant || printf '%s\n' "$b"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove 'manage all-resources in tenancy' from every policy statement except the one for the Administrators group, granting service-level admin groups only the resource families they need.

@@ -1,0 +1,19 @@
+id: TMA-AZURE-6.1.5
+title: Ensure Basic, Free, and Consumption SKUs are not used on Production artifacts requiring monitoring and SLA
+description: The use of Basic, Free, or Consumption SKUs in Azure, whilst cost effective, have significant limitations in terms of what can be monitored and what support can be realized from Microsoft. Typically, these SKUs do not have a service SLA and Microsoft may refuse to provide support for them. Furthermore, they offer reduced or no high availability guarantees and have limited observability and diagnostic capabilities. As a result, Microsoft may limit or refuse support for workloads running on these SKUs. Consequently Basic, Free, or Consumption SKUs should never be used for production workloads unless your organization explicitly approved it as an exception. While an automated assessment procedure exists for this recommendation, the assessment status remains manual. Determining appropriate SKUs depends on the context and requirements of each organization and environment. Typically, produc...
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- monitoring
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 6.1.5 Ensure Basic, Free, and Consumption SKUs are not used on Production artifacts requiring monitoring and SLA
+audit:
+  type: manual
+  command: 'This needs to be audited by Azure Policy (one for each resource type) and denied for each artifact that is production. Audit from Azure Portal 1. Open Azure Resource Graph Explorer 2. Click New query 3. Paste the following into the query window: Resources | where isnotnull(sku) | where sku.name =~ ''Basic'' or sku.tier =~ ''Basic'' or sku.name =~ ''Free'' or sku.tier =~ ''Free'' or sku.name =~ ''Consumption'' or sku.tier =~ ''Consumption'' | order by type 4. Click Run query then evaluate the results in the results window. 5. Ensure that no production artifacts are returned. If production workload or environment tags exist, use the following query and edit the tag name and value in Environment and Production to reflect your tagging standard: Resources | where tostring(tags.Environment) =~ ''Production'' | where isnotnull(sku) | where sku.name =~ ''Basic'' or sku.tier =~ ''Basic'' or sku.name =~ ''Free'' or sku.tier =~ ''Free'' or sku.name =~ ''Consumption'' or sku.tier =~ ''Consumption''
+    | order by type Audit from Azure CLI az graph query -q " Resources | where isnotnull(sku) | where sku.name =~ ''Basic'' or sku.tier =~ ''Basic'' or sku.name =~ ''Free'' or sku.tier =~ ''Free'' or sku.name =~ ''Consumption'' or sku....'
+remediation:
+  type: iac_patch
+  command: 'Each resource has its own process for upgrading from Basic/Free/Consumption to Standard (or higher) SKUs. Follow the official Microsoft documentation for the relevant service. - Public IP Address: https://learn.microsoft.com/en-us/azure/virtual-network/ip- services/public-ip-upgrade. - Basic Load Balancer: https://learn.microsoft.com/en-us/azure/load-balancer/load- balancer-basic-upgrade-guidance. - Azure Cache for Redis: https://learn.microsoft.com/en-us/azure/azure-cache-for- redis/cache-how-to-scale. - Azure SQL Database: https://learn.microsoft.com/en-us/azure/azure- sql/database/scale-resources. - VPN Gateway: https://learn.microsoft.com/en-us/azure/vpn-gateway/gateway- sku-resize. - Virtual Network Gateway (VPN): https://learn.microsoft.com/azure/vpn- gateway/gateway-sku-resize - Azure Bastion: https://learn.microsoft.com/azure/bastion/bastion-faq#is-there-a- basic-sku (No Basic SKU exists; upgrade = redeploy with Standard SKU. Developer tier is not supported for production;
+    deploy using Standard SKU.) - Application Gateway: https://learn.microsoft.com/azure/application- gateway/upgrade-application-gateway - Azure Container Registry: https://learn.microsoft.com/azure/conta...'

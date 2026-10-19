@@ -1,0 +1,21 @@
+id: TMA-ALINUX2-3.5.1.2
+title: Ensure loopback traffic is configured
+description: Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network (127.0.0.0/8).
+target: linux
+os_family:
+- alinux-2
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Aliyun Linux 2 Benchmark v1.0.0 ARCHIVE - 3.5.1.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v iptables >/dev/null 2>&1 || { echo "step1: iptables not installed"; return 1; }; o=$(bash -c ''iptables -L INPUT -v -n Chain INPUT (policy DROP 0 packets, 0 bytes)'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''pkts bytes target prot opt in out source'' || { echo step1: missing ''pkts bytes target prot opt in out source''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- destination || { echo step1: missing destination; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''0 0 ACCEPT all -- lo * 0.0.0.0/0 0.0.0.0/0'' || { echo step1: missing ''0 0 ACCEPT all -- lo * 0.0.0.0/0 0.0.0.0/0''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''0 0 DROP all -- * * 127.0.0.0/8 0.0.0.0/0'' || { echo step1: missing ''0 0 DROP all -- * * 127.0.0.0/8 0.0.0.0/0''; return 1; }; command -v
+    iptables >/dev/null 2>&1 || { echo "step2: iptables not installed"; return 1; }; o=$(bash -c ''iptables -L OUTPUT -v -n Chain OUTPUT (policy DROP 0 packets, 0 bytes)'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''pkts bytes target prot opt in out source'' || { echo step2: missing ''pkts bytes target prot opt in out source''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- destination || { echo step2: missing destination; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''0 0 ACCEPT all -- * lo 0.0.0.0/0 0.0.0.0/0'' || { echo step2: missing ''0 0 ACCEPT all -- * lo 0.0.0.0/0 0.0.0.0/0''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # iptables -A INPUT -i lo -j ACCEPT # iptables -A OUTPUT -o lo -j ACCEPT # iptables -A INPUT -s 127.0.0.0/8 -j DROP # service iptables save'

@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.3.10
+title: Ensure incoming client certificates are enabled and required (if in use)
+description: Client certificates allow for the function app to request a certificate for incoming requests. Only clients that have a valid certificate will be able to reach the app. The TLS mutual authentication technique in enterprise environments ensures the authenticity of clients to the server. If incoming client certificates are enabled, then only an authenticated client with valid certificates can access the app.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.10 Ensure incoming client certificates are enabled and required (if in use)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Incoming client certificates, ensure that Client certificate mode is set to Required. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the clientCertEnabled and clientCertMode settings: az functionapp show --resource-group <resource-group-name> --name <function- app-name> --query "[clientCertEnabled, clientCertMode]" Ensure that [true,"Required"] is returned. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: ab6a902f-9493-453b-928d-62c30b11b5a6 - Name: ''Function apps should have Client Certificates (Incoming client certificates) enabled'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Incoming client certificates, set Client certificate mode to Required. 5. Click Save. 6. Click Continue. 7. Repeat steps 1-6 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to enable and require incoming client certificates: az resource update --resource-group <resource-group-name> --name <function- app-name> --resource-type "Microsoft.Web/sites" --set properties.clientCertEnabled=true --set properties.clientCertMode=Required'

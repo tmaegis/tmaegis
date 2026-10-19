@@ -1,0 +1,67 @@
+id: TMA-OL6-5.3.17
+title: Ensure SSH Idle Timeout Interval is configured
+description: The two options ClientAliveInterval and ClientAliveCountMax control the timeout of ssh sessions. • ClientAliveInterval sets a timeout interval in seconds after which if no data has been received from the client, sshd will send a message through the encrypted channel to request a response from the client. The default is 0, indicating that these messages will not be sent to the client. • ClientAliveCountMax sets the number of client alive messages which may be sent without sshd receiving any messages back from the client. If this threshold is reached while client alive messages are being sent, s
+target: linux
+os_family:
+- ol-6
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 6 Benchmark v2.0.0 - 5.3.17
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''sshd -T -C user=root -C host="$(hostname)" -C addr="$(grep $(hostname) /etc/hosts | awk ''"''"''{print $1}''"''"'')" | grep clientaliveinterval'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''clientaliveinterval 300'' || { echo step1: missing ''clientaliveinterval 300''; return 1; }; o=$(bash -c ''sshd -T -C user=root -C host="$(hostname)" -C addr="$(grep $(hostname) /etc/hosts | awk ''"''"''{print $1}''"''"'')" | grep clientalivecountmax'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''clientalivecountmax 3'' || { echo step2: missing ''clientalivecountmax 3''; return 1; }; o=$(bash -c ''grep -Ei ''"''"''^\s*clientaliveinterval\s+(0|3[0-9][1-9]|[4-9][0-9][0-9]|[1-9][0- 9][0-9][0-9]+)\b''"''"'' /etc/ssh/sshd_config'' 2>/dev/null); [ -z "$o" ] || { echo "step3: $o" | head -c 300; return 1; }; o=$(bash -c ''grep -Ei ''"''"''^\s*ClientAliveCountMax\s+(0|[4-9]|[1-9][0-9]+)\b''"''"''
+    /etc/ssh/sshd_config'' 2>/dev/null); [ -z "$o" ] || { echo "step4: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # tma_sshd_apply "Name value" ... : replace every existing setting, put ours first, validate, reload.
+    tma_sshd_apply() {
+      c=/etc/ssh/sshd_config
+      [ -f "$c" ] || { echo "sshd_config not present, nothing to do"; return 0; }
+      files="$c $(ls /etc/ssh/sshd_config.d/*.conf 2>/dev/null)"
+      sv=$(mktemp -d)
+      for f in $files; do tma_bak "$f"; cp -a "$f" "$sv/$(echo "$f" | tr / _)"; done
+      for kv in "$@"; do
+        n=${kv%% *}
+        for f in $files; do
+          [ -L "$f" ] && continue
+          sed -i -E "s/^([[:space:]]*$n[[:space:]=].*)$/# tmaegis: \1/I" "$f"
+        done
+      done
+      tmp=$(mktemp); : > "$tmp"
+      for kv in "$@"; do printf '%s\n' "$kv" >> "$tmp"; done
+      cat "$c" >> "$tmp"; cat "$tmp" > "$c"; rm -f "$tmp"
+      if command -v sshd >/dev/null 2>&1 && ! sshd -t 2>/dev/null; then
+        echo "sshd -t failed, restoring" >&2
+        for f in $files; do cat "$sv/$(echo "$f" | tr / _)" > "$f"; done
+        rm -rf "$sv"; return 1
+      fi
+      rm -rf "$sv"
+      for u in sshd ssh; do systemctl reload "$u" 2>/dev/null && break; done
+      return 0
+    }
+
+    tma_sshd_apply 'ClientAliveInterval 300' 'ClientAliveCountMax 3'
+  guidance: "Edit the /etc/ssh/sshd_config file to set the parameters according to site policy. This should include ClientAliveInterval between 1 and 300 and ClientAliveCountMax between 1 and 3: ClientAliveInterval 300 ClientAliveCountMax 3"

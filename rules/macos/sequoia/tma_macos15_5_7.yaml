@@ -1,0 +1,44 @@
+id: TMA-MACOS15-5.7
+title: Ensure an Administrator Account Cannot Login to Another User's Active and Locked Session
+description: 'macOS has a privilege that can be granted to any user that will allow that user to unlock active users'' sessions. Note: For organizations that are using Platform Single-Sign-On (PSSO), this setting can cause issues with syncing with your PSSO. See the note in the audit to verify if you are using PSSO. Audit: Organisations using Platform SSO (app-sso platform -s shows a configuration) should not apply this change.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 5.7 Ensure an Administrator Account Cannot Login to Another User's Active and Locked Session
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    out=$(/usr/bin/security authorizationdb read system.login.screensaver 2>&1) || exit 1
+    printf '%s\n' "$out" | /usr/bin/awk -F "[<>]" '$3=="authenticate-session-owner" { ++x } END { print x+0 }'
+  expected_output: '1'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    /usr/bin/security -q authorizationdb read system.login.screensaver > "$TMA_BK/system.login.screensaver.$TMA_TS.plist" 2>/dev/null
+    /usr/bin/security authorizationdb write system.login.screensaver authenticate-session-owner
+    n=$(/usr/bin/security authorizationdb read system.login.screensaver 2>&1 | /usr/bin/awk -F "[<>]" '$3=="authenticate-session-owner" { ++x } END { print x+0 }')
+    if [ "$n" -lt 1 ]; then
+      /usr/bin/security -q authorizationdb write system.login.screensaver < "$TMA_BK/system.login.screensaver.$TMA_TS.plist"
+      echo "TMAegis: rule did not take effect; original right restored" >&2; exit 1
+    fi
+  guidance: "Terminal: sudo /usr/bin/security authorizationdb write system.login.screensaver authenticate-session-owner ; sudo /usr/bin/defaults write /Library/Preferences/com.apple.loginwindow screenUnlockMode -int 1."

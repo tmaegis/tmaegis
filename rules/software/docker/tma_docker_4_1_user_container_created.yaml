@@ -1,0 +1,23 @@
+id: TMA-DOCKER-4.1
+title: Ensure that a user for the container has been created
+description: Containers should run as a non-root user defined in the image (USER) or at run time (--user). Flags containers whose configured user (Config.User) is empty, root or 0; processes that start as root and drop privileges themselves are reported too and need review. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- image
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 4.1 Ensure that a user for the container has been created
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} [{{.Config.User}}]' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '$2=="[]" || $2 ~ /^\[(root|0)(:.*)?\]$/ {print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Add a USER instruction to the Dockerfile (RUN useradd -r app && ... USER app) or run the container with --user <uid>:<gid>.

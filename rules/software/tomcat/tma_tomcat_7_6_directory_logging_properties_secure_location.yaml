@@ -1,0 +1,25 @@
+id: TMA-TOMCAT-7.6
+title: Ensure directory in logging.properties is a secure location
+description: 'The directory attribute tells Tomcat where to store logs. The directory value should be a secure location with restricted access. Every *.directory in conf/logging.properties (${catalina.base}/${catalina.home} resolved) must exist, have no permissions for others and be owned by $TOMCAT_OWNER:$TOMCAT_GROUP; expects 0 findings. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored. The expected owner/group are tomcat_admin:tomcat as in the benchmark; override with TOMCAT_OWNER / TOMCAT_GROUP.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- logging
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 7.6 Ensure directory in logging.properties is a secure location
+audit:
+  type: command
+  shell: bash
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; f="$B/conf/logging.properties"; [ -r "$f" ] || exit 1; n=0; while IFS= read -r d; do d=${d//\${catalina.base\}/$B}; d=${d//\${catalina.home\}/$H}; if [ ! -d "$d" ] || [ -n "$(find -L "$d" -maxdepth 0 \( -perm /o+rwx -o ! -user "$O" -o ! -group "$G" \) -print 2>/dev/null)" ]; then n=$((n+1)); fi; done < <(awk -F= '$1~/\.directory[[:space:]]*$/{v=$2; gsub(/^[[:space:]]+|[[:space:]]+$/,"",v); print v}' "$f" | sort -u); echo $n
+  expected_output: '0'
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: chown tomcat_admin:tomcat <log directory> && chmod o-rwx <log directory>. Restart Tomcat afterwards.

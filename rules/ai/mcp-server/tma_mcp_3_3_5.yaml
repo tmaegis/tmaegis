@@ -1,0 +1,19 @@
+id: TMA-MCP-3.3.5
+title: Ensure confused-deputy safeguards are applied for static OAuth client IDs
+description: An MCP server acting as an OAuth proxy with a shared static client ID toward a downstream third-party authorization server, that lets MCP clients dynamically register (each obtaining its own client ID), and whose third-party authorization server sets a consent cookie for the static client ID, implements the specification's confused-deputy mitigations. The third-party authorization server often lacks dynamic client registration, which is why the proxy uses one static client ID for all requests. Three mitigations apply. (1) Per-client consent keyed to each dynamically-registered MCP client's client_id, checked before any redirect to the third-party authorization server, and never reused across registrations. (2) Exact-string redirect_uri validation with no wildcards or pattern matching, rejecting any request whose redirect_uri changed without re- registration. (3) State parameter valida...
+target: mcp-server
+level: 2
+severity: low
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.3.5 Ensure confused-deputy safeguards are applied for static OAuth client IDs
+audit:
+  type: manual
+  command: 'Review the proxy''s OAuth flow and confirm a newly registered MCP client triggers fresh consent, a changed redirect_uri is rejected by exact match, and a missing or mismatched state is rejected. AUTHZ="https://<SERVER_URL>/authorize" CID="<REGISTERED_CLIENT_ID>" GOOD_REDIRECT="<REGISTERED_REDIRECT_URI>" BAD_REDIRECT="https://attacker.example.com/cb" CH="<CODE_CHALLENGE>" base="client_id=$CID&response_type=code&state=test123&code_challenge=$CH&code_challen ge_method=S256" gc=$(curl -sS -o /dev/null -w ''%{http_code}'' "$AUTHZ?$base&redirect_uri=$GOOD_REDIRECT") bc=$(curl -sS -o /dev/null -w ''%{http_code}'' "$AUTHZ?$base&redirect_uri=$BAD_REDIRECT") echo "control_valid_redirect=$gc varied_bad_redirect=$bc" case "$gc" in 000) echo "ERROR: authorization endpoint unreachable"; exit 0 ;; 4*) echo "ERROR: positive control was itself rejected ($gc), the request is missing required parameters, cannot attribute the redirect_uri rejection"; exit 0 ;; esac case "$bc" in 400|401|403) echo
+    "PASS: with only redirect_uri changed the request is rejected while the valid one is accepted, rejection attributable to exact redirect_uri validation" ;; 302) echo "REVIEW: the bad redirect_uri produced a 302,...'
+remediation:
+  type: iac_patch
+  command: This is application or server logic with no portable command. Maintain a per-user registry of the MCP client client_id values that have been consented, check it before any redirect to the third-party authorization server, and show an MCP-owned consent page that names the client and the third-party scopes, with CSRF protection and anti- framing. Validate redirect_uri by exact string match and reject any change without re-registration. Generate a cryptographically random state per request, store it server- side only after consent is approved, validate it at the callback, and make it single-use and short-lived. Log consent per MCP client. Verify with the Audit.

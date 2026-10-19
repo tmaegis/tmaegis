@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-9.20
+title: Ensure that access to data sets used as step libraries in /etc/steplib is controlled
+description: The STEPLIBLIST parameter specifies the pathname of the HFS file that contains the list of MVS data sets that are used as step libraries for programs that have the set user id or set group id permission bit set. The use of STEPLIBLIST is at the site's discretion, but if used the value of STEPLIBLIST should be /etc/steplib.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.20 Ensure that access to data sets used as step libraries in /etc/steplib is controlled
+audit:
+  type: manual
+  command: 'Request a list of data sets defined in active /etc/steplib. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entry covering data sets defined in /etc/steplib Request reports generated using IRRDBU00 output that will allow you to: Verify that data sets defined in /etc/steplib are secured by RACF profiles in the DATASET class that: Have UACC of NONE or READ Are not in WARNING mode AUDIT a minimum of SUCCESS(UPDATE) and FAILURES(READ) ID(*) is not used to grant ... (full steps: CIS section 9.20)'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<steplib-dataset>'' GENERIC + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + DATA(''CAN BE USED AS STEPLIB LIBRARY FOR SETUID PROGRAMS'') PERMIT ''<steplib-dataset>'' GENERIC + ACCESS(READ) ID(*) PERMIT ''<steplib-dataset>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''<steplib-dataset>'' GENERIC + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''<steplib-dataset>'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking
+    is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF ... (see CIS section 9.20)'

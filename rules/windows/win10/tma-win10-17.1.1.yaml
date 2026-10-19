@@ -1,0 +1,20 @@
+id: TMA-WIN10-17.1.1
+title: Ensure 'Audit Credential Validation' is set to 'Success and Failure'
+description: This subcategory reports the results of validation tests on credentials submitted for a user account logon request. These events occur on the computer that is authoritative for the credentials. For domain accounts, the Domain Controller is authoritative, whereas for local accounts, the local computer is authoritative. In domain environments, most of the Account Logon events occur in the Security log of the Domain Controllers that are authoritative for the domain accounts. However, these events can occur on other computers in the organization when local accounts are used to log on. Events for t
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 17.1.1
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce923f-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce923f-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

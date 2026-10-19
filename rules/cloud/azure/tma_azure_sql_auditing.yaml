@@ -1,0 +1,17 @@
+id: TMA-AZURE-SQL-AUDITING
+title: Ensure auditing is enabled on Azure SQL servers
+description: Server-level auditing records database events to storage, Log Analytics or Event Hubs for investigations. Every logical SQL server must have its audit policy state Enabled. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- database
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Database Services - SQL Server auditing (verify section number for your release)
+audit:
+  type: command
+  command: "srv=$(az sql server list --query '[].[name,resourceGroup]' -o tsv 2>/dev/null) || exit 1\nbad=0\nwhile read -r n g; do\n  [ -n \"$n\" ] || continue\n  s=$(az sql server audit-policy show --name \"$n\" --resource-group \"$g\" --query state -o tsv 2>/dev/null </dev/null) || exit 1\n  [ \"$s\" = Enabled ] || { echo \"auditing off: $n\"; bad=1; }\ndone <<EOF\n$srv\nEOF\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: az sql server audit-policy update --name <server> --resource-group <rg> --state Enabled --lat-destination|--blob-storage-target-state ... with retention of at least 90 days.

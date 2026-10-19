@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-4.7
+title: Ensure Row Level Security (RLS) is configured correctly
+description: In addition to the SQL-standard privilege system available through GRANT, tables can have row security policies that restrict, on a per-user basis, which individual rows can be returned by normal queries or inserted, updated, or deleted by data modification commands. This feature is also known as Row Level Security (RLS).
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authorization
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.7 Ensure Row Level Security (RLS) is configured correctly
+audit:
+  type: manual
+  command: Determine which tables need row level security, then run SELECT oid, relname, relrowsecurity FROM pg_class WHERE relrowsecurity IS TRUE; Any table that requires RLS but is missing from the result (or lacks policies, see \d+ <table>) is a fail.
+remediation:
+  type: iac_patch
+  command: ALTER TABLE <table> ENABLE ROW LEVEL SECURITY; then CREATE POLICY ... for each required access rule, and confirm roles that must obey RLS do not have BYPASSRLS.

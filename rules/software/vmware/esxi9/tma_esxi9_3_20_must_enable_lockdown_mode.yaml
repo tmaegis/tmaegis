@@ -1,0 +1,20 @@
+id: TMA-ESXI9-3.20
+title: Host must enable lockdown mode
+description: Implementing lockdown mode restricts direct access to ESXi hosts, mandating management via vCenter Server to uphold defined roles and access controls, mitigating risks associated with unauthorized or insufficiently audited activities. Exception Users list serves as an override mechanism, permitting specified users direct access even in lockdown mode. The audit runs vim-cmd -U dcui vimsvc/auth/lockdown_mode and requires lockdownNormal or lockdownStrict. Running the shell during lockdown requires the scanning account on the Exception Users list. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: high
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 3.20 Host must enable lockdown mode
+audit:
+  type: command
+  command: |-
+    out=$(vim-cmd -U dcui vimsvc/auth/lockdown_mode 2>/dev/null) || out=$(vim-cmd -U dcui vimsvc/auth/lockdown_is_enabled 2>/dev/null) || exit 1
+    case "$out" in *lockdownNormal*|*lockdownStrict*|true) echo compliant ;; *) echo "lockdown: $out" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enable lockdown mode, perform the following from the vSphere web client: 1. From the vSphere Web Client, select the host. 2. Select Configure then expand System and select Security Profile. 3. Across from Lockdown Mode click on Edit. 4. Click the radio button for Normal or Strict. 5. Click OK. Alternately, run the following PowerCLI command: # Enable lockdown mode for each host Get-VMHost | Foreach { $_.EnterLockdownMode() }'

@@ -1,0 +1,20 @@
+id: TMA-UBUNTU1404-2.2.16
+title: Ensure rsync service is not enabled
+description: The rsyncd service can be used to synchronize files between systems over network links.
+target: linux
+os_family:
+- ubuntu-14.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 14.04 LTS Benchmark v2.1.0 ARCHIVE - 2.2.16
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep ^RSYNC_ENABLE /etc/default/rsync'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- RSYNC_ENABLE=false || { echo step1: missing RSYNC_ENABLE=false; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/default/rsync file and set RSYNC_ENABLE to false: RSYNC_ENABLE=false'

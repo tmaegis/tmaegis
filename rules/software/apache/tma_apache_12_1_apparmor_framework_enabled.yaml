@@ -1,0 +1,20 @@
+id: TMA-APACHE-12.1
+title: Ensure the AppArmor Framework Is Enabled
+description: AppArmor is a Linux kernel security module that provides a named based mandatory access control with security policies. AppArmor can enforce rules on programs for file access and network connections and restrict actions based on defined policies. aa-status --enabled must succeed (run as root). Not applicable without /etc/apparmor.d.
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- apparmor
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 12.1 Ensure the AppArmor Framework Is Enabled
+audit:
+  type: command
+  shell: bash
+  command: command -v aa-status >/dev/null || exit 1; aa-status --enabled 2>/dev/null && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /etc/apparmor.d
+remediation:
+  type: iac_patch
+  command: Install and enable AppArmor (apt install apparmor apparmor-utils; systemctl enable --now apparmor).

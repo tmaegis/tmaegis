@@ -1,0 +1,18 @@
+id: TMA-AIX-8.2.1
+title: Ensure syslog local logging is configured
+description: 'This recommendation implements a local syslog configuration. Establishing a logging process via syslog provides system and security administrators with pertinent information relating to: login, mail, daemon, user and kernel activity. Audit: /etc/syslog.conf must log auth.info and *.info to local files (verify rotation/archive settings).'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- audit
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 8.2.1 Ensure syslog local logging is configured
+audit:
+  type: command
+  command: out=$(grep -Ev "^[[:blank:]]*(#|$)" /etc/syslog.conf 2>/dev/null) || exit 1; r=compliant; printf '%s\n' "$out" | grep -Eq "(^|;)auth\.info[[:blank:]]+/" || r="auth.info not logged locally"; printf '%s\n' "$out" | grep -Eq "^\*\.info[^[:blank:]]*[[:blank:]]+/" || r="*.info not logged locally"; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'If not already present, explicitly define a log file for the auth.info output in /etc/syslog.conf: printf "auth.info\t\t/var/log/syslog/auth.log rotate time 1d files 30 compress\n" >> /etc/syslog.conf NOTE: This ensures that remote login, sudo or su attempts are logged separately Create the authlog file and make it readable by root only: # /usr/bin/touch /var/log/syslog/auth.log # /usr/bin/chown root:system /var/log/syslog/auth.log # /usr/bin/chmod u=rw,go= /var/log/syslog/auth.log If not already present, create an entry in /etc/syslog.conf to capture all other output of level info or higher, excluding authentication information, as this is to be captured within /var/log/syslog/info.log: printf "*.info;auth.none\t/var/log/syslog/info.log rotate time 1d files 30 compress\n" >> /etc/syslog.conf Create the syslog file: # /usr/bin/touch /var/log/syslog/info.log # /usr/bin/chown root:system /var/log/syslog/info.log # /usr/bin/chmod u=rw,g=r,o= /var/log/syslog/info.log Refresh syslogd
+    to force the daemon to read the edited /etc/syslog.conf: # refresh -s syslogd'

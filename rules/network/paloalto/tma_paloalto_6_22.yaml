@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-6.22
+title: Ensure that 'Inline Cloud Analysis' on Vulnerability Protection profiles are enabled if 'Advanced Threat Prevention' is available
+description: 'Enable ''Inline Cloud Analysis'' on Vulnerability Protection profiles to combat zero-day threats. PASS requires cloud-inline-analysis yes on a vulnerability protection profile (only applicable with Advanced Threat Prevention). Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.22 Ensure that 'Inline Cloud Analysis' on Vulnerability Protection profiles are enabled if 'Advanced Threat Prevention' is available
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles vulnerability (?:"[^"\n]*"|\S+) cloud-inline-analysis yes[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles vulnerability <profile> cloud-inline-analysis yes
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > Vulnerability Protection Go to Inline Cloud Analysis tab. Tick the checkbox for Enable cloud inline analysis. Verify that all Model action is set as alert. Note that, firewall device certificate is used to authenticate to the Advanced Threat Prevention inline cloud analysis service. This step is required before 'Inline Cloud Analysis' can be used. Refer to reference for detailed guide.

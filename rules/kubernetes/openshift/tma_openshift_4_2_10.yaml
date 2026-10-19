@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-4.2.10
+title: Ensure that the --rotate-certificates argument is not set to false
+description: Enable kubelet client certificate rotation. The benchmark marks this recommendation Manual.
+target: openshift
+level: 2
+severity: medium
+tags:
+- openshift
+- worker-node
+- kubelet
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.2.10 Ensure that the --rotate-certificates argument is not set to false
+audit:
+  type: manual
+  command: 'This feature also requires the RotateKubeletClientCertificate feature gate to be enabled. The feature gate is enabled by default. Run the following command to check that certificate rotation is enabled for each node: for node in $(oc get nodes -ojsonpath=''{.items[*].metadata.name}''); do oc get --raw /api/v1/nodes/$node/proxy/configz | jq ''.kubeletconfig.rotateCertificates'' done Verify all the nodes return true.'
+remediation:
+  type: iac_patch
+  command: Set --rotate-certificates argument to true.

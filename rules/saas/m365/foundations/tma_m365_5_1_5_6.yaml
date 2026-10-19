@@ -1,0 +1,18 @@
+id: TMA-M365-5.1.5.6
+title: Ensure maximum certificate lifetime for applications does not exceed 180 days
+description: 'In Microsoft Entra ID, applications and service principals can authenticate using certificate credentials. This setting enforces a tenant-wide maximum lifetime for new certificate credentials added to any application registration or service principal. When enabled, any certificate uploaded must have a validity period that falls within the configured maximum, which for this recommendation is 180 days or less. The policy is implemented through the default app management policy and applies to all applications unless scoped exceptions are configured. The setting does not retroactively shorten or invalidate existing certificate credentials; certificates uploaded before the policy was enabled remain valid until they expire or are explicitly removed. The recommended state is Restrict maximum certificate lifetime set to On: 180 days or less. Long-lived certificates extend the window of exploi...'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.1.5.6 Ensure maximum certificate lifetime for applications does not exceed 180 days
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID and select Enterprise apps. 3. Under Security select Application policies. 4. Select Restrict max certificate lifetime. 5. Verify that Status is set to On. 6. Verify that Applies to is set to one of the following: o All applications o All applications with exclusions (if using exclusions, verify they are reviewed annually). 7. Verify that Only apply to apps created after is one of the following states: o Not configured (Field will show Select a date with no date selected) o A date that is on or before the date of the assessment. 8. Verify that Maximum lifetime (in days) is 180 days or less. 9. Compliance is met when all of the above conditions are satisfied. To audit using the Microsoft Graph API: Note: Both the application restrictions and service principal restrictions must be audited to ensure the certificate lifetime is properly restricted, as they can be independently
+    configured in Graph or PowerShell. The UI only surfaces the combined state of both settings. 1. Execute a GET request to the following relative URI to get the default app management policy: v1.0/...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID and select Enterprise apps. 3. Under Security select Application policies. 4. Select Restrict max certificate lifetime. 5. Set Status to On. 6. Set Applies to to one of the following: o All applications o All applications with exclusions (if using exclusions, ensure they are reviewed annually). 7. Set Only apply to apps created after to a desired date or leave it unconfigured. 8. Set Maximum lifetime (in days) to 180 days or less. 9. Select Save and close to apply the changes. To remediate using the Microsoft Graph API: 1. Execute a GET request to retrieve the current policy: v1.0/policies/defaultAppManagementPolicy 2. Modify the returned JSON to reflect the following changes: o Set isEnabled to true. o Under applicationRestrictions.keyCredentials, locate the entry where restrictionType is asymmetricKeyLifetime and set the following: ▪ state to enabled ▪ maxLifetime
+    to P180D or a shorter duration. ▪ restrictForAppsCreatedAfterDateTime to 0001-01- 01T00:00:00Z or a desired date. o Under servicePrincipalRestrictions.keyCredentials, locate the entry where restrict...'

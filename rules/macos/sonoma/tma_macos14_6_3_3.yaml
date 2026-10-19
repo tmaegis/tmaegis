@@ -1,0 +1,21 @@
+id: TMA-MACOS14-6.3.3
+title: Ensure Warn When Visiting A Fraudulent Website in Safari Is Enabled
+description: Apple uses the Google Safe Browsing API to check for fraudulent websites and report them to the user attempting to visit one. Attackers use crafted web pages to social engineer users to load unwanted content. Warning users prior to loading the content enables better security.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: medium
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 6.3.3 Ensure Warn When Visiting A Fraudulent Website in Safari Is Enabled
+audit:
+  type: command
+  command: 'out=$(/usr/sbin/system_profiler SPConfigurationProfileDataType 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | /usr/bin/grep -E ''WarnAboutFraudulentWebsites'' | /usr/bin/tr -d '' '''
+  expected_output: WarnAboutFraudulentWebsites=1;
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.Safari 2. The key to include is WarnAboutFraudulentWebsites 3. The key must be set to: <true/>'

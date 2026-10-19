@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-2.4
+title: Ensure Passwords are Not Stored in the service file
+description: One can set a password in a PostgreSQL connection service file. Verify the password option is not used in a connection service file.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- credentials
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 2.4 Ensure Passwords are Not Stored in the service file
+audit:
+  type: manual
+  command: 'As root search connection service files for passwords: find / -name .pg_service.conf -type f -exec grep -H password {} \; 2>/dev/null; grep password /root/.pg_service.conf "${PGSERVICEFILE}" "${PGSYSCONFDIR}/pg_service.conf". Any password=... line is a finding.'
+remediation:
+  type: iac_patch
+  command: Remove password= entries from pg_service.conf/.pg_service.conf files and store credentials in ~/.pgpass (mode 0600) or use certificate authentication.

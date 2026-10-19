@@ -1,0 +1,20 @@
+id: TMA-OL9-7.2.5
+title: Ensure no duplicate GIDs exist
+description: Although the groupadd program will not let you create a duplicate Group ID (GID), it is possible for an administrator to manually edit the /etc/group file and change the GID field.
+target: linux
+os_family:
+- ol-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 9 Benchmark v3.0.0 - 7.2.5
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   while read -r l_count l_gid; do\n      if [ \"$l_count\" -gt 1 ]; then\n      echo -e \"Duplicate GID: \\\"$l_gid\\\" Groups: \\\"$(awk -F: '\"'\"'($3 == n) { print $1 }'\"'\"' n=$l_gid /etc/group | xargs)\\\"\"\n    fi\n  done < <(cut -f3 -d\":\" /etc/group | sort -n | uniq -c)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Based on the Audit Procedure output, for each GID shared by more than one group, keep the GID on the correct group and assign a new, unused GID to each of the other groups: # groupmod -g <GID> <groupname> Review any files group-owned by the previously shared GID and reassign group ownership to the correct group as appropriate.'

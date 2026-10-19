@@ -1,0 +1,16 @@
+id: TMA-M365-5.1.4.4
+title: Ensure local administrator assignment is limited during Entra join
+description: This setting determines if the Microsoft Entra user registering their device as Microsoft Entra join will be added to the local administrators group. This setting applies only once during the actual registration of the device as Microsoft Entra join. The recommended state is Selected or None. To uphold the principle of least privilege, the assignment of local administrator rights during Microsoft Entra join should be centrally managed using appropriate built-in roles through Intune. This approach minimizes the number of disparate users with elevated privileges, reducing the attack surface and potential for misuse. Centralized management also streamlines the deprovisioning process, ensuring that administrative access can be revoked efficiently and consistently across all devices, rather than requiring manual intervention on each individual endpoint.
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.1.4.4 Ensure local administrator assignment is limited during Entra join
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Devices and select Device settings. 3. Verify that Registering user is added as local administrator on the device during Microsoft Entra join (Preview) is set to Selected or None. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: beta/policies/deviceRegistrationPolicy 2. Verify that azureADJoin.localAdmins.registeringUsers.@odata.type is one of the following: o #microsoft.graph.enumeratedDeviceRegistrationMembership (Selected) o #microsoft.graph.noDeviceRegistrationMembership (None). Note: When set to Selected, users and groups will also appear in the output of the Graph Request.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Devices and select Device settings. 3. Set Registering user is added as local administrator on the device during Microsoft Entra join (Preview) to Selected (and add members) or None.'

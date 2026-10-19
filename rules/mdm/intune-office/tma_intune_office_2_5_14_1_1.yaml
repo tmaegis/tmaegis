@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.1.1
+title: Ensure 'Automatically download content for e-mail from people in Safe Senders and Safe Recipients Lists' is set to 'Disabled'
+description: 'This policy setting controls whether Outlook automatically downloads external content in e-mails from senders in the Safe Senders List or Safe Recipients List. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) unblockspecificsenders that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.1.1 Ensure 'Automatically download content for e-mail from people in Safe Senders and Safe Recipients Lists' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\options\mail'') -Name ''unblockspecificsenders'' -ErrorAction SilentlyContinue).''unblockspecificsenders''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':unblockspecificsenders='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Outlook 2016\Security\Automatic Picture Download Settings\Automatically download content for e-mail from people in Safe Senders and Safe Recipients Lists'

@@ -1,0 +1,51 @@
+id: TMA-AIX-4.3.2.12
+title: Ensure sendmail is not in use
+description: 'The sendmail daemon means that the system can operate as a mail server. sendmail is a service with many historical vulnerabilities and where possible should be disabled. Unless a system is specifically designated to act as a mail server, it is recommended that the sendmail fileset be removed to reduce the potential attack surface. Audit: the sendmail start line in /etc/rc.tcpip must be commented out and the sendmail subsystem must not be active.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- services
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.3.2.12 Ensure sendmail is not in use
+audit:
+  type: command
+  command: command -v lssrc >/dev/null 2>&1 || exit 1; [ -r /etc/rc.tcpip ] || exit 1; out=$( { grep -E "^[[:blank:]]*start[[:blank:]]+/usr/(sbin|lib)/sendmail([[:blank:]]|$)" /etc/rc.tcpip; lssrc -s sendmail | awk 'NR>1 && $NF=="active"' ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    tma_comment /etc/rc.tcpip '^[[:blank:]]*start[[:blank:]]+/usr/(sbin|lib)/sendmail([[:blank:]]|$)'
+    lssrc -s sendmail 2>/dev/null | awk 'NR>1 && $NF=="active"' | grep -q . && stopsrc -s sendmail >/dev/null 2>&1
+    true
+  guidance: "Run the following command to remove the software: # /usr/sbin/installp -u bos.net.tcp.sendmail bos.net.tcp.server - OR - - IF - the bos.net.tcp.sendmail fileset is required as a dependency: Run the following script to stop and disable sendmail #!/usr/bin/ksh DAEMONS=\"sendmail\" for l_daemon in $DAEMONS; do /usr/sbin/chrctcp -d $l_daemon /usr/bin/stopsrc -s $l_daemon done"

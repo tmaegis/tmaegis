@@ -1,0 +1,17 @@
+id: TMA-M365-4.2
+title: Ensure device enrollment for personally owned devices is blocked by default
+description: 'Device enrollment restrictions let you restrict devices from enrolling in Intune based on certain device attributes such as device limit, device platform, OS Version, manufacturer or device ownership (Personally owned devices). The recommended state is to Block personally owned devices from enrollment. Restricting the enrollment of personally owned devices prevents attackers who have bypassed other controls from registering a new device to gain an additional foothold, further hiding or obscuring their activities. An attack path could be: 1. Account Compromise via Phishing and AiTM 2. Conditional Access Bypass 3. Reconnaissance using e.g. ROADrecon, GraphRunner or AADInternals 4. Lateral Movement, Privilege Escalation or Persistence through a newly registered device enrolled in Intune'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 4.2 Ensure device enrollment for personally owned devices is blocked by default
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Intune admin center https://intune.microsoft.com/ 2. Select Devices and then under Device onboarding click Enrollment 3. Under Enrollment options select Device platform restriction. 4. Inspect the policies listed under Device type restrictions o For the Default priority policy, click All Users. o Select Properties. 5. Verify that all platforms are set to Block in the Personally owned column. 6. If the Platform itself is set to Block for any of the platforms shown this is also a passing state for that platform. Note: Blocking platforms that are not used in the organization is a more restrictive best practice and will also effectively block enrollment of personally owned devices for the selected platform, ensuring compliance for this recommendation. To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "DeviceManagementConfiguration.Read.All" 2. Run the following script: $Uri = ''https://graph.microsoft.com/beta/deviceManagement/deviceEnrollmentConfigurat
+    ions'' $Config = (Invoke-MgGraphRequest -Uri $Uri -Method GET).value | Where-Object { $_.id -match ''DefaultPlatformRestrictions'' -and $_.priority - eq...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Intune admin center https://intune.microsoft.com/ 2. Select Devices and then under Device onboarding click Enrollment 3. Under Enrollment options select Device platform restriction. 4. Inspect the policies listed under Device type restrictions o For the Default priority policy, click All Users. o Select Properties. 5. Click Edit to change Platform settings. 6. In the Personally owned column set each platform to Block. Note: Blocking platforms that are not used in the organization is a more restrictive best practice and will also effectively block enrollment of personally owned devices for the selected platform, ensuring compliance for this recommendation.'

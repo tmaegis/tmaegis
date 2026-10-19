@@ -1,0 +1,17 @@
+id: TMA-GCP-1.1.1
+title: Ensure Super Admin Email Address Is Not Tied To A Single User
+description: It is recommended that the super admin role is assigned to a dedicated email address (e.g., gcp-superadmin@company.com) rather than to individual user email addresses (e.g., john.doe@company.com). The dedicated super admin email should be a separate user account used exclusively for super admin level administrative tasks. When you first sign up for Google Workspace or Cloud Identity, the person who completes the signup process automatically becomes the first super administrator for that account. When the GCP organization resource is created, existing super administrator accounts from Google Workspace or Cloud Identity automatically gain access to manage the organization. This initial assignment typically results in an individual user's email address being assigned the super admin role by default. The super admin role has unrestricted access to all GCP organization resources and settin...
+target: gcp
+level: 1
+severity: high
+tags:
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 1.1.1 Ensure Super Admin Email Address Is Not Tied To A Single User
+audit:
+  type: manual
+  command: 'From Google Cloud Admin Console 1. Navigate to the Google Admin console at https://admin.google.com 2. Go to Account --> Admin roles in the left navigation menu 3. Click on Super Admin role 4. Review the list of users assigned the Super Admin role 5. Verify that: o The super admin role is assigned to a dedicated email address (e.g., gcp- superadmin@company.com, cloud-admin@company.com) o Individual user email addresses (e.g., john.doe@company.com, jane.smith@company.com) are NOT assigned the Super Admin role directly Non-compliant examples: - john.doe@company.com assigned Super Admin role - jane.smith@company.com assigned Super Admin role Compliant examples: - gcp-superadmin@company.com assigned Super Admin role - cloud-admin@company.com assigned Super Admin role'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Admin Console 1. Create a Dedicated Super Admin User Account o Navigate to the Google Admin console at https://admin.google.com o Go to Directory → Users in the left navigation menu o Click Add new user o Configure the dedicated super admin account: ▪ First name: GCP Super Admin (or similar) ▪ Last name: Account ▪ Primary email: gcp-superadmin@company.com (or similar dedicated address) ▪ Password: Set a strong temporary password o Click Add new user o Configure additional security settings for this account, for example: ▪ Enforce 2-Step Verification with hardware security key 2. Assign Super Admin Role to the Dedicated Account o Still in Google Admin console at https://admin.google.com o Go to Account --> Admin roles in the left navigation menu o Click on Super Admin role o Click Assigned Admins --> Assign users o Search for and select the dedicated account created in Step 1 (e.g., gcp- superadmin@company.com) o Click Assign role o Verify the dedicated account
+    now appears in the Super Admin role members list 3. Remove Individual User Accounts from Super Admin Role o In the Super Admin role page, review all currently assigned users o For each individual user ema...'

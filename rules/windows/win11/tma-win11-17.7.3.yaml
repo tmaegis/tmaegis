@@ -1,0 +1,20 @@
+id: TMA-WIN11-17.7.3
+title: Ensure 'Audit Authorization Policy Change' is set to include 'Success'
+description: 'This subcategory reports changes in authorization policy. Events for this subcategory include: • 4703: A user right was adjusted. • 4704: A user right was assigned. • 4705: A user right was removed. • 4670: Permissions on an object were changed. • 4911: Resource attributes of the object were changed. • 4913: Central Access Policy on the object was changed. The recommended state for this setting is to include: Success.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 17.7.3
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9231-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9231-69ae-11d9-bed3-505054503030}' /success:enable

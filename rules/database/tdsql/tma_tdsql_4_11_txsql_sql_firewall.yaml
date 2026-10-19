@@ -1,0 +1,16 @@
+id: TMA-TDSQL-4.11
+title: Ensure the TXSQL SQL Firewall Is Enabled
+description: 'The TXSQL kernel includes a built-in SQL firewall (txsql_sql_filter) that can reject specific SQL types/keyword patterns or limit the concurrent connections matching a rule. Rule metadata is stored in information_schema.txsql_sql_filter_info (fields: TYPE, ITEM_ID, CURRENT_CONN, MAX_CONN, REJECTED_SQL_COUNT, CREATED_TIME, EXPIRE_TIME, EXPIRED, KEY_STR, ORIGIN_STR, etc.).'
+target: tdsql
+level: 2
+severity: medium
+tags:
+- tdsql
+- hardening
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.11 Ensure the TXSQL SQL Firewall Is Enabled
+audit:
+  type: manual
+  command: -- Check the SQL firewall switch SHOW GLOBAL VARIABLES LIKE 'txsql_sql_filter_enable'; -- View configured filter rules and their hit/reject statistics SELECT * FROM information_schema.txsql_sql_filter_info; Confirm txsql_sql_filter_enable = ON, and that interception rules are configured for critical scenarios (financial transaction tables, user data tables).
+remediation:
+  type: iac_patch
+  command: 'Configuring rules through the OSS management interface is recommended (OSS validates rule legality before pushing). If executing SQL directly as an administrator, the rule syntax of the txsql_sql_filter variable is: -- Enable the SQL firewall SET GLOBAL txsql_sql_filter_enable = ON;'

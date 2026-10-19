@@ -1,0 +1,16 @@
+id: TMA-M365-2.4.4
+title: Ensure Zero-hour auto purge for Microsoft Teams is on
+description: Zero-hour auto purge (ZAP) is a protection feature that retroactively detects and neutralizes malware and high confidence phishing. When ZAP for Teams protection blocks a message, the message is blocked for everyone in the chat. The initial block happens right after delivery, but ZAP occurs up to 48 hours after delivery. ZAP is intended to protect users that have received zero-day malware messages or content that is weaponized after being delivered to users. It does this by continually monitoring spam and malware signatures taking automated retroactive action on messages that have already been delivered.
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.4.4 Ensure Zero-hour auto purge for Microsoft Teams is on
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com/ 2. Expand System > Settings > Email & collaboration > Microsoft Teams protection. 3. Verify that Zero-hour auto purge (ZAP) is set to On (Default) 4. Under Exclude these participants review the list of exclusions and verify they are justified and within tolerance for the organization. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following cmdlets: Get-TeamsProtectionPolicy | fl ZapEnabled Get-TeamsProtectionPolicyRule | fl ExceptIf* 3. Verify that ZapEnabled is True. 4. Review the list of exclusions and ensure they are justified and within tolerance for the organization. If nothing returns from the 2nd cmdlet then there are no exclusions defined.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com/ 2. Expand System > Settings > Email & collaboration > Microsoft Teams protection. 3. Set Zero-hour auto purge (ZAP) to On (Default) To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following cmdlet: Set-TeamsProtectionPolicy -Identity "Teams Protection Policy" -ZapEnabled $true'

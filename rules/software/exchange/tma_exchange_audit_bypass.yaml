@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-AUDIT-BYPASS
+title: Ensure no accounts are configured to bypass mailbox audit logging
+description: Accounts with AuditBypassEnabled can access mailboxes without generating audit records. Prints the number of bypass associations (expected 0). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- logging
+reference: CIS Microsoft Exchange Server Benchmark - Auditing / Mailbox audit bypass (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-MailboxAuditBypassAssociation -ResultSize Unlimited -ErrorAction Stop | Where-Object { $_.AuditBypassEnabled -eq $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'For each reported identity, after confirming it is not a required service account: Set-MailboxAuditBypassAssociation -Identity <name> -AuditBypassEnabled $false'

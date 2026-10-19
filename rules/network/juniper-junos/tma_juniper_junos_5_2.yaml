@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-5.2
+title: Ensure SNMPv1/2 are set to Read Only
+description: Do not allow Read-Write SNMP access for versions below SNMPv3. SNMP can be used to read and write configuration information from a router using your Network Management Systems; however the inherently insecure design of the older SNMP V1, V2 and V2C standards, which do not use encryption to protect community strings, make ... Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- snmp
+reference: CIS Juniper OS Benchmark v2.1.0 - 5.2 Ensure SNMPv1/2 are set to Read Only
+audit:
+  type: config_regex
+  pattern: (?m)^set snmp community \S+ authorization read-write\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have deployed SNMP below Version 3 on your router with Read-Write access, delete the associated community using the following command under the hierarchy;
+    delete snmp community <community> Alternatively you can set the communities authorization level to Read Only with the following command from the hierarchy;
+    set snmp community <community> authorization read-only

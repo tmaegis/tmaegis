@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.8.4
+title: Ensure 'Enable curtaining of remote access hosts' is set to 'Disabled'
+description: 'This setting allows someone physically present at the host machine to see what a user is doing while a remote connection is in progress. If this setting is disabled, a host''s physical input and output devices are enabled while a remote connection is in progress. The recommended state for this setting is: Disabled (0) Rationale: If a remote session is in progress, the user physically present at the host machine shall be able to see what a remote user is doing. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:RemoteAccessHostRequireCurtain (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.8.4 Ensure 'Enable curtaining of remote access hosts' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''RemoteAccessHostRequireCurtain'' -ErrorAction SilentlyContinue).''RemoteAccessHostRequireCurtain''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RemoteAccessHostRequireCurtain' -Value 0 -PropertyType DWord -Force | Out-Null

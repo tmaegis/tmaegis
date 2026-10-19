@@ -1,0 +1,20 @@
+id: TMA-BIND-10.4
+title: Ensure Only the Necessary SELinux Booleans are Enabled
+description: 'SELinux booleans allow or disallow specific behaviors. There are two boolean variables specific to the ISC BIND DNS server: ; named_tcp_bind_http_port - Allow named to tcp bind http port ; named_write_master_zones - Allow named to write master zones The named_tcp_bind_http_port would allow enabling the BIND statistics http channel which is not recommended. The audit runs getsebool named_tcp_bind_http_port and requires off (named_write_master_zones is not audited).'
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- selinux
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 10.4 Ensure Only the Necessary SELinux Booleans are Enabled
+audit:
+  type: command
+  command: |-
+    v=$(getsebool named_tcp_bind_http_port 2>/dev/null) || exit 1
+    case "$v" in *'--> off') echo compliant ;; *) echo "$v" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: Disable the SELinux boolean using the setsebool command as shown below with the -P option to make the change persistent. # setsebool -P named_tcp_bind_http_port off'

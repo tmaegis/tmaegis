@@ -1,0 +1,35 @@
+id: TMA-RHEL8-2.1.22
+title: Ensure X window server services are not in use
+description: The X Window System provides a Graphical User Interface (GUI) where users can have multiple windows in which to run programs and various add on. The X Windows system is typically used on workstations where users login, but not on servers where users typically do not login.
+target: linux
+os_family:
+- rhel-8
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 8 Benchmark v4.0.0 - 2.1.22
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v rpm >/dev/null 2>&1 || { echo "step1: rpm not installed"; return 1; }; o=$(bash -c ''rpm -q xorg-x11-server-common'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''package xorg-x11-server-common is not installed'' || { echo step1: missing ''package xorg-x11-server-common is not installed''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_svc_off gdm.service lightdm.service sddm.service
+  guidance: "- IF - a Graphical Desktop Manager or X-Windows server is not required and approved by local site policy: Run the following command to remove the X Windows Server packages: # dnf remove xorg-x11-server-common"

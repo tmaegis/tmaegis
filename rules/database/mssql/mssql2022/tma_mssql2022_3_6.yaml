@@ -1,0 +1,16 @@
+id: TMA-MSSQL2022-3.6
+title: Ensure the SQL Server’s SQLAgent Service Account is Not an Administrator
+description: The service account and/or service SID used by the SQLSERVERAGENT service for a default instance or SQLAGENT$<InstanceName> service for a named instance should not be a member of the Windows Administrator group either directly or indirectly (via a group). This also means that the account known as LocalSystem (AKA NT AUTHORITY\SYSTEM) should not be used for the SQLAGENT service as this account has higher privileges than the SQL Server service requires. Following the principle of least privilege, the service account should have no more privileges than required to do its job. For SQL Server services, the SQL Server Setup will assign the required permissions directly to the service SID. No additional permissions or privileges should be necessary.
+target: mssql
+level: 1
+severity: high
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 3.6 Ensure the SQL Server’s SQLAgent Service Account is Not an Administrator
+audit:
+  type: manual
+  command: 'Verify that the service account (in case of a local or AD account) and service SID are not members of the Windows Administrators group. Verify that the service account for running SQLAgent is not LocalSystem, by executing the below query: SELECT servicename, service_account FROM sys.dm_server_services WHERE servicename LIKE ''SQL Server Agent (%'' AND service_account IN ( ''NT AUTHORITY\SYSTEM'', ''LocalSystem'', ''NT AUTHORITY\LocalSystem'' ); If a record is returned then this is a finding and requires remediation. If no record is returned, verify that the account used is not part of the Local Administrators group.'
+remediation:
+  type: iac_patch
+  command: In the case where LocalSystem is used, use SQL Server Configuration Manager to change to a less privileged account. Otherwise, remove the account or service SID from the Administrators group. You may need to run the SQL Server Configuration Manager if underlying permissions had been changed or if SQL Server Configuration Manager was not originally used to set the service account.

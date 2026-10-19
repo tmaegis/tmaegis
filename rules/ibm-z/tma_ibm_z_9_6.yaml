@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.6
+title: Ensure that z/OS UNIX user accounts are defined with compliant values
+description: User IDs, groups, and started tasks that use z/OS UNIX facilities are defined to RACF with an OMVS segment containing attributes such as UID and GID. If these attributes are not correctly defined, data access or command privilege controls could be compromised.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.6 Ensure that z/OS UNIX user accounts are defined with compliant values
+audit:
+  type: manual
+  command: 'Request reports generated using IRRDBU00 output that will allow you to: Verify that a USER profile with an OMVS segment has the following attributes: If specified, the UID value must be unique (excluding user IDs assigned UID(0)) If specified, the HOME value must be unique (excluding user IDs assigned UID(0)) The PROGRAM value must be /bin/sh or /bin/tcsh or /bin/echo or /bin/false or other approved value'
+remediation:
+  type: iac_patch
+  command: 'To modify a USER profile use the RACF ALTUSER command: ALTUSER <profile> + OMVS( + AUTOUID + HOME(''</unique/directory>'') + PROGRAM(''/bin/sh'') + ) Notes: 1. AUTOUID is only available if the site has enabled automatic assignment of unique UNIX identities. 2. The HOME and PROGRAM values are case sensitive.'

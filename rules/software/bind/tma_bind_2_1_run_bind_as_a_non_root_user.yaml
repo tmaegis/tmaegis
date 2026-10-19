@@ -1,0 +1,26 @@
+id: TMA-BIND-2.1
+title: Run BIND as a non-root User
+description: To start BIND you must execute it as the root user. After the initial startup, BIND has the ability to change to a non-root user, allowing it to drop the root privileges. The audit requires a running named process started with -u named (or -u bind on Debian), not owned by root, whose account UID is between 1 and UID_MIN-1.
+target: bind
+level: 1
+severity: high
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.1 Run BIND as a non-root User
+audit:
+  type: command
+  command: |-
+    out=$(ps -eo user=,args= 2>/dev/null) || exit 1
+    p=$(printf '%s\n' "$out" | awk '$2 ~ /(^|\/)named$/')
+    [ -n "$p" ] || { echo 'named is not running'; exit 1; }
+    printf '%s\n' "$p" | awk '$1 == "root"' | grep -q . && { echo 'named runs as root'; exit 1; }
+    printf '%s\n' "$p" | grep -Eq ' -u (named|bind)( |$)' || { echo 'named started without -u named/bind'; exit 1; }
+    u=$(printf '%s\n' "$p" | awk '{print $1; exit}'); uid=$(id -u "$u" 2>/dev/null) || exit 1
+    min=$(awk '$1=="UID_MIN"{print $2}' /etc/login.defs 2>/dev/null); min=${min:-1000}
+    [ "$uid" -gt 0 ] && [ "$uid" -lt "$min" ] && echo compliant || echo "named account uid $uid (UID_MIN $min)"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create the named user and group if it does not already exist. Using a shell of /dev/null is best practice. if ! id named; then groupadd -g 53 named useradd -m -u 53 -g 53 -c "BIND named" -d /var/named -s /dev/null named fi 2>/dev/null Add the -u named to the OPTIONS parameters in the /etc/sysconfig/named if not already present.

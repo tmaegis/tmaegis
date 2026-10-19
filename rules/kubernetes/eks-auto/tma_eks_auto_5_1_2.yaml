@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-5.1.2
+title: Enforce least privilege for ECR repositories storing EKS Auto Mode workload images
+description: Least privilege access for Amazon ECR repositories helps limit who can pull, push, delete, or administer container images used by EKS Auto Mode workloads. This reduces unnecessary exposure of the image registry and helps ensure that only the identities required to support image pulls, image publishing, release promotion, and repository administration can access the repositories. EKS Auto Mode shifts more infrastructure management to AWS. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- managed-services
+- registry
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.1.2 Enforce least privilege for ECR repositories storing EKS Auto Mode workload images
+audit:
+  type: manual
+  command: Review the IAM permissions and ECR repository policies that apply to repositories used by EKS Auto Mode workload images, and verify that access is limited to approved EKS Auto Mode Node IAM roles, CI/CD identities, cross-account principals, and repository administration roles. Confirm that runtime pull access is limited to the minimum ECR actions required for image retrieval, that push or administrative access is limited to the repositories and actions required, and that no unnecessary wildcard or broad cross-account access is present.
+remediation:
+  type: iac_patch
+  command: Enforce least privilege access for ECR repositories used by EKS Auto Mode workload images by separating image pull, image push, account access, and repository administration into different IAM roles and policy scopes. Grant the EKS Auto Mode Node IAM role only the ECR permissions needed to authenticate and pull images, such as ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:BatchGetImage, and ecr:GetDownloadUrlForLayer. Scope CI/CD and administrator access to the specific repositories and actions they require, and review both IAM identity based policies and ECR repository policies because ECR authorization can be affected by both. Separate ECR access by role. Use different roles for EKS Auto Mode runtime image pulls, CI/CD image pushes, account repository access, and repository administration. • Replace broad pull access with pull-only permissions where possible.

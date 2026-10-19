@@ -1,0 +1,20 @@
+id: TMA-MSSQL2022-2.6
+title: Ensure 'Remote Access' Server Configuration Option is set to '0'
+description: The remote access option controls the execution of local stored procedures on remote servers or remote stored procedures on local server. Functionality can be abused to launch a Denial-of-Service (DoS) attack on remote servers by off-loading query processing to a target.
+target: mssql
+level: 1
+severity: medium
+tags:
+- access-control
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.6 Ensure 'Remote Access' Server Configuration Option is set to '0'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN CAST(value AS int) = 0 AND CAST(value_in_use AS int) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM sys.configurations WHERE name = 'remote access';"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'remote access', 0; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"
+  guidance: "For AWS RDS Instances, please refer to the documentation for using Parameter Groups here: Working with parameter groups Otherwise, run the following T-SQL command: EXECUTE sp_configure 'show advanced options', 1; RECONFIGURE; EXECUTE sp_configure 'remote access', 0; RECONFIGURE; GO EXECUTE sp_configure 'show advanced options', 0; RECONFIGURE; Restart the Database Engine."

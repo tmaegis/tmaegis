@@ -1,0 +1,65 @@
+id: TMA-COS-5.3.5
+title: Ensure default user shell timeout is 900 seconds or less
+description: The default TMOUT determines the shell timeout for users. The TMOUT value is measured in seconds. Having no timeout value associated with a shell could allow an unauthorized user access to another user's shell session (e.g. user walks away from their computer and doesn't lock the screen). Setting a timeout value at least reduces the risk of this happening.
+target: cos
+level: 2
+severity: low
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 5.3.5 Ensure default user shell timeout is 900 seconds or less
+audit:
+  shell: bash
+  type: manual
+  command: 'Run the following commands and verify all TMOUT lines returned are 900 or less and at least one exists in each file. # grep "^TMOUT" /etc/bash/bashrc TMOUT=900 # grep "^TMOUT" /etc/profile TMOUT=900'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # make every umask line in the given files at least 027
+    tma_umask_fix() { for f in "$@"; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      grep -Eqi '^[[:space:]]*umask[[:space:]]' "$f" || continue
+      t=$(mktemp); ch=0
+      while IFS= read -r line || [ -n "$line" ]; do
+        if [[ $line =~ ^([[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+)0*([0-7]{1,4})([[:space:]#].*)?$ ]]; then
+          v=$((8#${BASH_REMATCH[2]})); n=$((v | 8#027))
+          if [ "$n" != "$v" ]; then line="${BASH_REMATCH[1]}$(printf '%03o' $n)${BASH_REMATCH[3]}"; ch=1; fi
+        elif [[ $line =~ ^[[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+[ugoa]*= ]] && [[ $line =~ (g=[rwx]*w|o=[rwx]*[rwx]) ]]; then
+          line="umask 027"; ch=1
+        fi
+        printf '%s\n' "$line" >> "$t"
+      done < "$f"
+      if [ $ch = 1 ]; then tma_bak "$f"; cat "$t" > "$f"; fi
+      rm -f "$t"
+    done; }
+    N=900
+    # one authoritative file; any other TMOUT assignment is commented out (audit demands readonly+export in each file mentioning it)
+    for f in /etc/profile /etc/bashrc /etc/bash.bashrc /etc/bash/bashrc /etc/profile.d/*.sh; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      [ "$f" = /etc/profile.d/50-tmaegis-tmout.sh ] && continue
+      grep -Eq '^[^#]*\bTMOUT\b' "$f" || continue
+      tma_bak "$f"; sed -i -E '/^[[:space:]]*#/! s/^([^#]*\bTMOUT\b.*)$/# tmaegis: \1/' "$f"
+    done
+    mkdir -p /etc/profile.d
+    printf '# CIS: idle shell timeout\nTMOUT=%s\nreadonly TMOUT\nexport TMOUT\n' "$N" > /etc/profile.d/50-tmaegis-tmout.sh
+    chmod 644 /etc/profile.d/50-tmaegis-tmout.sh
+    for f in /etc/bash/bashrc /etc/profile; do [ -f "$f" ] && ! grep -q '^TMOUT=' "$f" && [ "$f" = /etc/bash/bashrc ] && printf 'TMOUT=%s\nreadonly TMOUT\nexport TMOUT\n' "$N" >> "$f"; done
+    true
+  guidance: "Edit the /etc/bash/bashrc and /etc/profile files (and the appropriate files for any other shell supported on your system) and add or edit any umask parameters as follows: TMOUT=900"

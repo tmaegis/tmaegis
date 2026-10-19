@@ -1,0 +1,17 @@
+id: TMA-AWS-RDS-ENCRYPTION
+title: Ensure RDS instances have encryption at rest enabled
+description: Unencrypted RDS storage, snapshots and replicas expose data if storage media or snapshots are shared or leaked. Every DB instance in every enabled region must have StorageEncrypted. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- database
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Storage - RDS encryption at rest (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  out=$(aws rds describe-db-instances --region \"$r\" --query 'DBInstances[?StorageEncrypted!=`true`].DBInstanceIdentifier' --output text 2>/dev/null) || exit 1\n  [ -z \"$out\" ] || { echo \"unencrypted: $r $out\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Encryption cannot be turned on in place: snapshot the instance, copy the snapshot with --kms-key-id, restore a new encrypted instance and cut over. Set storage_encrypted = true for new instances.'

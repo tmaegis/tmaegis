@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.68
+title: Ensure 'Block third party cookies' is set to 'Enabled'
+description: 'This policy controls whether web page elements from a domain other than that in the address bar can set cookies. The recommended state for this setting is: Enabled. Rationale: Allowing third-party cookies could potentially allow tracking of your web activities by third-party entities which may expose information that could be used for an attack on the end-user. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:BlockThirdPartyCookies (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 2
+severity: low
+tags:
+- edge
+- browser
+- cis-l2
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.68 Ensure 'Block third party cookies' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''BlockThirdPartyCookies'' -ErrorAction SilentlyContinue).''BlockThirdPartyCookies''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'BlockThirdPartyCookies' -Value 1 -PropertyType DWord -Force | Out-Null

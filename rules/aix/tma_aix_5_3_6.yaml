@@ -1,0 +1,17 @@
+id: TMA-AIX-5.3.6
+title: Ensure user nobody is secured
+description: 'This change locks and disables login access for the nobody user account. This change disables direct local and remote login to the nobody user account. Do not set a password on this account to ensure that the only access is via su from the root account. There should not be a requirement to log in as the nobody user directly. Audit: `lsuser -a account_locked login rlogin nobody` must show true/false/false; an absent account is compliant.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.3.6 Ensure user nobody is secured
+audit:
+  type: command
+  command: command -v lsuser >/dev/null 2>&1 || exit 1; lsuser nobody >/dev/null 2>&1 || { echo compliant; exit 0; }; out=$(lsuser -a account_locked login rlogin nobody 2>/dev/null); [ "$out" = "nobody account_locked=true login=false rlogin=false" ] && echo compliant || echo "$out"
+  expected_output: compliant
+remediation:
+  type: command
+  command: chuser account_locked=true login=false rlogin=false nobody

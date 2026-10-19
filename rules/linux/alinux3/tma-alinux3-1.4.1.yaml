@@ -1,0 +1,50 @@
+id: TMA-ALINUX3-1.4.1
+title: Ensure access to bootloader config is configured
+description: The grub files contain information on boot settings and passwords for unlocking boot options.
+target: linux
+os_family:
+- alinux-3
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Alibaba Cloud Linux 3 Benchmark v2.0.0 - 1.4.1
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   a_output=() a_output2=()\n   file_access_chk()\n   {\n      a_out=() a_out2=()\n      [[ \"$(dirname \"$l_file\")\" =~ ^\\/boot\\/efi\\/EFI ]] && l_pmask=\"0077\" || l_pmask=\"0177\"\n      l_maxperm=\"$( printf '\"'\"'%o'\"'\"' $(( 0777 & ~$l_pmask )) )\"\n      if [ $(( $l_mode & $l_pmask )) -gt 0 ]; then\n         a_out2+=(\"   - Is mode \\\"$l_mode\\\" and should be mode: \\\"$l_maxperm\\\" or more restrictive\")\n      else\n         a_out+=(\"   - Is correctly mode: \\\"$l_mode\\\" which is mode: \\\"$l_maxperm\\\" or more restrictive\")\n      fi\n      if [ \"$l_user\" = \"root\" ]; then\n         a_out+=(\"   - Is correctly owned by user: \\\"$l_user\\\"\")\n      else\n         a_out2+=(\"   - Is owned by user: \\\"$l_user\\\" and should be owned by user: \\\"root\\\"\")\n      fi\n      if [ \"$l_group\" = \"root\" ]; then\n         a_out+=(\"   - Is correctly group-owned by group: \\\"$l_user\\\"\")\n      else\n\
+    \         a_out2+=(\"   - Is group-owned by group: \\\"$l_user\\\" and should be group-owned by group: \\\"root\\\"\")\n      fi\n      [ \"${#a_out[@]}\" -gt 0 ] && a_output+=(\"  - File: \\\"$l_file\\\"\" \"${a_out[@]}\" \"\")\n      [ \"${#a_out2[@]}\" -gt 0 ] && a_output2+=(\"  - File: \\\"$l_file\\\"\" \"${a_out2[@]}\" \"\")\n   }\n   while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_gfile; do\n      while IFS=: read -r l_file l_mode l_user l_group; do\n         file_access_chk\n      done <<< \"$(stat -Lc '\"'\"'%n:%#a:%U:%G'\"'\"' \"$l_gfile\")\"\n   done < <(find /boot -type f \\( -name '\"'\"'grub*'\"'\"' -o -name '\"'\"'user.cfg'\"'\"' \\) - print0)\n   if [ \"${#a_output2[@]}\" -le 0 ]; then\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** PASS **\" \"${a_output[@]}\" \"\"\n   else\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** FAIL **\" \" - Reason(s) for audit failure:\" \"${a_output2[@]}\"\n      [ \"${#a_output[@]}\" -gt 0 ] && printf '\"'\"\
+    '%s\\n'\"'\"' \"\" \"- Correctly set:\" \"${a_output[@]}\" \"\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    find /boot -type f \( -name 'grub*' -o -name 'user.cfg' \) | while IFS= read -r f; do
+      case "$f" in /boot/efi/EFI/*) pm=0077;; *) pm=0177;; esac
+      cur=$(stat -Lc %a "$f")
+      chown root:root "$f" 2>/dev/null
+      chmod "$(printf '%o' $(( 8#$cur & ~pm & 0777 )))" "$f" 2>/dev/null
+    done
+    # vfat ESP cannot hold modes: enforce through mount options
+    if findmnt -kn -t vfat /boot/efi >/dev/null 2>&1 && grep -qE '^[^#][^[:space:]]*[[:space:]]+/boot/efi[[:space:]]' /etc/fstab; then
+      for o in fmask=0077 uid=0 gid=0; do
+        awk -v o="$o" '$0 !~ /^#/ && $2=="/boot/efi" { n=split($4,a,","); f=0; for(i=1;i<=n;i++){ split(a[i],b,"="); split(o,c,"="); if(b[1]==c[1]) { a[i]=o; f=1 } } s=a[1]; for(i=2;i<=n;i++) s=s","a[i]; if(!f) s=s","o; $4=s } {print}' OFS='\t' /etc/fstab > /etc/fstab.tma && cat /etc/fstab.tma > /etc/fstab; rm -f /etc/fstab.tma
+      done
+      mount -o remount /boot/efi 2>/dev/null
+    fi
+    true
+  guidance: "Run the following to update the mode, ownership, and group ownership of the grub configuration files: - IF - Files are located in /boot/efi/EFI/* Note: This is a vFat filesystem Edit /etc/fstab and add the fmask=0077, uid=0, and gid=0 options: Example: <device> /boot/efi vfat defaults,umask=0027,fmask=0077,uid=0,gid=0 0 0 Note: This may require a re-boot to enable the change - OR - - IF - Files are located in /boot/grub2/*: Run the following commands to set ownership and permissions on your grub configuration file(s): # [ -f /boot/grub2/grub.cfg ] && chown root:root /boot/grub2/grub.cfg # [ -f /boot/grub2/grub.cfg ] && chmod u-x,go-rwx /boot/grub2/grub.cfg # [ -f /boot/grub2/grubenv ] && cho…"

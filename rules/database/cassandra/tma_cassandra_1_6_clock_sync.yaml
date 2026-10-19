@@ -1,0 +1,17 @@
+id: TMA-CASSANDRA-1.6
+title: Ensure clocks are synchronized on all nodes
+description: Enabling Network Time Protocol (NTP), or some equivalent way, to keep clocks on all nodes in sync is critical. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses timedatectl (systemd); passes when the kernel clock is reported as NTP-synchronised by chronyd, ntpd or systemd-timesyncd. Compare offsets across nodes as well.
+target: cassandra
+level: 1
+severity: medium
+tags:
+- cassandra
+- time
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 1.6 Ensure clocks are synchronized on all nodes
+audit:
+  type: command
+  command: out=$(timedatectl show -p NTPSynchronized --value 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'yes'
+remediation:
+  type: iac_patch
+  command: 'Install and enable chrony (or ntpd) on every node, pointing all nodes at the same time sources: systemctl enable --now chronyd.'

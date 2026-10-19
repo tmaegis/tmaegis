@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-6.17
+title: Set Retry Limit for Account Lockout
+description: 'The RETRIES parameter is the number of failed login attempts a user is allowed before being disconnected from the system and forced to reconnect. When LOCK_AFTER_RETRIES is set in /etc/security/policy.conf, then the user''s account is locked after this many failed retries (the account can only be unlocked by the administrator using the command: passwd -u <username>. Audit: RETRIES=3 (or fewer) in /etc/default/login and LOCK_AFTER_RETRIES=YES in policy.conf; review exempt accounts (userattr lock_after_retries) manually.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.17 Set Retry Limit for Account Lockout
+audit:
+  type: command
+  command: r=compliant; grep -Eq "^RETRIES=[1-3]$" /etc/default/login 2>/dev/null || r="RETRIES is not 3 or less"; grep -q "^LOCK_AFTER_RETRIES=YES" /etc/security/policy.conf 2>/dev/null || r="LOCK_AFTER_RETRIES is not YES"; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # cd /etc/default # awk ''/RETRIES=/ { $1 = "RETRIES=3" } { print }'' login >login.CIS # mv login.CIS login # cd /etc/security # awk ''/LOCK_AFTER_RETRIES=/ { $1 = "LOCK_AFTER_RETRIES=YES" } { print }'' policy.conf > policy.conf.CIS # mv policy.conf.CIS policy.conf # svcadm restart svc:/system/name-service/cache Be careful when enabling these settings as they can create a denial-of-service situation for legitimate users and applications. Account lockout can be disabled for specific users via the usermod command. For example, the following command disables account lock specifically for the oracle account: # usermod -K lock_after_retries=no oracle Note: The root role is configured in this manner by default to prevent accidental lock out.'

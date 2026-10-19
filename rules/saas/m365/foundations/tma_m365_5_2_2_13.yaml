@@ -1,0 +1,18 @@
+id: TMA-M365-5.2.2.13
+title: Ensure that periodic reauthentication is required for all users
+description: Sign-in frequency defines the time period before a user is asked to sign in again when attempting to access a resource. The Microsoft Entra ID default configuration for user sign-in frequency is a rolling window of 90 days. The recommended state for all users is to enforce periodic reauthentication for 7 days or less. A 7-day interval balances security and user experience by reducing the maximum lifespan of compromised credentials or stolen tokens without introducing excessive reauthentication prompts that can increase phishing susceptibility and user fatigue.
+target: m365
+level: 1
+severity: high
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.13 Ensure that periodic reauthentication is required for all users
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify All users is included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify Resources (formerly cloud apps) includes All resources (formerly ''All cloud apps'') o Under Session ensure Sign-in frequency is checked, and Periodic reauthentication is set to 7 days or less. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. Filter to policies where SessionControls.SignInFrequency.IsEnabled is true 3. Filter out policies where Conditions.signInRiskLevels
+    and Conditions.userRiskLevels have values defined, excluding these from the assessment. 4. For each policy returned, verify the following criteria: o Conditions.Users.IncludeUsers is...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users. o Under Target resources verify Resources (formerly cloud apps) include All resources (formerly ''All cloud apps''). ▪ Under Exclude exclude any break-glass accounts. o Under Session select Sign-in frequency and set Periodic reauthentication to 7 days or less. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On.'

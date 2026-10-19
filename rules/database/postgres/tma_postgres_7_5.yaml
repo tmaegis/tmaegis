@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-7.5
+title: Ensure streaming replication parameters are configured correctly
+description: Streaming replication from a PRIMARY host transmits DDL, DML, passwords, and other potentially sensitive activities and data. These connections should be protected with Secure Sockets Layer (SSL).
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- replication
+- tls
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 7.5 Ensure streaming replication parameters are configured correctly
+audit:
+  type: manual
+  command: Confirm a dedicated non-superuser replication role exists (SELECT rolname FROM pg_roles WHERE rolreplication;) and, from the standby, that psql 'host=<primary> dbname=postgres user=replication_user sslmode=require' -c 'select 1;' succeeds; check primary_conninfo on the standby uses sslmode=require or stronger.
+remediation:
+  type: iac_patch
+  command: On the standby set primary_conninfo = 'host=<primary> user=replication_user sslmode=verify-full ...' (and primary_slot_name), create standby.signal, and allow only hostssl replication entries on the primary.

@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.19.3
+title: Ensure 'Always require users to connect to verify permission' is set to 'Enabled'
+description: 'This policy setting controls whether users are required to connect to the Internet or a local network to have their licenses confirmed every time they attempt to open Excel workbooks, InfoPath forms or templates, Outlook e-mail messages, PowerPoint presentations, or Word documents that are protected by Information Rights Management (IRM). This policy is useful for logging the usage of files with restricted permissions on the server. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) requireconnection that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.19.3 Ensure 'Always require users to connect to verify permission' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\drm'') -Name ''requireconnection'' -ErrorAction SilentlyContinue).''requireconnection''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':requireconnection='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Office 2016\Manage Restricted Permissions\Always require users to connect to verify permission'

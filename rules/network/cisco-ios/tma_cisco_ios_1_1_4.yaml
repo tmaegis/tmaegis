@@ -1,0 +1,21 @@
+id: TMA-CISCO-IOS-1.1.4
+title: Set 'login authentication for 'line vty'
+description: Authenticates users who access the router or switch remotely through the VTY port. Using AAA authentication for interactive management access to the device provides consistent, centralized control of your network. The default under AAA (local or network) is to require users to log in using a valid user name and password. Fails if any 'line vty' block has no explicit 'login authentication <list>' line. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all' or 'show startup-config').
+target: cisco-ios
+level: 1
+severity: high
+tags:
+- cisco-ios
+- network
+- logging
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.1.4 Set 'login authentication for 'line vty'
+audit:
+  type: config_regex
+  pattern: (?m)^line vty[^\n]*\n(?:[ \t]+(?:$|[^l \t\n]|l(?:$|[^o\n]|o(?:$|[^g\n]|g(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n])))))))))))))))))))))[^\n]*\n)*(?:[^ \t]|\z)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure management lines to require login using the default or a named AAA authentication list. This configuration must be set individually for all line types.
+    line vty {line-number} [ending-line-number]
+    login authentication {default | aaa_list_name}

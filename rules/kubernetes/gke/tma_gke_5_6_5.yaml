@@ -1,0 +1,22 @@
+id: TMA-GKE-5.6.5
+title: Ensure private GKE nodes are configured without external IP addresses
+description: Configure GKE nodes without external IP addresses so worker nodes are reachable only through internal network paths. Private nodes reduce direct exposure of the node network interface to external clients while still allowing the cluster to run workloads and communicate with the control plane through internal connectivity. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Every node pool is checked.
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- managed-services
+- network
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.6.5 Ensure private GKE nodes are configured without external IP addresses
+audit:
+  type: command
+  command: |-
+    c=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(privateClusterConfig.enablePrivateNodes)') || exit 1
+    out=$(gcloud container node-pools list --cluster "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(name,networkConfig.enablePrivateNodes)') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F '\t' 'NF && $2!="True" {print $1}')
+    if [ "$c" = True ] && [ -z "$bad" ]; then echo compliant; else echo "noncompliant: cluster=$c pools:" $bad; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediate by enabling private nodes at the cluster level for new node pools and at the node pool level for existing node pools. Private nodes provision GKE nodes with internal IP addresses only. GKE does not automatically modify existing node pools when the cluster level setting is changed, so existing node pools must be updated separately. Enable private nodes as the cluster level default for new node pools: gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-private-nodes \ --enable-ip-alias Enable private nodes on an existing node pool: gcloud container node-pools update $POOL_NAME \ --cluster $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-private-nodes \ --enable-ip-alias • Note: After remediation, rerun the audit commands and confirm that the cluster level default and each applicable node pool return ...'

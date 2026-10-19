@@ -1,0 +1,20 @@
+id: TMA-CISCO-NXOS-3.1.4.1
+title: If VLAN interfaces have IP addreses, configure anti spoofing / ingress filtering protections
+description: 'If VLAN interfaces have IP addresses, it is important that anti-spoofing protections are in place, to prevent an attacker from spoofing an address that is illegal on that inbound interface. If an attacker is allowed to "spoof" addresses to the point that packets are permitted to arrive on the incorrect interface, it becomes possible for an attacker to spoof their trust level from a network point of view, for instance to source "inside" addresses ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.4.1 If VLAN interfaces have IP addreses, configure anti spoofing / ingress filtering protections
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The "show run ip" command will show all IP interfaces as well as their URPF settings. All non-loopback interfaces that have IP addresses should have URPF configured (ip verify unicast source). switch# sho run ip !Command: show running-config ip !Running configuration last done at: Sun May 17 13:32:08 2020 !Time: Sun May 17 13:36:49 2020 version 9.3(3) Bios:version vrf context management ip route 0.0.0.0/0 10.17.8.2 ip route 0.0.0.0/0 192.168.122.1 interface Vlan1 ip address 10.10.10.10/24 ip verify unicast source reachable-via rx'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Apply the command "ip verify unicast source reachable-via rx" to all VLAN interfaces that have IP addresses. This forces the check to verify that the packet is arriving on the correct interface. The command variant "ip verify unicast source reachable-via any" is not recommended, as it only filters for valid IP addresses. If the device has a default route, then this command variant has no affect.
+    interface Vlan X
+    ip verify unicast source reachable-via rx

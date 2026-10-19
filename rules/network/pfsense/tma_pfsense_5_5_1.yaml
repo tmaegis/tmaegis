@@ -1,0 +1,16 @@
+id: TMA-PFSENSE-5.5.1
+title: Ensure that OpenVPN use strong ciphers or hashing algorithms
+description: This rule aims to prevent the use of weak cryptographic algorithms in OpenVPN, which could be exploited by attackers to compromise the confidentiality, integrity, and availability of the VPN traffic. Specifically, this rule requires that only strong and secure cryptographic ciphers and hashing algorithms are used in OpenVPN.
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- crypto
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 5.5.1 Ensure that OpenVPN use strong ciphers or hashing algorithms
+audit:
+  type: manual
+  command: 'VPN > OpenVPN > Servers/Clients > edit each instance: confirm Data Encryption Algorithms list only AES-256-GCM / AES-128-GCM / CHACHA20-POLY1305 (no BF-CBC, DES or other weak ciphers), Fallback Data Encryption Algorithm is AES-256-CBC or better, and Auth digest algorithm is SHA256 or stronger.'
+remediation:
+  type: iac_patch
+  command: 'VPN > OpenVPN > Servers (and Clients) > edit: set Data Encryption Algorithms to AES-256-GCM and AES-128-GCM (optionally CHACHA20-POLY1305), Fallback Data Encryption Algorithm to AES-256-CBC, Auth digest algorithm to SHA256 or SHA512, Save. Update client exports.'

@@ -1,0 +1,16 @@
+id: TMA-AZURE-7.13
+title: Ensure 'HTTP2' is Set to 'Enabled' on Azure Application Gateway
+description: Enable HTTP/2 for improved performance, efficiency, and security. HTTP/2 protocol support is available to clients that connect to application gateway listeners only. Communication with backend server pools is always HTTP/1.1. Enabling HTTP/2 supports use of modern encrypted connections.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 7.13 Ensure 'HTTP2' is Set to 'Enabled' on Azure Application Gateway
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Application gateways. 2. Click the name of an application gateway. 3. Under Settings, click Configuration. 4. Ensure HTTP2 is set to Enabled. 5. Repeat steps 1-4 for each application gateway. Audit from Azure CLI Run the following command to list application gateways: az network application-gateway list For each application gateway, run the following command to get the HTTP2 setting: az network application-gateway show --resource-group <resource-group> --name <application-gateway> --query enableHttp2 Ensure true is returned. Audit from PowerShell Run the following command to list application gateways: Get-AzApplicationGateway Run the following command to get the application gateway in a resource group with a given name: $gateway = Get-AzApplicationGateway -ResourceGroupName <resource-group> -Name <application-gateway> Run the following command to get the HTTP2 setting: $gateway.EnableHttp2 Ensure True is returned. Repeat for each application gateway.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Application gateways. 2. Click the name of an application gateway. 3. Under Settings, click Configuration. 4. Under HTTP2, click Enabled. 5. Click Save. 6. Repeat steps 1-5 for each application gateway requiring remediation. Remediate from Azure CLI For each application gateway requiring remediation, run the following command to enable HTTP2: az network application-gateway update --resource-group <resource-group> -- name <application-gateway> --http2 Enabled Remediate from PowerShell Run the following command to get the application gateway in a resource group with a given name: $gateway = Get-AzApplicationGateway -ResourceGroupName <resource-group> -Name <application-gateway> Run the following command to enable HTTP2: $gateway.EnableHttp2 = $true Run the following command to apply the update: Set-AzApplicationGateway -ApplicationGateway $gateway Repeat for each application gateway requiring remediation.'

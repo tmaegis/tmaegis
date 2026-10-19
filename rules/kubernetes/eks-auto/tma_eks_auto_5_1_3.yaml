@@ -1,0 +1,18 @@
+id: TMA-EKS-AUTO-5.1.3
+title: Restrict EKS Auto Mode Node IAM role to ECR pull-only permissions
+description: Restricting ECR access for the EKS Auto Mode Node IAM role to pull only permissions helps ensure that nodes can retrieve required container images without receiving broader registry visibility, image publishing, deletion, or administrative access. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- managed-services
+- rbac
+- registry
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.1.3 Restrict EKS Auto Mode Node IAM role to ECR pull-only permissions
+audit:
+  type: manual
+  command: Review the IAM permissions and any ECR repository policies that apply to the EKS Auto Mode Node IAM role, and verify that the role is limited to pull-only ECR access. For this control, focus on the Node IAM role assigned to EKS Auto Mode nodes. If the cluster also uses Fargate, review the Fargate pod execution role under a separate Fargate specific check. The EKS Auto Mode Node IAM role has key permissions that include pulling images from ECR, and the suggested node role policies include AmazonEKSWorkerNodeMinimalPolicy and AmazonEC2ContainerRegistryPullOnly.
+remediation:
+  type: iac_patch
+  command: Enforce pull-only ECR access for the EKS Auto Mode Node IAM role by limiting the role to the permissions required to authenticate to ECR and retrieve container image layers. The EKS Auto Mode Node IAM role should use AmazonEC2ContainerRegistryPullOnly or equivalent permissions, together with the required EKS node permissions. Identify the EKS Auto Mode Node IAM role in scope. Use the role configured in the cluster’s Auto Mode compute configuration or the expected role name, such as AmazonEKSAutoNodeRole. Remove broader ECR managed policies from the Node IAM role. Detach AmazonEC2ContainerRegistryReadOnly, AmazonEC2ContainerRegistryPowerUser, AmazonEC2ContainerRegistryFullAccess, or similar broad policies from the role when it only needs image-pull access. ECR managed policies are general purpose, and customer-managed policies can further reduce permissions for specific use cases.

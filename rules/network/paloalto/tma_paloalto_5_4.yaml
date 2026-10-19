@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-5.4
+title: Ensure all WildFire session information settings are enabled
+description: 'Enable all options under Session Information Settings for WildFire. FAILs if any WildFire session-info-select exclude-* option is set to yes. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 5.4 Ensure all WildFire session information settings are enabled
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig setting wildfire session-info-select exclude-\S+ yes[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig setting wildfire session-info-select exclude-<field> no
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > WildFire > Session Information Settings. Set every option to be enabled.

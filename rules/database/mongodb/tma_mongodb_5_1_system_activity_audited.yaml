@@ -1,0 +1,20 @@
+id: TMA-MONGODB-5.1
+title: Ensure that system activity is audited
+description: Track access and changes to database configurations and data. MongoDB Enterprise includes a system auditing facility that can record system events (e.g. user operations, connection events) on a MongoDB instance. These audit records permit forensic analysis and allow administrators to verify proper controls. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). Auditing requires MongoDB Enterprise or Percona Server for MongoDB.
+target: mongodb
+level: 1
+severity: high
+tags:
+- mongodb
+- logging
+- audit
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 5.1 Ensure that system activity is audited
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^auditLog:[ \t]*\n(?:[ \t]*(?:#[^\n]*)?\n|[ \t]+[^\n]*\n)*?[ \t]+destination:[ \t]*['\x22]?(?:file|syslog|console)\b
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'Add ''auditLog: {destination: file, format: JSON, path: /var/log/mongodb/auditLog.json}'' (or destination: syslog) to /etc/mongod.conf and restart mongod.'

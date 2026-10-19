@@ -1,0 +1,17 @@
+id: TMA-AZURE-SQL-TDE
+title: Ensure Transparent Data Encryption is enabled on every Azure SQL database
+description: TDE encrypts database files, backups and logs at rest. Every user database on every logical SQL server must have TDE state Enabled. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- database
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Database Services - SQL Database transparent data encryption (verify section number for your release)
+audit:
+  type: command
+  command: "srv=$(az sql server list --query '[].[name,resourceGroup]' -o tsv 2>/dev/null) || exit 1\nbad=0\nwhile read -r n g; do\n  [ -n \"$n\" ] || continue\n  dbs=$(az sql db list --server \"$n\" --resource-group \"$g\" --query '[?name!=`\"master\"`].name' -o tsv 2>/dev/null </dev/null) || exit 1\n  for d in $dbs; do\n    s=$(az sql db tde show --server \"$n\" --resource-group \"$g\" --database \"$d\" --query state -o tsv 2>/dev/null </dev/null) || exit 1\n    [ \"$s\" = Enabled ] || { echo \"TDE off: $n/$d\"; bad=1; }\n  done\ndone <<EOF\n$srv\nEOF\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: az sql db tde set --server <server> --resource-group <rg> --database <db> --status Enabled (optionally with a customer managed TDE protector).

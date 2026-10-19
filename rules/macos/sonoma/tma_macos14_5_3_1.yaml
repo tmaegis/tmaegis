@@ -1,0 +1,24 @@
+id: TMA-MACOS14-5.3.1
+title: Ensure all internal user storage APFS volumes are encrypted
+description: Apple developed the APFS (Apple File System) structure primarily for flash and solid- state drives. This file structure was first made available in 10.12 and then became the default in 10.13. macOS computers generally have several volumes created as part of APFS formatting, including Preboot, Recovery and Virtual Memory (VM), as well as traditional user disks. All APFS volumes that do not have specific roles and do not require encryption should be encrypted. "Role" disks include Preboot, Recovery and VM. User disks are labelled with "(No specific role)" by default. In order to protect user data from loss or tampering volumes, carrying data should be encrypted.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- encryption
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 5.3.1 Ensure all internal user storage APFS volumes are encrypted
+audit:
+  type: command
+  command: '[ -x /usr/sbin/diskutil ] || exit 1
+
+    out=$(/usr/sbin/diskutil list internal | /usr/bin/grep ''APFS Volume'' | /usr/bin/awk ''{print $NF}'' | /usr/bin/xargs -n1 /usr/sbin/diskutil info | /usr/bin/grep -E "Volume Name|FileVault" | /usr/bin/sed ''/Preboot/{N;d;}'' | /usr/bin/sed ''/Recovery/{N;d;}'' | /usr/bin/sed ''/VM/{N;d;}'')
+
+    if printf ''%s\n'' "$out" | /usr/bin/grep -qE ''FileVault: +No''; then printf ''%s\n'' "$out"; else echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Use Disk Utility to erase a user disk and format as APFS (Encrypted). Note: APFS Encrypted disks will be described as "FileVault" whether they are the boot volume or not in the ap list.'

@@ -1,0 +1,21 @@
+id: TMA-WIN2019-18.4.6
+title: Ensure 'LSA Protection' is set to 'Enabled'
+description: 'This policy setting controls whether the Local Security Authority Server Service (LSASS) process runs protected. The Local Security Authority (LSA), which includes the Local Security Authority Server Service (LSASS) process, validates users for local and remote sign-ins and enforces local security policies. The recommended state for this setting is: Enabled. Note: This setting only applies to Windows Server 2012 R2 (or newer) except for Windows Server 2022 (or newer). See policy setting Configure LSASS to run as a protected process.'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 18.4.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa'' -Name ''RunAsPPL'' -ErrorAction SilentlyContinue).''RunAsPPL''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RunAsPPL='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'RunAsPPL' -Value 1 -PropertyType DWord -Force | Out-Null

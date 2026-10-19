@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.11
+title: 'Ensure ''Allow download restrictions'' is set to ''Enabled: Block malicious downloads'''
+description: 'Google Chrome can block certain types of downloads, and won''t let users bypass the security warnings, depending on the classification of Safe Browsing. - No special restrictions. Default. (0, Disabled) (Default) - Block malicious downloads and dangerous file types. (1) - Block malicious downloads, uncommon or unwanted downloads and dangerous file types. (2) - Block all downloads. (3) - Block malicious downloads. Rationale: Users shall be prevented from downloading malicious file types, and shall not be able to bypass security warnings. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DownloadRestrictions (REG_DWORD); compliant when it is 4. Remediation writes 4 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.11 Ensure ''Allow download restrictions'' is set to ''Enabled: Block malicious downloads'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DownloadRestrictions'' -ErrorAction SilentlyContinue).''DownloadRestrictions''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(4) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DownloadRestrictions' -Value 4 -PropertyType DWord -Force | Out-Null

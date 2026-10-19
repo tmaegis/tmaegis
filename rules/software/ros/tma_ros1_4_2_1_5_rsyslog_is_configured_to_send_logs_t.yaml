@@ -1,0 +1,22 @@
+id: TMA-ROS1-4.2.1.5
+title: Ensure rsyslog is configured to send logs to a remote log host
+description: The rsyslog utility supports the ability to send logs it gathers to a remote log host running syslogd(8) or to receive messages from remote hosts, reducing administrative overhead. The audit requires an rsyslog action with target= or a *.* @host forwarding rule. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.2.1.5 Ensure rsyslog is configured to send logs to a remote log host
+audit:
+  type: command
+  shell: bash
+  command: |-
+    grep -Ehs '^[^#]*action\(' /etc/rsyslog.conf /etc/rsyslog.d/*.conf | grep -q 'target=' && { echo compliant; exit 0; }
+    grep -Ehs '^[^#]\s*\S+\.\*\s+@' /etc/rsyslog.conf /etc/rsyslog.d/*.conf | grep -q . && echo compliant || echo 'no remote log host configured'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/rsyslog.conf and /etc/rsyslog.d/*.conf files and add one of the following lines: Newer syntax: <files to sent to the remote log server> action(type="omfwd" target="<FQDN or ip of loghost>" port="<port number>" protocol="tcp" action.resumeRetryCount="<number of re-tries>" queue.type="linkList" queue.size=<number of messages to queue>") Example: *.* action(type="omfwd" target="192.168.2.100" port"514" protocol="tcp" action.resumeRetryCount="100" queue.type="linkList" queue.size="1000") Older syntax: *.* @@<FQDN or ip of loghost> Example: *.* @@192.168.2.100 Run the following command to reload the rsyslog configuration: # systemctl reload rsyslog'

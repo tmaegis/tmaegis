@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-5.2
+title: Ensure that access to the Tape Bypass Label Processing (BLP) resource is controlled
+description: Tape Bypass Label Processing (BLP) is extremely sensitive, as it allows the circumvention of security access checking for the data. When BLP is used in z/OS, the only verification that is done is for the data set name in the JCL. Any data set name can be used. If an unauthorized user possesses BLP authority, they could potentially read any restricted tape and modify any information once it has been copied.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 5.2 Ensure that access to the Tape Bypass Label Processing (BLP) resource is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering the ICHBLP resource Request reports generated using IRRDBU00 output ... (full steps: CIS section 5.2)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To create a FACILITY profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE FACILITY ICHBLP + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''TAPE BYPASS LABEL PROCESSING (BLP)'') PERMIT ICHBLP CLASS(FACILITY) + ACCESS(UPDATE) ID(STGADMIN OPERATOR SYSPROG) SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER and SETROPTS commands: RALTER FACILITY ICHBLP + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant access list entry use the RACF PERMIT and SETROPTS commands: PERMIT ICHBLP CLASS(FACILITY) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant
+    GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access ... (see CIS section 5.2)'

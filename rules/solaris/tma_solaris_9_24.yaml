@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.24
+title: Find Files and Directories with Extended Attributes
+description: 'Extended attributes are implemented as files in a "shadow" file system that is not generally visible via normal administration commands without special arguments. Attackers or malicious users could "hide" information, exploits, etc. in extended attribute areas. Since extended attributes are rarely used, it is important to find files with extended attributes set. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- permissions
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.24 Find Files and Directories with Extended Attributes
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -xattr -ls ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine the existence of any files having extended file attributes, and determine the best course of action in accordance with site policy. Note that the Solaris OS does not ship with files that have extended attributes.

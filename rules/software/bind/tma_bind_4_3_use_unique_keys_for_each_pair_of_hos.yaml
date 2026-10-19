@@ -1,0 +1,29 @@
+id: TMA-BIND-4.3
+title: Use Unique Keys for Each Pair of Hosts
+description: 'A unique TSIG key should be used for each pair of communicating hosts. For example, if there is one master authoritative name server and three slave authoritative name servers that were updated by the master, then there would need to be a unique TSIG key for at least the following: ; Master <-> Slave1 ; Master <-> Slave2 ; Master <-> Slave3 The audit requires every key secret and key name in the effective configuration to be unique. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).'
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- tsig
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 4.3 Use Unique Keys for Each Pair of Hosts
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    d=$(printf '%s\n' "$flat" | grep -Eo 'secret "[^"]*"' | sort | uniq -d | wc -l)
+    n=$(printf '%s\n' "$flat" | grep -Eo 'key "?[^ "]+"? \{ *algorithm' | sort | uniq -d | wc -l)
+    [ "$d" -eq 0 ] && [ "$n" -eq 0 ] && echo compliant || echo "duplicate key secrets: $d, duplicate key names: $n"
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: Generate unique keys for host to host communication. The command below can be used to generate 2 files, a <name>.key file and a <name>.private file with secret keys of suitable length with base64 encoding. The files themselves are not needed, and should be securely deleted once the values are copied into a key file for including in the named configuration. $ dnssec-keygen -a HMAC-SHA256 -b 256 -n HOST ns1-ns2.cisecurity.org Kns1-ns2.cisecurity.org.+163+13013 $ cat Kns1-ns2.cisecurity.org.+163+13013.key ns1-ns2.cisecurity.org. IN KEY 512 3 163 9FQ2dYCQ17HJwDi/uHgANh2dlb8M7eb+F4AjML8tTdA=

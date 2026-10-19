@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.4.4
+title: Ensure 'Send Exchange Customer Experience reports' is set to 'False'
+description: This parameter specifies whether the Exchange server is enrolled in the Windows Customer Experience Improvement Program (CEIP). This is a voluntary program that collects information on users and their computers in order to help Microsoft improve features and solve common issues. Prints compliant when CustomerFeedbackEnabled is False. Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 2
+severity: low
+tags:
+- exchange
+- privacy
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.4.4 Ensure 'Send Exchange Customer Experience reports' is set to 'False'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $o = Get-OrganizationConfig -ErrorAction Stop; if ($o.CustomerFeedbackEnabled -eq $false) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-OrganizationConfig -CustomerFeedbackEnabled $false

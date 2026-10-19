@@ -1,0 +1,22 @@
+id: TMA-MACOS14-5.10
+title: Ensure XProtect Is Running and Updated
+description: XProtect is Apple's native signature-based antivirus technology. XProtect both finds and blocks the execution of known malware. There are many AV and Endpoint Detection and Response (EDR) tools available for macOS. The native Apple provisioned tool looks for specific known malware and is completely integrated into the OS. No matter what other tools are being used, XProtect should have the latest signatures available. Apple creates signatures for known malware that actually affects Macs and that knowledge should be leveraged.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- patching
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 5.10 Ensure XProtect Is Running and Updated
+audit:
+  type: command
+  command: 'out=$(/usr/bin/xprotect status 2>/dev/null) || exit 1
+
+    if printf ''%s\n'' "$out" | /usr/bin/grep -q "XProtect launch scans: enabled" && printf ''%s\n'' "$out" | /usr/bin/grep -q "XProtect background scans: enabled"; then echo compliant; else printf ''%s\n'' "$out"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Terminal Method: Run the following command to enable and update XProtect: % /usr/bin/sudo /bin/launchctl load -w /Library/Apple/System/Library/LaunchDaemons/com.apple.XProtect.daemon.scan.pl ist % /usr/bin/sudo /bin/launchctl load -w /Library/Apple/System/Library/LaunchDaemons/com.apple.XprotectFramework.Plugi nService.plist % /usr/bin/sudo /usr/bin/xprotect update Starting update. Update succeeded: Activated update LocalUpdate[<newest XProtect version>] Note: XProtect can only be enabled/disabled if SIP (System Integrity Protection) is disabled. If XProtect is disabled, the system might be compromised and needs to be investigated.'

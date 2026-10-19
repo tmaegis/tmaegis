@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.10.59.2
+title: 'Ensure ''Allow Cloud Search'' is set to ''Enabled: Disable Cloud Search'''
+description: 'This policy setting allows search and Cortana to search cloud sources like OneDrive and SharePoint. The recommended state for this setting is: Enabled: Disable Cloud Search.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.10.59.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search'' -Name ''AllowCloudSearch'' -ErrorAction SilentlyContinue).''AllowCloudSearch''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowCloudSearch='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name 'AllowCloudSearch' -Value 0 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,37 @@
+id: TMA-ESXI9-5.3
+title: Host must restrict use of the dvFilter network API
+description: The Net.DVFilterBindIpAddress parameter controls the use of the dvFilter network API, allowing network information to be sent to a specified IP address. If enabled with a compromised IP address, unauthorized network access to other virtual machines on the host could occur. It's essential to keep this parameter unconfigured, unless required by a product like VMware NSX. The audit reads Net.DVFilterBindIpAddress with esxcli and requires an empty value (set it only when a dvfilter security appliance is used). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- network
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 5.3 Host must restrict use of the dvFilter network API
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Net/DVFilterBindIpAddress 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^ *String Value: *//p' | head -n 1)
+    if [ -z "$v" ]; then echo compliant; else echo "/Net/DVFilterBindIpAddress = '$v' (expected empty)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Net/DVFilterBindIpAddress -s ''
+  guidance: "To remove the configuration for the dvfilter network API, perform the following from the vSphere web client: 1. From the vSphere web client, select the host and click Configure then expand System 2. Click on Advanced System Settings then Edit. 3. Search for Net.DVFilterBindIpAddress in the filter. 4. Set Net.DVFilterBindIpAddress has an empty value. 5. If an appliance is being used, make sure the value of this parameter is set to the proper IP address. 6. Enter the proper IP address. 7. Click OK."

@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-6.13
+title: Ensure alerting after a threshold of credit card or Social Security numbers is detected is enabled
+description: 'This guideline is highly specific to an organization. While blocking of credit card or Social Security numbers will not occur with the recommended settings below, careful tuning is also recommended. PASS requires a data filtering profile rule with a non-zero alert-threshold (typically 20). Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- logging
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.13 Ensure alerting after a threshold of credit card or Social Security numbers is detected is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles data-filtering (?:"[^"\n]*"|\S+) rules (?:"[^"\n]*"|\S+) [^\n]*\balert-threshold [1-9]\d*\b
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles data-filtering <profile> rules cc-ssn data-object <pattern> alert-threshold 20 block-threshold 0 log-severity informational
+    commit
+    # CIS guidance:
+    Navigate to Objects > Custom Objects > Data Patterns. Create an appropriate Data Pattern that accounts for sensitive information within your organization. In most cases this will include Credit Card Numbers, and your jurisdiction's equivalent of Social Insurance Numbers. In many cases these can simply be picked from the list of Predefined Patterns.
+    Navigate to Objects > Security Profiles > Data Filtering. Create appropriate Data Filtering Profile, using the created Data Patterns. Ensure that an Alert Threshold is set that generates alerts appropriately. A typical starting value for Alert Threshold is 20, but this should be adjusted after appropriate testing.

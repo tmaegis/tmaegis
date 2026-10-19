@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.1
+title: Check for Remote Consoles
+description: 'The consadm command can be used to select or display alternate console devices. Since the system console has special properties to handle emergency situations, it is important to ensure that the console is in a physically secure location and that unauthorized consoles have not been defined. Audit: applies to the global zone.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- hardening
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.1 Check for Remote Consoles
+audit:
+  type: command
+  command: command -v consadm >/dev/null 2>&1 || exit 1; out=$( { consadm -p ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # /usr/sbin/consadm [-d device...]'

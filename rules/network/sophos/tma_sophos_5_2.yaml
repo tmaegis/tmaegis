@@ -1,0 +1,19 @@
+id: TMA-SOPHOS-5.2
+title: Ensure SSL/TLS inspection rules is enabled to all relevant firewall policies
+description: With SSL/TLS inspection rules, you can intercept and decrypt SSL and TLS connections over TCP, enabling Sophos Firewall to enforce secure connections between clients and web servers. SSL/TLS inspection enables the prevention of malware transmitted through encrypted connections. Reviewed in the Sophos Firewall web admin console (SFOS has no plain-text configuration export to audit offline).
+target: sophos
+level: 2
+severity: high
+tags:
+- sophos
+- crypto
+reference: CIS Sophos Firewall v22 Benchmark v1.0.0 - 5.2 Ensure SSL/TLS inspection rules is enabled to all relevant firewall policies
+audit:
+  type: manual
+  command: 'Navigate to ''Protect > Rules and policies > SSL/TLS inspection rules > SSL/TLS inspection settings''. Verify that ''Non-decryptable traffic > SSL 2.0 and SSL 3.0'' is set to ''Reject'' or ''Drop''. Verify that ''SSL compression'' is set to ''Reject'' or ''Drop''. Verify that ''When SSL/TLS connections exceed limit'' is set to ''Drop'' or ''Reject''. Verify that ''TLS 1.3 decryption'' is set to ''Decrypt as 1.3''. Verify that ''Advanced settings > SSL/TLS engine'' is set to ''Enabled''. (Full steps: CIS 5.2.)'
+remediation:
+  type: iac_patch
+  command: |-
+    Navigate to 'Rules and policies > SSL/TLS inspection rules > SSL/TLS inspection settings'. Set 'Non-decryptable traffic > SSL 2.0 and SSL 3.0' to 'Reject' or 'Drop'. Set 'SSL compression' to 'Reject' or 'Drop'. Set 'When SSL/TLS connections exceed limit' to 'Drop' or 'Reject'. Set 'TLS 1.3 decryption' to 'Decrypt as 1.3'. Set 'Advanced settings > SSL/TLS engine' to 'Enabled'.
+    Navigate to configured 'SSL/TLS inspection rule' and set the 'Action' to 'Decrypt' and 'Log connections' is checked. Set the rule position to above rules configured with 'Action' set to 'Don't decrypt'.
+    Navigate to the configured Firewall rules. Set 'Scan HTTP and decrypted HTTPS' and 'Use zero-day protection' is checked.

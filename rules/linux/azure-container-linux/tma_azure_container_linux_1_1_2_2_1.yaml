@@ -1,0 +1,19 @@
+id: TMA-AZURE-CONTAINER-LINUX-1.1.2.2.1
+title: Ensure /dev/shm is a separate partition
+description: The /dev/shm directory is a world-writable directory that can function as shared memory that facilitates inter process communication (IPC).
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- cis-converted
+- filesystem
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 1.1.2.2.1 Ensure /dev/shm is a separate partition
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /dev/shm >/dev/null 2>&1; then echo compliant; else echo /dev/shm' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For specific configuration requirements of the /dev/shm mount for your environment, modify /etc/fstab. Example: tmpfs /dev/shm tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0'

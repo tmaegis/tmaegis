@@ -1,0 +1,26 @@
+id: TMA-MACOS15-1.1
+title: Ensure Apple-provided Software Updates Are Installed
+description: 'Software vendors release security patches and software updates for their products when security vulnerabilities are discovered. There is no simple way to complete this action without a network connection to an Apple software repository. Please ensure appropriate access for this control. This check is only for what Apple provides through software update. Audit: Passes when LastFullSuccessfulDate is within 30 days and RecommendedUpdates lists no pending update.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- software-update
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 1.1 Ensure Apple-provided Software Updates Are Installed
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    [ -x /usr/bin/defaults ] || exit 1
+    d=$(/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate LastFullSuccessfulDate 2>/dev/null) || { echo "never checked"; exit 0; }
+    t=$(/bin/date -j -f "%Y-%m-%d %H:%M:%S %z" "$d" +%s 2>/dev/null) || exit 1
+    now=$(/bin/date +%s)
+    [ $((now - t)) -le 2592000 ] || { echo "last successful check older than 30 days: $d"; exit 0; }
+    n=$(/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates 2>/dev/null | /usr/bin/grep -c "Product Key")
+    if [ "${n:-0}" -eq 0 ]; then echo compliant; else echo "updates pending: $n"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Terminal: sudo /usr/sbin/softwareupdate -l ; sudo /usr/sbin/softwareupdate -i -a ; sudo /usr/sbin/softwareupdate -i ''<package name>''. GUI: System Settings > General > Software Update > Update All.'

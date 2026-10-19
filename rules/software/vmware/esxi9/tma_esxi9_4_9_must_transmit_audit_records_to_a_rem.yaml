@@ -1,0 +1,25 @@
+id: TMA-ESXI9-4.9
+title: Host must transmit audit records to a remote log collector
+description: This control enables the forwarding of audit records from the ESXi host to a designated log collector, aiding in real-time monitoring and analysis. The parameter governing this behavior is Syslog.global.auditRecord.remoteEnable with a recommended setting of TRUE. The audit requires Syslog.global.logHost to be set and Syslog.global.auditRecord.remoteEnable to be true (1). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 4.9 Host must transmit audit records to a remote log collector
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Syslog/global/logHost 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^ *String Value: *//p' | head -n 1)
+    [ -n "$v" ] || { echo 'Syslog.global.logHost is empty'; exit 1; }
+    out2=$(esxcli system settings advanced list -o /Syslog/global/auditRecord/remoteEnable 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out2" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/Syslog/global/auditRecord/remoteEnable: no integer value'; exit 1 ;; esac
+    if [ "$v" -eq 1 ]; then echo compliant; else echo "/Syslog/global/auditRecord/remoteEnable = $v (expected true/1)"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To configure remote logging properly, perform the following from the vSphere web client: 1. Select the host 2. Click Configure then expand System then select Advanced System Settings. 3. Select Edit then enter Syslog.global.logHost in the filter. 4. Set the Syslog.global.logHost to the hostname or IP address of the central log server. 5. Click OK. Alternately, run the following PowerCLI command: # Set Syslog.global.logHost for each host Get-VMHost | Foreach { Set-AdvancedSetting -VMHost $_ -Name Syslog.global.logHost -Value "<NewLocation>" } Note: When setting a remote log host, it is also recommended to set the "Syslog.global.logDirUnique" to true.'

@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.39.4
+title: Ensure 'Enable Customer Experience Improvement Program' is set to 'Disabled'
+description: 'This policy setting controls whether users can participate in the Microsoft Office Customer Experience Improvement Program to help improve Microsoft Office. When users choose to participate in the Customer Experience Improvement Program (CEIP), Office 2016 applications automatically send information to Microsoft about how the applications are used. This information is combined with other CEIP data to help Microsoft solve problems and to improve the products and features customers use most often. This feature does not collect users'' names, addresses, or any other identifying information except the IP address that is used to send the data. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) qmenable that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.39.4 Ensure 'Enable Customer Experience Improvement Program' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common'') -Name ''qmenable'' -ErrorAction SilentlyContinue).''qmenable''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':qmenable='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Office 2016\Trust Center\Enable Customer Experience Improvement Program'

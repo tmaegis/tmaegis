@@ -1,0 +1,60 @@
+id: TMA-CHROME-2.17
+title: 'Ensure ''Proxy settings'' is set to ''Enabled'' and does not contain "ProxyMode": "auto_detect"'
+description: 'Google Chrome offers the functionality to configure the proxy settings by automatic discovery using WPAD (Web Proxy Auto-Discovery Protocol). Setting this configures the proxy settings for Chrome and ARC-apps, which ignore all proxy-related options specified from the command line. Disabled (0): Lets users choose their proxy settings. Rationale: Attackers may abuse the WPAD auto-config functionality to supply computers with a PAC file that specifies a rogue web proxy under their control. Compliant when the proxy policy is configured (ProxyMode or ProxySettings under HKLM\SOFTWARE\Policies\Google\Chrome) and neither selects auto_detect.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.17 Ensure ''Proxy settings'' is set to ''Enabled'' and does not contain "ProxyMode": "auto_detect"'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''ProxyMode'' -ErrorAction SilentlyContinue).''ProxyMode''; $m = $v; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''ProxySettings'' -ErrorAction SilentlyContinue).''ProxySettings''; if ($null -eq $m -and $null -eq $v) { ''unset'' } elseif ("$m" -eq ''auto_detect'' -or "$v" -match ''auto_detect'') { ''non-compliant: auto_detect'' } else { ''compliant'' }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    $tmaBk = Join-Path $env:ProgramData 'TMAegis\backup'
+    function Backup-TmaKey([string]$p) {
+      try {
+        if (Test-Path -LiteralPath $p) {
+          $k = $p -replace '^Registry::', ''
+          New-Item -ItemType Directory -Force -Path $tmaBk | Out-Null
+          $f = Join-Path $tmaBk (($k -replace '[\\/:*?"<>|]', '_') + '.reg')
+          if (-not (Test-Path -LiteralPath $f)) { & reg.exe export $k $f | Out-Null }
+        }
+      } catch { }
+    }
+    function Set-TmaReg([string]$p, [string]$n, $v, [string]$t) {
+      Backup-TmaKey $p
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      New-ItemProperty -LiteralPath $p -Name $n -Value $v -PropertyType $t -Force | Out-Null
+    }
+    function Remove-TmaValue([string]$p, [string]$n) {
+      if ((Test-Path -LiteralPath $p) -and ($null -ne (Get-ItemProperty -LiteralPath $p -Name $n -ErrorAction SilentlyContinue))) {
+        Backup-TmaKey $p
+        Remove-ItemProperty -LiteralPath $p -Name $n -Force
+      }
+    }
+    function Remove-TmaKey([string]$p) {
+      if (Test-Path -LiteralPath $p) { Backup-TmaKey $p; Remove-Item -LiteralPath $p -Recurse -Force }
+    }
+    function Set-TmaList([string]$p, [string[]]$items, [bool]$replace) {
+      Backup-TmaKey $p
+      if ($replace) { Remove-TmaKey $p }
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      $have = @((Get-ItemProperty -LiteralPath $p -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Value)" })
+      $n = [int](@((Get-Item -LiteralPath $p).GetValueNames()) | ForEach-Object { $x = 0; if ([int]::TryParse($_, [ref]$x)) { $x } else { 0 } } | Measure-Object -Maximum).Maximum
+      foreach ($i in $items) {
+        if ($have -notcontains $i) { $n++; New-ItemProperty -LiteralPath $p -Name "$n" -Value $i -PropertyType String -Force | Out-Null }
+      }
+    }
+    $k = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'
+    $m = (Get-ItemProperty -LiteralPath $k -Name 'ProxyMode' -ErrorAction SilentlyContinue).'ProxyMode'
+    $s = (Get-ItemProperty -LiteralPath $k -Name 'ProxySettings' -ErrorAction SilentlyContinue).'ProxySettings'
+    if ("$s" -match 'auto_detect') { Remove-TmaValue $k 'ProxySettings'; $s = $null }
+    if ("$m" -eq 'auto_detect' -or ($null -eq $m -and $null -eq $s)) { Set-TmaReg $k 'ProxyMode' 'system' 'String' }
+  guidance: "Configure through Group Policy: Computer Configuration\\Polices\\Administrative Templates\\Google\\Google Chrome\\Proxy settings with a ProxyMode other than auto_detect."

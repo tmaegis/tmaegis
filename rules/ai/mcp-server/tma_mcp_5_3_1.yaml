@@ -1,0 +1,20 @@
+id: TMA-MCP-5.3.1
+title: Ensure logs are separated from the protocol stream in stdio mode
+description: 'In stdio transport mode, stdout is reserved exclusively for valid JSON-RPC protocol messages. A valid message is a response correlated by id, or a notification that relates to an in-flight request or an active subscription. A server does not write JSON-RPC requests to stdout under the 2026-07-28 revision because server-initiated interaction uses the multi round-trip pattern inside a response rather than a server- originated request. No log output, diagnostic message, progress banner, or debug line may be written to stdout, and all logging goes to stderr or a file sink. The requirement is unconditional: a single invalid line on stdout is a failure. Logger configuration is verified at startup to confirm no appender or handler writes to stdout before the server accepts connections. stdio framing depends on stdout carrying only well-formed JSON-RPC responses and notifications. Any log lin...'
+target: mcp-server
+level: 1
+severity: low
+tags:
+- ai
+- logging
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.3.1 Ensure logs are separated from the protocol stream in stdio mode
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_5_3_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 5.3.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure the server's logging so all output goes to stderr or a file and never to stdout. The exact setting is framework-specific. In Python, initialize the logging module against a stderr stream and avoid print, which writes to stdout. In Node.js, use console.error rather than console.log for diagnostics, and confirm any logging library defaults to stderr. Under the 2026-07-28 revision, prefer stderr or OpenTelemetry over the deprecated Logging capability. Add a startup guard to the launch wrapper that fails the launch if anything reaches stdout before protocol input arrives, and that distinguishes a failed launch from a clean start rather than treating an empty stdout as success. This is server configuration, and there is no single portable command.

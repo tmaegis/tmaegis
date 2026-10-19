@@ -1,0 +1,26 @@
+id: TMA-AKS-3.2.7
+title: Ensure that rotateCertificates is set to true
+description: The value of rotateCertificates (-rotate-certificates argument) should be set to true because it allows the kubelet to automatically generate a new key and request a replacement client certificate from the Kubernetes API as the current certificate approaches expiration. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access. A false or blank rotateCertificates fails.
+target: aks
+level: 2
+severity: medium
+tags:
+- aks
+- worker-node
+- kubelet
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.2.7 Ensure that rotateCertificates is set to true
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"rotateCertificates":true'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If an audit shows rotateCertificates set to false or blank, the preferred remediation is to replace the affected node pool with a new pool and let the kubelet come up through the normal AKS node-pool configuration path, rather than trying to force a one-off manual change onto existing nodes. This is the preferred approach because the setting affects kubelet client certificate rotation, which is part of how each node maintains authenticated trust with the Kubernetes API server over time. Rebuilding the pool allows new nodes to be provisioned, bootstrapped, and joined through the same managed configuration path, which helps ensure consistent kubelet behavior across the pool and avoids carrying forward nodes whose certificate lifecycle or startup arguments may already have drifted from the intended state.

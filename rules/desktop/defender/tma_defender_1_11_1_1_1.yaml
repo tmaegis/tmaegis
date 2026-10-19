@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.11.1.1.1
+title: 'Ensure ''Configure Brute-Force Protection aggressiveness'' is set to ''Enabled: Medium'' or higher'
+description: 'This policy setting configures whether Brute-Force Protection in Microsoft Defender Antivirus is enabled. Brute-force protection can detect and block attempts to forcibly sign in to a system. The recommended state for this setting is: Enabled: Medium. Configuring this setting to Enabled: High also conforms to the benchmark. Rationale: This feature can help reduce the likelihood of a successful brute force attack. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Brute Force Protection:BruteForceProtectionAggressiveness (REG_DWORD); compliant when it is 1 or 2. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 2
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l2
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.11.1.1.1 Ensure ''Configure Brute-Force Protection aggressiveness'' is set to ''Enabled: Medium'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Brute Force Protection'' -Name ''BruteForceProtectionAggressiveness'' -ErrorAction SilentlyContinue).''BruteForceProtectionAggressiveness''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1,2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Brute Force Protection'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'BruteForceProtectionAggressiveness' -Value 1 -PropertyType DWord -Force | Out-Null

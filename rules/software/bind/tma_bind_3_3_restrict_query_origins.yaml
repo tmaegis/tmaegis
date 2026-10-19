@@ -1,0 +1,27 @@
+id: TMA-BIND-3.3
+title: Restrict Query Origins
+description: BIND can be configured to restrict access to its query services based on source IP address. It is recommended that the allow-query option be used to restrict access to only the networks authorized to use the name server. The audit requires a global allow-query option; confirm it lists only localhost and the authorized networks (any is acceptable only for an external authoritative-only server). The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- access-control
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 3.3 Restrict Query Origins
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    printf '%s\n' "$opts" | grep -Eq '[{; ]allow-query \{' && echo compliant || echo 'no global allow-query option'
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: 'For remediation: ; Create an ACL for the authorized trusted networks in the named.conf file. acl authorized_networks { 10.10.32.0/24; 10.10.34.0/24; . . . }; Add the allow-query statement to the global options of the named.conf file with the localhost ACL and the authorized trusted networks ACL. allow-query { localhost; authorized_networks };'

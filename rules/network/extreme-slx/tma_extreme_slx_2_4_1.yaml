@@ -1,0 +1,23 @@
+id: TMA-EXTREME-SLX-2.4.1
+title: Ensure multiple NTP servers are configured
+description: NTP servers ensure that the system maintains the correct time to prevent drift and delays. If an adversary gains access to an NTP server it is more difficult to cause issues if there are multiple servers configured on the device PASS requires at least two ntp server lines. Audited against SLX-OS 'show running-config' output (saved in full).
+target: extreme-slx
+level: 1
+severity: medium
+tags:
+- extreme-slx
+- time
+reference: CIS ExtremeNetworks SLX-OS 20.X.X Benchmark v1.0.1 - 2.4.1 Ensure multiple NTP servers are configured
+audit:
+  type: config_regex
+  pattern: (?ms)^ntp server \S+.*?^ntp server \S+
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+    ntp server 192.168.0.10 source-interface-type management source-interface-number 0
+    ntp server 192.168.0.11 source-interface-type management source-interface-number 0
+    end
+    # CIS guidance:
+    ntp server 192.168.0.10 source-interface-type management source-
+    interface-number 0

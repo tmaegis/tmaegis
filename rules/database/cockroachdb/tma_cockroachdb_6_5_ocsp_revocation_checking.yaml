@@ -1,0 +1,33 @@
+id: TMA-COCKROACHDB-6.5
+title: Ensure OCSP Certificate Revocation Checking Is Enabled
+description: Online Certificate Status Protocol (OCSP) is a mechanism for checking whether a certificate has been revoked by its Certificate Authority (CA) before it expires. CockroachDB supports OCSP checking through the security.ocsp.mode cluster setting, which can be configured to verify certificate revocation status when validating client and node certificates. Runs cockroach sql with --certs-dir ${COCKROACH_CERTS_DIR:-/var/lib/cockroach/certs} (a root or admin client certificate must be in it); the target node comes from COCKROACH_HOST (default localhost:26257) or COCKROACH_URL. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when security.ocsp.mode is strict or lax (default off); strict is recommended where the OCSP responder is reliable.
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- tls
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 6.5 Ensure OCSP Certificate Revocation Checking Is Enabled
+audit:
+  type: sql_query
+  command: 'out=$(cockroach sql --certs-dir="${COCKROACH_CERTS_DIR:-/var/lib/cockroach/certs}" --format=csv --execute "SHOW CLUSTER SETTING security.ocsp.mode;" 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''NR == 2 {v = tolower($0)} END {print (v == "strict" || v == "lax") ? "compliant" : "mode " v}'''
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v cockroach >/dev/null 2>&1 || exit 0
+    cockroach sql --certs-dir="${COCKROACH_CERTS_DIR:-/var/lib/cockroach/certs}" --execute "SET CLUSTER SETTING security.ocsp.mode = 'lax';"
+  guidance: "SET CLUSTER SETTING security.ocsp.mode = 'strict'; (or 'lax' if OCSP availability cannot be guaranteed) and tune security.ocsp.timeout."

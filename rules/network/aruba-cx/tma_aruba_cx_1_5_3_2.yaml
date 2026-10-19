@@ -1,0 +1,20 @@
+id: TMA-ARUBA-CX-1.5.3.2
+title: Remote Authorization
+description: Remote authorization on CX switches leverages centralized servers like TACACS+ to manage and authorize user access, ensuring consistent enforcement of policies across the network. PASS requires command authorization through a remote (TACACS+) group. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 2
+severity: medium
+tags:
+- aruba-cx
+- hardening
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.5.3.2 Remote Authorization
+audit:
+  type: config_regex
+  pattern: (?m)^aaa authorization commands (?:default|console|ssh|telnet) group (?:local )?(?:[^ln\s]|l[^o\s]|lo[^c\s]|n[^o\s]|no[^n\s])\S*
+remediation:
+  type: iac_patch
+  command: |-
+    aaa authorization commands default group tacacs1 local
+    # CIS guidance:
+    To enable remote authorization by assigning the TACACS+ group list as primary method and local as recommended fallback method - aaa authorization commands {default | console | ssh | telnet} group <tacacs-
+    local

@@ -1,0 +1,52 @@
+id: TMA-COS-5.2.1
+title: Ensure password creation requirements are configured
+description: 'The pam_passwdqc.so module checks the strength of passwords. It performs checks such as making sure a password is not a dictionary word, it is a certain length, contains a mix of characters (e.g. alphabet, numeric, other) and more based on the following options set in the /etc/security/passwdqc.conf: - min=disabled,disabled,disabled,disabled,14 - The password must be 14 characters or more and consists of four character classes. - max=40 - The maximum allowed password length is 40. - passphrase=3 - The number of words required for a passphrase is at least 3. - match=4 - The length of common substring required to conclude that a password is at least partially based on information found in a character string is 4. - similar=deny - The password that is similar to the old one is going to be denied. - random=47 - The size of randomly-generated passphrases in bits is 47. - enforce=everyone -...'
+target: cos
+level: 2
+severity: low
+tags:
+- auth
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 5.2.1 Ensure password creation requirements are configured
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v cat >/dev/null 2>&1 || { echo "step1: cat not installed"; return 1; }; o=$(bash -c ''cat /etc/security/passwdqc.conf'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- min=disabled,disabled,disabled,disabled,14 || { echo step1: missing min=disabled,disabled,disabled,disabled,14; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- max=40 || { echo step1: missing max=40; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- passphrase=3 || { echo step1: missing passphrase=3; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- match=4 || { echo step1: missing match=4; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- similar=deny || { echo step1: missing similar=deny; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//''
+    | grep -Fxq -- random=47 || { echo step1: missing random=47; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- enforce=everyone || { echo step1: missing enforce=everyone; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- retry=3 || { echo step1: missing retry=3; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    PAMF="/etc/pam.d/system-auth /etc/pam.d/password-auth /etc/pam.d/system-password /etc/pam.d/common-auth /etc/pam.d/common-password /etc/pam.d/common-account /etc/pam.d/common-session /etc/pam.d/common-session-noninteractive /etc/pam.d/postlogin"
+    # tma_pam_sed EXPR : sed -E on every existing PAM stack file (follows symlinks, backs up once)
+    tma_pam_sed() { for f in $PAMF /usr/share/pam-configs/unix; do
+      [ -e "$f" ] || continue; tma_bak "$f"; sed -i --follow-symlinks -E "$1" "$f"; done; }
+    # tma_conf_set FILE KEY VALUE : "key = value", replacing active or commented key lines
+    tma_conf_set() { f=$1; k=$2; v=$3; mkdir -p "$(dirname "$f")"; [ -e "$f" ] || : > "$f"; tma_bak "$f"
+      sed -i -E "/^[[:space:]]*#?[[:space:]]*$k[[:space:]]*=/d" "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; }
+    tma_conf_del() { for f in $2; do [ -e "$f" ] || continue; tma_bak "$f"; sed -i -E "/^[[:space:]]*$1[[:space:]]*=/d" "$f"; done; }
+    tma_conf_set /etc/security/pwquality.conf minlen 14
+    tma_conf_set /etc/security/pwquality.conf minclass 4
+    for f in $PAMF; do [ -e "$f" ] || continue
+      grep -Eq 'pam_pwquality\.so' "$f" || continue
+      grep -E 'pam_pwquality\.so' "$f" | grep -Eq 'retry=[1-3]\b' || { tma_bak "$f"; sed -i --follow-symlinks -E '/^[[:space:]]*password[[:space:]].*pam_pwquality\.so/ { s/[[:space:]]+retry=[0-9]+//; s/$/ retry=3/ }' "$f"; }
+    done
+    true
+  guidance: "Edit the file /etc/security/passwdqc.conf and add or modify the following lines for password length and complexity to conform to site policy: min=disabled,disabled,disabled,disabled,14 max=40 passphrase=3 match=4 similar=deny random=47 enforce=everyone retry=3 Edit the /etc/pam.d/system-auth files to include the appropriate options for pam_passwdqc.so and to conform to site policy: password required pam_passwdqc.so config=/etc/security/passwdqc.conf"

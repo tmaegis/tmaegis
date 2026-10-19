@@ -1,0 +1,18 @@
+id: TMA-EXCHANGE-2.1.2
+title: Ensure 'Retain deleted items for the specified number of days' is set to '14'
+description: This policy setting specifies how long deleted messages are retained before they are permanently removed from the database. Prints the number of mailbox databases whose DeletedItemRetention is less than 14 days (expected 0). Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- mailbox
+- retention
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.1.2 Ensure 'Retain deleted items for the specified number of days' is set to '14'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $ts = { param($v) $s = "$v"; if (-not $s -or $s -eq 'Unlimited') { $null } else { [timespan]$s } }; $bad = @(Get-MailboxDatabase -ErrorAction Stop | Where-Object { $t = & $ts $_.DeletedItemRetention; $null -eq $t -or $t.TotalDays -lt 14 }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-MailboxDatabase '<database>' -DeletedItemRetention 14

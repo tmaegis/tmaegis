@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-3.2.6
+title: Ensure 'Cross Region Restore' is set to 'Enabled' on Recovery Services vaults
+description: Cross region restore enables data restoration in a secondary Azure paired region, even when the primary region is fully operational. This allows organizations to conduct drills and validate regional resiliency, thereby ensuring preparedness for potential outages. Enabling cross region restore facilitates proactive resilience testing and disaster recovery planning by allowing data restoration drills in a secondary region without needing a primary region outage. This capability helps organizations validate recovery processes, identify gaps in regional failover, and ensures critical data can be accessed and restored during real disruptions.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.2.6 Ensure 'Cross Region Restore' is set to 'Enabled' on Recovery Services vaults
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a Recovery Services vault. 3. Under Settings, click Properties. 4. Under Backup Configuration, click Update. 5. Next to Cross Region Restore, ensure the radio button next to Enabled is selected. 6. Repeat steps 1-5 for each Recovery Services vault. Audit from Azure CLI Run the following command to list Recovery Services vaults: az backup vault list For each Recovery Services vault, run the following command: az backup vault show --resource-group <resource-group> --name <recovery- services-vault> Ensure that under properties > redundancySettings, crossRegionRestore is set to Enabled. Audit from PowerShell Run the following command to list Recovery Services vaults: Get-AzRecoveryServicesVault Run the following command to get the Recovery Services vault in a resource group with a given name: $vault = Get-AzRecoveryServicesVault -ResourceGroupName <resource-group> - Name <recovery-services-vault> Run
+    the following command to get the cross region restore setting for the Recovery Services vault: $vault.Properties.RedundancySettings.CrossRegionRestore Ensure that the command returns Enabled. Repeat for each...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a Recovery Services vault. 3. Under Settings, click Properties. 4. Under Backup Configuration, click Update. 5. Next to Cross Region Restore, select the radio button next to Enabled. 6. Click Apply. 7. Repeat steps 1-6 for each Recovery Services vault requiring remediation. Remediate from Azure CLI For each Recovery Services vault requiring remediation, run the following command to enable cross region restore: az backup vault update --resource-group <resource-group> --name <recovery- services-vault> --cross-region-restore-flag Enabled Remediate from PowerShell Run the following command to get the Recovery Services vault in a resource group with a given name: $vault = Get-AzRecoveryServicesVault -ResourceGroupName <resource-group> - Name <recovery-services-vault> Run the following command to enable cross region restore: Set-AzRecoveryServicesBackupProperty -Vault $vault -EnableCrossRegionRestore
+    Repeat for each Recovery Services vault requiring remediation.'

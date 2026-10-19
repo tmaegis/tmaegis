@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.8
+title: Ensure 'Allow scanning of all downloaded files and attachments' is set to 'Allowed'
+description: 'This policy setting configures scanning for all downloaded files and attachments. The recommended state for this setting is: Allowed. Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.8 Ensure 'Allow scanning of all downloaded files and attachments' is set to 'Allowed'
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\PolicyManager'' -Name ''AllowIOAVProtection'' -ErrorAction SilentlyContinue).''AllowIOAVProtection''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''AllowIOAVProtection='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Allowed. Defender\Allow scanning of all downloaded files and attachments To establish the recommended configuration via Endpoint Security Blade: 1. Navigate to Endpoint Security 2. Click Antivirus 3. Click Create Profile 4. Select Windows for the Platform and Microsoft Defender Antivirus for Profile 5. Name the profile 6. Configure Allow scanning of all downloaded files and attachments to Allowed'

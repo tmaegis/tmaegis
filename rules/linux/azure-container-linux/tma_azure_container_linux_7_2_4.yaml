@@ -1,0 +1,18 @@
+id: TMA-AZURE-CONTAINER-LINUX-7.2.4
+title: Ensure no duplicate UIDs exist
+description: 'Although the useradd program will not let you create a duplicate User ID (UID), it is possible for an administrator to manually edit the /etc/passwd file and change the UID field. Audit: Passes when no value of field 3 in /etc/passwd appears more than once.'
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- accounts
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 7.2.4 Ensure no duplicate UIDs exist
+audit:
+  type: command
+  shell: bash
+  command: 'cut -d: -f3 /etc/passwd | sort | uniq -d | grep -q . && echo noncompliant || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique UIDs and review all files owned by the shared UIDs to determine which UID they are supposed to belong to.

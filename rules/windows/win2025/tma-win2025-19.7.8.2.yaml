@@ -1,0 +1,21 @@
+id: TMA-WIN2025-19.7.8.2
+title: Ensure 'Do not suggest third-party content in Windows spotlight' is set to 'Enabled'
+description: 'This policy setting determines whether Windows will suggest apps and content from third-party software publishers. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 19.7.8.2
+audit:
+  type: registry
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\Software\Policies\Microsoft\Windows\CloudContent'') -Name ''DisableThirdPartySuggestions'' -ErrorAction SilentlyContinue).''DisableThirdPartySuggestions''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':DisableThirdPartySuggestions='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure through Group Policy (User Configuration): User Configuration\Policies\Administrative Templates\Windows Components\Cloud Content\Do not suggest third-party content in Windows spotlight'

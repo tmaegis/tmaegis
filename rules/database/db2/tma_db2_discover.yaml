@@ -1,0 +1,18 @@
+id: TMA-DB2-DISCOVER
+title: Ensure DISCOVER is set to DISABLE
+description: DISCOVER=SEARCH lets the instance answer network discovery requests, advertising instances and databases to anyone on the network. Run as the instance owner (or with sqllib/db2profile sourced) so 'db2 get dbm cfg' reads the instance configuration.
+target: db2
+level: 2
+severity: low
+tags:
+- db2
+- database
+- network
+reference: CIS IBM Db2 Benchmark - Instance Configuration / Discovery (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(db2 get dbm cfg 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk -F= ''/\(DISCOVER\)/ {v=$2; gsub(/[ \t]/, "", v); f=1} END {if (f && (v == "DISABLE")) print "compliant"; else print "noncompliant: " v}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: db2 update dbm cfg using DISCOVER DISABLE; then db2stop && db2start

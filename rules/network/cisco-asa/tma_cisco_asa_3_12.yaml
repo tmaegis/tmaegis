@@ -1,0 +1,20 @@
+id: TMA-CISCO-ASA-3.12
+title: Ensure explicit deny in access lists is configured correctly
+description: Ensures that each access-list has an explicit deny statement. Configuring an explicit deny entry, with log option, at the end of access control lists enables monitoring and troubleshooting traffic flows that have been denied. Logging these events can provide an effective record to troubleshoot issues and attacks. Passes when at least one extended ACL ends with an explicit 'deny ip any any log'. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 3.12 Ensure explicit deny in access lists is configured correctly
+audit:
+  type: config_regex
+  pattern: (?m)^access-list \S+ extended deny ip any[46]? any[46]? log\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the name <access-list_name> of the access-list that is not compliant from the audit procedure
+    - Step 2: Run the following to configure the explicit deny.
+    <access-list_name> extended deny ip any any log The statement will be placed at the end of the access-list

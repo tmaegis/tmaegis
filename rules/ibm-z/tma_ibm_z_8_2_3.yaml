@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.2.3
+title: Ensure that access to JES2 trace resources is controlled
+description: The JES2 tracing facility can be used to diagnose various problems that can occur in JES2. Since all trace data is intended to diagnose problems with how the system manages data, there are cases where that data may contain sensitive information.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.2.3 Ensure that access to JES2 trace resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that JESSPOOL appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that JESSPOOL appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that JESSPOOL appears. Request a list of all JES2 subsystem IDs used by the site. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the JESSPOOL entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Note: The following specific entries ... (full steps: CIS section 8.2.3)'
+remediation:
+  type: iac_patch
+  command: 'To activate the JESSPOOL class use the RACF SETROPTS command: SETROPTS CLASSACT(JESSPOOL) To enable generic profile checking for the JESSPOOL class use the RACF SETROPTS command: SETROPTS GENERIC(JESSPOOL) To RACLIST the JESSPOOL class use the RACF SETROPTS command: SETROPTS RACLIST(JESSPOOL) To create a JESSPOOL profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE JESSPOOL <localnodeid>.*.$TRCLOG.*.*.JESTRACE + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''CATCH-ALL JES2 TRACE OUTPUT'') PERMIT <localnodeid>.*.$TRCLOG.*.*.JESTRACE CLASS(JESSPOOL) + ACCESS(ALTER) ID(OPERATOR SYSPROG) SETROPTS REFRESH RACLIST(JESSPOOL) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER JESSPOOL <localnodeid>.*.$TRCLOG.*.*.JESTRACE + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(JESSPOOL) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(JESSPOOL)
+    + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(JESSPOOL) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> ... (see CIS section 8.2.3)'

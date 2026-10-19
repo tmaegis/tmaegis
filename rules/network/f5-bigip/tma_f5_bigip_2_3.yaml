@@ -1,0 +1,24 @@
+id: TMA-F5-BIGIP-2.3
+title: Ensure that "Fallback to local" option is disabled for Remote Authentication Settings
+description: 'To prevent the system from checking local DB for remote users authentication PASS requires auth source fallback false (no fallback to local accounts). Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 2
+severity: high
+tags:
+- f5-bigip
+- authentication
+reference: CIS F5 Networks Benchmark v1.0.0 - 2.3 Ensure that "Fallback to local" option is disabled for Remote Authentication Settings
+audit:
+  type: config_regex
+  pattern: (?m)^auth source \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+fallback false[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify auth source fallback false
+    tmsh save sys config
+    # CIS guidance:
+    1. Log in to the Configuration utility.
+    2. Go to System > Users > Authentication.
+    3. Select Change.
+    4. Select the Fallback to Local check box.
+    5. Select Finished.

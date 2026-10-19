@@ -1,0 +1,23 @@
+id: TMA-JUNIPER-JUNOS-6.10.5.10
+title: Ensure REST Service Address is Set
+description: The REST API Service Address should be set. The REST API service allows remote scripts or users to connect to a JUNOS Device and execute RPC commands to operate and configure the device, potentially granting full control if connecting using a privileged account. Passes when 'set system services rest' is not configured; otherwise requires 'set system services rest https addresses'. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.5.10 Ensure REST Service Address is Set
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^d\n]|d(?:$|[^d\n]|d(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n])))))))))))))))))))))))))))))))))))))))))[^\n]*\n)*[ \t]*set system services rest (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^d\n]|d(?:$|[^d\n]|d(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]))))))))))))))))[^\n]*(?:\n(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^
+    \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^d\n]|d(?:$|[^d\n]|d(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n])))))))))))))))))))))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To restrict the IP Address/es on which the REST API will listen, enter the following command from the hierarchy:
+    set system services rest https addresses <Service IP> Where <Service IP> is a single IP Address configured on one of the JUNOS Device's interfaces. To add multiple addresses, enter the following command:
+    set system services rest https addresses [<Service IP 1> <Service IP 2> <Service IP ...> ] To remove a single address from the current list enter the following command:
+    delete system services rest https addresses <Service IP>

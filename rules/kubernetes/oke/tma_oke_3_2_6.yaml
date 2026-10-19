@@ -1,0 +1,17 @@
+id: TMA-OKE-3.2.6
+title: Ensure the kubelet event recording QPS is set to an appropriate value
+description: In OKE, this control is about tuning how quickly the kubelet records events so worker nodes capture useful operational data without generating unnecessary event volume. Oracle supports kubelet tuning for managed nodes through custom cloud-init initialization scripts and kubelet extra args, while worker node property changes are applied through node pool updates and replacement worker nodes. Reported as a manual review because it needs site-specific judgement.
+target: oke
+level: 1
+severity: low
+tags:
+- oke
+- worker-node
+- kubelet
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 3.2.6 Ensure the kubelet event recording QPS is set to an appropriate value
+audit:
+  type: manual
+  command: To audit whether the kubelet event recording QPS is appropriately set on an OKE worker node, query the live effective kubelet configuration through the Kubernetes API server proxy and inspect the kubelet configz output for eventRecordQPS. Kubernetes identifies configz as the view of the kubelet’s final actuated configuration, and OKE managed node customization should be validated from the effective node configuration when kubelet settings are changed through cloud-init or kubelet extra args.
+remediation:
+  type: iac_patch
+  command: If the audit shows eventRecordQPS is set too low, the worker node may throttle useful event creation during burst conditions and should be adjusted. If the value is 0, Kubernetes defines that as no limit enforced, so it should be used only when the additional event volume is intentional and downstream capacity has been considered. If the field is missing or null, first confirm the configz response is complete, because Kubernetes identifies configz as the view of the kubelet’s final actuated configuration. In OKE, remediation should be made through the supported managed node initialization, node pool update, or node replacement workflow, not by directly editing the kubelet config file on the host, because Oracle supports custom cloud-init initialization scripts for managed nodes and applies updated worker node properties through new or replacement worker nodes.

@@ -1,0 +1,18 @@
+id: TMA-PALOALTO-6.17
+title: Ensure that all zones have Zone Protection Profiles with all Reconnaissance Protection settings enabled, tuned, and set to appropriate actions
+description: Enable all three scan options in a Zone Protection profile. Do not configure an action of Allow for any scan type. The exact interval and threshold values must be tuned to the specific environment. Less aggressive settings are typically appropriate for trusted zones, such as setting an action of alert for all scan types. Attach appropriate Zone Protection profiles meeting these criteria to all zones. Separate Zone Protection profiles for trusted and untrusted zones is a best practice.
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- firewall-policy
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.17 Ensure that all zones have Zone Protection Profiles with all Reconnaissance Protection settings enabled, tuned, and set to appropriate actions
+audit:
+  type: manual
+  command: 'Network > Network Profiles > Zone Protection > Reconnaissance Protection: TCP Port Scan enabled, action block-ip (track-by source, duration 600), interval 5, threshold 20; Host Sweep enabled, action block, interval 10, threshold 30; UDP Port Scan enabled, action alert, interval 10, threshold 20. Confirm all zones use the profile. CLI: show network profiles zone-protection-profile <name> scan.'
+remediation:
+  type: iac_patch
+  command: |-
+    Navigate to Network > Network Profiles > Zone Protection > Zone Protection Profile > Reconnaissance Protection. Set TCP Port Scan to enabled, its Action to block-ip, its Interval to 5, and its Threshold to 20. For block-ip, set the "Track By" is set to source and "Duration" is set to 600 seconds. Set Host Sweep to enabled, its Action to block, its Interval to 10, and its Threshold to
+    30. Set UDP Port Scan to enabled, its Action to alert, its Interval to 10, and its Threshold to 20.

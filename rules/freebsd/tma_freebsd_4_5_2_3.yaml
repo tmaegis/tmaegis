@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.5.2.3
+title: Ensure system accounts are secured
+description: 'Several accounts are provided with most distributions that are used to manage applications and are not intended to provide an interactive shell. Furthermore, a user may add special accounts not intended to provide an interactive shell. It is important to make sure that accounts that are not being used by regular users are prevented from being used to provide an interactive shell. Audit: system accounts (uid < 1000, other than root/toor/uucp) must use nologin, and nologin accounts must have disabled passwords.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.2.3 Ensure system accounts are secured
+audit:
+  type: command
+  command: 'command -v awk >/dev/null 2>&1 || exit 1; out=$( { awk -F: ''($1!~/^(root|toor|uucp)$/ || $3 == 65533) && $7!~/^(\/usr)?\/sbin\/nologin$/ { print $1 }'' /etc/passwd | while read u; do uid=$(id -u "$u" 2>/dev/null); [ -n "$uid" ] && [ "$uid" -lt 1000 ] && echo "$u: login shell"; done; awk -F: ''($2!="*" && $2!~/^\*LOCKED\*/ && $7~/^(\/usr)?\/sbin\/nologin$/) { print $1 ": nologin account with a usable password" }'' /etc/master.passwd ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'System accounts Set the shell for any accounts returned by the audit to nologin: # pw usermod -s $(command -v nologin) <user> Disabled accounts Lock any non-root accounts returned by the audit: # pw lock <user>'

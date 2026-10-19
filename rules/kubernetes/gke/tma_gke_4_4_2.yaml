@@ -1,0 +1,17 @@
+id: TMA-GKE-4.4.2
+title: Use Secret Manager for external workload secret storage
+description: Use Secret Manager as the preferred external storage and management service for workload secrets used by GKE Standard clusters. Workloads should access secrets through Secret Manager API calls using Workload Identity Federation for GKE, or through mounted volumes using the Secret Manager add-on when file based access is required. The benchmark marks this recommendation Manual.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- policies
+- secrets
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.4.2 Use Secret Manager for external workload secret storage
+audit:
+  type: manual
+  command: Review the GKE Standard secrets implementation and verify that sensitive workload secrets are stored in Secret Manager where external secret storage is required, rather than relying only on native Kubernetes Secrets. Confirm whether workloads access Secret Manager through direct API calls with Workload Identity Federation for GKE, or through mounted files using the Secret Manager add-on and SecretProviderClass resources.
+remediation:
+  type: iac_patch
+  command: Move externally managed workload secrets to Secret Manager and update GKE workloads to access them through Workload Identity Federation for GKE. Prefer direct Secret Manager API access through Google Cloud client libraries where the application supports it. For applications that require file based secret access, enable the Secret Manager add-on and mount secrets into Pods using SecretProviderClass and CSI volumes. • Enable Workload Identity Federation for GKE on the Standard cluster and required node pools. • Use dedicated Kubernetes ServiceAccounts for workloads that need Secret Manager access. • Grant least privilege Secret Manager IAM permissions only to the required workload identities. • Enable the Secret Manager add-on when workloads need secrets mounted as files. • Migrate sensitive values out of Kubernetes Secrets where practical, then remove unused in-cluster Secret objects.

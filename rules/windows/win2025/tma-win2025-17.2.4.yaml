@@ -1,0 +1,20 @@
+id: TMA-WIN2025-17.2.4
+title: Ensure 'Audit Other Account Management Events' is set to include 'Success' (DC only)
+description: 'This subcategory reports other account management events. Events for this subcategory include: • 4782: The password hash an account was accessed. • 4793: The Password Policy Checking API was called. The recommended state for this setting is to include: Success.'
+target: windows
+os_family:
+- windows-server-2025-dc
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 17.2.4
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce923a-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce923a-69ae-11d9-bed3-505054503030}' /success:enable

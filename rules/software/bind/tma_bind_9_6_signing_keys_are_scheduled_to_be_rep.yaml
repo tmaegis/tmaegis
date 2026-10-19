@@ -1,0 +1,36 @@
+id: TMA-BIND-9.6
+title: Ensure Signing Keys are Scheduled to be Replaced Periodically
+description: Implement a periodic key rollover process for both the Zone Signing Keys (ZSK) and the Key Signing Keys (KSK). The ZSK should be replaced within 2 years or less. The KSK should be replaced within 6 years or less. Keys are replaced by generating a new key before the existing key expires, and scheduling a rollover date when the new key will phase out and replace the old key. The audit reads activation dates with dnssec-settime -u -pA and requires ZSKs (DNSKEY 256) activated within the last 2 years and KSKs (DNSKEY 257) within 6 years.
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- operations
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 9.6 Ensure Signing Keys are Scheduled to be Replaced Periodically
+audit:
+  type: command
+  command: |-
+    command -v dnssec-settime >/dev/null 2>&1 || exit 1
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    keys=$(find $BH /etc/bind/keys -name 'K*.key' -type f 2>/dev/null | sort -u)
+    [ -n "$keys" ] || { echo compliant; exit 0; }
+    now=$(date +%s)
+    bad=$(for k in $keys; do
+      if grep -q 'DNSKEY 256 3' "$k"; then lim=63072000; elif grep -q 'DNSKEY 257 3' "$k"; then lim=189216000; else continue; fi
+      a=$(dnssec-settime -u -pA "$k" 2>/dev/null | awk '{print $NF; exit}')
+      case "$a" in ''|*[!0-9]*) echo "$k: no activation date" ;; *) [ $((now - a)) -le $lim ] || echo "$k: activated $(( (now - a) / 86400 )) days ago" ;; esac
+    done)
+    [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: 'To replace an aged key, perform the following: ; Generate a new key to replace the old key using dnssec-keygen and one of the recommended algorithms. An example command is shown below: # dnssec-keygen -a ED25519 example.org # dnssec-keygen -a ED25519 -f KSK example.org ; Implement a rollover period to phase out the old key and replace it with the newly generated key. The older key should have dates set for the keys to be inactive and then deleted. # dnssec-settime -I +30d -D +60d Kexample.org.+013+46651.key ; Once the date for key deletion has passed, and the key is no longer included in the zone, then remove the key files.'

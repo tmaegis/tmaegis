@@ -1,0 +1,20 @@
+id: TMA-CISCO-IOSXR-1.5.4
+title: Set the ACL for each 'snmp-server community'
+description: 'This feature specifies a list of IP addresses that are allowed to use the community string to gain access to the SNMP agent. If ACLs are not applied, then anyone with a valid SNMP community string can potentially monitor and manage the router. An ACL should be defined and applied for all SNMP access to limit access to a small number of authorized management stations segmented in a ... CIS marks this Manual; automated: fails if a community line carries no IPv4/IPv6 ACL. Audited against the hierarchical output of ''show running-config'' (run ''terminal length 0'' first; not ''show running-config formal'').'
+target: cisco-iosxr
+level: 1
+severity: high
+tags:
+- cisco-iosxr
+- network
+- snmp
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.5.4 Set the ACL for each 'snmp-server community'
+audit:
+  type: config_regex
+  pattern: '(?m)(?i)^snmp-server community \S+(?: (?:RO|RW))?(?: (?:SystemOwner|SDROwner))?[ \t\r]*$'
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure authorized SNMP community string and restrict access to authorized management systems.
+    snmp-server community {community_string} RO IPv4 {snmp_access-list}

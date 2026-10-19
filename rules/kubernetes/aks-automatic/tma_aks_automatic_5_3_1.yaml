@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-5.3.1
+title: Encrypt Kubernetes Secrets at rest with AKS KMS protection
+description: Kubernetes Secret data stored by AKS in etcd must be protected with encryption at rest. When additional KMS protection is required, use the AKS KMS provider integrated with Azure Key Vault. Azure platform encryption provides baseline storage layer protection, while AKS KMS adds envelope encryption before Secret data is committed to etcd. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: high
+tags:
+- aks-automatic
+- managed-services
+- secrets
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 5.3.1 Encrypt Kubernetes Secrets at rest with AKS KMS protection
+audit:
+  type: manual
+  command: Review each AKS Automatic cluster to determine whether KMS encryption for Kubernetes Secrets is enabled and correctly configured. Azure platform encryption is always enabled for data at rest, but AKS KMS adds a separate encryption layer before Secret data is written to etcd. Verify that securityProfile.kubernetesResourceObjectEncryptionProfile.infras tructureEncryption is set to Enabled for the current KMS data encryption experience.
+remediation:
+  type: iac_patch
+  command: Enable AKS KMS on AKS Automatic clusters that require additional Kubernetes Secret encryption. Confirm that the selected KMS experience is supported for the cluster and that Preview use is approved where applicable. 1. Identify clusters where AKS KMS is not enabled. 2. Decide whether to use platform managed keys or customer managed keys based on key ownership and compliance requirements. 3. For customer managed keys, create or select the Azure Key Vault key, assign a user assigned managed identity, and grant the required key permissions before enabling KMS. 4. For a private Key Vault, configure the firewall to allow trusted Azure services and confirm that the managed identity can access the vault. 5. Verify that the AKS security profile shows infrastructure encryption enabled and, for customer managed keys, the expected Key Vault configuration. 6.

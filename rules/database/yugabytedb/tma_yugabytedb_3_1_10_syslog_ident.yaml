@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-3.1.10
+title: Ensure the program name for YugabyteDB syslog messages is correct
+description: 'The syslog_ident setting specifies the program name used to identify YugabyteDB messages in syslog logs. An example of a possible program name is yugabyte. Assessed manually here: the benchmark check is environment-specific and cannot be evaluated reliably by a single command.'
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.10 Ensure the program name for YugabyteDB syslog messages is correct
+audit:
+  type: manual
+  command: Run SHOW syslog_ident; in ysqlsh (default postgres). The program name must match the value your syslog routing and SIEM rules expect for YugabyteDB (for example yugabyte); a value that does not match the logging policy is a finding.
+remediation:
+  type: iac_patch
+  command: 'Use the yb-tserver binary and its flags to configure the YB-TServer server (in this example, assuming a program name of yugabyte). Add the following GFLAG to YB- TServer: ./bin/yb-tserver --ysql_pg_conf_csv="syslog_ident=''yugabyte''"'

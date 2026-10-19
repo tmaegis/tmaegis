@@ -1,0 +1,18 @@
+id: TMA-AKS-4.1.7
+title: Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+description: Cluster roles and roles with the impersonate, bind or escalate permissions should not be granted unless strictly required. Each of these permissions allow a particular subject to escalate their privileges beyond those explicitly granted by cluster administrators Review AKS authorization assignments to ensure bind, escalate, and impersonation permissions are granted only to identities with a documented administrative need. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- rbac
+- file-permissions
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.7 Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+audit:
+  type: manual
+  command: Review AKS RBAC to identify any users, groups, or service accounts granted bind, escalate, or impersonation permissions through Kubernetes RBAC or Azure RBAC for Kubernetes Authorization. • Identify roles and bindings that include bind, escalate, or impersonation permissions. • Determine which users, groups, or service accounts receive those permissions. • Validate that each assignment is required for a defined administrative function. • Flag any cluster-scoped or service-account assignment that lacks a documented need.
+remediation:
+  type: iac_patch
+  command: Remove bind, escalate, and impersonation permissions from any custom Role or ClusterRole that does not require them for an approved administrative function. Where these permissions are required, keep them limited to the smallest practical scope and avoid assigning them to workload service accounts, since AKS recommends minimum required permissions and service accounts continue to rely on Kubernetes RBAC. • Update each affected custom Role to remove unnecessary bind, escalate, or impersonate rules. • Update each affected custom ClusterRole to retain only the specific elevated permission that is explicitly required. • Replace broad assignments with lower-privilege roles and reduce scope from cluster-wide to namespace-scoped where possible. • Do not assign these permissions to workload service accounts unless there is a documented and approved need.

@@ -1,0 +1,26 @@
+id: TMA-GITLAB-1.1.20
+title: Ensure branch protection is enforced on the default branch
+description: Enforce branch protection on the default and main branch. The default or main branch of repositories is considered very important, as it is eventually gets deployed to the production. Therefore it needs protection. By enforcing branch protection rules on this branch, it is secured from unwanted or unauthorized changes. It can also be protected from untested and unreviewed changes and more.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- branch-protection
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.20 Ensure branch protection is enforced on the default branch
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to enforce branch protection on the main or default branch at the project level: 1. Navigate to your project page. 2. Select Settings > Repository. 3. Expand Protected branches. 4. Select Add protected branch. 5. From the Branch dropdown list, select the project''s main or default branch. 6. Choose the roles who should be Allowed to merge and Allowed to push and merge for this protected default branch. 7. Select Protect. Perform the following to enforce branch protection on the main or default branch of new projects at the group level: 1. Navigate to the main page for your GitLab group. 2. Select Settings > Repository. 3. Expand Default branch 4. Enable initial default branch protection for the "main" or default branch of new repositories created in the group. 5. Select Save changes. Perform the following to enforce branch protection on the main branch of new projects at the instance level (self-managed GitLab administrators only): 1. Navigate to Admin Area.
+    2. Select Settings > Repository. 3. Expand Default branch. 4. Enable initial default branch protection for the "main" or default branch of new repositories created on this GitLab instance. 5. Select Save...'

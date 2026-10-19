@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-2.4
+title: Ensure Database Servers Are Isolated in a Separate Subnet with Restricted Ingress and Egress
+description: The core requirement is to deploy CockroachDB nodes on private, non-public networks (subnets, VLANs, or VPC private segments) and to use strict firewall or security group rules to control access to the required ports. This ensures the database is shielded from the public internet and enforces least-privilege access.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- network
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 2.4 Ensure Database Servers Are Isolated in a Separate Subnet with Restricted Ingress and Egress
+audit:
+  type: manual
+  command: 'Run cockroach node status --format=table and confirm node addresses are private (RFC 1918). Review host firewalls / security groups: 26257 (SQL/RPC) only from other nodes, approved app subnets and jump hosts; 8080 (DB Console) only from admin networks; no 0.0.0.0/0 ingress; egress limited to required destinations (NTP, KMS, backup storage).'
+remediation:
+  type: iac_patch
+  command: '1. Place CockroachDB Nodes in Private Networks: Ensure all CockroachDB VMs are located in a private VLAN or non-internet-routable subnet. If a public IP is assigned for management, ensure it is not the primary address used for cluster communication and that its inbound ports are fully locked down. 2.'

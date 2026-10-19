@@ -1,0 +1,26 @@
+id: TMA-BIND-2.2
+title: Give the BIND User Account an Invalid Shell
+description: The BIND user account, named by default, must not be used as a regular login account, and should be assigned an invalid or nologin shell to ensure that the account cannot be used to login. The audit reads /etc/passwd and requires the named (or bind) account shell to be /sbin/nologin, /bin/false or /dev/null.
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.2 Give the BIND User Account an Invalid Shell
+audit:
+  type: command
+  command: |-
+    bad=0; n=0
+    for u in named bind; do
+      s=$(awk -F: -v u=$u '$1==u{print $7}' /etc/passwd) || exit 1
+      [ -n "$s" ] || continue; n=1
+      case "$s" in /sbin/nologin|/usr/sbin/nologin|/bin/false|/usr/bin/false|/dev/null) ;; *) echo "$u shell $s"; bad=1 ;; esac
+    done
+    [ "$n" -eq 1 ] || { echo 'no named/bind account'; exit 1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Change the named account to use the nologin shell as shown: # chsh -s /sbin/nologin named'

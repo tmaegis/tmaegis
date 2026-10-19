@@ -1,0 +1,16 @@
+id: TMA-AIX-2.6
+title: Ensure regular scans for unauthorized applications
+description: This recommendation is find and report (audit) software on the system that has not been included in the TE (trusted execution) TSD (trusted signature database). These entries establish a so-called AllowList. Software not included on this AllowList should be generating a syslog and/or audit record whenever it is executed.
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 2.6 Ensure regular scans for unauthorized applications
+audit:
+  type: manual
+  command: 'The following command will locate the software AIX considers untrusted aka TROJAN. Note: the output goes to stderr so stderr is first joined to stdout and thereafter stdout get redirected to /dev/null. The argument -i instructs the scan to ignore NFS mounts. trustchk -i -n tree / 2>&1 >/dev/null | grep untrusted'
+remediation:
+  type: iac_patch
+  command: 'This will be a manual process. The remediation is to find and remove the offending file (currently the reported file might be the artifact of another error - most common is a symbolic link that points at a non-existent object). The starting point is running the same command from the AUDIT section: trustchk -i -n tree / 2>&1 >/dev/null | grep untrusted Line by line, verify the root cause and act (one of): remove the offending object remove SUID/SGID settings remove privcmds setting add to TSD aka AllowList'

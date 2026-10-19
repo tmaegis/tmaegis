@@ -1,0 +1,17 @@
+id: TMA-AZURE-5.7
+title: Ensure there are between 2 and 3 Subscription Owners
+description: The Owner role in Azure grants full control over all resources in a subscription, including the ability to assign roles to others. Limit the number of security principals (users, groups, service principals, and managed identities) assigned the Owner role to between 2 and 3. If groups are used, ensure their membership is tightly controlled and regularly reviewed to avoid privilege sprawl.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 5.7 Ensure there are between 2 and 3 Subscription Owners
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Subscriptions. 2. Click the name of a subscription. 3. Click Access Controls (IAM). 4. Click Role assignments. 5. Click Role : All. 6. Click the arrow next to All. 7. Click Owner. 8. Ensure a minimum of 2 and a maximum of 3 members are returned. 9. Repeat steps 1-8 for each subscription. Audit from Azure CLI Run the following command to list members with role Owner at a given subscription scope: az role assignment list --role Owner --scope /subscriptions/<subscription-id> --query "[].{PrincipalName:principalName, Type:principalType}" Ensure a minimum of 2 and a maximum of 3 members are returned. For each Owner assignment, check: If principalType == Group, review group membership. If principalType == ServicePrincipal or ManagedIdentity, validate necessity and scope. Repeat for each subscription. Audit from PowerShell Run the following command to list members with role Owner at a given subscription scope: Get-AzRoleAssignment -RoleDefinitionName
+    Owner -Scope /subscriptions/<subscription-id> Ensure a minimum of 2 and a maximum of 3 members are returned. Repeat for each subscription. Audit from Azure Policy If referencing a digital copy of this Bench...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Subscriptions. 2. Click the name of a subscription. 3. Click Access Controls (IAM). 4. Click Role assignments. 5. Click Role : All. 6. Click the arrow next to All. 7. Click Owner. 8. Check the box next to members from whom the owner role should be removed. 9. Click Delete. 10. Click Yes. 11. Repeat steps 1-10 for each subscription requiring remediation. Remediate from Azure CLI Run the following command to delete role assignments by role assignment id: az role assignment delete --ids <role-assignment-ids>'

@@ -1,0 +1,23 @@
+id: TMA-PALOALTO-6.21
+title: Ensure that 'Wildfire Inline ML' on antivirus profiles are set to enable for all file types
+description: 'Configure ''Wildfire Inline ML'' on antivirus profiles to a value of ''enable'' for all file types. FAILs if any antivirus profile disables a WildFire Inline ML model (mlav-policy-action disable). Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.21 Ensure that 'Wildfire Inline ML' on antivirus profiles are set to enable for all file types
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles virus (?:"[^"\n]*"|\S+) mlav-engine-filebased-enabled (?:"[^"\n]*"|\S+) mlav-policy-action disable[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles virus <profile> mlav-engine-filebased-enabled "Windows Executables" mlav-policy-action enable
+    (repeat for every model)
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > Antivirus Go to Wildfire Inline ML tab. Set enable (inherit per-protocol actions) for all Model on Action Setting.

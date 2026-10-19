@@ -1,0 +1,19 @@
+id: TMA-IBMCLOUD-7.1.2
+title: Ensure TLS 1.2+ for all inbound traffic at IBM Cloud Kubernetes Service Ingress
+description: Ensure that all insecure (HTTP) client requests to applications and services hosted on IBM Cloud Kubernetes Service are redirected to secure TLS connections (HTTPS) and ensure that only TLS versions 1.2+ are supported. You set up Ingress application load balancers (ALBs) in your cluster to secure your domain with the IBM-provided TLS certificate or your custom TLS certificate. Some users might try to access your apps by using an insecure http request to your ALB domain, for example http://www.myingress.com, instead of using https. Hypertext transfer protocol secure (HTTPS) is the secure version of HTTP and uses the Transport Layer Security (TLS) protocol to provide a secure, encrypted connection between the client and the server. This protocol encrypts communication to protect users from attack, for example, man in the middle attacks. IBM Cloud Kubernetes Service provides configuratio...
+target: ibmcloud
+level: 1
+severity: medium
+tags:
+- cloud
+- ibmcloud
+- tls
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 7.1.2 Ensure TLS 1.2+ for all inbound traffic at IBM Cloud Kubernetes Service Ingress
+audit:
+  type: manual
+  command: '1. Obtain the configuration for the ibm-k8s-controller-config ConfigMap resource. kubectl get cm ibm-k8s-controller-config -n kube-system -o yaml 2. In the data section, ensure that the ssl-protocols key is not present, or if it is present, ensure that it only includes TLSv1.2 and/or TLSv1.3. 3. In the data section, ensure that the ssl-redirect key is present and is set to true. apiVersion: v1 data: ssl-protocols: "TLSv1.2 TLSv1.3" ssl-redirect: “true” kind: ConfigMap metadata: name: ibm-k8s-controller-config namespace: kube-system 4. Obtain the configuration for your Ingress resource by running the following command: kubectl get ingress <my_ingress> -n <my_namespace> -o yaml 5. In the annotations section, ensure that the nginx.ingress.kubernetes.io/ssl-redirect key is present and is set to true. apiVersion: networking.k8s.io/v1 kind: Ingress metadata: name: myingress annotations: nginx.ingress.kubernetes.io/ssl-redirect: "true" spec: tls: - hosts: - myhost secretName: mytlssecret
+    rules: - host: myhost http: paths: - backend: service: name: myservice port: number: 8080 path: /'
+remediation:
+  type: iac_patch
+  command: '1. Edit the configuration file for the ibm-k8s-controller-config ConfigMap resource by running the following command: kubectl edit cm ibm-k8s-controller-config -n kube-system 2. In the data section, remove the ssl-protocols key, or ensure it is set to ssl- protocols: "TLSv1.2 TLSv1.3". 3. In the data section, add ssl-redirect: "true". apiVersion: v1 data: ssl-protocols: "TLSv1.2 TLSv1.3" ssl-redirect: “true” kind: ConfigMap metadata: name: ibm-k8s-controller-config namespace: kube-system 4. Edit the configuration for your Ingress resource by running the following command: kubectl edit ingress <my_ingress> -n <my_namespace> 5. In the annotations section, add nginx.ingress.kubernetes.io/ssl- redirect: "true". apiVersion: networking.k8s.io/v1 kind: Ingress metadata: name: myingress annotations: nginx.ingress.kubernetes.io/ssl-redirect: "true" spec: tls: - hosts: - myhost secretName: mytlssecret rules: - host: myhost http: paths: - backend: service: name: myservice port: number:
+    8080 path: /'

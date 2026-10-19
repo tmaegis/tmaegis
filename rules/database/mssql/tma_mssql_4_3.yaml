@@ -1,0 +1,19 @@
+id: TMA-MSSQL-4.3
+title: Ensure 'CHECK_POLICY' Option is set to 'ON' for All SQL Authenticated Logins
+description: 'Applies the same password complexity policy used in Windows to passwords used inside SQL Server. Disabled logins with CHECK_POLICY OFF are counted too, as in the benchmark query. Default: CHECK_POLICY is ON Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- authentication
+- password-policy
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 4.3 Ensure 'CHECK_POLICY' Option is set to 'ON' for All SQL Authenticated Logins
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.sql_logins WHERE is_policy_checked = 0;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'For each <login_name> found by the Audit Procedure, execute the following T-SQL statement: ALTER LOGIN [<login_name>] WITH CHECK_POLICY = ON; Note: In the case of AWS RDS do not perform this remediation for the Master account.'

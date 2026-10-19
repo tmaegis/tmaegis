@@ -1,0 +1,56 @@
+id: TMA-DEBIAN11-2.3.2.1
+title: Ensure systemd-timesyncd configured with authorized timeserver
+description: NTP= • A space-separated list of NTP server host names or IP addresses. During runtime this list is combined with any per-interface NTP servers acquired from systemd-networkd.service(8). systemd-timesyncd will contact all configured system or per-interface servers in turn, until one responds. When the empty string is assigned, the list of NTP servers is reset, and all prior assignments will have no effect. This setting defaults to an empty list. FallbackNTP= • A space-separated list of NTP server host names or IP addresses to be used as the fallback NTP servers. Any per-interface NTP servers o
+target: linux
+os_family:
+- debian-11
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 11 Benchmark v2.0.0 - 2.3.2.1
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   a_parlist=(\"NTP=[^#\\n\\r]+\" \"FallbackNTP=[^#\\n\\r]+\")\n   l_systemd_config_file=\"/etc/systemd/timesyncd.conf\" # Main systemd configuration file\n   config_file_parameter_chk()\n   {\n      unset A_out; declare -A A_out # Check config file(s) setting\n      while read -r l_out; do\n         if [ -n \"$l_out\" ]; then\n            if [[ $l_out =~ ^\\s*# ]]; then\n               l_file=\"${l_out//# /}\"\n            else\n               l_systemd_parameter=\"$(awk -F= '\"'\"'{print $1}'\"'\"' <<< \"$l_out\" | xargs)\"\n               grep -Piq -- \"^\\h*$l_systemd_parameter_name\\b\" <<< \"$l_systemd_parameter\" && A_out+=([\"$l_systemd_parameter\"]=\"$l_file\")\n            fi\n         fi\n      done < <(/usr/bin/systemd-analyze cat-config \"$l_systemd_config_file\" | grep -Pio '\"'\"'^\\h*([^#\\n\\r]+|#\\h*\\/[^#\\n\\r\\h]+\\.conf\\b)'\"'\"')\n      if (( ${#A_out[@]} > 0 )); then # Assess\
+    \ output from files and generate output\n         while IFS=\"=\" read -r l_systemd_file_parameter_name l_systemd_file_parameter_value; do\n            l_systemd_file_parameter_name=\"${l_systemd_file_parameter_name// /}\"\n            l_systemd_file_parameter_value=\"${l_systemd_file_parameter_value// /}\"\n            if grep -Piq \"^\\h*$l_systemd_parameter_value\\b\" <<< \"$l_systemd_file_parameter_value\"; then\n               l_output=\"$l_output\\n - \\\"$l_systemd_parameter_name\\\" is correctly set to \\\"$l_systemd_file_parameter_value\\\" in \\\"$(printf '\"'\"'%s'\"'\"' \"${A_out[@]}\")\\\"\\n\"\n            else\n               l_output2=\"$l_output2\\n - \\\"$l_systemd_parameter_name\\\" is incorrectly set to \\\"$l_systemd_file_parameter_value\\\" in \\\"$(printf '\"'\"'%s'\"'\"' \"${A_out[@]}\")\\\" and should have a value matching: \\\"$l_systemd_parameter_value\\\"\\n\"\n            fi\n         done < <(grep -Pio -- \"^\\h*$l_systemd_parameter_name\\h*=\\h*\\H+\" \"\
+    ${A_out[@]}\")\n      else\n         l_output2=\"$l_output2\\n - \\\"$l_systemd_parameter_name\\\" is not set in an included file\\n ** Note: \\\"$l_systemd_parameter_name\\\" May be set in a file that'\"'\"'s ignored by load procedure **\\n\"\n      fi\n   }\n   while IFS=\"=\" read -r l_systemd_parameter_name l_systemd_parameter_value; do # Assess and check parameters\n      l_systemd_parameter_name=\"${l_systemd_parameter_name// /}\"\n      l_systemd_parameter_value=\"${l_systemd_parameter_value// /}\"\n      config_file_parameter_chk\n   done < <(printf '\"'\"'%s\\n'\"'\"' \"${a_parlist[@]}\")\n   if [ -z \"$l_output2\" ]; then # Provide output from checks\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\"\n      [ -n \"$l_output\" ] && echo -e \"\\n- Correctly set:\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' ||\
+    \ { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    if ! grep -Eqs '^[[:space:]]*NTP=[^[:space:]]' /etc/systemd/timesyncd.conf /etc/systemd/timesyncd.conf.d/*.conf; then
+      mkdir -p /etc/systemd/timesyncd.conf.d
+      printf '[Time]\nNTP=%s\nFallbackNTP=%s\n' "${TMA_NTP_SERVERS:-0.pool.ntp.org 1.pool.ntp.org}" "${TMA_NTP_FALLBACK:-2.pool.ntp.org 3.pool.ntp.org}" > /etc/systemd/timesyncd.conf.d/60-tmaegis.conf
+    elif ! grep -Eqs '^[[:space:]]*FallbackNTP=[^[:space:]]' /etc/systemd/timesyncd.conf /etc/systemd/timesyncd.conf.d/*.conf; then
+      mkdir -p /etc/systemd/timesyncd.conf.d
+      printf '[Time]\nFallbackNTP=%s\n' "${TMA_NTP_FALLBACK:-2.pool.ntp.org 3.pool.ntp.org}" > /etc/systemd/timesyncd.conf.d/61-tmaegis-fallback.conf
+    fi
+    systemctl try-restart systemd-timesyncd.service 2>/dev/null; true
+  guidance: "Set NTP and/or FallbackNPT parameters to local site approved authoritative time server(s) in /etc/systemd/timesyncd.conf or a file in /etc/systemd/timesyncd.conf.d/ ending in .conf in the [Time] section: Example file: [Time] NTP=time.nist.gov # Uses the generic name for NIST's time servers FallbackNTP=time-a-g.nist.gov time-b-g.nist.gov time-c-g.nist.gov # Space separated list of NIST time servers Example script to create systemd drop-in file: #!/usr/bin/env bash { [ ! -d /etc/systemd/timesyncd.conf.d/ ] && mkdir /etc/systemd/timesyncd.conf.d/ printf '%s\\n' \"[Time]\" \"NTP=time.nist.gov\" \"FallbackNTP=time-a-g.nist.gov time-b-g.nist.gov time-c-g.nist.gov\" >> /etc/systemd/timesyncd.conf.d/60- ti…"

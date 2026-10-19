@@ -1,0 +1,21 @@
+id: TMA-WIN2022-17.7.2
+title: Ensure 'Audit Authentication Policy Change' is set to include 'Success'
+description: 'This subcategory reports changes in authentication policy. Events for this subcategory include: • 4706: A new trust was created to a domain. • 4707: A trust to a domain was removed. • 4713: Kerberos policy was changed. • 4716: Trusted domain information was modified. • 4717: System security access was granted to an account. • 4718: System security access was removed from an account. • 4739: Domain Policy was changed. • 4864: A namespace collision was detected. • 4865: A trusted forest information entry was added. • 4866: A trusted forest information entry was removed. • 4867: A trusted forest '
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 17.7.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9230-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9230-69ae-11d9-bed3-505054503030}' /success:enable

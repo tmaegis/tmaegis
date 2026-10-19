@@ -1,0 +1,27 @@
+id: TMA-FORTIGATE-7.1.1
+title: Enable Event Logging
+description: Enabling event logging to allow for log generation and review. FAILs if any event type in config log eventfilter is disabled. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: medium
+tags:
+- fortigate
+- logging
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 7.1.1 Enable Event Logging
+audit:
+  type: config_regex
+  pattern: (?m)^config log eventfilter\n(?:[ \t]+[^\n]*\n)*?[ \t]+set \S+ disable[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config log eventfilter
+        set event enable
+    end
+    # CIS guidance:
+    On GUI:
+    1. Go to Log & Report > Log Settings.
+    2. Enable "All" Event Logging. On CLI:
+    config log eventfilter
+        set event enable
+    end

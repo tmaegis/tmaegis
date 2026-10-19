@@ -1,0 +1,24 @@
+id: TMA-CHECKPOINT-1.12
+title: Ensure Maximum number of failed attempts allowed is set to 5 or fewer
+description: This only takes effect if Deny access after failed attempts is enabled. The number of failed login attempts that a user is allowed before being locked out. After making that many successive failed attempts, future attempts will fail. When one login attempt succeeds, counting of failed attempts stops, and the count is reset to zero. PASS requires deny-on-fail failures-allowed of 5 or fewer. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: high
+tags:
+- checkpoint
+- hardening
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 1.12 Ensure Maximum number of failed attempts allowed is set to 5 or fewer
+audit:
+  type: config_regex
+  pattern: (?m)^set password-controls deny-on-fail failures-allowed [1-5][ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    set password-controls deny-on-fail failures-allowed 5
+    save config
+    # CIS guidance:
+    Run the following command to set the deny-on-fail failures-allowed setting. CLI:
+    set password-controls deny-on-fail failures-allowed 5
+    GUI:
+    Navigate to User Management > Password Policy > Deny Access After Failed Login Attempts:
+    checked and set ' Maximum number of failed attempts allowed is set to' setting to 5 or fewer.

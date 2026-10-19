@@ -1,0 +1,19 @@
+id: TMA-AZURE-COMPUTE-2.3.16
+title: Ensure all traffic is routed through the virtual network
+description: Enable vnetRouteAllEnabled to ensure all outbound traffic is routed through the integrated virtual network. This recommendation should be applied after integrating a function app with a virtual network. Routing all outbound traffic through the virtual network enhances security.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+- network
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.16 Ensure all traffic is routed through the virtual network
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Networking. 4. Under Outbound traffic configuration, next to Virtual network integration, click the virtual network and subnet name. 5. Under Application routing, ensure that the box next to Outbound internet traffic is checked. 6. Repeat steps 1-5 for each function app. Audit form Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the virtual network traffic routing setting: az functionapp show --resource-group <resource-group-name> --name <app-name> --query vnetRouteAllEnabled Ensure that true is returned. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: 32a913ec-5ed7-4b31-a5b0-198450d8fb13 - Name: ''Function apps should enable outbound non-RFC 1918 traffic to Azure Virtual Network'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Networking. 4. Under Outbound traffic configuration, next to Virtual network integration, click the virtual network and subnet name. 5. Under Application routing, check the box next to Outbound internet traffic. 6. Click Apply. 7. Repeat steps 1-6 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to route all traffic through the virtual network: az resource update --resource-group <resource-group-name> --name <function- app-name> --resource-type "Microsoft.Web/sites" --set properties.vnetRouteAllEnabled=true'

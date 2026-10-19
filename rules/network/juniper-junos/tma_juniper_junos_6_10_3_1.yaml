@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.10.3.1
+title: Ensure XNM-Clear-Text Service is Not Set
+description: Cleartext Management Services should be disabled. JUNOScript Clients can access the router using a variety of transport modes including Clear-Text, Telnet, SSH and SSL. When Clear-Text is used the JUNOScript Client connects to the JUNOS Device on port TCP/3221. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.3.1 Ensure XNM-Clear-Text Service is Not Set
+audit:
+  type: config_regex
+  pattern: (?m)^set system services xnm-clear-text\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! The XNM-Clear-Text service is not enabled by default, however if it has been configured on your router it can by disabled by issuing the following command from the hierarchy;
+    delete system services xnm-clear-text

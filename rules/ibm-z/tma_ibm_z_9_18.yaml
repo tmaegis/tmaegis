@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.18
+title: Ensure that the BPXROOT user account is configured with compliant values
+description: The z/OS UNIX System Services function setuid can be used to change the UID of the process. When the UID requested is UID=0, the user set as SUPERUSER in BPXPRMxx is used. The default user is BPXROOT. The BPXROOT user must be defined with the correct attributes so the setuid function can be securely used. If these attributes are not correctly defined, data access or command privilege controls could be compromised.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.18 Ensure that the BPXROOT user account is configured with compliant values
+audit:
+  type: manual
+  command: 'Request a list of BPXROOT user ID values for the SUPERUSER statement in BPXPRMxx members. Request reports generated using IRRDBU00 output that will allow you to: Verify that the RACF user ID defined as BPXROOT in a SUPERUSER statement: Has the PROTECTED attribute Does not appear on any RACF data set or general resource access list Does not have any segments beyond base and OMVS Does not have any extra system or group privileges (ex. ROAUDIT, CLAUTH, group-JOIN, etc.) Has the following OMVS segment values: o UID value of 0 o HOME value of / o PROGRAM value of ... (full steps: CIS section 9.18)'
+remediation:
+  type: iac_patch
+  command: 'To create a compliant BPXROOT user ID use the RACF ADDGROUP, ADDUSER, and CONNECT commands: ADDUSER BPXROOT + OWNER(OMVSGRP) + DFLTGRP(OMVSGRP) + NOPASSWORD + DATA(''USER IS DEFINED AS SUPERUSER IN BPXPRMXX'') + OMVS( + UID(0) SHARED + HOME(''/'') + PROGRAM(''/bin/sh'') + ) CONNECT OMVSKERN + GROUP(OMVSGRP) + OWNER(OMVSGRP) Note: The HOME and PROGRAM values are case sensitive. To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT BPX.DAEMON CLASS(FACILITY) + DELETE ID(BPXROOT) SETROPTS RACFLIST GENERIC(FACILITY)'

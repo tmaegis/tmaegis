@@ -1,0 +1,22 @@
+id: TMA-PFSENSE-6.1
+title: Ensure syslog is configured
+description: Syslog logging is a standard logging protocol that is widely supported. It is recommended for a level 1 deployment only, as syslog does not support encryption PASS requires remote logging enabled (<enable> in <syslog>) with a non-empty <remoteserver>. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- logging
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 6.1 Ensure syslog is configured
+audit:
+  type: config_regex
+  pattern: <syslog>(?:[^<]|<[^/<]|</[^s<]|</s[^y<]|</sy[^s<]|</sys[^l<]|</sysl[^o<]|</syslo[^g<]|</syslog[^><])*?(?:<enable(?:\s*/>|>[^<]*</enable>)(?:[^<]|<[^/<]|</[^s<]|</s[^y<]|</sy[^s<]|</sys[^l<]|</sysl[^o<]|</syslo[^g<]|</syslog[^><])*?<remoteserver>[^<\s][^<]*</remoteserver>|<remoteserver>[^<\s][^<]*</remoteserver>(?:[^<]|<[^/<]|</[^s<]|</s[^y<]|</sy[^s<]|</sys[^l<]|</sysl[^o<]|</syslo[^g<]|</syslog[^><])*?<enable(?:\s*/>|>[^<]*</enable>))
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: Status > System Logs > Settings > Remote Logging Options: tick Enable Remote Logging, set Remote log servers, select the log contents, Save.
+    # CIS guidance:
+    In GUI:
+    -
+    Navigate to Status > System Logs > Settings.
+    - Configure 'Enable Remote Logging' Options

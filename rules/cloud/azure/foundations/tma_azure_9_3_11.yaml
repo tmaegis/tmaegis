@@ -1,0 +1,17 @@
+id: TMA-AZURE-9.3.11
+title: Ensure Redundancy is Set to 'geo-redundant storage (GRS)' on Critical Azure Storage Accounts
+description: 'Geo-redundant storage (GRS) in Azure replicates data three times within the primary region using locally redundant storage (LRS) and asynchronously copies it to a secondary region hundreds of miles away. This setup ensures high availability and resilience by providing 16 nines (99.99999999999999%) durability over a year, safeguarding data against regional outages. Enabling GRS protects critical data from regional failures by maintaining a copy in a geographically separate location. This significantly reduces the risk of data loss, supports business continuity, and meets high availability requirements for disaster recovery. NOTE: In recent discussions the CIS Microsoft Azure Community has discussed revising this recommendation to ensure other geographically redundant storage options are considered. While the recommendation remains unchanged in this publication, other Geographically red...'
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 9.3.11 Ensure Redundancy is Set to 'geo-redundant storage (GRS)' on Critical Azure Storage Accounts
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. Click on a storage account. 3. Under Data management, click Redundancy. 4. Ensure that Redundancy is set to Geo-redundant storage (GRS). 5. Repeat steps 1-4 for each storage account. Audit from Azure CLI Run the following command to list storage accounts: az storage account list For each storage account, run the following command: az storage account show --resource-group <resource-group> --name <storage- account> Under sku, ensure that name is set to Standard_GRS. Audit from PowerShell Run the following command to list storage accounts: Get-AzStorageAccount Run the following command to get the storage account in a resource group with a given name: $storageAccount = Get-AzStorageAccount -ResourceGroupName <resource-group> - Name <storage-account> Run the following command to get the redundancy setting for the storage account: $storageAccount.SKU.Name Ensure that the command returns Standard_GRS. Repeat for each storage account.
+    Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage accounts. 2. Click on a storage account. 3. Under Data management, click Redundancy. 4. From the Redundancy drop-down menu, select Geo-redundant storage (GRS). 5. Click Save. 6. Repeat steps 1-5 for each storage account requiring remediation. Remediate from Azure CLI For each storage account requiring remediation, run the following command to enable geo-redundant storage: az storage account update --resource-group <resource-group> --name <storage- account> --sku Standard_GRS Remediate from PowerShell For each storage account requiring remediation, run the following command to enable geo-redundant storage: Set-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account> -SkuName "Standard_GRS"'

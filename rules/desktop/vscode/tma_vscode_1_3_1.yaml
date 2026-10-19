@@ -1,0 +1,18 @@
+id: TMA-VSCODE-1.3.1
+title: Ensure 'EnableFeedback' is set to 'Disabled'
+description: 'This policy setting controls feedback mechanisms, such as the issue reporter and surveys. The recommended state for this setting is: Disabled. Rationale: The VS Code issue reporter can be configured to submit context such as basic system configuration and application settings. This may inadvertently disclose information that some organizations consider confidential. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\VSCode:EnableFeedback (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: vscode
+level: 2
+severity: low
+tags:
+- vscode
+- developer-tools
+- cis-l2
+reference: CIS Visual Studio Code GPO Benchmark v1.0.0 - 1.3.1 Ensure 'EnableFeedback' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'' -Name ''EnableFeedback'' -ErrorAction SilentlyContinue).''EnableFeedback''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'EnableFeedback' -Value 0 -PropertyType DWord -Force | Out-Null

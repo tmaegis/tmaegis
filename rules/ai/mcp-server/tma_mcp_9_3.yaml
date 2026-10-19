@@ -1,0 +1,19 @@
+id: TMA-MCP-9.3
+title: Ensure local stdio MCP servers run under least-privilege identities with sandbox or container isolation
+description: 'Each local stdio MCP server runs under a least-privilege identity and inside an isolation boundary that limits its filesystem reach, network egress, and ability to spawn subprocesses to what its declared function requires. A stdio server is a subprocess of the host and, without such a boundary, inherits the full privileges of the host user: every file, credential, environment variable, and network destination that user can reach. The isolation boundary may be a container, an operating-system sandbox, systemd sandboxing directives, or a mandatory access control profile combined with capability restrictions. The mechanism varies by platform, but the required properties do not. The execution identity is non-privileged, and where feasible it is distinct from or restricted relative to the interactive user. Filesystem access is limited to the paths the server''s declared function requires. O...'
+target: mcp-server
+level: 2
+severity: low
+tags:
+- ai
+- containers
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 9.3 Ensure local stdio MCP servers run under least-privilege identities with sandbox or container isolation
+audit:
+  type: manual
+  command: 'Verify for each approved local stdio server that the running process is confined as its profile declares. Confirm that the execution identity is the designated least-privilege identity, that the isolation mechanism limits filesystem access to the paths documented for the server, that a default-deny egress policy with an allowlist of the declared destinations is applied, and that subprocess execution is disabled or restricted. Under systemd, the command below evaluates the unit''s sandbox properties. Supply the approved account in EXPECTED_USER, and any approved capability set in EXPECTED_CAPS where the deployment defines one. A unit that is loaded but not active returns ERROR, because a running process is required to verify runtime confinement. An IPv4 catch-all denial is accepted as default-deny when the unit restricts address families to exclude AF_INET6. The command needs systemctl. Run the following command: UNIT="<SYSTEMD_UNIT>" out=$(systemctl show "$UNIT" -p LoadState,ActiveState,SubState,User,NoNewPrivileges,ProtectSystem,ProtectHome,Capabil
+    ityBoundingSet,SystemCallFilter,IPAddressDeny,IPAddressAllow,RestrictAddressFamilies 2>/dev/null) get() { printf ''%s\n'' "$out" | sed...'
+remediation:
+  type: iac_patch
+  command: 'Author an isolation profile for each approved local server that documents its required paths, required network destinations, and required helper binaries. Run the server inside a boundary that enforces that profile. The boundary may be a container with a non-root user, a read-only root filesystem, dropped capabilities, and an egress policy. It may be systemd sandboxing directives: a dedicated user, filesystem protection, a default-deny egress policy set with IPAddressDeny=any and an IPAddressAllow allowlist of the declared destinations, an approved capability set, and restricted system calls. Or it may be a MAC profile with equivalent constraints. Set the execution identity to a dedicated least-privilege account where the host supports launching servers under one. Log denials from the boundary for anomaly detection. The mechanism differs by platform, but the required properties (identity, filesystem, egress, subprocess) do not.'

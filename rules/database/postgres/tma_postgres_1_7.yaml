@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-1.7
+title: Verify That the 'PGPASSWORD' Environment Variable is Not in Use
+description: PostgreSQL can read a default database password from an environment variable called PGPASSWORD. Run as root; counts processes whose environment contains PGPASSWORD (including the scanner itself if it was given PGPASSWORD).
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- credentials
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 1.7 Verify That the 'PGPASSWORD' Environment Variable is Not in Use
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; n=$(grep -lsaz ''^PGPASSWORD='' /proc/[0-9]*/environ 2>/dev/null | wc -l); echo "$n"'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Find the processes (grep -lsaz ^PGPASSWORD= /proc/*/environ) and change the users or scripts that export PGPASSWORD to use ~/.pgpass or another secure method.

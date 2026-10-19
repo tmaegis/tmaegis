@@ -1,0 +1,19 @@
+id: TMA-MSSQL-7.4
+title: Ensure Network Encryption is Configured and Enabled
+description: 'Configuring and enabling network encryption ensures traffic between the application and the database system is encrypted. This will ensure compliance to security standards such as PCI DSS, which is required if connections are through a public network. Network encryption can be configured in SQL Server either with self-signed certificates or TLS certificates. Evaluates the connections open at scan time: every non-shared-memory connection must report encrypt_option TRUE. Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 2
+severity: high
+tags:
+- mssql
+- database
+- encryption
+- network
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 7.4 Ensure Network Encryption is Configured and Enabled
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN EXISTS (SELECT 1 FROM sys.dm_exec_connections c WHERE c.net_transport <> 'Shared memory' AND c.encrypt_option <> 'TRUE' AND c.endpoint_id NOT IN (SELECT endpoint_id FROM sys.database_mirroring_endpoints WHERE encryption_algorithm IS NOT NULL)) THEN 'noncompliant' ELSE 'compliant' END;"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Refer to Microsoft SQL Server Encryption Documentation: https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/sql-server- encryption'

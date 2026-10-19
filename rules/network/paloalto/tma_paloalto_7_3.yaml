@@ -1,0 +1,24 @@
+id: TMA-PALOALTO-7.3
+title: Ensure 'Security Policy' denying any/all traffic to/from IP addresses on Trusted Threat Intelligence Sources Exists
+description: 'Create a pair of security rules at the top of the security policies ruleset to block traffic to and from IP addresses known to be malicious. Note: This recommendation (as written) requires a Palo Alto Networks "Threat Prevention License". Third Party and Open Source Threat Intelligence Feeds can also be used for this purpose. PASS requires security rules using the panw-known-ip-list EDL as source and as destination; confirm the rules also list panw-highrisk-ip-list, panw-torexit-ip-list and panw-bulletproof-ip-list and use action deny/drop. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 7.3 Ensure 'Security Policy' denying any/all traffic to/from IP addresses on Trusted Threat Intelligence Sources Exists
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase security rules (?:"[^"\n]*"|\S+) destination [^\n]*panw-known-ip-list(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase security rules (?:"[^"\n]*"|\S+) source [^\n]*panw-known-ip-list|^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase security rules (?:"[^"\n]*"|\S+) source [^\n]*panw-known-ip-list(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase security rules (?:"[^"\n]*"|\S+) destination [^\n]*panw-known-ip-list)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set rulebase security rules "Deny to Malicious IP" from any to any source any destination [ panw-known-ip-list panw-highrisk-ip-list panw-torexit-ip-list panw-bulletproof-ip-list ] application any service any action deny
+    set rulebase security rules "Deny from Malicious IP" from any to any source [ panw-known-ip-list panw-highrisk-ip-list panw-torexit-ip-list panw-bulletproof-ip-list ] destination any application any service any action deny
+    commit
+    # CIS guidance:
+    Navigate to Policies > Security Create a Security Policy similar to:
+    General tab: Name set to Deny to Malicious IP Source tab: Source Zone set to Any, Destination tab: Destination Zone set to Any, Destination Address set to Palo Alto Networks - Known malicious IP addresses,Palo Alto Networks - High risk IP addresses, Palo Alto Networks - Tor exit IP addresses, Palo Alto Networks - Bulletproof IP addresses Application tab: Application set to Any Service/URL Category tab: Service set to Any Actions tab: Action set to Block, Profile Type set to None Create a Security Policy similar to:
+    General tab: Name set to Deny from Malicious IP Source tab: Source Zone set to Any, Source Address set to Palo Alto Networks - Known malicious IP addresses,Palo Alto Networks - High risk IP addresses, Palo Alto Networks - Tor exit IP addresses, Palo Alto Networks - Bulletproof IP addresses Destination tab: Destination Zone set to Any Application tab: Application set to Any Service/URL Category tab: Service set to Any Actions tab: Action set to Block, Profile Type set to None Note: This recommendation requires a Palo Alto Networks "Threat Prevention License"

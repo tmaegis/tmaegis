@@ -1,0 +1,18 @@
+id: TMA-SUPPLY-CHAIN-SIGNED-COMMITS
+title: Ensure the HEAD commit carries a valid signature
+description: Signed commits bind changes to a verified identity and make history tampering or author spoofing detectable. The audit requires git log -1 --format=%G? to report G (good) or U (good, unknown trust). SSH-signed commits verify only when gpg.ssh.allowedSignersFile is configured and GPG-signed commits need the signer's public key; otherwise the audit reports 'signed but could not be verified' and fails.
+target: supply-chain
+level: 2
+severity: medium
+tags:
+- supply-chain
+- source-code
+- commit-signing
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Source Code - require signed commits (verify section number for your release)
+audit:
+  type: command
+  command: "s=$(git log -1 --format=%G? 2>/dev/null) || exit 1\ncase $s in\n  G|U) echo compliant ;;\n  *)\n    if git cat-file commit HEAD 2>/dev/null | grep -q '^gpgsig'; then\n      echo \"HEAD is signed but the signature could not be verified (status $s): import the signer key or set gpg.ssh.allowedSignersFile\"\n    else\n      echo \"HEAD commit is not signed (status ${s:-none})\"\n    fi ;;\nesac"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Contributors: git config --global commit.gpgsign true with user.signingkey (GPG, SSH via gpg.format ssh, or Sigstore gitsign). Repository: enable ''Require signed commits'' in branch protection / rulesets. Auditor host: import signer keys or set gpg.ssh.allowedSignersFile so signatures can be verified.'

@@ -1,0 +1,38 @@
+id: TMA-VMWARE-2.11
+title: Host must use sufficient entropy for cryptographic operations
+description: Starting with vSphere 8.0, ESXi has enhanced its entropy implementation to align with FIPS 140-3 and EAL4 certifications, ensuring a robust foundation for cryptographic operations. Kernel boot options dictate the activation of entropy sources on an ESXi host. The parameter governing this behavior is disableHwrng = FALSE and entropySources = 0. The audit runs esxcli system settings kernel list -o disableHwrng and requires it to be absent or FALSE (configured and runtime). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 2.11 Host must use sufficient entropy for cryptographic operations
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings kernel list -o disableHwrng 2>/dev/null) || exit 1
+    set -- $(printf '%s\n' "$out" | awk '$1=="disableHwrng" {print toupper($3), toupper($4); exit}')
+    [ $# -eq 0 ] && { echo compliant; exit 0; }
+    [ "$1" = FALSE ] && [ "$2" = FALSE ] && echo compliant || echo "disableHwrng configured=$1 runtime=$2"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings kernel set -s disableHwrng -v FALSE
+  guidance: "1. Set the kernel option with: esxcli system settings kernel set -s disableHwrng -v FALSE 2. Reboot if required by the host/build and verify the configured and runtime values are FALSE."

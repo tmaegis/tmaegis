@@ -1,0 +1,17 @@
+id: TMA-AWS-6.3
+title: Ensure no security groups allow ingress from 0.0.0.0/0 to remote server administration ports
+description: Security groups provide stateful filtering of ingress and egress network traffic to AWS resources. It is recommended that no security group allows unrestricted ingress access to remote server administration ports, such as SSH on port 22 and RDP on port 3389, using either the TCP (6), UDP (17), or ALL (-1) protocols. Public access to remote server administration ports, such as 22 (when used for SSH, not SFTP) and 3389, increases the attack surface of resources and unnecessarily raises the risk of resource compromise.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 6.3 Ensure no security groups allow ingress from 0.0.0.0/0 to remote server administration ports
+audit:
+  type: manual
+  command: 'Perform the following to determine if the account is configured as prescribed: 1. Login to the AWS VPC Console at https://console.aws.amazon.com/vpc/home. 2. In the left pane, click Security Groups. 3. For each security group, perform the following: o Select the security group. o Click the Inbound Rules tab. o Ensure that no rule exists which has a port range including port 22 or 3389, uses the protocols TCP (6), UDP (17), or ALL (-1), or other remote server administration ports for your environment, and has a Source of 0.0.0.0/0. Note A port value of ALL or a port range such as 0-3389 includes port 22, 3389, and potentially other remote server administration ports Security groups are stateful and do not support explicit DENY rules. Therefore, an “effective ruleset” approach (e.g., allowing ANY/ANY but denying specific ports) is not applicable. Any rule that allows 0.0.0.0/0 access to administrative ports is considered non-compliant and must be removed or restricted'
+remediation:
+  type: iac_patch
+  command: 'From Console: Perform the following to implement the prescribed state: 1. Login to the AWS VPC Console at https://console.aws.amazon.com/vpc/home. 2. In the left pane, click Security Groups. 3. For each security group, perform the following: o Select the security group. o Click the Inbound Rules tab. o Click the Edit inbound rules button. 4. Identify the rules to be edited or removed. 5. Either: A) update the Source field to a range other than 0.0.0.0/0, or B) click Delete to remove the offending inbound rule. o Click Save rules. From Command Line: 1. Check all security groups for insecure inbound rules allowing traffic from 0.0.0.0/0: aws ec2 describe-security-group-rules --query ''SecurityGroupRules[?CidrIpv4 == "0.0.0.0/0" && IsEgress == `false`]'' --output json 2. Delete the insecure rule(s) based on their rule ID: aws ec2 delete-security-group-rules --group-id <security_group_id> -- security-group-rule-ids <rule_id_to_delete> 3. Recreate necessary security group rules: aws
+    ec2 authorize-security-group-ingress --group-id <security_group_id> -- protocol <tcp、udp、icmp or all> --port <port> --cidr <souce_cidr>'

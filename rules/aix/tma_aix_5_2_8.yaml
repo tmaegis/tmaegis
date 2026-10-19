@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.8
+title: Ensure a strong password hashing algorithm is configured
+description: 'The recommendation is to change the default password hash algorithm to ssha512 (see recommendation "Ensure pwd_algorithm is configured"). However, changing the default algorithm away from crypt is not enough. The user must supply a new password before a new hashed version of the password is stored in the shadow password file /etc/security/password. Audit: no stored password may still use a 13-character crypt hash in /etc/security/passwd.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.8 Ensure a strong password hashing algorithm is configured
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; [ -r /etc/security/passwd ] || exit 1; out=$( { grep -E "^[[:blank:]]*password[[:blank:]]*=[[:blank:]]*[^{*[:blank:]]{13}[[:blank:]]*$" /etc/security/passwd ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Execute the following command to enable an administrative requirement to update password on next login - when current password is still hashed using the crypt algorithm. #!/usr/bin/ksh -e # hash_chk:5.2.12 # Provided to CIS by AIXTools # Copyright AIXTools, 2022 #SystemAccounts are skipped, root is treated a regular account #pconsole is no longer a system account - being deprecated/removed SACTS1="(adm|bin|daemon|invscout|ipsec|lp|lpd|nobody|nuucp|sshd|sys|uucp)" SACTS2="(esa|srvproxy|imnadm|anonymou|ftp)" grep ''password[[:blank:]]= .............$'' /etc/security/passwd | \ while read pass equals cryptedhash; do user=$(/usr/bin/grep -p $cryptedhash /etc/security/passwd |\ /usr/bin/egrep -vp "${SACTS1}:$" |\ /usr/bin/egrep -vp "${SACTS2}:$" |\ /usr/bin/egrep ''[a-zA-z0-9]+:$'' | sed -e s/:$//) print ${user}: needs to update passwd set -x /usr/bin/pwdadm -c ${user} /usr/bin/pwdadm -f ADMCHG ${user} set +x done'

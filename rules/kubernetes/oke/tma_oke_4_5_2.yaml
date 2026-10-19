@@ -1,0 +1,17 @@
+id: TMA-OKE-4.5.2
+title: Apply securityContext controls to pods and containers
+description: Apply Security Context to Your Pods and Containers. For OKE workloads, securityContext controls should be used with Pod Security Admission or an equivalent admission policy so pods and containers run with only the operating system privileges they require. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- policies
+- pod-security
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.5.2 Apply securityContext controls to pods and containers
+audit:
+  type: manual
+  command: 'Review the pod definitions in your cluster and verify that you have security contexts defined as appropriate. Here is a key compliance check in OKE (Oracle Kubernetes Engine) to ensure all Pods define a securityContext at either the pod or container level: echo -e "NAMESPACE\tPOD\tHAS_POD_SECURITY_CONTEXT\tHAS_CONTAINER_SECURITY_CONTEXT" && \ kubectl get pods -A -o json \ | jq -r '' .items[] | .metadata.namespace as $ns | .metadata.name as $pod | (.spec.securityContext != null) as $hasPodSC | ([(.spec.containers[]?.securityContext != null)] | any) as $hasContainerSC | [$ns, $pod, ...'
+remediation:
+  type: iac_patch
+  command: 'Use securityContext settings in workload manifests and enforce the required Pod Security Standard with Pod Security Admission or an equivalent admission policy. Avoid using legacy PodSecurityPolicy manifests for current OKE clusters. For normal application workloads, configure pod and container securityContext settings that align to the intended security level. Common settings include running as a non root user, disabling privilege escalation, dropping unnecessary Linux capabilities, restricting host namespace use, and setting read only root filesystems where the application supports it. securityContext: runAsNonRoot: true allowPrivilegeEscalation: false capabilities: drop: - ALL • Label workload namespaces to enforce the required Pod Security Standard.'

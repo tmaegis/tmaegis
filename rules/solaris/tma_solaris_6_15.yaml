@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-6.15
+title: Secure the GRUB Menu (Intel)
+description: 'GRUB is a boot loader for x64 based systems that permits loading an OS image from any location. Oracle x64 systems support the use of a GRUB Menu password for the console. The flexibility that GRUB provides creates a security risk if its configuration is modified by an unauthorized user. Audit: on x86 systems /rpool/boot/grub/grub.cfg must source password.cfg; SPARC systems are compliant.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- hardening
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.15 Secure the GRUB Menu (Intel)
+audit:
+  type: command
+  command: if [ "$(uname -p)" = i386 ]; then grep -q "password.cfg" /rpool/boot/grub/grub.cfg 2>/dev/null && echo compliant || echo "GRUB menu password not configured"; else echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to generate your password hash: # /usr/lib/grub2/bios/bin/grub-mkpasswd-pbkdf2 Enter password: Reenter password: PBKDF2 hash of your password is <em><password_hash></em> Create the file /usr/lib/grub2/bios/etc/grub.d/01\_password: #!/bin/sh /usr/bin/cat > /rpool/boot/grub/password.cfg<<EOF # # GRUB password # set superusers="root" password_pbkdf2 root <em><password_hash></em> EOF /usr/bin/chmod 600 /rpool/boot/grub/password.cfg /usr/bin/echo ''source /@/boot/grub/password.cfg'' Run the following to finalize the password configuration and set menu timeout: # /usr/bin/chmod 700 /usr/lib/grub2/bios/etc/grub.d/01_password # /usr/sbin/bootadm set-menu timeout=30 Changes will take effect on the next reboot.'

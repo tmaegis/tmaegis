@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-4.6.2
+title: Ensure BFD Authentication is Not Set to Loose-Check
+description: BFD Peers should be authenticated. Bidirectional Forwarding Detection (BFD) is a Forwarding Plane feature which allows more rapid detection of a failed neighbor then can be achieved through a routing protocols' normal detection mechanisms, providing faster reconvergence. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.6.2 Ensure BFD Authentication is Not Set to Loose-Check
+audit:
+  type: config_regex
+  pattern: (?m)^set [^\n]*\bbfd-liveness-detection authentication loose-check\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have deployed BFD with Loose Authentication Checking, it can be disabled by issuing the appropriate [.* bfd-liveness-detection] hierarchy, in this example we are configuring BFD Authentication for BGP:
+    delete protocols bgp bfd-liveness-detection authentication loose-check BFD may be configured at a wide variety of configuration hierarchies, for different Protocols, Routing Instances or even for Static Routes. The bfd-liveness-detection hierarchy is the same at each level it is used, so the Remediation Process is the same and should be applied at each hierarchy indicated in the Audit Procedure.

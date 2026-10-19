@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.32
+title: Ensure that the Docker socket is not mounted inside any containers
+description: A container with the Docker socket mounted can start privileged containers and fully control the host. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: critical
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.32 Ensure that the Docker socket is not mounted inside any containers
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}}{{range .Mounts}} {{.Source}}{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '/docker\.sock/{print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Redeploy without mounting /var/run/docker.sock; use a narrowly-scoped API proxy if a container genuinely needs Docker API access.

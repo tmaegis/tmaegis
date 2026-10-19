@@ -1,0 +1,17 @@
+id: TMA-NGINX-4.1.10
+title: Ensure the upstream traffic server certificate is trusted
+description: When acting as a reverse proxy, NGINX must be configured to function as a secure TLS client. This requires validating the identity of the upstream server by verifying its certificate against a trusted Certificate Authority (CA). Furthermore, NGINX must ensure that the hostname of the upstream server matches the name (Subject Name / SAN) within the certificate itself. When proxy_pass https:// is used, proxy_ssl_verify on, proxy_ssl_trusted_certificate and proxy_ssl_name must be configured (verify the CA file itself manually). Compliant when no TLS upstream exists. Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 2
+severity: low
+tags:
+- nginx
+- tls
+reference: CIS NGINX Benchmark v3.0.0 - 4.1.10 Ensure the upstream traffic server certificate is trusted
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '{l=$0; o=""; q=""; for(i=1;i<=length(l);i++){c=substr(l,i,1); if(q!=""){o=o c; if(c==q) q=""; continue} if(c=="\""||c=="\047"){q=c; o=o c; continue} if(c=="#") break; if(c==";"||c=="{"){print o c; o=""; continue} if(c=="}"){if(o~/[^[:space:]]/) print o; print "}"; o=""; continue} o=o c} if(o~/[^[:space:]]/) print o}' | awk 'function a(i,  x){x=$i; sub(/;$/,"",x); gsub(/["\047]/,"",x); return x} function inb(n,  i){for(i=1;i<=sp;i++) if(st[i]==n) return 1; return 0} $1=="proxy_pass" && a(2)~/^https:/ {hp=1} $1=="proxy_ssl_verify" && a(2)=="on"{v=1} $1=="proxy_ssl_trusted_certificate"{t=1} $1=="proxy_ssl_name"{s=1} {o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); while(o-->0){sp++; b=$1; sub(/\{.*/,"",b); st[sp]=b} while(c-->0 && sp>0) sp--} END{print (!hp||(v&&t&&s))?"compliant":"noncompliant"}'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add 'proxy_ssl_verify on; proxy_ssl_trusted_certificate /etc/nginx/ssl/ca.crt; proxy_ssl_name <upstream host>;' to the proxied locations. Then run nginx -t and reload nginx.

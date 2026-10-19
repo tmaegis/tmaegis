@@ -1,0 +1,16 @@
+id: TMA-GKE-AUTOPILOT-5.4.5
+title: Use Google managed SSL certificates for GKE Ingress TLS
+description: Use Google managed SSL certificates for GKE Ingress TLS to encrypt client traffic between external users and the Google Cloud load balancer. Google provisions and renews these certificates for the configured domains, reducing manual certificate lifecycle management for supported GKE Ingress use cases. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 2
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.4.5 Use Google managed SSL certificates for GKE Ingress TLS
+audit:
+  type: manual
+  command: Review public application exposure and identify workloads using Service objects of type LoadBalancer. Google managed SSL certificates for GKE Ingress apply to HTTPS load balancers created through Ingress, not TCP or UDP load balancers created directly from Service objects. Public HTTP or HTTPS workloads exposed through LoadBalancer services should be reviewed to determine whether GKE Ingress is the better TLS termination pattern.
+remediation:
+  type: iac_patch
+  command: Remediate public HTTPS workloads by using GKE Ingress with Google managed SSL certificates where this pattern is appropriate. This applies to HTTPS traffic terminated by the external Application Load Balancer through GKE Ingress and does not apply to TCP or UDP workloads exposed through Service objects of type LoadBalancer. • For public HTTP or HTTPS workloads exposed directly through Service objects of type LoadBalancer, evaluate whether they should be exposed through GKE Ingress so Google managed SSL certificates can be used. • Create a ManagedCertificate object in the same namespace as the Ingress and define the approved non wildcard domain names for the certificate. • Update the Ingress metadata to include the networking.gke.io/managed-certificates annotation with the ManagedCertificate resource name. Multiple managed certificates can be listed as comma separated values when needed.

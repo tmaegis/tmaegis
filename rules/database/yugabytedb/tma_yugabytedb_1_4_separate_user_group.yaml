@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-1.4
+title: Ensure a separate user and group exist for YugabyteDB
+description: Create separate userid and group for YugabyteDB. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when the yugabyte group and user exist and the user is a member of the group.
+target: yugabytedb
+level: 2
+severity: medium
+tags:
+- yugabytedb
+- service-account
+reference: CIS YugabyteDB Benchmark v2.0.0 - 1.4 Ensure a separate user and group exist for YugabyteDB
+audit:
+  type: command
+  command: 'g=$(getent group yugabyte) || exit 1; u=$(getent passwd yugabyte) || exit 1; gid=$(printf ''%s'' "$g" | cut -d: -f3); ugid=$(printf ''%s'' "$u" | cut -d: -f4); members=$(printf ''%s'' "$g" | cut -d: -f4); if [ "$gid" = "$ugid" ] || printf ''%s'' ",$members," | grep -q '',yugabyte,''; then echo compliant; else echo ''user not in group''; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: groupadd yugabyte; useradd -m -d /home/yugabyte -s /bin/bash -g yugabyte -u <UID> yugabyte (use an unused UID).

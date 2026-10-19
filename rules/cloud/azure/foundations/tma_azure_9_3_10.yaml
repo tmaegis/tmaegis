@@ -1,0 +1,16 @@
+id: TMA-AZURE-9.3.10
+title: Ensure Azure Resource Manager ReadOnly Locks are Considered for Azure Storage Accounts
+description: Adding an Azure Resource Manager ReadOnly lock can prevent users from accidentally or maliciously deleting a storage account, modifying its properties and containers, or creating access assignments. The lock must be removed before the storage account can be deleted or updated. It provides more protection than a CannotDelete-type of resource manager lock. This feature prevents POST operations on a storage account and containers to the Azure Resource Manager control plane, management.azure.com. Blocked operations include listKeys which prevents clients from obtaining the account shared access keys. Microsoft does not recommend ReadOnly locks for storage accounts with Azure Files and Table service containers. This Azure Resource Manager REST API documentation (spec) provides information about the control plane POST operations for Microsoft.Storage resources. While an automated assessment...
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 9.3.10 Ensure Azure Resource Manager ReadOnly Locks are Considered for Azure Storage Accounts
+audit:
+  type: manual
+  command: Audit from Azure Portal 1. Navigate to the storage account in the Azure portal. 2. For each storage account, under Settings, click Locks. 3. Ensure that a ReadOnly lock exists on the storage account. Audit from Azure CLI az lock list --resource-group <resource-group> \ --resource-name <storage-account> \ --resource-type "Microsoft.Storage/storageAccounts" Audit from PowerShell Get-AzResourceLock -ResourceGroupName <RESOURCEGROUPNAME> ` -ResourceName <STORAGEACCOUNTNAME> ` -ResourceType "Microsoft.Storage/storageAccounts" Audit from Azure Policy There is currently no built-in Microsoft policy to audit resource locks on storage accounts. Custom and community policy definitions can check for the existence of a “Microsoft.Authorization/locks” resource with an AuditIfNotExists effect.
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Navigate to the storage account in the Azure portal. 2. Under the Settings section, select Locks. 3. Select Add. 4. Provide a Name, and choose ReadOnly for the type of lock. 5. Add a note about the lock if desired. Remediate from Azure CLI Replace the information within <> with appropriate values: az lock create --name <lock> \ --resource-group <resource-group> \ --resource <storage-account> \ --lock-type ReadOnly \ --resource-type Microsoft.Storage/storageAccounts Remediate from PowerShell Replace the information within <> with appropriate values: New-AzResourceLock -LockLevel ReadOnly ` -LockName <lock> ` -ResourceName <storage-account> ` -ResourceType Microsoft.Storage/storageAccounts ` -ResourceGroupName <resource-group>'

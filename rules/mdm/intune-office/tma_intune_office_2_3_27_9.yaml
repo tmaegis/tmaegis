@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.27.9
+title: Ensure 'Disable additional security checks on VBA library references that may refer to unsafe locations on the local machine' is set to 'Disabled'
+description: 'This policy setting restricts VBA to checking project library references only against the registry and trusted zones. The recommended state for this setting is: Disabled Audit: reads the registry value(s) disablestrictvbarefssecurity that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.27.9 Ensure 'Disable additional security checks on VBA library references that may refer to unsafe locations on the local machine' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\vba\security'') -Name ''disablestrictvbarefssecurity'' -ErrorAction SilentlyContinue).''disablestrictvbarefssecurity''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':disablestrictvbarefssecurity='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Office 2016\Security Settings\Disable additional security checks on VBA library references that may refer to unsafe locations on the local machine'

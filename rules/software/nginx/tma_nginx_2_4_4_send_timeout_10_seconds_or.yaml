@@ -1,0 +1,48 @@
+id: TMA-NGINX-2.4.4
+title: Ensure send_timeout is set to 10 seconds or less, but not 0
+description: The send_timeout directive sets a timeout for transmitting a response to the client between two successive write operations. Every send_timeout must be between 1 and 10 seconds and the directive must be set (default 60s). Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- dos
+reference: CIS NGINX Benchmark v3.0.0 - 2.4.4 Ensure send_timeout is set to 10 seconds or less, but not 0
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '{l=$0; o=""; q=""; for(i=1;i<=length(l);i++){c=substr(l,i,1); if(q!=""){o=o c; if(c==q) q=""; continue} if(c=="\""||c=="\047"){q=c; o=o c; continue} if(c=="#") break; if(c==";"||c=="{"){print o c; o=""; continue} if(c=="}"){if(o~/[^[:space:]]/) print o; print "}"; o=""; continue} o=o c} if(o~/[^[:space:]]/) print o}' | awk 'function a(i,  x){x=$i; sub(/;$/,"",x); gsub(/["\047]/,"",x); return x} function inb(n,  i){for(i=1;i<=sp;i++) if(st[i]==n) return 1; return 0} ($1=="send_timeout"){v=a(2); m=1; if(v~/m$/) m=60; sub(/[ms]$/,"",v); seen[$1]=1; if(v*m<1||v*m>10) bad=1} {o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); while(o-->0){sp++; b=$1; sub(/\{.*/,"",b); st[sp]=b} while(c-->0 && sp>0) sp--} END{print (seen["send_timeout"]&&!bad)?"compliant":"noncompliant"}'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v nginx >/dev/null 2>&1 || exit 0
+    tma_audit() ( out=$(nginx -T 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '{l=$0; o=""; q=""; for(i=1;i<=length(l);i++){c=substr(l,i,1); if(q!=""){o=o c; if(c==q) q=""; continue} if(c=="\""||c=="\047"){q=c; o=o c; continue} if(c=="#") break; if(c==";"||c=="{"){print o c; o=""; continue} if(c=="}"){if(o~/[^[:space:]]/) print o; print "}"; o=""; continue} o=o c} if(o~/[^[:space:]]/) print o}' | awk 'function a(i,  x){x=$i; sub(/;$/,"",x); gsub(/["\047]/,"",x); return x} function inb(n,  i){for(i=1;i<=sp;i++) if(st[i]==n) return 1; return 0} ($1=="send_timeout"){v=a(2); m=1; if(v~/m$/) m=60; sub(/[ms]$/,"",v); seen[$1]=1; if(v*m<1||v*m>10) bad=1} {o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); while(o-->0){sp++; b=$1; sub(/\{.*/,"",b); st[sp]=b} while(c-->0 && sp>0) sp--} END{print (seen["send_timeout"]&&!bad)?"compliant":"noncompliant"}'
+    )
+    tma_ok() { [ "$(tma_audit 2>/dev/null | tail -n 1)" = compliant ]; }
+    tma_ok && exit 0
+    files=$(nginx -T 2>/dev/null | sed -n 's/^# configuration file \(.*\):$/\1/p' | sort -u)
+    main=$(nginx -t 2>&1 | sed -n 's/.*the configuration file \([^ ]*\) syntax is ok.*/\1/p' | head -n 1)
+    [ -f "$main" ] || main=/etc/nginx/nginx.conf
+    [ -f "$main" ] || exit 1
+    bk=$(mktemp -d) || exit 1
+    for f in $files; do mkdir -p "$bk$(dirname "$f")"; cp -p "$f" "$bk$f"; done
+    tma_restore() { for f in $files; do cp -p "$bk$f" "$f"; done; }
+    tma_http() { sed -i -E "0,/^([[:space:]]*)http[[:space:]]*\{/s||&\n\1    $1|" "$main"; }
+    for f in $files; do [ -w "$f" ] && sed -i -E -e 's/^([[:space:]]*send_timeout)[[:space:]]+[^;]*;/\1 10;/' "$f"; done
+    tma_ok || tma_http 'send_timeout 10;'
+    nginx -t >/dev/null 2>&1 || { tma_restore; echo "nginx -t failed, change rolled back" >&2; exit 1; }
+    nginx -s reload 2>/dev/null || systemctl reload nginx 2>/dev/null; rm -rf "$bk"; true
+  guidance: "Set 'send_timeout 10;' in the http block. Then run nginx -t and reload nginx."

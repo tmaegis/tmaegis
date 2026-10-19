@@ -1,0 +1,19 @@
+id: TMA-MYSQL-1.5
+title: Ensure Interactive Login is Disabled
+description: When created, the MySQL user may have interactive access to the operating system, which means that the MySQL user could login to the host as any other user would. Checks that the mysql account has /bin/false or nologin as its shell.
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- os
+- authentication
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 1.5 Ensure Interactive Login is Disabled
+audit:
+  type: command
+  command: out=$(getent passwd mysql 2>/dev/null) || exit 1; s=${out##*:}; case "$s" in /bin/false|/usr/bin/false|/sbin/nologin|/usr/sbin/nologin) echo compliant ;; *) echo "$s" ;; esac
+  expected_output: compliant
+remediation:
+  type: command
+  command: usermod -s /bin/false mysql

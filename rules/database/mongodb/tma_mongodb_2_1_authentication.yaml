@@ -1,0 +1,19 @@
+id: TMA-MONGODB-2.1
+title: Ensure Authentication is configured
+description: This setting ensures that all clients, users, servers are required to authenticate before being granted access to the MongoDB database. Authentication is the process of verifying the identity of a client. When access control, i.e. authorization, is enabled, MongoDB requires all clients to authenticate themselves in order to determine their access. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist).
+target: mongodb
+level: 1
+severity: critical
+tags:
+- mongodb
+- authentication
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 2.1 Ensure Authentication is configured
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*authorization:[ \t]*['\x22]?enabled\b
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'Create a user administrator first (use admin; db.createUser({user: ''<admin>'', pwd: passwordPrompt(), roles: [{role: ''userAdminAnyDatabase'', db: ''admin''}]})), then set ''security: authorization: enabled'' in /etc/mongod.conf and restart mongod.'

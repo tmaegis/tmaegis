@@ -1,0 +1,17 @@
+id: TMA-DB2-8.2.1
+title: Encrypt the Database
+description: Encrypting the database will protect your data and may be required for compliance with certain government regulations (e.g. NIST).
+target: db2
+level: 2
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.2.1 Encrypt the Database
+audit:
+  type: manual
+  command: Check that the database is encrypted via examining configuration settings.
+remediation:
+  type: iac_patch
+  command: 'To determine if a database is encrypted you should check the Encrypted database database configuration parameter: db2 => get db cfg | grep -i encrypt Encryption Library for Backup (ENCRLIB) = libdb2encr.so Encryption Options for Backup (ENCROPTS) = CIPHER=AES:MODE=CBC:KEY LENGTH=256 Encrypted database = YES You should see that the encrypted database is set to YES. You should check the type of key manger used by checking dbm configuration: db2 => get dbm cfg | grep -i keystore Keystore type (KEYSTORE_TYPE) = KMIP Keystore location (KEYSTORE_LOCATION) = /path/ekeystore.cfg You can also check the current database encryption settings: db2 => SELECT * FROM TABLE(SYSPROC.ADMIN_GET_ENCRYPTION_INFO()) You must be connected to the database to run this command. The following information will be shown for the connected database: ; OBJECT_NAME ; OBJECT_TYPE ; ALGORITHM ; ALGORITHM_MODE ...'

@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-2.7
+title: Ensure Sever Header is Modified To Prevent Information Disclosure
+description: 'The server header is a vanity header developed to help identify the underlying technology in a server for troubleshooting and identification. This header is unnecessary and could be used to target your website for exploitation. Tomcat does not provide the ability to remove the server header, however, it does provide the ability to modify the header. Every non-AJP Connector must set a server attribute that does not mention Apache, Tomcat or Coyote (the default is Apache-Coyote/1.1 or none). Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored.'
+target: tomcat
+level: 2
+severity: low
+tags:
+- tomcat
+- information-disclosure
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 2.7 Ensure Sever Header is Modified To Prevent Information Disclosure
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; s=$(x "$B/conf/server.xml") || exit 1; printf '%s\n' "$s" | awk 'function at(n,  r){if(match($0,"[[:space:]]" n "[[:space:]]*=[[:space:]]*[\"\047][^\"\047]*")){r=substr($0,RSTART,RLENGTH); sub(/^[^=]*=[[:space:]]*./,"",r); return r} return "-unset-"} /^Connector[[:space:]]/ && at("protocol")!~/AJP/ {v=tolower(at("server")); if(v=="-unset-" || v=="" || v~/apache|tomcat|coyote/) bad=1} END{print bad?"noncompliant":"compliant"}'
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Add server="I am a teapot" (any non-identifying value) to each HTTP <Connector> in server.xml. Restart Tomcat afterwards.

@@ -1,0 +1,38 @@
+id: TMA-NGINX-4.1.3
+title: Ensure private key permissions are restricted
+description: 'The server''s and potentially its vhost''s private keys should be protected from unauthorized access by limiting access based on the principle of least privilege. Every ssl_certificate_key and every *.key file under /etc/nginx must have mode 400 or stricter (relative paths are resolved against /etc/nginx; variables and engine: keys are skipped). Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.'
+target: nginx
+level: 1
+severity: high
+tags:
+- nginx
+- tls
+- permissions
+reference: CIS NGINX Benchmark v3.0.0 - 4.1.3 Ensure private key permissions are restricted
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; { printf '%s\n' "$out" | awk '$1=="ssl_certificate_key"{v=$2; sub(/;$/,"",v); gsub(/["\047]/,"",v); print v}'; find /etc/nginx -name '*.key' 2>/dev/null; } | sort -u | { bad=0; while IFS= read -r k; do case "$k" in data:*|engine:*|store:*|*'$'*) continue;; /*) ;; *) k=/etc/nginx/$k;; esac; [ -e "$k" ] || continue; [ -z "$(find -L "$k" -perm /377)" ] || bad=1; done; [ "$bad" = 0 ] && echo compliant || echo noncompliant; }
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v nginx >/dev/null 2>&1 || exit 0
+    out=$(nginx -T 2>/dev/null) || exit 1
+    { printf '%s\n' "$out" | awk '$1=="ssl_certificate_key"{v=$2; sub(/;$/,"",v); gsub(/["\047]/,"",v); print v}'; find /etc/nginx -name '*.key' 2>/dev/null; } | sort -u | while IFS= read -r k; do
+      case "$k" in data:*|engine:*|store:*|*'$'*) continue;; /*) ;; *) k=/etc/nginx/$k;; esac
+      [ -e "$k" ] && chmod u-x,go-rwx "$k"
+    done; true
+  guidance: "find /etc/nginx/ -name '*.key' -exec chmod u-wx,go-rwx {} + (and the same for keys stored elsewhere)."

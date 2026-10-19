@@ -1,0 +1,23 @@
+id: TMA-CISCO-NXOS-1.1.1.3
+title: Configure AAA Authentication - RADIUS if applicable
+description: 'RADIUS is an authentication protocol that Cisco NX-OS devices can use for authentication of management users against a remote AAA server. These management users can access the Cisco NX-OS device through any protocol and use this back-end authentication. Using a central authentication store (such as Active Directory) ensures that all administrative actions are tied to named users, making the tracking of changes much ... Central authentication is key as it minimizes the effort in managing named user accounts. Keeping local admin accounts opens the door to all the issues inherent in shared accounts, namely: - Errors in implementation being done by generic admin accounts, which ... Not applicable (passes) when no ''radius-server host'' is configured; otherwise requires two servers and an ''aaa group server radius''. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- aaa
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.1.1.3 Configure AAA Authentication - RADIUS if applicable
+audit:
+  type: config_regex
+  pattern: (?m)(?:(?s:^radius-server host \S.*^radius-server host \S.*^aaa group server radius \S))|(?:\A(?:[ \t]*(?:$|[^r \t\n]|r(?:$|[^a\n]|a(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^u\n]|u(?:$|[^s\n]|s(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^r \t\n]|r(?:$|[^a\n]|a(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^u\n]|u(?:$|[^s\n]|s(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))[^\n]*)?\z)
+remediation:
+  type: iac_patch
+  command: |-
+    ! First define two or more RADIUS Servers
+    radius-server host 3.4.5.6 key somekey authentication accounting
+    radius-server host 4.5.6.7 key someotherkey authentication accounting Then create an AAA group for RADIUS
+    aaa group server radius RADIUSGROUP server 3.4.5.6 server 4.5.6.7 Finally, create the authentication lists in the correct order - to be effective the RADIUS group needs to appear first in the list. Both the default and console access should be secured in the same way:
+    aaa authentication login default group RADIUSGROUP local
+    aaa authentication login console group RADIUSGROUP local It is common to include "local" as the last entry in the list, to allow access to administer the device even if the RADIUS server is offline. Note that while this ensures access in the case of the device or the RADIUS server being offline, it also means that if an attacker can DOS the RADIUS Servers, they can authenticate locally as well.

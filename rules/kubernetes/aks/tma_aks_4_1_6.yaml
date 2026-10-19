@@ -1,0 +1,21 @@
+id: TMA-AKS-4.1.6
+title: Ensure that Service Account Tokens are only mounted where necessary
+description: Review that service account tokens in AKS are mounted only for pods that require Kubernetes API access or an explicitly configured workload identity flow. Confirm that pods and service accounts are not broadly relying on default token mounting, and that token projection is limited to workloads with a defined operational need. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Reports pods with an auto-mounted service account token (kube-api-access-* volume).
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.6 Ensure that Service Account Tokens are only mounted where necessary
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}}{{range .spec.volumes}} {{.name}}{{end}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex && ($0 ~ / kube-api-access-/)')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Apply the following steps to reduce unnecessary service account token mounting in AKS: • Set automountServiceAccountToken to false for pods and service accounts that do not require Kubernetes API access. AKS policy guidance states that this increases security by avoiding default token auto-mounting. • Update workloads to use a dedicated serviceAccountName only where a service account token is operationally required, instead of inheriting token behavior from the namespace default service account. AKS states that service account credentials are used by authorized pods to communicate with the API server. • For workloads that need Azure resource access, use Microsoft Entra Workload ID with explicit workload configuration rather than broad default token mounting. AKS documents that workload identity token projection is enabled only for explicitly configured pods.'

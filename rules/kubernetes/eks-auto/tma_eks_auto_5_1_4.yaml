@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-5.1.4
+title: Restrict EKS Auto Mode workload images to approved registries
+description: Restricting EKS Auto Mode workload images to approved registries helps reduce software supply chain risk by ensuring workloads are sourced only from trusted image locations. Approved registry controls provide a workload guardrail that complements image scanning, image signing, and deployment governance. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: medium
+tags:
+- eks-auto
+- managed-services
+- registry
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.1.4 Restrict EKS Auto Mode workload images to approved registries
+audit:
+  type: manual
+  command: Review the image sources currently used by the cluster and the admission controls that govern new deployments, then verify that EKS Auto Mode workload images are limited to approved registries only. EKS Auto Mode nodes are Kubernetes conformant, so standard Kubernetes policy enforcement tools can be used to limit workload configuration, including allowed image registries. Compare running workload image registry hostnames to the approved registry allowlist. Any image sourced from an unapproved registry is a finding.
+remediation:
+  type: iac_patch
+  command: Restrict EKS Auto Mode workload images to approved container registries by enforcing image source controls at admission time, rather than relying only on CI/CD checks or written standards. Enforcement is typically implemented with a policy admission controller such as Kyverno, OPA Gatekeeper, or another validating admission path so image references are checked before the workload is admitted. EKS Auto Mode supports standard Kubernetes policy enforcement tools, making admission time registry restrictions appropriate for Auto Mode workload governance. Include internal ECR repositories, explicitly approved third-party registries, and required ECR registries for EKS add-ons, platform components, security agents, and operational tooling in the approved registry allowlist.

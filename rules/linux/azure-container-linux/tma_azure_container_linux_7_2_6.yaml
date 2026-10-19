@@ -1,0 +1,18 @@
+id: TMA-AZURE-CONTAINER-LINUX-7.2.6
+title: Ensure no duplicate user names exist
+description: 'Although the useradd program will not let you create a duplicate user name, it is possible for an administrator to manually edit the /etc/passwd file and change the user name. Audit: Passes when no value of field 1 in /etc/passwd appears more than once.'
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- accounts
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 7.2.6 Ensure no duplicate user names exist
+audit:
+  type: command
+  shell: bash
+  command: 'cut -d: -f1 /etc/passwd | sort | uniq -d | grep -q . && echo noncompliant || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique user names for the users. File ownerships will automatically reflect the change as long as the users have unique UIDs.

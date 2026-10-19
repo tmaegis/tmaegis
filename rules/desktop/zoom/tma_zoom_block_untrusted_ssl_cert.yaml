@@ -1,0 +1,17 @@
+id: TMA-ZOOM-BLOCK-UNTRUSTED-SSL-CERT
+title: Ensure the Zoom client blocks connections with untrusted TLS certificates
+description: Without this, users can accept an untrusted certificate and expose meeting traffic to interception. Audit reads HKLM:\SOFTWARE\Policies\Zoom\Zoom Meetings\General\BlockUntrustedSSLCert (value or 'unset'); compliant when 1. Confirm the value name against the Zoom Group Policy options article for your client version.
+target: zoom
+level: 1
+severity: medium
+tags:
+- zoom
+- tls
+reference: CIS Zoom Benchmark v1.0.0 - Block untrusted SSL certificates
+audit:
+  type: registry
+  command: $v = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Zoom\Zoom Meetings\General' -Name 'BlockUntrustedSSLCert' -ErrorAction SilentlyContinue).'BlockUntrustedSSLCert'; if ($null -eq $v) { 'unset' } else { "$v" }
+  expected_output: '1'
+remediation:
+  type: command
+  command: $p = 'HKLM:\SOFTWARE\Policies\Zoom\Zoom Meetings\General'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'BlockUntrustedSSLCert' -Value 1 -Type DWord

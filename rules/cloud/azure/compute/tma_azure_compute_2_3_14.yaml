@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.3.14
+title: Ensure function app is integrated with a virtual network
+description: Integrate function apps with a virtual network to enable access to resources in or through a non-internet-routable virtual network. This recommendation does not apply to function apps created on the consumption hosting plan, which does not support virtual networking. Integrate function apps with a virtual network for increased security and control.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+- network
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.14 Ensure function app is integrated with a virtual network
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Networking. 4. Under Outbound traffic configuration, next to Virtual network integration, ensure that a virtual network and subnet name are displayed. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the virtual network subnet ID: az functionapp show --resource-group <resource-group-name> --name <function- app-name> --query "virtualNetworkSubnetId" Ensure that a virtual network subnet ID is returned. Audit from PowerShell Run the following command to list function apps: Get-AzFunctionApp Run the following command to get the function app in a resource group with a given name: $app = Get-AzFunctionApp -ResourceGroupName <resource-group-name> -Name <function-app-name> Run the following command to get the virtual network
+    subnet ID: $app.virtualNetworkSubnetId Ensure that a virtual network subnet ID is returned. Repeat for each function app.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Networking. 4. Under Outbound traffic configuration, next to Virtual network integration, click Not configured. 5. Click Add virtual network integration. 6. Select an existing App Service Plan connection, or select New connection and select a subscription, virtual network, and subnet. 7. Click Connect. 8. Repeat steps 1-7 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to integrate with a virtual network: az functionapp vnet-integration add --resource-group <resource-group-name> -- name <function-app-name> --vnet <virtual-network-name> --subnet <subnet-name> Remediate from PowerShell For each function app requiring remediation, run the following commands to integrate with a virtual network: Prepare parameters: $siteName = ''<app-name>'' $vNetResourceGroupName
+    = ''<virtual-network-resource-group-name>'' $functionAppResourceGroupName = ''<function-app-resource-group-name>'' $vNetName = ''<virtual-network-name>'' $integrationSubnetName = ''<subnet-name>'' $vNetSubscriptionI...'

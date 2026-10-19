@@ -1,0 +1,17 @@
+id: TMA-EKS-4.3.2
+title: Ensure required workloads are covered by Kubernetes network policies
+description: The Amazon VPC CNI plugin for Kubernetes can enforce Kubernetes network policies in EKS, but workload isolation depends on the relevant workloads actually being covered by NetworkPolicy or ClusterNetworkPolicy rules. NetworkPolicy provides namespace-scoped pod traffic segmentation, while ClusterNetworkPolicy can apply a common security posture across all or a selected subset of workloads in the cluster. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- policies
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.3.2 Ensure required workloads are covered by Kubernetes network policies
+audit:
+  type: manual
+  command: Review the Kubernetes network policy model in the EKS cluster and verify that every required workload is selected by either a namespace-scoped NetworkPolicy or a cluster-scoped ClusterNetworkPolicy. A separate policy in every namespace is not required, because cluster-scoped policies can apply a shared posture across all workloads or a selected subset. Workloads that are not matched by policy remain effectively unsegmented because Pod traffic is allowed by default until policy restricts it.
+remediation:
+  type: iac_patch
+  command: Create and apply Kubernetes NetworkPolicy or ClusterNetworkPolicy objects so every required workload is explicitly covered by policy. Start with a default deny posture and then add only the ingress and egress rules needed for approved traffic such as DNS and required service-to-service flows. Use namespace-scopedNetworkPolicy where application-level segmentation is sufficient, and use ClusterNetworkPolicy where a shared security posture must apply across multiple namespaces or workload groups. Keep in mind that coverage depends on the Amazon VPC CNI network policy feature being enabled, applies to Amazon EC2 Linux nodes, and is limited to a Pod’s primary interface.

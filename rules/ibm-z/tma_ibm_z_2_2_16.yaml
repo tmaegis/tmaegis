@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.2.16
+title: Ensure that access to RACF resources in the FACILITY class is controlled
+description: RACF-defined resources, prefixed with IRR in the FACILITY class, consist of sensitive capabilities including RACF commands and certain SAF callable services. Missing or inaccurate protection of these resources could allow a user to access sensitive data, modify or delete data and operating system controls, or issue commands that could negatively impact system availability.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.2.16 Ensure that access to RACF resources in the FACILITY class is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering IRR prefixed resources Request reports generated using IRRDBU00 ... (full steps: CIS section 2.2.16)'
+remediation:
+  type: iac_patch
+  command: 'To activate the FACILITY class use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for the FACILITY class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST the FACILITY class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER FACILITY IRR.<qualifiers> + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT IRR.<qualifiers> CLASS(FACILITY) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will
+    need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

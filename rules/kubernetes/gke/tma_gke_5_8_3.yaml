@@ -1,0 +1,19 @@
+id: TMA-GKE-5.8.3
+title: Ensure Legacy Authorization (ABAC) is Disabled
+description: Keep legacy ABAC authorization disabled for GKE clusters. ABAC is a legacy Kubernetes authorization method that has been superseded by Kubernetes RBAC, which provides fine grained authorization through Role, ClusterRole, RoleBinding, and ClusterRoleBinding resources. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 1
+severity: critical
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.8.3 Ensure Legacy Authorization (ABAC) is Disabled
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(legacyAbac.enabled)') || exit 1
+    if [ "$v" != True ]; then echo compliant; else echo "noncompliant: legacyAbac.enabled=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Disable legacy ABAC authorization for any GKE cluster where the audit result returns true. Before disabling ABAC, confirm that required users, groups, service accounts, workloads, and automation have the necessary Kubernetes RBAC permissions through Role, ClusterRole, RoleBinding, and ClusterRoleBinding resources. gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --no-enable-legacy-authorization Rerun the audit command and confirm that .legacyAbac.enabled returns false or null. Validate representative access with kubectl auth can-i to confirm legitimate users and automation still have the required RBAC access.

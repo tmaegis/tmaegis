@@ -1,0 +1,18 @@
+id: TMA-MACOS14-2.5.2
+title: Ensure Listen for (Siri) Is Disabled
+description: 'macOS includes the Siri digital assistant and if enabled it is always listening in case it is needed. In Sonoma a user may choose either "Hey Siri" or either "Siri" and "Hey Siri." In either case, Siri is using the microphone at all times to listen for instructions and then can record questions once activated. In an organizational environment where people are talking and listening on video/voice calls, there are too many opportunities for unauthorized information disclosure to have a live microphone at all times. If Siri will be used it may be on, with "Listen for" Off and a keyboard shortcut selected. Note: Currently this recommendation cannot be disabled either globally with a profile or individually with a plist change, but only through the GUI. Due to this, we are moving this recommendation to be manual (but still disabled) and disabling Siri until it is possible to disable Listen...'
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: low
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.5.2 Ensure Listen for (Siri) Is Disabled
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to ensure that "Hey Siri" is disabled: 1. Open System Settings 2. Select General 3. Select Device Management 4. Verify that an installed profile has VoiceTriggerUserEnabled set to 0 Terminal Method: Run the following command to verify that "Hey Siri" is disabled: % /usr/bin/sudo /usr/bin/osascript -l JavaScript << EOS $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.Siri'')\ .objectForKey(''VoiceTriggerUserEnabled'').js EOS false'
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.Siri 2. The key to include is set to VoiceTriggerUserEnabled 3. The key must be set to <false/> Note: After testing, this profile will disable Hey Siri only for the first input but not additional inputs. This issues seems to only occur using the Apple Studio Display (and possibly the Pro Display XDR, but no testing has occurred with that device) and it is not the primary input source. We are going to continue testing, but this seems to be an edge case.'

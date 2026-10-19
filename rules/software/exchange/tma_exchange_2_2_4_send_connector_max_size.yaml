@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.2.4
+title: 'Ensure ''Maximum send size: Connector level'' is set to ''25'''
+description: This policy setting can limit the size of messages that are be sent by the user at the connector level. The message size includes the header, body, and any attachments for the email. For internal message flow, Exchange Server uses the custom X-MS-Exchange- Organization-OriginalSize message header to record the original message size of the message as it enters the Exchange Server organization.... Prints the number of Send connectors whose MaxMessageSize is above 25 MB or Unlimited (expected 0). Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- transport
+reference: 'CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.2.4 Ensure ''Maximum send size: Connector level'' is set to ''25'''
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bytes = { param($s) if ("$s" -match '\(([\d,\.\s]+) bytes\)') { [int64]($matches[1] -replace '[^\d]','') } else { [int64]::MaxValue } }; $bad = @(Get-SendConnector -ErrorAction Stop | Where-Object { (& $bytes $_.MaxMessageSize) -gt 25MB }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-SendConnector '<connector>' -MaxMessageSize 25MB

@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.1.10
+title: Minimize access to the approval subresource of CertificateSigningRequests objects
+description: Minimize access to the approval subresource of CertificateSigningRequests objects so that only tightly controlled administrative identities can approve certificate requests in AKS. AKS uses certificates for component authentication. Kubelets use CSRs as part of client certificate bootstrap and rotation. AKS authorization is intentionally granular and is meant to give users, groups, and service accounts access only to the resources they require. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: medium
+tags:
+- aks-automatic
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.10 Minimize access to the approval subresource of CertificateSigningRequests objects
+audit:
+  type: manual
+  command: Audit this control by reviewing how privileged access is granted across the AKS authorization model and verifying that CSR approval authority is limited to approved administrative identities. This is not a discrete platform setting. It is a least privilege review across Microsoft Entra integration, Kubernetes RBAC, and Azure RBAC for Kubernetes Authorization, which is preconfigured in AKS Automatic.
+remediation:
+  type: iac_patch
+  command: Remove certificatesigningrequests/approval access from any ClusterRole that is not explicitly required for cluster certificate administration, then bind that capability only to approved AKS administrative identities. Use Microsoft Entra integration with least privilege Kubernetes RBAC and the preconfigured Azure RBAC for Kubernetes Authorization while limiting cluster permissions to approved identities. Remove unnecessary Azure role assignments or CSR write permissions from custom roles. Validate that expected AKS certificate workflows, such as kubelet TLS bootstrapping and rotation, continue to generate approved CSRs after permissions are tightened. Do not modify AKS managed system roles or bindings.

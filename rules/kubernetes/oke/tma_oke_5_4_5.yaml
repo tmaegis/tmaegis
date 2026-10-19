@@ -1,0 +1,18 @@
+id: TMA-OKE-5.4.5
+title: Use TLS certificates on OKE load balancer listeners for encrypted client connections
+description: Using TLS certificates on OKE load balancer listeners protects client to load balancer traffic in transit by presenting a trusted server certificate and negotiating encrypted HTTPS or TLS connections at the listener. In OKE, this commonly means configuring TLS on an OCI Load Balancer created for Kubernetes Service resources, or configuring HTTPS/TLS on OCI native ingress controller listeners so externally exposed application entry points do not ... The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- managed-services
+- network
+- secrets
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.4.5 Use TLS certificates on OKE load balancer listeners for encrypted client connections
+audit:
+  type: manual
+  command: Review all OKE Service resources of type LoadBalancer and all Ingress resources that expose client traffic, and verify that client facing listeners use HTTPS or TLS with a valid certificate. For OCI Load Balancer backed Service resources, listener encryption is configured with annotations such as service.beta.kubernetes.io/oci-load-balancer-ssl-ports and service.beta.kubernetes.io/oci-load-balancer-tls-secret, or with OCI Certificates based configuration where used.
+remediation:
+  type: iac_patch
+  command: Configure every client facing OKE load balancer listener to use HTTPS or TLS with a valid certificate so client to load balancer traffic is encrypted in transit. For OCI Load Balancer backed Service resources, configure SSL/TLS listener ports and associate a TLS certificate using Kubernetes secrets or OCI Certificates based configuration. For OCI native ingress controller resources, configure HTTPS/TLS listeners and associate the required Kubernetes secret or certificate OCID. If the design requires encryption beyond the load balancer, implement backend TLS separately because listener TLS alone protects only the client facing connection. • Add a valid certificate to each client facing OCI Load Balancer or OCI native ingress controller listener that should serve encrypted traffic.

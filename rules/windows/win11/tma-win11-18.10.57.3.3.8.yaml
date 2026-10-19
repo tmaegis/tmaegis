@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.57.3.3.8
+title: 'Ensure ''Restrict clipboard transfer from server to client'' is set to ''Enabled: Disable clipboard transfers from server to client'''
+description: 'This policy setting controls whether the clipboard can be used to transfer data from the Remote Desktop session to the client. The recommended state for this setting is: Enabled: Disable clipboard transfers from server to client.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.57.3.3.8
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'' -Name ''SCClipLevel'' -ErrorAction SilentlyContinue).''SCClipLevel''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''SCClipLevel='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services' -Name 'SCClipLevel' -Value 0 -PropertyType DWord -Force | Out-Null

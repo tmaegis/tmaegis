@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-5.5
+title: Ensure that YCQL only listens for network connections on authorized interfaces
+description: The cql_proxy_bind_address GFLAG setting specifies the IP address and port for YCQL interface. cql_proxy_bind_address should be set according to your organization's approved IP address and ports policy.
+target: yugabytedb
+level: 2
+severity: medium
+tags:
+- yugabytedb
+- network
+reference: CIS YugabyteDB Benchmark v2.0.0 - 5.5 Ensure that YCQL only listens for network connections on authorized interfaces
+audit:
+  type: manual
+  command: Check the cql_proxy_bind_address GFlag of every YB-TServer (curl -s http://<tserver>:9000/varz | grep cql_proxy_bind_address, or the tserver flag file). It must name an authorised address and port, not 0.0.0.0 or an unapproved interface.
+remediation:
+  type: iac_patch
+  command: 'Use the yb-tserver binary and its flags to configure the YB-TServer server. Add the following GFLAG to YB-TServer: ./bin/yb-tserver --cql_proxy_bind_address <ip address>:<port>'

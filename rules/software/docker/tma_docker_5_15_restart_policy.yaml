@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.15
+title: Ensure that the 'on-failure' container restart policy is set to '5'
+description: Restart policy 'always' (or on-failure with unlimited retries) can hide failures and turn a crashing container into a resource drain; on-failure with at most 5 retries is recommended. Flags always, unless-stopped and on-failure with 0 or more than 5 retries. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: low
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.15 Ensure that the 'on-failure' container restart policy is set to '5'
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{.HostConfig.RestartPolicy.Name}} {{.HostConfig.RestartPolicy.MaximumRetryCount}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '$2=="always" || $2=="unless-stopped" || ($2=="on-failure" && ($3+0==0 || $3+0>5)){print $1" "$2":"$3}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Redeploy with --restart=on-failure:5 (compose: ''restart: on-failure:5'') or update in place: docker update --restart=on-failure:5 <container>.'

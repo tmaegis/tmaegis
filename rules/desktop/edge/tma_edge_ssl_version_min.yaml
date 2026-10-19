@@ -1,0 +1,17 @@
+id: TMA-EDGE-SSL-VERSION-MIN
+title: Ensure 'Minimum TLS version enabled' is set to 'TLS 1.2'
+description: TLS 1.0/1.1 are deprecated and vulnerable; Edge should refuse to negotiate them. The value is a REG_SZ string. Audit reads the Group Policy value HKLM:\SOFTWARE\Policies\Microsoft\Edge\SSLVersionMin (prints the value or 'unset'); compliant when it is tls1.2. An unset policy means the browser default applies and is reported as a FAIL. Remediation writes the policy value locally; in a domain, set it through the ADMX template instead so GPO does not revert it.
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- tls
+reference: CIS Microsoft Edge Benchmark - Minimum TLS version enabled
+audit:
+  type: registry
+  command: $v = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' -Name 'SSLVersionMin' -ErrorAction SilentlyContinue).'SSLVersionMin'; if ($null -eq $v) { 'unset' } else { "$v" }
+  expected_output: tls1.2
+remediation:
+  type: command
+  command: $p = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'SSLVersionMin' -Value 'tls1.2' -Type String

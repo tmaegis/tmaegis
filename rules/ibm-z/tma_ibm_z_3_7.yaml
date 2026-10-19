@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-3.7
+title: Ensure that effective SMF records collection options are set
+description: SMF data collection provides a standardized method for recording all system activity to a recording media (file or logstream). including the audit trails from RACF. Some recording options are mandatory to ensure an effective recording of the activity and therefore complete audit trails. If the control options for the recording is not set correctly, system audit could be compromised.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- audit
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 3.7 Ensure that effective SMF records collection options are set
+audit:
+  type: manual
+  command: 'Issue the following z/OS console command: D SMF,O Look for the following messages: ACTIVE JWT(<hhmm>) MAXDORM(<mmss>) SYS(<options>) Verify that: ACTIVE is present JWT value is equal to or less than 15 minutes MAXDORM specifies a time value of 5 minutes SYS specifies DETAIL'
+remediation:
+  type: iac_patch
+  command: 'To make changes persistent update the SMFPRMxx parmlib member to use: ACTIVE JWT(0015) MAXDORM (0500) SYS(DETAIL) Note: The two alphanumeric characters, represented by xx, are appended to SMFPRM to identify your SMFPRMxx member. The site should follow their standard procedures for cycling the SMF started task to apply the changes.'

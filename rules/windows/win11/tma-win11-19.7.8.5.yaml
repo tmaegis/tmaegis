@@ -1,0 +1,20 @@
+id: TMA-WIN11-19.7.8.5
+title: Ensure 'Turn off Spotlight collection on Desktop' is set to 'Enabled'
+description: 'This policy setting removes the Spotlight collection setting in Personalization, rendering the user unable to select and subsequently download daily images from Microsoft to the system desktop. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 19.7.8.5
+audit:
+  type: registry
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\Windows\CloudContent'') -Name ''DisableSpotlightCollectionOnDesktop'' -ErrorAction SilentlyContinue).''DisableSpotlightCollectionOnDesktop''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':DisableSpotlightCollectionOnDesktop='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure through Group Policy (User Configuration): User Configuration\Policies\Administrative Templates\Windows Components\Cloud Content\Turn off Spotlight collection on Desktop'

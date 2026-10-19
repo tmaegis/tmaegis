@@ -1,0 +1,26 @@
+id: TMA-GITLAB-1.1.17
+title: Ensure branch deletions are denied
+description: Ensure that users with only push access are incapable of deleting a protected branch. When enabling deletion of a protected branch, any user with at least push access to the repository can delete a branch. This can be potentially dangerous, as a simple human mistake or a hacked account can lead to data loss if a branch is deleted. It is therefore crucial to prevent such incidents by denying protected branch deletion.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- branch-protection
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.17 Ensure branch deletions are denied
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each repository that is being used, protect a branch in order to block the option to delete branches. To protect a branch for one project: 1. On the left sidebar, select Search or go to and find your project. 2. Select Settings > Repository. 3. Expand Protected branches. 4. Select Add protected branch. 5. From the Branch dropdown list, select the branch you want to protect. 6. From the Allowed to merge list, select a role that can merge into this branch. 7. From the Allowed to push and merge list, select a role that can push to this branch. Group owners can create protected branches at the group level. These settings are inherited by all projects in the group and can’t be overridden by project settings. If a specific branch is configured with Allowed to force push settings at both the group and project levels, the Allowed to force push setting at the project level is ignored in favor of the group level setting. Prerequisites: - You must have the Owner role in the group. To
+    protect a branch for all the projects in a group: 1. On the left sidebar, select Search or go to and find your group. 2. Select Settings > Repository. 3. Expand Protected branches. 4. Select Add protected...'

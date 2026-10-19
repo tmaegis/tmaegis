@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.23.3
+title: 'Ensure ''Control Blogging'' is set to ''Enabled: All Blogging Disabled'''
+description: 'This policy setting controls whether users can compose and post blog entries from Word. The recommended state for this setting is: Enabled: All Blogging Disabled. Audit: reads the registry value(s) disableblog that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.23.3 Ensure ''Control Blogging'' is set to ''Enabled: All Blogging Disabled'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\common\blog'') -Name ''disableblog'' -ErrorAction SilentlyContinue).''disableblog''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $_.PSChildName + '':disableblog='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: All Blogging Disabled: Microsoft Office 2016\Miscellaneous\Control Blogging'

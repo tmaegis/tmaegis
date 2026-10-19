@@ -1,0 +1,41 @@
+id: TMA-AMZN2023-1.1.9
+title: Ensure usb-storage is disabled
+description: USB storage provides a means to transfer and store files ensuring persistence and availability of the files independent of network connection status. Its popularity and utility has led to USB-based malware being a simple and common means for network infiltration and a first step to establishing a persistent threat within a networked environment.
+target: linux
+os_family:
+- amzn-2023
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Amazon Linux 2023 Benchmark v1.0.0 - 1.1.9
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   l_mname=\"usb-storage\" # set module name\n   # Check if the module exists on the system\n   if [ -z \"$(modprobe -n -v \"$l_mname\" 2>&1 | grep -Pi -- \"\\h*modprobe:\\h+FATAL:\\h+Module\\h+$l_mname\\h+not\\h+found\\h+in\\h+directory\")\" ]; then\n      # Check how module will be loaded\n      l_loadable=\"$(modprobe -n -v \"$l_mname\")\"\n      [ \"$(wc -l <<< \"$l_loadable\")\" -gt \"1\" ] && l_loadable=\"$(grep -P -- \"(^\\h*install|\\b$l_mname)\\b\" <<< \"$l_loadable\")\"\n      if grep -Pq -- '\"'\"'^\\h*install \\/bin\\/(true|false)'\"'\"' <<< \"$l_loadable\"; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is not loadable: \\\"$l_loadable\\\"\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is loadable: \\\"$l_loadable\\\"\"\n      fi\n      # Check is the module currently loaded\n      if ! lsmod | grep \"$l_mname\" > /dev/null 2>&1; then\n\
+    \         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is not loaded\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is loaded\"\n      fi\n      # Check if the module is deny listed\n      if modprobe --showconfig | grep -Pq -- \"^\\h*blacklist\\h+$(tr '\"'\"'-'\"'\"' '\"'\"'_'\"'\"' <<< \"$l_mname\")\\b\"; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is deny listed in: \\\"$(grep -Pl -- \"^\\h*blacklist\\h+$l_mname\\b\" /etc/modprobe.d/*)\\\"\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is not deny listed\"\n      fi\n   else\n      l_output=\"$l_output\\n - Module \\\"$l_mname\\\" doesn'\"'\"'t exist on the system\"\n   fi\n   # Report results. If no failures output in l_output2, we pass\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\\\
+    n\"\n      [ -n \"$l_output\" ] && echo -e \"\\n- Correctly set:\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=usb_storage
+    mkdir -p /etc/modprobe.d
+    f=/etc/modprobe.d/60-$m.conf
+    printf 'install %s /bin/false\nblacklist %s\n' "$m" "$m" > "$f"
+    modprobe -r "$m" 2>/dev/null; rmmod "$m" 2>/dev/null; true
+  guidance: "Run the following script to disable usb-storage: #!/usr/bin/env bash { l_mname=\"usb-storage\" # set module name # Check if the module exists on the system if [ -z \"$(modprobe -n -v \"$l_mname\" 2>&1 | grep -Pi -- \"\\h*modprobe:\\h+FATAL:\\h+Module\\h+$l_mname\\h+not\\h+found\\h+in\\h+directory\")\" ]; then # Remediate loadable l_loadable=\"$(modprobe -n -v \"$l_mname\")\" [ \"$(wc -l <<< \"$l_loadable\")\" -gt \"1\" ] && l_loadable=\"$(grep -P -- \"(^\\h*install|\\b$l_mname)\\b\" <<< \"$l_loadable\")\" if ! grep -Pq -- '^\\h*install \\/bin\\/(true|false)' <<< \"$l_loadable\"; then echo -e \" - setting module: \\\"$l_mname\\\" to be not loadable\" echo -e \"install $l_mname /bin/false\" >> /etc/modprobe.d/\"$l_mname\".conf fi # Remediate …"

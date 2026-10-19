@@ -1,0 +1,17 @@
+id: TMA-GITLAB-2.1.9
+title: Ensure default passwords are not used
+description: Do not use default passwords of build tools and components. Sometimes build tools and components are provided with default passwords for the first login. This password is intended to be used only on the first login and should be changed immediately after. Using the default password substantially increases the attack risk. It is especially important to ensure that default passwords are not used in build tools and components.
+target: gitlab
+level: 1
+severity: high
+tags:
+- auth
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 2.1.9 Ensure default passwords are not used
+audit:
+  type: manual
+  command: 'GitLab’s default root password depends on the installation method, and when the installation occurred: 1. When deploying a GitLab instance using the official AWS AMI, the root password to the instance is the EC2 Instance ID 2. Most installation methods allow a non-default password to be provided as configuration 3. Prior to 14.0 the default password was 5iveL!fe 4. Otherwise the default password is unique and randomly generated. Attempt to log in as root using a suspected default password to audit whether it has changed. For any other external build tools, ensure the password used is not the default one.'
+remediation:
+  type: iac_patch
+  command: GitLab’s root password can be changed by an administrator using the UI, the “gitlab:password:reset” rake task, or by using the Rails console. For each build tool with a default password, change to a unique cryptographically secure pseudorandom password.

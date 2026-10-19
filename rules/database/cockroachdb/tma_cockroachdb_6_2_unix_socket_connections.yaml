@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-6.2
+title: Ensure local connections via UNIX domain sockets are configured correctly
+description: UNIX domain sockets provide secure local inter-process communication for database connections on the same host. When combined with certificate-based authentication (see section 6.0), UNIX domain sockets offer the most secure mechanism for local database access.
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- authentication
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 6.2 Ensure local connections via UNIX domain sockets are configured correctly
+audit:
+  type: manual
+  command: Check the --socket-dir used by cockroach start (default $TMPDIR); the socket (.s.PGSQL.26257) directory should be owned by cockroach and not world-writable (e.g. /var/run/cockroach, 755). Confirm cockroach sql --certs-dir=certs --host=<socket dir> --user=root works only with valid client certificates and that unauthenticated local logins fail.
+remediation:
+  type: iac_patch
+  command: 'Prerequisites: Complete certificate infrastructure setup as described in section 6.0. 1. Configure UNIX Domain Socket Location # Start CockroachDB with custom socket directory cockroach start \ --certs-dir=certs \ --store=node1 \ --listen-addr=localhost:26257 \ --socket-dir=/var/run/cockroach \ --http-addr=localhost:8080 # Ensure socket directory has appropriate permissions mkdir -p /var/run/cockroach chown cockroach:cockroach /var/run/cockroach ...'

@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.11
+title: Ensure local interactive user dot files access is configured
+description: 'While the system administrator can establish secure permissions for users'' "dot" files, the users can easily override these. .forward file specifies an email address to forward the user''s mail to. .rhost file provides the "remote authentication" database for the rcp, rlogin, and rsh commands and the rcmd() function. Audit: interactive users must have no .forward/.rhosts files, .netrc and history files at 600, other dot files at 644 or stricter, all owned by the user (group ownership is not evaluated).'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.11 Ensure local interactive user dot files access is configured
+audit:
+  type: command
+  command: 'command -v awk >/dev/null 2>&1 || exit 1; out=$( { awk -F: ''$3>=1000 && $1!="nobody" && $7!~/(nologin|false)$/ {print $1, $6}'' /etc/passwd | while read u h; do [ -d "$h" ] || continue; for f in "$h"/.[!.]*; do [ -f "$f" ] || continue; b=${f##*/}; m=$(ls -ld "$f" | awk ''{print $1, $3}''); case "$b" in .forward|.rhost|.rhosts) echo "$f must not exist";; .netrc) case "$m" in -rw-------*|-r--------*) ;; *) echo "$f: $m";; esac;; .sh_history|.history) case "$m" in -rw-------*|-r--------*|-------*) ;; *) echo "$f: $m";; esac;; *) printf ''%s\n'' "$m" | awk ''substr($1,4,1)!="-" || substr($1,6,1)!="-" || substr($1,7,1)!="-" || substr($1,9,1)!="-" || substr($1,10,1)!="-" {print "  mode " $1}'' | sed "s|^|$f|";; esac; o=${m#* }; [ "$o" = "$u" ] || echo "$f owned by $o"; done; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Making global modifications to users' files without alerting the user community can result in unexpected outages and unhappy users. Therefore, it is recommended that a monitoring policy be established to report user dot file permissions and determine the action to be taken following site policy.

@@ -1,0 +1,85 @@
+id: TMA-UBUNTU2004-6.3.4.3
+title: Ensure audit log files group owner is configured
+description: Audit log files contain information about the system and system activity.
+target: linux
+os_family:
+- ubuntu-20.04
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 6.3.4.3
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { command -v grep >/dev/null 2>&1 || { echo \"step1: grep not installed\"; return 1; }; o=$(bash -c 'grep -Piws -- '\"'\"'^\\h*log_group\\h*=\\h*\\H+\\b'\"'\"' /etc/audit/auditd.conf | grep -Pvi -- '\"'\"'(adm)'\"'\"'' 2>/dev/null); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; o=$(bash -c '#!/usr/bin/env bash\n\n{\n  if [ -e /etc/audit/auditd.conf ]; then\n      l_fpath=\"$(dirname \"$(awk -F \"=\" '\"'\"'/^\\s*log_file/ {print $2}'\"'\"' /etc/audit/auditd.conf | xargs)\")\"\n      find -L \"$l_fpath\" -not -path \"$l_fpath\"/lost+found -type f \\( ! -group root -a ! -group adm \\) -exec ls -l {} +\n   fi\n}' 2>&1); [ -z \"$o\" ] || { echo \"step2: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_AUDITD_CONF=/etc/audit/auditd.conf
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; }
+    tma_audit_pkg() {
+      command -v auditctl >/dev/null 2>&1 && [ -f /etc/audit/auditd.conf ] && return 0
+      if command -v apt-get >/dev/null 2>&1; then tma_pkg_install auditd; else tma_pkg_install audit; fi; }
+    tma_nl() { [ -s "$1" ] && [ -n "$(tail -c1 "$1")" ] && echo >> "$1"; return 0; }
+    tma_kv() { # file key value : 'key = value' style (auditd.conf); replaces every uncommented line
+      f=$1; k=$2; v=$3
+      [ -f "$f" ] || return 0
+      tma_bak "$f"
+      if grep -Eq "^[[:space:]]*$k[[:space:]]*=" "$f"; then
+        sed -i -E "s|^[[:space:]]*$k[[:space:]]*=.*|$k = $v|" "$f"
+      else tma_nl "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; fi; }
+    tma_ini_set() { # file section key value : systemd ini 'Key=value'
+      f=$1; s=$2; k=$3; v=$4
+      mkdir -p "$(dirname "$f")"; [ -f "$f" ] || : > "$f"; tma_nl "$f"
+      sed -i -E "/^[[:space:]]*$k[[:space:]]*=/d" "$f"
+      if grep -q "^\[$s\]" "$f"; then sed -i "/^\[$s\]/a $k=$v" "$f"; else printf '[%s]\n%s=%s\n' "$s" "$k" "$v" >> "$f"; fi; }
+    tma_clear() { # path octal-mask : remove the mask bits from the file mode
+      [ -e "$1" ] || return 0
+      m=$(stat -Lc %a "$1")
+      [ $((8#$m & 8#$2)) -eq 0 ] || chmod "$(printf '%o' $((8#$m & ~8#$2 & 8#7777)))" "$1"; }
+    tma_rule() { # rules.d-filename audit-rule-line : append when missing (whitespace-normalised)
+      f=/etc/audit/rules.d/$1; shift; l=$*
+      mkdir -p /etc/audit/rules.d; [ -f "$f" ] || : > "$f"
+      if ! tr -s ' \t' '  ' < "$f" | sed 's/^ //;s/ $//' | grep -Fxq -- "$l"; then tma_nl "$f"; printf '%s\n' "$l" >> "$f"; fi
+      chown root:root "$f"; chmod 640 "$f"; }
+    tma_rules_load() { command -v augenrules >/dev/null 2>&1 && augenrules --load >/dev/null 2>&1; true; }
+    tma_audit_logdir() {
+      d=$(awk -F= '/^[[:space:]]*log_file[[:space:]]*=/{print $2}' /etc/audit/auditd.conf 2>/dev/null | xargs 2>/dev/null)
+      [ -n "$d" ] && dirname "$d" || echo /var/log/audit; }
+    tma_grub_arg() { # key=value : add/replace in GRUB_CMDLINE_LINUX and regenerate grub.cfg
+      a=$1; k=${a%%=*}; g=/etc/default/grub
+      [ -f "$g" ] || { echo "no $g: bootloader not managed by grub defaults" >&2; return 0; }
+      tma_bak "$g"
+      if ! grep -q '^GRUB_CMDLINE_LINUX=' "$g"; then tma_nl "$g"; printf 'GRUB_CMDLINE_LINUX="%s"\n' "$a" >> "$g"
+      elif grep -E '^GRUB_CMDLINE_LINUX=' "$g" | grep -Eq "[\"' ]$k(=|[\"' ])"; then
+        sed -i -E "/^GRUB_CMDLINE_LINUX=/ s#([\"' ])$k(=[^\"' ]*)?([\"' ])#\1$a\3#" "$g"
+      else
+        sed -i -E "/^GRUB_CMDLINE_LINUX=/ s#([\"'])\$#  $a\1#; /^GRUB_CMDLINE_LINUX=/ s#=([\"'])  #=\1#; /^GRUB_CMDLINE_LINUX=/ s#   *# #g" "$g"
+      fi
+      if command -v update-grub >/dev/null 2>&1; then update-grub >/dev/null 2>&1
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        for c in /boot/grub2/grub.cfg /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c" >/dev/null 2>&1; done
+      elif command -v grub-mkconfig >/dev/null 2>&1; then grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1; fi
+      true; }
+    tma_audit_pkg
+    getent group adm >/dev/null 2>&1 && tma_kv /etc/audit/auditd.conf log_group adm
+    dir=$(tma_audit_logdir)
+    [ -d "$dir" ] && find "$dir" -maxdepth 1 -type f $(getent group root >/dev/null 2>&1 && echo "! -group root") $(getent group adm >/dev/null 2>&1 && echo "! -group adm") -exec chgrp root {} +
+    true
+  guidance: "Run the following command to configure the audit log files to be group owned by adm: # find $(dirname $(awk -F\"=\" '/^\\s*log_file/ {print $2}' /etc/audit/auditd.conf | xargs)) -type f \\( ! -group adm -a ! -group root \\) -exec chgrp adm {} + Run the following command to set the log_group parameter in the audit configuration file to log_group = adm: # sed -ri 's/^\\s*#?\\s*log_group\\s*=\\s*\\S+(\\s*#.*)?.*$/log_group = adm\\1/' /etc/audit/auditd.conf Run the following command to restart the audit daemon to reload the configuration file: # systemctl restart auditd"

@@ -1,0 +1,33 @@
+id: TMA-ORACLE-DB-3.1
+title: Ensure 'FAILED_LOGIN_ATTEMPTS' Is Less Than Or Equal To '5'
+description: 'The FAILED_LOGIN_ATTEMPTS setting defines the number of consecutive failed login attempts allowed before a user''s account is locked. While different profiles can have customized settings based on organizational needs, a minimum recommended value of 5 should be enforced. Organizations may choose a higher value for specific use cases, such as application data source accounts, to prevent ... DEFAULT limits resolve to the DEFAULT profile value; UNLIMITED counts as 9999. Default: 10 Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- password-policy
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 3.1 Ensure 'FAILED_LOGIN_ATTEMPTS' Is Less Than Or Equal To '5'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from (
+      select p.con_id, p.profile, to_number(decode(p.limit, 'DEFAULT',
+        (select decode(d.limit, 'UNLIMITED', '9999', d.limit) from cdb_profiles d
+          where d.profile = 'DEFAULT' and d.resource_name = p.resource_name and d.con_id = p.con_id),
+        'UNLIMITED', '9999', p.limit)) lim
+      from cdb_profiles p where p.resource_name = 'FAILED_LOGIN_ATTEMPTS'
+    ) where lim > 5;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remediate this setting by executing the following SQL statement for each PROFILE returned by the audit procedure. ALTER PROFILE <profile_name> LIMIT FAILED_LOGIN_ATTEMPTS 5;

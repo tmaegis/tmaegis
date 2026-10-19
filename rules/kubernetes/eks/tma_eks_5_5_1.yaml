@@ -1,0 +1,20 @@
+id: TMA-EKS-5.5.1
+title: Use EKS access entries to manage IAM principal access to Kubernetes
+description: Using EKS access entries centralizes how IAM principals are granted access to the Kubernetes API and lets cluster access be managed through Amazon EKS instead of relying on manual aws-auth ConfigMap updates. This gives a cleaner access-management model for users and roles that need to work with Kubernetes resources in the cluster. Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE. Checks the authentication mode is API or API_AND_CONFIG_MAP.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- managed-services
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.5.1 Use EKS access entries to manage IAM principal access to Kubernetes
+audit:
+  type: command
+  command: |-
+    m=$(aws eks describe-cluster --name "${EKS_CLUSTER:?set EKS_CLUSTER}" --query cluster.accessConfig.authenticationMode --output text) || exit 1
+    case "$m" in API|API_AND_CONFIG_MAP) echo compliant;; *) echo "noncompliant: authenticationMode=$m";; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure the cluster to use EKS access entries for IAM principal access management, then create and scope access entries for each required IAM role or user. This remediation typically starts by enabling the access-entry API through the cluster authentication mode, then moving existing access management from legacy aws-auth ConfigMap mappings to access entries with EKS access policies, Kubernetes RBAC group mappings, or both. Access entries require the cluster authentication mode to include the EKS API, and moving from CONFIG_MAP to API_AND_CONFIG_MAP is the recommended transition path. Update the cluster authentication mode to API_AND_CONFIG_MAP aws eks update-cluster-config \ --name $CLUSTER_NAME \ --region $REGION_CODE \ --access-config authenticationMode=API_AND_CONFIG_MAP • Create an access entry for each IAM principal that needs Kubernetes access.

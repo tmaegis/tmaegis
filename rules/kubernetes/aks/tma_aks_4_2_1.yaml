@@ -1,0 +1,21 @@
+id: TMA-AKS-4.2.1
+title: Minimize the admission of privileged containers
+description: Minimize the admission of privileged containers by restricting the ability to create pods whose containers, init containers, or ephemeral containers run with securityContext.privileged=true, and reserve that capability for narrowly approved platform scenarios only. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.
+target: aks
+level: 1
+severity: critical
+tags:
+- aks
+- policies
+- pod-security
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.2.1 Minimize the admission of privileged containers
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex && ($4=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add policies to each namespace in the cluster which has user workloads to restrict the admission of privileged containers. To enable PSA for a namespace in your cluster, set the pod-security.kubernetes.io/enforce label with the policy value you want to enforce. kubectl label --overwrite ns NAMESPACE pod-security.kubernetes.io/enforce=restricted The above command enforces the restricted policy for the NAMESPACE namespace. You can also enable Pod Security Admission for all your namespaces. For example: kubectl label --overwrite ns --all pod-security.kubernetes.io/warn=baseline Pod Security Policies and Assignments can be found by searching for Policies in the Azure Portal. A detailed step-by-step guide can be found here: https://learn.microsoft.com/en-us/azure/governance/policy/concepts/policy-for-kubernetes'

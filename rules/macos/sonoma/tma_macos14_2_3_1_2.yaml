@@ -1,0 +1,39 @@
+id: TMA-MACOS14-2.3.1.2
+title: Ensure AirPlay Receiver Is Disabled
+description: In macOS Monterey (12.0), Apple has added the capability to share content from another Apple device to the screen of a host Mac. While there are many valuable uses of this capability, such sharing on a standard Mac user workstation should be enabled ad hoc as required rather than allowing a continuous sharing service. The feature can be restricted by Apple Account or network and is configured to use by accepting the connection on the Mac. Part of the concern is frequent connection requests may function as a denial-of-service and access control limits may provide too much information to an attacker. https://macmost.com/how-to-use-a-mac-as-an-airplay-receiver.html https://support.apple.com/guide/mac-pro-rack/use-airplay-apdf1417128d/mac This capability appears very useful for kiosk and shared work spaces. The ability to allow by network could be especially useful on segregated guest net...
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: low
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.3.1.2 Ensure AirPlay Receiver Is Disabled
+audit:
+  type: command
+  command: '/usr/bin/osascript -l JavaScript <<''EOS''
+
+    $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.applicationaccess'').objectForKey(''allowAirPlayIncomingRequests'').js
+
+    EOS'
+  expected_output: 'false'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.applicationaccess" 'allowAirPlayIncomingRequests' -bool false
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.applicationaccess 2. The key to include is allowAirPlayIncomingRequests 3. The key must be set to <false/>"

@@ -1,0 +1,39 @@
+id: TMA-BOTTLEROCKET-3.2.7
+title: Ensure TCP SYN Cookies is enabled
+description: When tcp_syncookies is set, the kernel will handle TCP SYN packets normally until the half-open connection queue is full, at which time, the SYN cookie functionality kicks in. SYN cookies work by not using the SYN queue at all. The audit reads the running value from /proc/sys. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 1
+severity: medium
+tags:
+- bottlerocket
+- network
+reference: CIS Bottlerocket Benchmark v1.0.0 - 3.2.7 Ensure TCP SYN Cookies is enabled
+audit:
+  type: command
+  command: |-
+    bad=0
+    chk() { f=/proc/sys/$(printf %s "$1" | tr . /); v=$(cat "$f" 2>/dev/null) || { echo "$1: not readable"; bad=1; return; }; [ "$v" = "$2" ] || { echo "$1 = $v (expected $2)"; bad=1; }; }
+    chk net.ipv4.tcp_syncookies 1
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    apiclient apply <<EOF
+    [settings.kernel.sysctl]
+    "net.ipv4.tcp_syncookies" = "1"
+    EOF
+  guidance: "Run the following command to set the active kernel parameter and persist the setting: # apiclient apply <<EOF [settings.kernel.sysctl] \"net.ipv4.tcp_syncookies\" = \"1\" EOF Run the following command to flush the routing cache: # sysctl -w net.ipv4.route.flush=1"

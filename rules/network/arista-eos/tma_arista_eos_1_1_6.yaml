@@ -1,0 +1,19 @@
+id: TMA-ARISTA-EOS-1.1.6
+title: DNS Configuration
+description: It is recommended that a DNS server be defined for client resolver. This allows for the use of hostnames when configuring services such as ntp or syslog. The susceptibility of IP addresses to spoofing translates to DNS host name and IP address mapping vulnerabilities. For example, suppose a source host wishes to establish a connection with a destination host and queries a DNS server for the IP address of the ... Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: medium
+tags:
+- arista-eos
+- network
+- hardening
+reference: CIS Arista EOS Benchmark v1.0.0 - 1.1.6 DNS Configuration
+audit:
+  type: config_regex
+  pattern: (?m)^ip name-server (?:vrf \S+ )?\S+
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure at least one name server and a domain name. DNS services should be provided over the management network.
+    ip name-server {vrf [Management VRF]} {ip address}

@@ -1,0 +1,20 @@
+id: TMA-UBUNTU1404-4.2.2.1
+title: Ensure syslog-ng service is enabled
+description: Once the syslog-ng package is installed it needs to be activated.
+target: linux
+os_family:
+- ubuntu-14.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 14.04 LTS Benchmark v2.1.0 ARCHIVE - 4.2.2.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v ls >/dev/null 2>&1 || { echo "step1: ls not installed"; return 1; }; o=$(bash -c ''ls /etc/rc*.d/S*syslog-ng /etc/rc2.d/S10syslog-ng  /etc/rc3.d/S10syslog-ng /etc/rc4.d/S10syslog-ng /etc/rc5.d/S10syslog-ng'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Start links should exist for run levels 2, 3, 4, and 5.'' || { echo step1: missing ''Start links should exist for run levels 2, 3, 4, and 5.''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to enable syslog-ng: # update-rc.d syslog-ng enable'

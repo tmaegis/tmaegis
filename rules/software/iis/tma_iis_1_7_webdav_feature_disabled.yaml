@@ -1,0 +1,19 @@
+id: TMA-IIS-1.7
+title: Ensure' WebDav' feature is disabled
+description: 'WebDAV is an extension to the HTTP protocol which allows clients to create, move, and delete files and resources on the web server. Note: The WebDAV feature must be enabled for this functionality to be available in IIS. The Web-DAV-Publishing Windows feature must not be installed (ServerManager module). PowerShell 5.1; reads the registry (run elevated).'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- features
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 1.7 Ensure' WebDav' feature is disabled
+audit:
+  type: command
+  command: $f = Get-WindowsFeature -Name Web-DAV-Publishing -ErrorAction Stop; if (-not $f.Installed) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Uninstall-WindowsFeature Web-DAV-Publishing

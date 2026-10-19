@@ -1,0 +1,18 @@
+id: TMA-VSCODE-1.1.2
+title: Ensure 'ChatToolsAutoApprove' is set to 'Disabled'
+description: 'This policy setting controls auto-approval for agent mode chat tools. The recommended state for this setting is: Disabled. Rationale: Automatic activation of agent mode tools may result in inadvertent disclosure of sensitive data to third-party servers backing the chat tool or unexpected modification to project files. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\VSCode:ChatToolsAutoApprove (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: vscode
+level: 1
+severity: medium
+tags:
+- vscode
+- developer-tools
+- cis-l1
+reference: CIS Visual Studio Code GPO Benchmark v1.0.0 - 1.1.2 Ensure 'ChatToolsAutoApprove' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'' -Name ''ChatToolsAutoApprove'' -ErrorAction SilentlyContinue).''ChatToolsAutoApprove''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ChatToolsAutoApprove' -Value 0 -PropertyType DWord -Force | Out-Null

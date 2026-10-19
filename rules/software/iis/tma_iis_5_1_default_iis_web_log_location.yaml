@@ -1,0 +1,19 @@
+id: TMA-IIS-5.1
+title: Ensure Default IIS web log location is moved
+description: IIS will log relatively detailed information on every request. These logs are usually the first item looked at in a security response and can be the most valuable. Malicious users are aware of this and will often try to remove evidence of their activities. It is recommended that the default location for IIS log files be changed to a restricted, non-system drive. The siteDefaults logFile directory and every site log directory must not be on the system drive (default %SystemDrive%\inetpub\logs\LogFiles). PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- logging
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 5.1 Ensure Default IIS web log location is moved
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $sd = $env:SystemDrive; $dirs = @((Get-WebConfiguration -Filter 'system.applicationHost/sites/siteDefaults/logFile' -PSPath 'MACHINE/WEBROOT/APPHOST').directory) + @(Get-Website | ForEach-Object { $_.logFile.directory }); $bad = @($dirs | Where-Object { $_ -and [Environment]::ExpandEnvironmentVariables($_) -like "$sd*" }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.applicationHost/sites/siteDefaults/logFile -Name directory -Value 'D:\IISLogs' (a non-system volume with restricted ACLs)

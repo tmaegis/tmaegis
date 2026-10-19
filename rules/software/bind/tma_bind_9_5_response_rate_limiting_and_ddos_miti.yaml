@@ -1,0 +1,29 @@
+id: TMA-BIND-9.5
+title: Response Rate Limiting and DDOS Mitigation
+description: Responses to excessive, nearly identical UDP requests can be controlled by configuring a response rate-limit clause in an options or view statement. At this time, Response Rate Limiting is only recommended for authoritative servers. The audit requires a rate-limit clause in the global options with responses-per-second 5 or less (applies to authoritative servers). The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- operations
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 9.5 Response Rate Limiting and DDOS Mitigation
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    r=$(printf '%s\n' "$opts" | grep -Eo 'rate-limit \{[^}]*\}') || { echo 'no rate-limit in options'; exit 1; }
+    v=$(printf '%s\n' "$r" | sed -n 's/.*responses-per-second \([0-9]*\);.*/\1/p')
+    [ -n "$v" ] && [ "$v" -le 5 ] && echo compliant || echo "responses-per-second ${v:-unset}"
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: To implement the recommended state, add or update a rate-limit clause in the server's options statement. Add a responses-per-second value of 5 or less, similar to the example below. options { . . . rate-limit { // Limit Response to Rapid Identical Queries for DDOS mitigation responses-per-second 5; . . . };

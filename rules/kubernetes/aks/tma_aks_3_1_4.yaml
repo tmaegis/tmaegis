@@ -1,0 +1,25 @@
+id: TMA-AKS-3.1.4
+title: Ensure that the azure.json file ownership is set to root:root
+description: The azure.json file on an AKS worker node contains Azure cloud-provider configuration used by Kubernetes components to interact with Azure resources such as load balancers, storage, and networking. Ensure that the file ownership is set to root:root. Runs on each AKS node; SKIPs where /etc/kubernetes/azure.json is absent.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- worker-node
+- file-permissions
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.1.4 Ensure that the azure.json file ownership is set to root:root
+audit:
+  type: command
+  command: |-
+    set -f
+    f=""; for x in /etc/kubernetes/azure.json; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    o=$(stat -Lc %U:%G "$f") || exit 1
+    if [ "$o" = "root:root" ]; then echo compliant; else echo "noncompliant: $f $o"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/azure.json
+remediation:
+  type: command
+  command: chown root:root /etc/kubernetes/azure.json

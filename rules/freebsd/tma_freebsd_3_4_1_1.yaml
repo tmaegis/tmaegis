@@ -1,0 +1,54 @@
+id: TMA-FREEBSD-3.4.1.1
+title: Ensure ipfw is enabled and configured
+description: 'The ipfw interface provides a new in-kernel packet classification framework that is based on a network-specific Virtual Machine (VM) and an ipfw userspace command line tool. The ipfw interface reuses the existing dummynet subsystems such as the existing hook infrastructure, the connection tracking system, NAT, userspace queuing and logging subsystem. Audit: firewall_enable must be YES and the ipfw module loaded; review the ruleset (ipfw list) against site policy.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- network
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 3.4.1.1 Ensure ipfw is enabled and configured
+audit:
+  type: command
+  command: command -v sysrc >/dev/null 2>&1 || exit 1; command -v kldstat >/dev/null 2>&1 || exit 1; v=$(sysrc -q -n firewall_enable 2>/dev/null); case "$v" in [Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn]|1) kldstat -q -m ipfw && echo compliant || echo "ipfw module not loaded";; *) echo "firewall_enable=$v";; esac
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    m=ipfw
+    kldstat -q -m "$m" && kldunload "$m" 2>/dev/null
+    sysrc kld_list-="$m" >/dev/null 2>&1 || true
+    tma_comment /boot/loader.conf "^[[:space:]]*${m}_load[[:space:]]*="
+    kldstat -q -m "$m" && echo "$m is still loaded (built into the kernel or in use); a reboot or kernel change is required" >&2
+    true
+  guidance: "Run the following command to install and enable ipfw. The firewall profile workstation comes with sane and secure configurations for a single host. # sysrc firewall_enable=\"YES\" # sysrc firewall_type=\"workstation\" # firewall_myservices+=\"22/tcp\" # firewall_allowservices=\"any\" This configuration will allow incoming connections on tcp port 22 or ssh from any IPv4 or IPv6 addresses. If this is the first time configuration, and the system is on a remote location, it is best to reboot the system to load the kernel modules properly: # reboot Or in case new rules are added run the following commands to restart the ipfw service: # service ipfw restart For an example if we want to allow incoming traffic for tcp port 443 or https run the following commands: # firewall_myservices+=\"443/tcp\" firewall_myservices: 22/tcp -> 22/tcp 443/tcp # service ipfw restart Flushed all rules. 00100 allow ip from any to any via lo0 00200 deny ip from any to 127.0.0.0/8 00300 deny ip from 127.0.0.0/8 to any 00400 deny ip from any to ::1 00500 deny ip from ::1 to any 00600 allow ipv6-icmp from :: to ff02::/16 00700 allow ipv6-icmp from fe80::/10 to fe80::/10 00800 allow ipv6-icmp ... (see CIS section 3.4.1.1)"

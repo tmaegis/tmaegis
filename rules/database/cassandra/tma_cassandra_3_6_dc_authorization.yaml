@@ -1,0 +1,19 @@
+id: TMA-CASSANDRA-3.6
+title: Ensure that Data Center Authorizations is activated
+description: Authorization at Data Center level is pluggable in Cassandra and is configured using the network_authorizer setting in cassandra.yaml. Cassandra ships with AllowAllNetworkAuthorizer which allows any role to access any datacenter effectively disabling datacenter authorization; which is the current behavior. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Checks /etc/cassandra/cassandra.yaml (package install; SKIP when it does not exist).
+target: cassandra
+level: 1
+severity: medium
+tags:
+- cassandra
+- authorization
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 3.6 Ensure that Data Center Authorizations is activated
+audit:
+  type: file_regex
+  file_path: /etc/cassandra/cassandra.yaml
+  pattern: (?m)^network_authorizer:[ \t]*(?:\n(?:[ \t]*(?:#[^\n]*)?\n|[ \t]+[^\n]*\n)*?[ \t]+class_name[ \t]*:[ \t]*)?['\x22]?(?:[\w.]*\.)?(?:CassandraNetworkAuthorizer)\b
+  requires_file:
+  - /etc/cassandra/cassandra.yaml
+remediation:
+  type: iac_patch
+  command: 'On each node set ''network_authorizer: CassandraNetworkAuthorizer'' in cassandra.yaml and rolling-restart; then restrict roles with ALTER ROLE <r> WITH ACCESS TO DATACENTERS {...}.'

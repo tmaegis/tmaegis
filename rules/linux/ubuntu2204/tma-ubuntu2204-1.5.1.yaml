@@ -1,0 +1,44 @@
+id: TMA-UBUNTU2204-1.5.1
+title: Ensure randomize_va_space is configured
+description: Address space layout randomization (ASLR) is an exploit mitigation technique which randomly arranges the address space of key data areas of a process.
+target: linux
+os_family:
+- ubuntu-22.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- kernel
+- linux
+- sysctl
+reference: CIS Ubuntu Linux 22.04 LTS Benchmark v3.0.0 - 1.5.1
+audit:
+  type: command
+  shell: bash
+  command: 'chk() { p=$1; allowed=" $2 "; case $p in net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || return 0;; esac; v=$(sysctl -n "$p" 2>/dev/null) || { echo "$p: not available"; return 1; }; case "$allowed" in *" $v "*) ;; *) echo "$p is $v (running)"; return 1;; esac; sd=$(readlink -e /lib/systemd/systemd-sysctl || readlink -e /usr/lib/systemd/systemd-sysctl); f=$("$sd" --cat-config 2>/dev/null | grep -Po "^\h*${p//./\.}\h*=\h*\K\H+" | tail -n1); [ -n "$f" ] || { echo "$p is not set in any sysctl configuration file"; return 1; }; case "$allowed" in *" $f "*) ;; *) echo "$p is $f in configuration"; return 1;; esac; }; if chk kernel.randomize_va_space 2; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=kernel.randomize_va_space; v=2
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+  guidance: "1. Review all files ending in .conf in the /etc/sysctl.d directory and comment out or remove all kernel.randomize_va_space lines that are not kernel.randomize_va_spacee=2. Example script: #!/usr/bin/env bash { l_option=\"kernel.randomize_va_space\" l_grep=\"${l_option//./\\\\.}\" l_value=\"2\" while IFS= read -r -d $'\\0' l_file; do grep -Poi '\\h*'\"$l_option\"'\\h*=\\h*\\H+\\b' \"$l_file\" \\ | grep -Pivq '^\\h*'\"$l_grep\"'\\h*=\\h*'\"$l_value\"'\\b' && \\ sed -ri '/^\\s*kernel.yama.ptrace_scope\\s*=/s/^/# /' \"$l_file\" done < <(find /etc/sysctl.d/ -type f -name '*.conf' -print0) } 2. Create or edit a file in the /etc/sysctl.d/ directory ending in .confand edit or add the following line: kernel.randomize_va_space = 2 E…"

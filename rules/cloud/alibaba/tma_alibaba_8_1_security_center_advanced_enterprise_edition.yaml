@@ -1,0 +1,20 @@
+id: TMA-ALIBABA-8.1
+title: Ensure that Security Center is Advanced or Enterprise Edition
+description: The Advanced or Enterprise Edition enables threat detection for network and endpoints, providing malware detection, webshell detection and anomaly detection in Security Center. The Advanced or Enterprise Edition allows for full protection to defend cloud threats. aliyun sas DescribeVersionConfig Version must be 3 (Enterprise), 5 (Advanced) or 7 (Ultimate). Run with a Security Center region (e.g. --region cn-shanghai or ap-southeast-1) in the CLI profile. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 2
+severity: medium
+tags:
+- alibaba
+- security-center
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 8.1 Ensure that Security Center is Advanced or Enterprise Edition
+audit:
+  type: command
+  command: |-
+    out=$(aliyun sas DescribeVersionConfig 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^[[:space:]]*"Version"[[:space:]]*:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -n 1)
+    case "$v" in 3|5|7) echo compliant ;; *) echo "edition code ${v:-unknown}" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Upgrade Security Center to the Advanced, Enterprise or Ultimate edition (Security Center console > Upgrade).

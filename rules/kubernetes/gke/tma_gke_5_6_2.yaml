@@ -1,0 +1,20 @@
+id: TMA-GKE-5.6.2
+title: Use VPC native GKE clusters with alias IP address ranges
+description: Use VPC native GKE clusters with alias IP address ranges so Pod and Service IP addresses are allocated from subnet secondary IP address ranges in the cluster’s VPC network. This provides native VPC routing for GKE workloads and avoids relying on custom static routes for Pod routing. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 1
+severity: medium
+tags:
+- gke
+- managed-services
+- network
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.6.2 Use VPC native GKE clusters with alias IP address ranges
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(ipAllocationPolicy.useIpAliases)') || exit 1
+    if [ "$v" = True ]; then echo compliant; else echo "noncompliant: ipAllocationPolicy.useIpAliases=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'VPC native networking is selected at cluster creation and cannot be enabled on an existing routes based cluster. To remediate a noncompliant cluster, create a new GKE cluster with alias IP address ranges enabled, migrate workloads to the new cluster, validate application connectivity, and decommission the routes based cluster after migration is complete. gcloud container clusters create $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-ip-alias For production clusters, define or select appropriate subnet secondary IP address ranges for Pods and Services before cluster creation. Proper IP range planning helps avoid Pod or Service IP exhaustion as the cluster scales. • Note: VPC native networking is selected at cluster creation and cannot be enabled on an existing routes based cluster.'

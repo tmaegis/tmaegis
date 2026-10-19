@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.19
+title: Ensure 'log_error_verbosity' is set correctly
+description: 'The log_error_verbosity setting specifies the verbosity (amount of detail) of logged messages. Valid values are: - TERSE - DEFAULT - VERBOSE with each containing the fields of the level above it as well as additional fields. TERSE excludes the logging of DETAIL, HINT, QUERY, and CONTEXT error information. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Passes when log_error_verbosity is default or verbose.'
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.19 Ensure 'log_error_verbosity' is set correctly
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SELECT CASE WHEN lower(current_setting('log_error_verbosity')) IN ('default','verbose') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_error_verbosity='verbose'" (or default) on every YB-TServer and restart it.

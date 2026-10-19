@@ -1,0 +1,18 @@
+id: TMA-IBMCLOUD-KEY-PROTECT-ROTATION
+title: Ensure Key Protect root keys have a rotation policy
+description: Rotation policies regularly re-wrap data encryption keys with new root key material. Every root (non-extractable) key in every Key Protect instance must have a rotation policy with interval_month (requires the kp plugin; keys are queried in the targeted region). Read-only ibmcloud CLI calls using the current CLI session and targeted region (ibmcloud login, or IBMCLOUD_API_KEY); JSON output is parsed with grep/sed/awk. A missing CLI, plugin or session fails the check.
+target: ibmcloud
+level: 1
+severity: medium
+tags:
+- ibmcloud
+- kms
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - Storage - Key Protect root key rotation (verify section number for your release)
+audit:
+  type: command
+  command: "inst=$(ibmcloud resource service-instances --service-name kms --output json 2>/dev/null) || exit 1\nbad=0\nfor g in $(printf '%s\\n' \"$inst\" | awk '{ o = gsub(/\\{/, \"{\"); c = gsub(/\\}/, \"}\") } d == 1 && /\"guid\"[[:space:]]*:/ { s = $0; sub(/^[^:]*:[[:space:]]*\"/, \"\", s); sub(/\".*/, \"\", s); print s } { d += o - c }'); do\n  ks=$(ibmcloud kp keys -i \"$g\" --output json 2>/dev/null) || exit 1\n  ids=$(printf '%s\\n' \"$ks\" | awk '{ o = gsub(/\\{/, \"{\"); c = gsub(/\\}/, \"}\") } d == 0 && o > 0 { id = \"\"; ex = \"\" } d == 1 && /\"id\"[[:space:]]*:/ { id = $0; sub(/^[^:]*:[[:space:]]*\"/, \"\", id); sub(/\".*/, \"\", id) } d == 1 && /\"extractable\"[[:space:]]*:/ { ex = $0 } { d += o - c } d == 0 && c > 0 && ex ~ /false/ { print id }')\n  for k in $ids; do\n    p=$(ibmcloud kp key policies \"$k\" -i \"$g\" --output json 2>/dev/null) || exit 1\n    printf '%s\\n' \"$p\" | grep -q '\"interval_month\"' || { echo \"no rotation policy: $g $k\"; bad=1; }\n  done\ndone\n\
+    [ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ibmcloud kp key policy-update rotation <key-id> -i <instance-id> --monthly-interval 12 (or shorter); alternatively set an instance-level rotation policy (ibmcloud kp instance policy-update rotation).

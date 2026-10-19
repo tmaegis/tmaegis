@@ -1,0 +1,59 @@
+id: TMA-ARUBA-CX-1.3.2
+title: Configuring Time Services
+description: This sequence describes configuring time services. AOS-CX supports both NTP client and NTP server functionality NTP client can be configured manually or via DHCP option 42. PASS requires an NTP server and ntp enable. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- time
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.3.2 Configuring Time Services
+audit:
+  type: config_regex
+  pattern: (?m)(?:^ntp server \S+(?s:.*?)^ntp enable[ \t]*$|^ntp enable[ \t]*$(?s:.*?)^ntp server \S+)
+remediation:
+  type: iac_patch
+  command: |-
+    ntp server 10.10.10.10 iburst prefer
+    ntp server 20.20.20.20
+    ntp vrf mgmt
+    ntp enable
+    # CIS guidance:
+    Note: In order for the NTP process to associate with a server, the switch time must be set to within 15 minutes of the NTP server time. To set switch time:
+    clock datetime YYYY-MM-DD HH:MM:SS
+    clock timezone <timezone>
+    NTP Client:
+    Configure an NTP time source:
+    ntp server <DNS-name or IP-address> <optional parameters>
+    Note: Optional parameters:
+      burst          NTP Association use burst mode
+      iburst         NTP Association use iburst mode
+      key-id  <4-17> NTP Key ID
+      maxpoll <4-17> NTP maximum poll time to use configuration
+      minpoll <4-17> NTP minimum poll time to use configuration
+      prefer         NTP Association preference configuration
+      version <3-4>  NTP Association version configuration
+    To allow NTP server being set via DHCP option 42:
+    ntp dhcp-enable
+    To specify a VRF for NTP to listen on:
+    ntp vrf <vrf_name>
+    To enable NTP:
+    ntp enable
+    Example config of NTP client:
+    clock datetime 2025-06-30 14:22:00
+    clock timezone americas/los_angeles
+    ntp server 10.10.10.10 iburst minpoll 10 maxpoll 14 prefer
+    ntp server 20.20.20.20
+    ntp vrf mgmt
+    ntp enable
+    NTP Conductor:
+    Note:
+    NTP clients and conductor must be enabled together. Configure NTP client first. NTP conductor MUST be enabled on a vrf other than the vrf of NTP client. Configure an NTP Conductor:
+    ntp conductor stratum <1-15> vrf <vrf_name>
+    Example config of and NTP conductor:
+    clock datetime 2025-06-30 14:22:00
+    clock timezone americas/los_angeles
+    ntp server 10.10.10.10 iburst minpoll 10 maxpoll 14 prefer
+    ntp vrf mgmt
+    ntp conductor  stratum 4 vrf default
+    ntp enable

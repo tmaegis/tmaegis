@@ -1,0 +1,19 @@
+id: TMA-AWS-DB-2.3
+title: Ensure Data in Transit Encryption is Enforced
+description: Use TLS (Transport Layer Security) to secure data in transit. Aurora supports TLS- encrypted connections between your application and your DB instance, and this configuration can be enforced so non-TLS connections are prohibited. Encrypting data in transit protects sensitive information from interception and tampering by unauthorized parties. Aurora supports TLS for securing client connections, however it is essential to ensure that client applications are properly configured to use TLS and that the database enforces encrypted connections.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- database
+- encryption
+reference: CIS AWS Database Services Benchmark v2.0.0 - 2.3 Ensure Data in Transit Encryption is Enforced
+audit:
+  type: manual
+  command: '1. Sign in to the AWS Management Console where the Aurora database cluster you are auditing resides. 2. Navigate to the Amazon Aurora and RDS Dashboard: - You can find this under the Database category. 3. Select the DB cluster name you wish to audit: - This opens the details page for your specific Aurora cluster. 4. Under Configuration, locate the DB cluster parameter group attached to this cluster: - Click on the parameter group name to review its parameters. 5. Verify the following engine-specific parameters to confirm encryption in transit is enforced: - 5a. PostgreSQL: Confirm that rds.force_ssl = 1 - 5b. MySQL: Confirm that require_secure_transport = ON (Only applicable for Aurora MySQL versions 2 and 3) Notes: - Make sure the parameter changes are applied and the cluster has been rebooted if necessary for the parameters to take effect.'
+remediation:
+  type: iac_patch
+  command: '1. Sign in to the AWS Management Console where the Aurora database cluster you are remediating resides. 2. Navigate to the Amazon Aurora and RDS Dashboard: - You can find this under the Database category. 3. Select the DB cluster name you wish to remediate: - This opens the details page for your specific Aurora cluster. 4. Under Configuration, locate the DB cluster parameter group attached to this cluster: - Click on the parameter group name to remediate its parameters. 5. Update the following engine-specific parameters to enforce encryption in transit at the database level: - PostgreSQL: Set rds.force_ssl = 1 - MySQL: Set require_secure_transport = ON (applicable to Aurora MySQL versions 2 and 3 only). 6. Reboot the database cluster to apply the parameter changes. 7. Configure your client application for SSL/TLS connections: - Download the appropriate AWS-provided SSL/TLS certificates: For MySQL-compatible Aurora, Amazon provides an SSL certificate that you can download from
+    their documentation. PostgreSQL-compatible Aurora uses the default PostgreSQL SSL certificate. - Once you have the appropriate certificate, you must configure your client application to use SSL/TLS. For exa...'

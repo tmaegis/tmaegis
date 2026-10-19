@@ -1,0 +1,17 @@
+id: TMA-AIX-4.7.6
+title: Unattended terminal session timeout is 900 seconds (or less) - readonly
+description: 'TMOUT and TIMEOUT are environmental settings that activate the timeout of a shell. readonly TMOUT both exports and locks the variable, preventing unwanted modification during run-time. All systems are vulnerable if terminals are left logged in and unattended. Audit: /etc/profile must set TMOUT and TIMEOUT to 1-900 seconds and mark them readonly.'
+target: aix
+level: 2
+severity: medium
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.7.6 Unattended terminal session timeout is 900 seconds (or less) - readonly
+audit:
+  type: command
+  command: '[ -r /etc/profile ] || exit 1; t=$(sed -n "s/^[[:blank:]]*TMOUT=\([0-9][0-9]*\).*/\1/p" /etc/profile | tail -n 1); u=$(sed -n "s/^[[:blank:]]*TIMEOUT=\([0-9][0-9]*\).*/\1/p" /etc/profile | tail -n 1); if [ -n "$t" ] && [ "$t" -ge 1 ] && [ "$t" -le 900 ] && [ -n "$u" ] && [ "$u" -ge 1 ] && [ "$u" -le 900 ] && grep -Eq "^[[:blank:]]*(readonly)[[:blank:]].*TMOUT" /etc/profile; then echo compliant; else echo "TMOUT=$t TIMEOUT=$u"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Review /etc/profile to verify that TMOUT and TIMEOUT are configured to no more than 900 seconds and are readonly, with the readonly statement last: TMOUT=900 TIMEOUT=900 readonly TMOUT TIMEOUT'

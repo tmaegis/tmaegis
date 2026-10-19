@@ -1,0 +1,63 @@
+id: TMA-APACHE-10.2
+title: Ensure the LimitRequestFields Directive is Set to 100 or Less but not 0
+description: The LimitRequestFields directive limits the number of fields allowed in an HTTP request. LimitRequestFields must be set and every value must be 1-100. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file.
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- request-limits
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 10.2 Ensure the LimitRequestFields Directive is Set to 100 or Less but not 0
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk 'tolower($1)=="limitrequestfields"{n++; v=$2+0; if(!(v>=1 && v<=100)) bad=1} END{print (n>0&&!bad)?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi
+    [ -r "$c" ] || exit 0
+    R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c")
+    ctl=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 0
+    tma_mod() { command -v a2enmod >/dev/null 2>&1 && a2enmod "$1" >/dev/null 2>&1; true; }
+    tma_test() { "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -t >/dev/null 2>&1; }
+    tma_reload() { systemctl reload apache2 2>/dev/null || systemctl reload httpd 2>/dev/null || "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -k graceful >/dev/null 2>&1; true; }
+    tma_audit() (
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk 'tolower($1)=="limitrequestfields"{n++; v=$2+0; if(!(v>=1 && v<=100)) bad=1} END{print (n>0&&!bad)?"compliant":"noncompliant"}'
+    )
+    [ "$(tma_audit 2>/dev/null | tail -n 1)" = 'compliant' ] && exit 0
+    bk=$(mktemp -d) || exit 1
+    cp -p "$c" "$bk/main"
+    for f in $(find -L "$R" /etc/httpd/conf.d "$(dirname "$c")" -name '*.conf' 2>/dev/null | sort -u); do
+      [ -w "$f" ] && grep -Eiq '^[[:space:]]*(LimitRequestFields)[[:space:]]' "$f" || continue
+      mkdir -p "$bk/files$(dirname "$f")"; cp -p "$f" "$bk/files$f"
+      sed -i -E 's/^([[:space:]]*(LimitRequestFields)[[:space:]])/#\1/I' "$f"
+    done
+    cat >> "$c" <<'TMAEOF'
+    LimitRequestFields 100
+    TMAEOF
+    if ! tma_test; then
+      cp -p "$bk/main" "$c"; [ -d "$bk/files" ] && (cd "$bk/files" && find . -type f | while read -r f; do cp -p "$f" "/${f#./}"; done)
+      echo "configtest failed, change rolled back" >&2; exit 1
+    fi
+    rm -rf "$bk"; tma_reload
+  guidance: "Set LimitRequestFields 100 (or lower, not 0). Then run apachectl configtest and reload Apache."

@@ -1,0 +1,18 @@
+id: TMA-AWS-3.1.1
+title: Ensure S3 Bucket Policy is set to deny HTTP requests
+description: At the Amazon S3 bucket level, permissions can be configured through a bucket policy to ensure objects are accessible only through HTTPS. By default, Amazon S3 allows both HTTP and HTTPS requests. To ensure that access to S3 objects is only permitted through HTTPS, you must explicitly deny HTTP requests. Bucket policies that allow HTTPS requests without explicitly denying HTTP requests do not meet this requirement.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 3.1.1 Ensure S3 Bucket Policy is set to deny HTTP requests
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the AWS Management Console and open the Amazon S3 console using https://console.aws.amazon.com/s3/ 2. Select the target bucket 3. Select the ''Permissions'' tab 4. Select Bucket policy 5. Ensure a policy exists that explicitly denies HTTP requests using one of the following conditions: Option 1: Deny non-HTTPS requests { "Sid": <optional>, "Effect": "Deny", "Principal": "*", "Action": "s3:*", "Resource": "arn:aws:s3:::<bucket_name>/*", "Condition": { "Bool": { "aws:SecureTransport": "false" } } } Option 2: Enforce minimum TLS version { "Sid": "<optional>", "Effect": "Deny", "Principal": "*", "Action": "s3:*", "Resource": [ "arn:aws:s3:::<bucket_name>", "arn:aws:s3:::<bucket_name>/*" ], "Condition": { "NumericLessThan": { "s3:TlsVersion": "1.2" } } } 6. Repeat for all S3 buckets From Command Line: 1. List all of the S3 Buckets: aws s3 ls 2. For each bucket, run: aws s3api get-bucket-policy --bucket <bucket_name> | grep aws:SecureTransport or aws s3api
+    get-bucket-policy --bucket <bucket_name> | grep s3:TlsVersion 3. Verify the policy includes either: - "aws:SecureTransport": "false" with "Effect": "Deny" - or a TLS version restriction using "s3:TlsVersion"...'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Sign in to the AWS Management Console and open the Amazon S3 console 2. Select the bucket 3. Select the Permissions tab 4. Select Bucket policy 5. Add one of the following statements to the policy Deny HTTP requests: { "Sid": <optional>, "Effect": "Deny", "Principal": "*", "Action": "s3:*", "Resource": "arn:aws:s3:::<bucket_name>/*", "Condition": { "Bool": { "aws:SecureTransport": "false" } } } Enforce TLS version: { "Sid": "<optional>", "Effect": "Deny", "Principal": "*", "Action": "s3:*", "Resource": [ "arn:aws:s3:::<bucket_name>", "arn:aws:s3:::<bucket_name>/*" ], "Condition": { "NumericLessThan": { "s3:TlsVersion": "1.2" } } } 6. Save the policy 7. Repeat for all relevant buckets From Console Using AWS Policy Generator: 1. Repeat steps 1-4 above 2. Click on Policy Generator at the bottom of the Bucket Policy editor 3. Select S3 Bucket Policy as the policy type 4. Configure the statement: - Effect = Deny - Principal = * - AWS Service = Amazon S3 - Actions
+    = * - Amazon Resource Name = <ARN of the S3 Bucket> 5. Select Generate Policy 6. Copy the generated policy and add it to the bucket policy From Command Line: 1. Export the existing policy, if one exists: aws...'

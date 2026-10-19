@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.2.4
+title: 'Ensure ''Default notification setting'' is set to ''Enabled: Do not allow any site to show desktop notifications'''
+description: 'Google Chrome offers websites the ability to display desktop notifications. These are push messages which are sent from the website operator through Google infrastructure to Chrome. Rationale: If the website operator decides to send messages unencrypted, Google''s servers may process it as plain text. Furthermore, potentially compromised or faked notifications might trick users into clicking on a malicious link. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DefaultNotificationsSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: low
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.2.4 Ensure ''Default notification setting'' is set to ''Enabled: Do not allow any site to show desktop notifications'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultNotificationsSetting'' -ErrorAction SilentlyContinue).''DefaultNotificationsSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultNotificationsSetting' -Value 2 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,22 @@
+id: TMA-CISCO-ASA-2.5
+title: Ensure ICMP is restricted for untrusted interfaces
+description: Allows ICMP traffic for specific hosts or subnets and denies ICMP traffic for all other sources. ICMP is an important troubleshooting tool that can also be used to perform ICMP attacks on untrusted interfaces. For these interfaces, the ICMP traffic should be allowed only for specific hosts or subnets that are trusted by the Enterprise and should be ... Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: high
+tags:
+- cisco-asa
+- network
+- management-plane
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 2.5 Ensure ICMP is restricted for untrusted interfaces
+audit:
+  type: config_regex
+  pattern: (?m)^icmp deny any \S+
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the untrusted interface name <untrusted_interface_name>, the trusted subnet and corresponding subnet mask
+    - Step 2: Run the following command to allow ICMP from the trusted subnet to the untrusted interface. Repeat the command if there are more than one trusted subnets identified.
+    icmp permit <subnet> <mask> <untrusted_interface_name>
+    - Step 3: Run the following command to deny ICMP from all other sources to the untrusted interface.
+    icmp deny any<untrusted_interface_name>

@@ -1,0 +1,29 @@
+id: TMA-ORACLE-DB-2.3.13
+title: Ensure 'REMOTE_LISTENER' Is Empty
+description: 'The remote_listener setting determines whether or not a valid listener can be established on a system separate from the database instance. This setting should be empty unless the organization specifically needs a valid listener on a separate system or on nodes running Oracle RAC instances. Counts non-compliant GV$SYSTEM_PARAMETER rows across instances and containers; 0 is required. Default: There is no default value. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- parameters
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.3.13 Ensure 'REMOTE_LISTENER' Is Empty
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from gv$system_parameter v
+    where upper(v.name) = 'REMOTE_LISTENER'
+    and v.value is not null;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: To remediate this setting, execute the following SQL statement. ALTER SYSTEM SET REMOTE_LISTENER = '' SCOPE = BOTH;

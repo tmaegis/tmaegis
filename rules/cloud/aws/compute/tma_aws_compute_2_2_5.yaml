@@ -1,0 +1,18 @@
+id: TMA-AWS-COMPUTE-2.2.5
+title: Ensure attached EBS volumes are encrypted
+description: The account level encryption by default setting only applies to volumes created after it is enabled and the existing snapshot encryption control only addresses snapshots. Neither checks whether volumes currently attached to running EC2 instances are encrypted, so a volume created before encryption by default was enabled, or created with encryption explicitly disabled, can remain unencrypted indefinitely without being flagged. A volume can be unencrypted even when the account level default setting is enabled and all snapshots are encrypted, since that setting only governs future volume creation and has no effect on resources that already exist. This control closes that gap by directly auditing the encryption status of each attached volume, rather than relying on settings or backups that don't reflect the current state of live, in use storage.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- compute
+- encryption
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 2.2.5 Ensure attached EBS volumes are encrypted
+audit:
+  type: manual
+  command: 'From Console 1. Login to the EC2 console 2. Under Elastic Block Store, click Volumes 3. For each volume, review the State and Encrypted columns 4. Volumes showing State as in-use and Encrypted as false are non compliant 5. Review every region in use From Command Line Run aws ec2 describe-volumes --filters Name=attachment.status,Values=attached -- query "Volumes[*].{ID:VolumeId,Encrypted:Encrypted}" Any volume returning "Encrypted": false is non compliant. This filter ensures only attached, in use volumes are evaluated, avoiding overlap with the existing control covering unused volumes. Review every region in use.'
+remediation:
+  type: iac_patch
+  command: From Console 1. Under Elastic Block Store, click Snapshots, create a snapshot of the unencrypted volume 2. Select the snapshot, click Actions, Copy, select Encrypt this snapshot 3. Create a new volume from the encrypted snapshot 4. Detach the original unencrypted volume, attach the new encrypted volume 5. Confirm the new volume is attached using the same device name as the original, for example /dev/xvda for most root volumes, since an incorrect device name can prevent the instance from starting 6. For root volumes, the instance must be stopped before detaching and reattaching, and this should be tested in a non production environment first given the required downtime

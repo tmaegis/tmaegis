@@ -1,0 +1,19 @@
+id: TMA-SOLARIS-7.4
+title: Set Default File Creation Mask for FTP Users
+description: 'If FTP is permitted, set a strong, default file creation mask to apply to files created by the FTP server. Many users assume that the FTP server will use their system file creation mask; generally it does not. This setting ensures that files transmitted over FTP use a strong file creation mask. Audit: only evaluated where the FTP server is installed.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 7.4 Set Default File Creation Mask for FTP Users
+audit:
+  type: file_regex
+  file_path: /etc/proftpd.conf
+  pattern: (?m)^Umask\s+0?27\b
+  requires_file:
+  - /etc/proftpd.conf
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # cd /etc # if [ "`grep ''^Umask'' proftpd.conf`" ]; then awk ''/^Umask/ { $2 = "027" } { print }'' proftpd.conf > proftpd.conf.CIS mv proftpd.conf.CIS proftpd.conf else echo "Umask 027" >> proftpd.conf fi'

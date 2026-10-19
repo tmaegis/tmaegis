@@ -1,0 +1,26 @@
+id: TMA-ANDROID-ENCRYPTION
+title: Ensure device storage encryption is active
+description: Android 10+ devices ship with file-based encryption enabled by default; older or modified devices can be unencrypted.
+  ro.crypto.state reports encrypted when FBE/FDE is active. The audit uses adb against the single attached device (set ANDROID_SERIAL
+  when several are connected) and FAILS when adb is missing or no authorised device is connected. adb requires USB debugging,
+  so disable Developer options again after the audit.
+target: android
+level: 1
+severity: high
+tags:
+- android
+- encryption
+- data-at-rest
+reference: CIS Google Android Benchmark - Encryption (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    out=$(adb shell getprop ro.crypto.state 2>/dev/null) || exit 1
+    state=$(printf '%s' "$out" | tr -d '\r[:space:]')
+    if [ "$state" = encrypted ]; then echo compliant; else echo "ro.crypto.state=${state:-unset}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Devices shipping Android 10+ are encrypted by default; if ro.crypto.state is not ''encrypted'' (custom ROM, unlocked
+    bootloader or legacy device) back up, relock the bootloader / reflash stock firmware or retire the device. Legacy devices:
+    Settings > Security > Encrypt phone. EMM: Android Management API policy encryptionPolicy=ENABLED_WITH_PASSWORD.'

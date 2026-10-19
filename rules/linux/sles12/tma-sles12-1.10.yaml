@@ -1,0 +1,23 @@
+id: TMA-SLES12-1.10
+title: Ensure GDM is removed or login is configured
+description: The GNOME Display Manager (GDM) handles graphical login for GNOME based systems. Configuration of the GNOME desktop is managed with dconf. It is a hierarchically structured database or registry that allows users to modify their personal settings, and system administrators to set default or mandatory values for all users. Global dconf configuration parameters can be set in the /etc/dconf/db/ directory. This includes the configuration for GDM or locking certain configuration options for users.
+target: linux
+os_family:
+- sles-12
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 12 Benchmark v3.2.0 - 1.10
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v rpm >/dev/null 2>&1 || { echo "step1: rpm not installed"; return 1; }; o=$(bash -c ''rpm -q gdm'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''package gdm is not installed'' || { echo step1: missing ''package gdm is not installed''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''- OR/IF - GDM is required:'' || { echo step1: missing ''- OR/IF - GDM is required:''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+  requires_file:
+  - /usr/sbin/gdm3
+  - /usr/sbin/gdm
+remediation:
+  type: iac_patch
+  command: 'Run the following command to remove GDM # zypper remove gdm - OR/IF - GDM is required: Edit or create the gdm profile which contains the following lines: (This is typically /etc/dconf/profile/gdm) user-db:user system-db:gdm file-db:/usr/share/gdm/greeter-dconf-defaults Run the following Run to display a login banner: Note: the directory /etc/dconf/db/gdm.d/ may need to be created Edit or create a gdm keyfile for machine-wide settings: _(This is typically /etc/dconf/db/gdm.d/01-banner-message) [org/gnome/login-screen] banner-message-enable=true banner-message-text=''<banner message>'' Example Banner Text: ''Authorized uses only. All activity may be monitored and reported.'' Run the following to d…'

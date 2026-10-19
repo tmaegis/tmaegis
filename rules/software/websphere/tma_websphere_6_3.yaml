@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-6.3
+title: Ensure CallbackHandler is used to access private keys in keystore files
+description: Use CallbackHandler to retrieve user password and for accessing private keys in keystore files. Using the CallbackHandler method to retrieve a user's password and access private keys in keystore files ___ (state benefit). Do not use plain text passwords in user and keystore fields for WebServices security. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 1
+severity: medium
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 6.3 Ensure CallbackHandler is used to access private keys in keystore files
+audit:
+  type: manual
+  command: Ensure that the org.apache.ws.security.crypto.merlin.keystore.private.password attribute is not specified in the encryptionProperties and signatureProperties element in Web Services Security client and provider configurations. grep -w -R -i 'org.apache.ws.security.crypto.merlin.keystore.private.password' ${server.config.dir} Ensure that the ws-security.password attribute is not specified in the Web Services Security client and provider configurations. grep -w -R -i 'ws-security.password' ${server.config.dir}
+remediation:
+  type: iac_patch
+  command: Ensure that the passwords are not configured in the wsSecurityClient and wsSecurityProvider elements in ${server.config.dir}/configDropins/overrides/<any file name>.xml. For more information, see the References section. "Implement the callbackhandler method. For more information, see the References section." <wsSecurityClient id="default" ws-security.callback- handler="com.myCompany.myExample.myCBH" ...> ... </wsSecurityClient> <wsSecurityProvider id="default" ws-security.callback- handler="com.myCompany.myExample.myCBH" ...> ... </wsSecurityProvider>

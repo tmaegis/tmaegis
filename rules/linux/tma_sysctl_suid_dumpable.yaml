@@ -1,0 +1,24 @@
+id: TMA-LNX-KERN-SUID-DUMPABLE
+title: Ensure setuid programs cannot dump core
+description: Kernel parameter fs.suid_dumpable should be 0.
+target: linux
+os_family:
+- ubuntu-22.04
+- ubuntu-24.04
+- rocky-9
+level: 1
+severity: medium
+tags:
+- kernel
+- sysctl
+- network
+reference: CIS Linux Benchmark - Network Configuration / Kernel Parameters (verify section number for your distro release)
+audit:
+  type: command
+  command: sysctl -n fs.suid_dumpable
+  expected_output: '0'
+remediation:
+  type: command
+  command: sysctl -w fs.suid_dumpable=0 && printf 'fs.suid_dumpable = 0\n' > /etc/sysctl.d/60-tmaegis-fs_suid_dumpable.conf
+  backup_files:
+  - /etc/sysctl.d/60-tmaegis-fs_suid_dumpable.conf

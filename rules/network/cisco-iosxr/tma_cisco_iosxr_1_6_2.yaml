@@ -1,0 +1,17 @@
+id: TMA-CISCO-IOSXR-1.6.2
+title: Restrict VTY Access
+description: 'VTY access can be restricted via access-lists to limit from which the source addresses a management session to the device can be established. VTY ACLs control what addresses may attempt to log in to the router. Configuring VTY lines to use an ACL, restricts the sources where a user can manage the device. CIS marks this Manual; automated: requires an ''access-class ingress <acl>'' on a line template. Audited against the hierarchical output of ''show running-config'' (run ''terminal length 0'' first; not ''show running-config formal'').'
+target: cisco-iosxr
+level: 1
+severity: high
+tags:
+- cisco-iosxr
+- network
+- management-plane
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.6.2 Restrict VTY Access
+audit:
+  type: config_regex
+  pattern: (?m)^line (?:default|template \S+)[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+access-class (?:ingress|egress) \S+
+remediation:
+  type: iac_patch
+  command: 'Define ACLs which match the allowed sources. To restrict access of incoming or outgoing connections over IPv4 and IPv6, the IPv4 access list and IPv6 access list must share the same name: ipv4 access-list ACL-VTY-IN 10 permit ipv4 192.168.1.0/24 any 1000 deny ipv4 any any log icmp-off ipv6 access-list ACL-VTY-IN 10 permit ipv6 2001:db8::/64 any 1000 deny any any log icmp-off Apply the ACL on the line template: vty-pool default 0 4 line-template default line default access-class ingress ACL-VTY-IN Alternatively you can implement restrictions on the SSH Server which allows both IPv4 and IPv6. Note that SSH could be also used for Netconf, so the ACL might need to include additional sources which do not apply for VTY access only. ssh server ipv4 access-list ACL-VTY-IN ipv6 access-list ACL-VTY-IN'

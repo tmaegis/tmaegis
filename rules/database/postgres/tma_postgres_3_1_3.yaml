@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.3
+title: Ensure the logging collector is enabled
+description: The logging collector is a background process that captures log messages sent to stderr and redirects them into log files. The logging_collector setting must be enabled in order for this process to run. It can only be set at the server start. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- logging
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.3 Ensure the logging collector is enabled
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SHOW logging_collector" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'on'
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET logging_collector = 'on'; then restart PostgreSQL (systemctl restart postgresql-18); this parameter only changes at server start.

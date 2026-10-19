@@ -1,0 +1,20 @@
+id: TMA-ORACLE-DB-2.1.1
+title: Ensure 'extproc' Is Not Present In 'listener.ora'
+description: extproc should be removed from the listener.ora to mitigate the risk that OS libraries can be invoked by the Oracle instance. Passes when listener.ora contains no extproc entry (or no listener.ora exists in that directory). 19c v2.0.0 titles this "Ensure 'extproc' Is Not Enabled". Reads the file from $TNS_ADMIN, or $ORACLE_HOME/network/admin when TNS_ADMIN is unset (Linux/UNIX hosts); fails when neither directory exists.
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- network
+- listener
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.1.1 Ensure 'extproc' Is Not Present In 'listener.ora'
+audit:
+  type: command
+  command: 'd="${TNS_ADMIN:-${ORACLE_HOME:?ORACLE_HOME not set}/network/admin}"; [ -d "$d" ] || { echo "missing $d"; exit 1; }; f="$d/listener.ora"; [ -f "$f" ] || { echo compliant; exit 0; }; n=$(grep -ic extproc "$f"); [ "$n" = 0 ] && echo compliant || echo "noncompliant: extproc found in $f"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, remove extproc from the listener.ora file. Instead of relying on the EXTPROC feature in Oracle to access external libraries, you can use a database directory to directly access the library files stored within the database server's file system, allowing you to execute code from those libraries within your PL/SQL code without going through a separate external process.

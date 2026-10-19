@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-12.8
+title: Ensure that Code Signing is enabled for Lambda functions.
+description: Ensure that all your Amazon Lambda functions are configured to use the Code Signing feature in order to restrict the deployment of unverified code. Code Signing, ensures that the function code is signed by an approved (trusted) source, and that it has not been altered since signing, and that the code signature has not expired or been revoked.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.8 Ensure that Code Signing is enabled for Lambda functions.
+audit:
+  type: manual
+  command: From the Console 1. Login to the AWS console using https://console.aws.amazon.com/lambda/ 2. In the left column, under AWS Lambda, click Functions. 3. Under Function name click on the name of the function that you want to review. 4. Click the Configuration tab 5. Under General configuration on the left column, click Code signing. 6. Under the Code signing configuration section check for any code signing configurations created for the function. 7. If there are no code signing configurations available or listed is not enabled, refer to the remediation 8. If a code signing configuration is listed, click into it and confirm the Signature validation policy is set to Enforce. If it is set to Warn, the function is non compliant, refer to the remediation. 9. Compare the function's Last modified date against the date the code signing configuration was attached. If the function's last modified date predates that attachment date, the function is non compliant, refer to the remediation. 10.
+    Repeat steps 2-7 for each Lambda function within the current region. 11. Then repeat the Audit process for all other regions. From the Command Line 1. Run aws lambda list-functions aws lambda list-functi...
+remediation:
+  type: iac_patch
+  command: 'From the Console 1. Login to the AWS console using https://console.aws.amazon.com/signer 2. Click on Create Signing Profile if none are set up. If you already have some created in the left panel click on Signing Profiles, Create Signing Profile. ***Note a Signing Profile is a trusted publisher and is analogous to the use of a digital signing certificate to generate signatures for your application code. 3. On the Create Signing Profile setup page provide Profile name Specify the Signature Validity period (6 months up to 12 months is recomended) 4. Click on Create Profile 5. Go to the Amazon Lambda console https://console.aws.amazon.com/lambda/. 6. In the left panel, under Additional resources, click on Code signing configurations. 7. Click on Create configuration 8. On the Create code signing configuration setup page: - Description box - provide a short description to identify this configuration - Click inside the Signing profile version ARN box and select the Signing Profile
+    created above. - For Signature validation policy, click the signature validation policy suitable for your Lambda function. **Note - A signature check can fail if the code is not signed by an allowed Signing...'

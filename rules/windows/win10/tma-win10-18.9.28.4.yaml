@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.9.28.4
+title: Ensure 'Enumerate local users on domain-joined computers' is set to 'Disabled'
+description: 'This policy setting allows local users to be enumerated on domain-joined computers. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.9.28.4
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System'' -Name ''EnumerateLocalUsers'' -ErrorAction SilentlyContinue).''EnumerateLocalUsers''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''EnumerateLocalUsers='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Name 'EnumerateLocalUsers' -Value 0 -PropertyType DWord -Force | Out-Null

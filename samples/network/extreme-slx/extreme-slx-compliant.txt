@@ -1,0 +1,42 @@
+! Synthetic sample: Extreme SLX-OS running-config (hardened). Not a secure template.
+! Command: show running-config
+switch-attributes host-name slx-core-01
+switch-attributes chassis-name core-chassis-01
+!
+banner login "Authorized access only. Activity is logged."
+!
+password-attributes min-length 12 max-retry 3 character-restriction upper 1 lower 2 numeric 1 special-char 1
+!
+management-security
+ ssl-profile server
+  tls min-version 1.2
+!
+ntp authenticate
+ntp authentication-key 1 md5 REDACTED
+ntp server 192.0.2.123
+ntp server 192.0.2.124
+!
+logging syslog-server 192.0.2.50
+logging syslog-facility local LOG_LOCAL4
+logging auditlog class SECURITY
+logging auditlog class CONFIGURATION
+logging auditlog class FIRMWARE
+!
+aaa authentication login local
+aaa accounting exec default start-stop
+aaa accounting commands default start-stop
+!
+snmp-server v3host 192.0.2.51 nmsuser
+ version 3
+!
+router bgp
+ local-as 65001
+ neighbor 198.51.100.2 remote-as 65002
+!
+interface Management 0
+ ip address 198.51.100.11/24
+ no shutdown
+!
+interface Ethernet 0/1
+ description uplink
+ no shutdown

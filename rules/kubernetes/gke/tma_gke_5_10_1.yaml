@@ -1,0 +1,19 @@
+id: TMA-GKE-5.10.1
+title: Do not use GKE alpha clusters for production workloads
+description: Do not use GKE alpha clusters for production workloads. Alpha clusters are intended only for short lived testing of Kubernetes alpha APIs and features, and they are not covered by the GKE SLA. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 1
+severity: low
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.10.1 Do not use GKE alpha clusters for production workloads
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(enableKubernetesAlpha)') || exit 1
+    if [ "$v" != True ]; then echo compliant; else echo "noncompliant: enableKubernetesAlpha=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Alpha cluster behavior is selected at cluster creation and should not be used for production workloads. To remediate a production workload running on an alpha cluster, create a supported non alpha GKE cluster, migrate workloads and required data, validate application health, and decommission the alpha cluster. Alpha clusters expire after 30 days, do not receive security updates, cannot be upgraded, and are not covered by the GKE SLA. gcloud container clusters create $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID Do not include the --enable-kubernetes-alpha flag when creating the replacement production cluster. If alpha features are needed for testing, use a separate nonproduction alpha cluster and migrate any required data before the 30 day expiration window.

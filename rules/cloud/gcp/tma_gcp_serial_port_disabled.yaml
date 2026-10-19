@@ -1,0 +1,25 @@
+id: TMA-GCP-SERIAL-PORT-DISABLED
+title: Ensure 'Enable connecting to serial ports' is not enabled for VM instances
+description: The interactive serial console bypasses network firewalls and can be reached from any IP. Neither project metadata nor any instance metadata may set serial-port-enable to true/1. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: medium
+tags:
+- gcp
+- compute
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Virtual Machines - interactive serial console disabled (verify section number for your release)
+audit:
+  type: command
+  command: 'proj=$(gcloud compute project-info describe --flatten=''commonInstanceMetadata.items[]'' --format=''value(commonInstanceMetadata.items.key,commonInstanceMetadata.items.value)'' 2>/dev/null) || exit 1
+
+    inst=$(gcloud compute instances list --flatten=''metadata.items[]'' --format=''value(name,metadata.items.key,metadata.items.value)'' 2>/dev/null) || exit 1
+
+    a=$(printf ''%s\n'' "$proj" | awk -F ''\t'' ''$1 == "serial-port-enable" && (tolower($2) == "true" || $2 == "1") { print "project" }'')
+
+    b=$(printf ''%s\n'' "$inst" | awk -F ''\t'' ''$2 == "serial-port-enable" && (tolower($3) == "true" || $3 == "1") { print $1 }'')
+
+    [ -z "$a" ] && [ -z "$b" ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: gcloud compute instances add-metadata <instance> --zone <zone> --metadata serial-port-enable=FALSE (and remove it from project metadata). Enforce with constraints/compute.disableSerialPortAccess.

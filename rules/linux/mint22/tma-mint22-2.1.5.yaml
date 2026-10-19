@@ -1,0 +1,36 @@
+id: TMA-MINT22-2.1.5
+title: Ensure dnsmasq services are not in use
+description: dnsmasq is a lightweight tool that provides DNS caching, DNS forwarding and DHCP (Dynamic Host Configuration Protocol) services.
+target: linux
+os_family:
+- linuxmint-22
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Linux Mint 22 Benchmark v1.0.0 - 2.1.5
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -s dnsmasq &>/dev/null && echo "dnsmasq is installed"'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; alt1() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled dnsmasq.service 2>/dev/null | grep ''"''"''enabled''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active dnsmasq.service 2>/dev/null | grep ''"''"''^active''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0 || alt1;
+    then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_svc_off dnsmasq.service
+  guidance: "Run the following commands to stop dnsmasq.service and remove dnsmasq package: # systemctl stop dnsmasq.service # apt purge dnsmasq - OR - - IF - the dnsmasq package is required as a dependency: Run the following commands to stop and mask the dnsmasq.service: # systemctl stop dnsmasq.service # systemctl mask dnsmasq.service"

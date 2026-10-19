@@ -1,0 +1,43 @@
+id: TMA-ORACLE-DB-5.3
+title: Ensure Critical Packages Are Audited
+description: 'Auditing critical packages in Oracle is essential to ensure database security, maintain accountability, and support compliance with regulatory requirements. These packages provide powerful functionality, such as scheduling jobs, performing cryptographic operations, or handling web-based utilities where, if misused or exploited, can compromise the integrity, confidentiality, and availability ... Packages: DBMS_AW, DBMS_CRYPTO, DBMS_FGA, DBMS_JAVA_TEST, DBMS_JOB, DBMS_LOGMNR, DBMS_NETWORK_ACL_ADMIN, DBMS_REDACT, DBMS_REDEFINITION, DBMS_RLS, DBMS_SCHEDULER, DBMS_SQL_TRANSLATOR, DBMS_SYS_SQL, DBMS_TSDP_MANAGE, DBMS_TSDP_PROTECT, DBMS_XMLGEN, DBMS_XMLSTORE, OWA_UTIL. Default: These packages are not audited by default. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- logging
+- audit
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 5.3 Ensure Critical Packages Are Audited
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    with cis_audit(con_id, audit_object_name) as (
+      select c.con_id, ll.column_value from v$containers c, table(dbmsoutput_linesarray('DBMS_AW','DBMS_CRYPTO','DBMS_FGA','DBMS_JAVA_TEST','DBMS_JOB','DBMS_LOGMNR','DBMS_NETWORK_ACL_ADMIN','DBMS_REDACT',
+      'DBMS_REDEFINITION','DBMS_RLS','DBMS_SCHEDULER','DBMS_SQL_TRANSLATOR','DBMS_SYS_SQL','DBMS_TSDP_MANAGE','DBMS_TSDP_PROTECT',
+      'DBMS_XMLGEN','DBMS_XMLSTORE','OWA_UTIL')) ll where c.open_mode = 'READ WRITE'),
+    audit_enabled as (
+      select distinct aud.con_id, aud.object_name from containers(audit_unified_policies) aud
+      where aud.object_name in ('DBMS_AW','DBMS_CRYPTO','DBMS_FGA','DBMS_JAVA_TEST','DBMS_JOB','DBMS_LOGMNR','DBMS_NETWORK_ACL_ADMIN','DBMS_REDACT',
+      'DBMS_REDEFINITION','DBMS_RLS','DBMS_SCHEDULER','DBMS_SQL_TRANSLATOR','DBMS_SYS_SQL','DBMS_TSDP_MANAGE','DBMS_TSDP_PROTECT',
+      'DBMS_XMLGEN','DBMS_XMLSTORE','OWA_UTIL')
+      and aud.audit_option_type = 'OBJECT ACTION'
+      and exists (select 1 from containers(audit_unified_enabled_policies) e
+        where e.success = 'YES' and e.failure = 'YES' and e.enabled_option = 'BY USER' and e.entity_name = 'ALL USERS'
+        and e.policy_name = aud.policy_name and e.con_id = aud.con_id)
+    )
+    select count(*) from cis_audit c
+    where not exists (select 1 from audit_enabled e where e.object_name = c.audit_object_name and e.con_id = c.con_id);
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Execute the following SQL statement to remediate this recommendation: CREATE AUDIT POLICY CIS_CDB_CRITICAL_PACKAGES ACTIONS EXECUTE ON SYS.DBMS_AW, EXECUTE ON SYS.DBMS_CRYPTO, EXECUTE ON SYS.DBMS_FGA, EXECUTE ON SYS.DBMS_JAVA_TEST, EXECUTE ON SYS.DBMS_JOB, EXECUTE ON SYS.DBMS_LOGMNR, EXECUTE ON SYS.DBMS_NETWORK_ACL_ADMIN, EXECUTE ON SYS.DBMS_REDACT, EXECUTE ON SYS.DBMS_REDEFINITION, EXECUTE ON SYS.DBMS_RLS, EXECUTE ON SYS.DBMS_SCHEDULER, EXECUTE ON SYS.DBMS_SQL_TRANSLATOR, EXECUTE ON SYS.DBMS_SYS_SQL, EXECUTE ON SYS.DBMS_TSDP_MANAGE, EXECUTE ON SYS.DBMS_TSDP_PROTECT, EXECUTE ON SYS.DBMS_XMLGEN, EXECUTE ON SYS.DBMS_XMLSTORE, EXECUTE ON SYS.OWA_UTIL ONLY TOPLEVEL; AUDIT POLICY CIS_CDB_CRITICAL_PACKAGES; Note: If you do not have CIS_CDB_CRITICAL_PACKAGES, please create one using the CREATE AUDIT POLICY statement. Refer to Section 8.3 where a PL/SQL block is provided to help create or ...'

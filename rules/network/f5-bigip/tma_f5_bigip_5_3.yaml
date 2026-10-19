@@ -1,0 +1,26 @@
+id: TMA-F5-BIGIP-5.3
+title: Ensure port lockdown for self IP is set
+description: 'to secure the BIG-IP system from unwanted connection attempts on self-IP. FAILs if any self IP has allow-service all or default (Port Lockdown must be Allow None or Allow Custom). Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- management
+reference: CIS F5 Networks Benchmark v1.0.0 - 5.3 Ensure port lockdown for self IP is set
+audit:
+  type: config_regex
+  pattern: (?m)^net self \S+ \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+allow-service (?:all|default)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify net self <self-ip> allow-service none
+    (or) tmsh modify net self <self-ip> allow-service replace-all-with { tcp:443 }
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to the Configuration utility.
+    2-Go to Network > Self IPs.
+    3-Select the relevant self IP address.
+    4-If the specified interface does not need to listen to incoming connections ( Example BGP ,BDF ..etc) , set "Port Lockdown" to "Allow None"
+    5-If the specified interface need to listen for incoming connections , set "Port Lockdown" to "Allow Custom". Then in the "Custom List" add needed ports only.

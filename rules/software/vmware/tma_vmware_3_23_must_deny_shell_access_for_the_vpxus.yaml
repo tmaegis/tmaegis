@@ -1,0 +1,21 @@
+id: TMA-VMWARE-3.23
+title: Host must deny shell access for the vpxuser account
+description: Deactivating shell access for the vpxuser account enhances security by enforcing an "API only" stance for predefined non-root ESXi users such as vpxuser and dcui. The audit runs esxcli system account list and requires Shell Access false for vpxuser. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 2
+severity: low
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.23 Host must deny shell access for the vpxuser account
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system account list 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="vpxuser" {print tolower($NF); exit}')
+    case "$v" in false) echo compliant ;; '') echo 'vpxuser not listed (or no Shell Access column on this build)'; exit 1 ;; *) echo 'vpxuser shell access: '"$v" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Do not assign an interactive shell to vpxuser. If the account was altered, restore the vendor-supported no-shell configuration or reconnect/recreate the vCenter host management account using supported vCenter procedures.

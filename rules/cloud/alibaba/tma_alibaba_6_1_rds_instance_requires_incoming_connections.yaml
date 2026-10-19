@@ -1,0 +1,37 @@
+id: TMA-ALIBABA-6.1
+title: Ensure that RDS instance requires all incoming connections to use SSL
+description: It is recommended to enforce all incoming connections to SQL database instance to use SSL. SQL database connections if successfully trapped (MITM); can reveal sensitive data like credentials, database queries, query outputs etc. DescribeDBInstanceSSL must report SSLEnabled Yes/on for every instance. Iterates every RDS region and instance (DescribeDBInstances). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- rds
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 6.1 Ensure that RDS instance requires all incoming connections to use SSL
+audit:
+  type: command
+  command: |-
+    regs=$(aliyun rds DescribeRegions 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$regs" | sed -n 's/.*"RegionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    [ -n "$regions" ] || exit 1
+    bad=0
+    for r in $regions; do
+      page=1
+      while :; do
+        out=$(aliyun rds DescribeDBInstances --RegionId "$r" --PageSize 100 --PageNumber "$page" 2>/dev/null) || exit 1
+        ids=$(printf '%s\n' "$out" | sed -n 's/.*"DBInstanceId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+        [ -n "$ids" ] || break
+        for i in $ids; do
+          s=$(aliyun rds DescribeDBInstanceSSL --DBInstanceId "$i" 2>/dev/null) || exit 1
+          printf '%s\n' "$s" | grep -Eiq '"SSLEnabled"[[:space:]]*:[[:space:]]*"?(yes|on|1|true)"?' || { echo "SSL off: $r $i"; bad=1; }
+        done
+        set -- $ids
+        [ "$#" -lt 100 ] && break
+        page=$((page + 1))
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun rds ModifyDBInstanceSSL --DBInstanceId <id> --ConnectionString <endpoint> --SSLEnabled 1 (RDS console > Data Security > SSL Encryption), and require TLS in the database engine.

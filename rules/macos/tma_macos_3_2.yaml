@@ -1,0 +1,56 @@
+id: TMA-MACOS-3.2
+title: Ensure Security Auditing Flags For User-Attributable Events Are Configured Per Local Organizational Requirements
+description: 'Auditing is the capture and maintenance of information about security-related events. Auditable events often depend on differing organizational requirements. Audit: Requires aa, ad, lo and -ex, -fm, -fr, -fw (or -all) in the flags line of /etc/security/audit_control.'
+target: macos
+level: 2
+severity: medium
+tags:
+- macos
+- logging-auditing
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 3.2 Ensure Security Auditing Flags For User-Attributable Events Are Configured Per Local Organizational Requirements
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    l=$(/usr/bin/grep -e "^flags:" /etc/security/audit_control 2>/dev/null) || exit 1
+    f=",$(printf '%s' "${l#flags:}" | /usr/bin/tr -d ' '),"
+    miss=""
+    for x in aa ad lo; do case "$f" in *",$x,"*) ;; *) miss="$miss $x";; esac; done
+    case "$f" in
+      *",-all,"*|*",all,"*) ;;
+      *) for x in ex fm fr fw; do case "$f" in *",-$x,"*|*",$x,"*) ;; *) miss="$miss -$x";; esac; done;;
+    esac
+    if [ -z "$miss" ]; then echo compliant; else echo "missing flags:$miss"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    f=/etc/security/audit_control
+    [ -f "$f" ] || exit 1
+    tma_bak "$f"
+    cur=$(/usr/bin/grep -e '^flags:' "$f" | /usr/bin/head -1); cur=${cur#flags:}; new=$(printf '%s' "$cur" | /usr/bin/tr -d ' ')
+    add() { case ",$new," in *",$1,"*) ;; *) new="${new:+$new,}$1";; esac; }
+    for x in aa ad lo; do add "$x"; done
+    case ",$new," in
+      *",-all,"*|*",all,"*) ;;
+      *) for x in -ex -fm -fr -fw; do case ",$new," in *",$x,"*|*",${x#-},"*) ;; *) add "$x";; esac; done;;
+    esac
+    if /usr/bin/grep -q '^flags:' "$f"; then /usr/bin/sed -i '' "s|^flags:.*|flags:$new|" "$f"; else printf 'flags:%s\n' "$new" >> "$f"; fi
+    /usr/sbin/audit -s 2>/dev/null; true
+  guidance: "Terminal: Edit the /etc/security/audit_control file and add aa, ad, -ex, -fm, -fr, -fw, and lo to flags. You can also substitute -all for -ex, -fm, -fr, and -fw."

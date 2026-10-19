@@ -1,0 +1,46 @@
+id: TMA-OCI-4.13
+title: Ensure VCN flow logging is enabled for all subnets
+description: VCN flow logs record details about traffic that has been accepted or rejected based on the security list rule. Enabling VCN flow logs enables you to monitor traffic flowing within your virtual network and can be used to detect anomalous traffic. Every AVAILABLE subnet must be the source (or belong to a VCN that is the source) of an enabled flowlogs service log. Network Command Center flow logs and capture-filter sampling are not evaluated. Covers every subscribed region and every accessible compartment. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 2
+severity: medium
+tags:
+- oci
+- logging
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 4.13 Ensure VCN flow logging is enabled for all subnets
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    cs=$(oci iam compartment list --compartment-id "$t" --compartment-id-in-subtree true --access-level ACCESSIBLE --all --query 'data[?"lifecycle-state"==`"ACTIVE"`].id' --raw-output 2>/dev/null) || exit 1
+    comps="$t $(printf '%s\n' "$cs" | grep -o 'ocid1\.compartment\.[^"]*')"
+    rs=$(oci iam region-subscription list --tenancy-id "$t" --query 'data[?status==`"READY"`]."region-name"' --raw-output 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$rs" | grep -o '"[a-z0-9-]*"' | tr -d '"')
+    [ -n "$regions" ] || exit 1
+    srcs=""
+    for r in $regions; do
+      for c in $comps; do
+        gs=$(oci logging log-group list --compartment-id "$c" --region "$r" --all --query 'data[].id' --raw-output 2>/dev/null) || exit 1
+        for g in $(printf '%s\n' "$gs" | grep -o 'ocid1\.loggroup\.[^"]*'); do
+          l=$(oci logging log list --log-group-id "$g" --region "$r" --all --query 'data[?"is-enabled"==`true` && configuration.source.service==`"flowlogs"`].configuration.source.resource' --raw-output 2>/dev/null) || exit 1
+          srcs="$srcs
+    $(printf '%s\n' "$l" | grep -o '"[^"]*"')"
+        done
+      done
+    done
+    for r in $regions; do
+      for c in $comps; do
+        sn=$(oci network subnet list --compartment-id "$c" --region "$r" --all --query 'data[?"lifecycle-state"==`"AVAILABLE"`].join(`" "`, [id, "vcn-id"])' --raw-output 2>/dev/null) || exit 1
+        for p in $(printf '%s\n' "$sn" | grep -o 'ocid1\.subnet\.[^" ]* ocid1\.vcn\.[^"]*' | tr ' ' ','); do
+          s=${p%%,*}; v=${p#*,}
+          printf '%s\n' "$srcs" | grep -qF -e "\"$s\"" -e "\"$v\"" || { echo "no flow log: $r $s"; bad=1; }
+        done
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable flow logs for every subnet (Logging > Logs > Enable service log > Virtual Cloud Networks / Flow logs > subnet, or oci logging log create --log-type SERVICE --configuration with source service flowlogs, category all), or a VCN-level flow log with 100% sampling.

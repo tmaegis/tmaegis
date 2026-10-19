@@ -1,0 +1,18 @@
+id: TMA-AZURE-8.3.5
+title: Ensure 'Purge protection' is Set to 'Enabled'
+description: 'Key vaults contain object keys, secrets, and certificates. Deletion of a key vault can cause immediate data loss or loss of security functions (authentication, validation, verification, non-repudiation, etc.) supported by the key vault objects. It is recommended the key vault be made recoverable by enabling the "purge protection" function. This is to prevent the loss of encrypted data, including storage accounts, SQL databases, and/or dependent services provided by key vault objects (keys, secrets, certificates, etc.). NOTE: In February 2025, Microsoft enabled soft delete protection on all key vaults. Users can no longer opt out of or turn off soft delete. WARNING: A current limitation is that role assignments disappear when a key vault is deleted. All role assignments will need to be recreated after recovery. Users may accidentally run delete/purge commands on a key vault, or an atta...'
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 8.3.5 Ensure 'Purge protection' is Set to 'Enabled'
+audit:
+  type: manual
+  command: 'Requisite Permissions - read section overview! Data-plane access not required. Can be audited and remediated with Azure Resource Manager permissions. Audit from Azure Portal 1. Go to Key Vaults. 2. Click the name of a key vault. 3. Under Settings, click Properties. 4. Next to Purge protection, ensure that Enable purge protection (enforce a mandatory retention period for deleted vaults and vault objects) is selected. 5. Repeat steps 1-4 for each key vault. Audit from Azure CLI Run the following command to list key vaults: az resource list --query "[?type==''Microsoft.KeyVault/vaults'']" For each key vault, run the following command to get the purge protection setting: az resource show --resource-group <resource-group> --name <key-vault> -- resource-type "Microsoft.KeyVault/vaults" --query properties.enablePurgeProtection Ensure that true is returned. Audit from PowerShell Run the following command to list key vaults: Get-AzKeyVault For each key vault, run the following command
+    to get the key vault details: Get-AzKeyVault -ResourceGroupName <resource-group> -VaultName <key-vault> Ensure Purge Protection Enabled? is set to True. Audit from Azure Policy If referencing a digital copy o...'
+remediation:
+  type: iac_patch
+  command: 'Requisite Permissions - read section overview! Data-plane access not required. Can be audited and remediated with Azure Resource Manager permissions. Note: Once enabled, purge protection cannot be disabled. Remediate from Azure Portal 1. Go to Key Vaults. 2. Click the name of a key vault. 3. Under Settings, click Properties. 4. Select the radio button next to Enable purge protection (enforce a mandatory retention period for deleted vaults and vault objects). 5. Click Save. 6. Repeat steps 1-5 for each key vault requiring remediation. Remediate from Azure CLI For each key vault requiring remediation, run the following command to enable purge protection: az resource update --resource-group <resource-group> --name <key-vault> -- resource-type "Microsoft.KeyVault/vaults" --set properties.enablePurgeProtection=true Remediate from PowerShell For each key vault requiring remediation, run the following command to enable purge protection: Update-AzKeyVault -ResourceGroupName <resource-group>
+    -VaultName <key-vault> -EnablePurgeProtection'

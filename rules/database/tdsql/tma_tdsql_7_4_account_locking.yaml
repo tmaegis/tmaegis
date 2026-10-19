@@ -1,0 +1,16 @@
+id: TMA-TDSQL-7.4
+title: Ensure an Account Locking Policy Is Configured
+description: 'An account locking policy automatically locks accounts after consecutive login failures, preventing brute-force attacks. Assessed manually here: the benchmark check is environment-specific and cannot be evaluated reliably by a single command.'
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- authentication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 7.4 Ensure an Account Locking Policy Is Configured
+audit:
+  type: manual
+  command: Run SELECT User, Host, User_attributes FROM mysql.user; and confirm business accounts carry FAILED_LOGIN_ATTEMPTS (e.g. 5) and PASSWORD_LOCK_TIME (e.g. 1 day) in User_attributes. On the SQLEngine run SHOW VARIABLES LIKE 'tdsql_user_lock_by_ip'; (should be ON). Accounts without a locking policy are a finding.
+remediation:
+  type: iac_patch
+  command: 'Set a locking policy when creating or modifying a user: ALTER USER ''username''@''host'' FAILED_LOGIN_ATTEMPTS 5 PASSWORD_LOCK_TIME 1; Enable SQLEngine''s per-IP locking: SET GLOBAL tdsql_user_lock_by_ip = ON; SQLEngine''s tdsql_user_lock_by_ip feature tracks failed login counts and locks per source IP, providing finer control than MySQL''s native per- account locking.'

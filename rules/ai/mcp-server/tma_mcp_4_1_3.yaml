@@ -1,0 +1,18 @@
+id: TMA-MCP-4.1.3
+title: Ensure Elicitation requests are consented, redacted, and identity-bound
+description: The client presents each server-initiated elicitation with clear attribution of the requesting server, provides decline and cancel options, lets the user review form responses before they are sent, and requires an explicit user decision before any form data is submitted or any URL is navigated to. Redaction filters remove personally identifiable information, secrets, and other sensitive data from context surfaced during an elicitation exchange, and the client records that the redaction check ran. Server- initiated elicitation is rate-limited. Each elicitation event is logged with the requesting server identity, the mode, a request identifier, the user's decision and its source, the redaction result, and the mode-specific fields. The 2026-07-28 specification sets two hard requirements. First, servers do not use form-mode elicitation to request secrets such as passwords, API keys, acces...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.1.3 Ensure Elicitation requests are consented, redacted, and identity-bound
+audit:
+  type: manual
+  command: 'Inspect the elicitation logs for an explicit user decision, a completed redaction check, and the mode-specific fields, and confirm by configuration review that form-mode elicitation cannot request secrets, that such requests use URL mode, that URL-mode flows verify the completing user, and that rate limiting is applied. Set the field names to match the deployment''s log schema if they differ. Run the following command: LOG="<MCP_AUDIT_LOG>" command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required and not installed (cannot verify)"; exit 0; } [ -s "$LOG" ] || { echo "ERROR: audit log <MCP_AUDIT_LOG> is missing or empty (cannot verify)"; exit 0; } events=$(grep -E ''"event":"elicitation"'' "$LOG") n=$(printf ''%s\n'' "$events" | grep -c .) [ "$n" -gt 0 ] || { echo "REVIEW: no elicitation events found (control not evidenced)"; exit 0; } printf ''%s\n'' "$events" | jq -e . >/dev/null 2>&1 || { echo "ERROR: elicitation records are not parseable (cannot verify)"; exit 0; } bad=$(printf
+    ''%s\n'' "$events" | jq -c '' select( (.server_identity==null or .server_identity=="") or (((.mode//"")=="form" or (.mode//"")=="url")|not) or (((.decision//"")|test("^(accepted|declined|cancelled)$"))|not)...'
+remediation:
+  type: iac_patch
+  command: These are host and server configuration settings, with no portable command. Configure the host to present server-initiated elicitation with clear server attribution and to require an explicit user decision before form data is submitted or a URL is navigated to. Apply a redaction filter that removes API keys, passwords, and common PII formats from any surfaced context, and record that the redaction check ran. Rate-limit server-initiated elicitation. In the server's elicitation handling, route any request for secrets through URL mode and never form mode, and for URL-mode flows securely associate any stored state with the individual user and verify that the same user completes the flow, deriving identity from MCP authorization credentials where possible. Log every elicitation event with the server identity, the mode, the user's decision and its source, the redaction result, and the mode-specific fields (requestedSchema for form mode, the target origin or URL for URL mode).

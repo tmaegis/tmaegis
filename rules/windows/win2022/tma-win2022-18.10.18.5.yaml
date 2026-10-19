@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.10.18.5
+title: Ensure 'Enable App Installer Microsoft Store Source Certificate Validation Bypass' is set to 'Disabled'
+description: 'This policy setting controls whether Windows Package Manager validates the Microsoft Store certificate hash to match a known Microsoft Store certificate when it initiates a connection to the Microsoft Store source. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.10.18.5
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller'' -Name ''EnableBypassCertificatePinningForMicrosoftStore'' -ErrorAction SilentlyContinue).''EnableBypassCertificatePinningForMicrosoftStore''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''EnableBypassCertificatePinningForMicrosoftStore='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller' -Name 'EnableBypassCertificatePinningForMicrosoftStore' -Value 0 -PropertyType DWord -Force | Out-Null

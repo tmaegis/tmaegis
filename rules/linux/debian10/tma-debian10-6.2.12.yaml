@@ -1,0 +1,61 @@
+id: TMA-DEBIAN10-6.2.12
+title: Ensure local interactive user dot files access is configured
+description: While the system administrator can establish secure permissions for users' "dot" files, the users can easily override these. • .forward file specifies an email address to forward the user's mail to. • .rhost file provides the "remote authentication" database for the rcp, rlogin, and rsh commands and the rcmd() function. These files bypass the standard password-based user authentication mechanism. They specify remote hosts and users that are considered trusted (i.e. are allowed to access the local system without supplying a password) • .netrc file contains data for logging into a remote host or
+target: linux
+os_family:
+- debian-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 10 Benchmark v2.0.0 ARCHIVE - 6.2.12
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\" l_output3=\"\" l_output4=\"\"\n   l_bf=\"\" l_df=\"\" l_nf=\"\" l_hf=\"\"\n   l_valid_shells=\"^($( awk -F\\/ '\"'\"'$NF != \"nologin\" {print}'\"'\"' /etc/shells | sed -rn '\"'\"'/^\\//{s,/,\\\\\\\\/,g;p}'\"'\"' | paste -s -d '\"'\"'|'\"'\"' - ))$\"\n   unset a_uarr && a_uarr=() # Clear and initialize array\n   while read -r l_epu l_eph; do # Populate array with users and user home location\n      [[ -n \"$l_epu\" && -n \"$l_eph\" ]] && a_uarr+=(\"$l_epu $l_eph\")\n   done <<< \"$(awk -v pat=\"$l_valid_shells\" -F: '\"'\"'$(NF) ~ pat { print $1 \" \" $(NF-1) }'\"'\"' /etc/passwd)\"\n   l_asize=\"${#a_uarr[@]}\" # Here if we want to look at number of users before proceeding\n   l_maxsize=\"1000\" # Maximun number of local interactive users before warning (Default 1,000)\n   [ \"$l_asize \" -gt \"$l_maxsize\" ] && echo -e \"\\n  ** INFO **\\n  - \\\"$l_asize\\\" Local interactive users found on the\
+    \ system\\n  - This may be a long running check\\n\"\n   file_access_chk()\n   {\n      l_facout2=\"\"\n      l_max=\"$( printf '\"'\"'%o'\"'\"' $(( 0777 & ~$l_mask)) )\"\n      if [ $(( $l_mode & $l_mask )) -gt 0 ]; then\n         l_facout2=\"$l_facout2\\n  - File: \\\"$l_hdfile\\\" is mode: \\\"$l_mode\\\" and should be mode: \\\"$l_max\\\" or more restrictive\"\n      fi\n      if [[ ! \"$l_owner\" =~ ($l_user) ]]; then\n         l_facout2=\"$l_facout2\\n  - File: \\\"$l_hdfile\\\" owned by: \\\"$l_owner\\\" and should be owned by \\\"${l_user//|/ or }\\\"\"\n      fi\n      if [[ ! \"$l_gowner\" =~ ($l_group) ]]; then\n         l_facout2=\"$l_facout2\\n  - File: \\\"$l_hdfile\\\" group owned by: \\\"$l_gowner\\\" and should be group owned by \\\"${l_group//|/ or }\\\"\"\n      fi\n   }\n   while read -r l_user l_home; do\n      l_fe=\"\" l_nout2=\"\" l_nout3=\"\" l_dfout2=\"\" l_hdout2=\"\" l_bhout2=\"\"\n      if [ -d \"$l_home\" ]; then\n         l_group=\"$(id -gn \"$l_user\"\
+    \ | xargs)\"\n         l_group=\"${l_group// /|}\"\n         while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_hdfile; do\n            while read -r l_mode l_owner l_gowner; do\n               case \"$(basename \"$l_hdfile\")\" in\n                  .forward | .rhost )\n                     l_fe=\"Y\" && l_bf=\"Y\"\n                     l_dfout2=\"$l_dfout2\\n  - File: \\\"$l_hdfile\\\" exists\" ;;\n                  .netrc )\n                     l_mask='\"'\"'0177'\"'\"'\n                     file_access_chk\n                     if [ -n \"$l_facout2\" ]; then\n                        l_fe=\"Y\" && l_nf=\"Y\"\n                        l_nout2=\"$l_facout2\"\n                     else\n                        l_nout3=\"   - File: \\\"$l_hdfile\\\" exists\"\n                     fi ;;\n\n                  .bash_history )\n                     l_mask='\"'\"'0177'\"'\"'\n                     file_access_chk\n                     if [ -n \"$l_facout2\" ]; then\n                        l_fe=\"Y\"\
+    \ && l_hf=\"Y\"\n                        l_bhout2=\"$l_facout2\"\n                     fi ;;\n                  * )\n                     l_mask='\"'\"'0133'\"'\"'\n                     file_access_chk\n                     if [ -n \"$l_facout2\" ]; then\n                        l_fe=\"Y\" && l_df=\"Y\"\n                        l_hdout2=\"$l_facout2\"\n                     fi ;;\n                  esac\n            done <<< \"$(stat -Lc '\"'\"'%#a %U %G'\"'\"' \"$l_hdfile\")\"\n         done < <(find \"$l_home\" -xdev -type f -name '\"'\"'.*'\"'\"' -print0)\n      fi\n      if [ \"$l_fe\" = \"Y\" ]; then\n         l_output2=\"$l_output2\\n - User: \\\"$l_user\\\" Home Directory: \\\"$l_home\\\"\"\n         [ -n \"$l_dfout2\" ] && l_output2=\"$l_output2$l_dfout2\"\n         [ -n \"$l_nout2\" ] && l_output2=\"$l_output2$l_nout2\"\n         [ -n \"$l_bhout2\" ] && l_output2=\"$l_output2$l_bhout2\"\n         [ -n \"$l_hdout2\" ] && l_output2=\"$l_output2$l_hdout2\"\n      fi\n      [ -n\
+    \ \"$l_nout3\" ] && l_output3=\"$l_output3\\n  - User: \\\"$l_user\\\" Home Directory: \\\"$l_home\\\"\\n$l_nout3\"\n   done <<< \"$(printf '\"'\"'%s\\n'\"'\"' \"${a_uarr[@]}\")\"\n   unset a_uarr # Remove array\n   [ -n \"$l_output3\" ] && l_output3=\" - ** Warning **\\n - \\\".netrc\\\" files should be removed unless deemed necessary\\n   and in accordance with local site policy:$l_output3\"\n   [ -z \"$l_bf\" ] && l_output=\"$l_output\\n   - \\\".forward\\\" or \\\".rhost\\\" files\"\n   [ -z \"$l_nf\" ] && l_output=\"$l_output\\n   - \\\".netrc\\\" files with incorrect access configured\"\n   [ -z \"$l_hf\" ] && l_output=\"$l_output\\n   - \\\".bash_history\\\" files with incorrect access configured\"\n   [ -z \"$l_df\" ] && l_output=\"$l_output\\n   - \\\"dot\\\" files with incorrect access configured\"\n   [ -n \"$l_output\" ] && l_output=\"  - No local interactive users home directories contain:$l_output\"\n   echo -e \"$l_output4\"\n   if [ -z \"$l_output2\" ]; then # If l_output2\
+    \ is empty, we pass\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n - * Correctly configured * :\\n$l_output\\n\"\n      echo -e \"$l_output3\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - * Reasons for audit failure * :\\n$l_output2\\n\"\n      echo -e \"$l_output3\\n\"\n      [ -n \"$l_output\" ] && echo -e \"- * Correctly configured * :\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    vs=$(awk -F/ '/^\// && $NF != "nologin"' /etc/shells)
+    # "user home" for interactive users whose home is a plain user directory
+    tma_homes() { while IFS=: read -r u p uid gid c h sh; do
+      case "$u" in +*|-*) continue;; esac
+      printf '%s\n' "$vs" | grep -qxF -- "$sh" || continue
+      case "$h" in /|""|/bin*|/sbin*|/usr*|/etc*|/proc*|/sys*|/dev*|/boot*|/run*|/var/run*) continue;; esac
+      echo "$u $h"; done < /etc/passwd; }
+    tma_homes | while read -r u h; do
+      [ -d "$h" ] || continue
+      g=$(id -gn "$u")
+      find "$h" -xdev -type f -name '.*' 2>/dev/null | while read -r f; do
+        case "$(basename "$f")" in
+          .forward|.rhost) mv "$f" "$f.tmaegis-disabled"; f="$f.tmaegis-disabled"; mask=8#0133;;
+          .netrc|.bash_history) mask=8#0177;;
+          *) mask=8#0133;;
+        esac
+        [ "$(stat -Lc %U "$f")" = "$u" ] || chown "$u" "$f"
+        [ "$(stat -Lc %G "$f")" = "$g" ] || chgrp "$g" "$f"
+        mo=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$mo & ~$mask & 8#7777)))" "$f"
+      done
+    done
+    true
+  guidance: "Making global modifications to users' files without alerting the user community can result in unexpected outages and unhappy users. Therefore, it is recommended that a monitoring policy be established to report user dot file permissions and determine the action to be taken in accordance with site policy. The following script will: • remove excessive permissions on dot files within interactive users' home directories • change ownership of dot files within interactive users' home directories to the user • change group ownership of dot files within interactive users' home directories to the user's primary group • list .forward and .rhost files to be investigated and manually deleted #!/usr/bin/…"

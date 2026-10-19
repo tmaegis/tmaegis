@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-4.1.4
+title: If proxy kubeconfig file exists ensure ownership is set to root:root
+description: If kube-proxy is running, ensure that the file ownership of its kubeconfig file is set to root:root. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- worker-node
+- file-permissions
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.1.4 If proxy kubeconfig file exists ensure ownership is set to root:root
+audit:
+  type: manual
+  command: 'In OpenShift 4, the kube-proxy runs within the sdn pods, which copies the kubeconfig from a configmap to the container at /tmp/kubeconfig, with root:root ownership. Run the following command: for i in $(oc get pods -n openshift-sdn -l app=sdn -oname) do oc exec -n openshift-sdn $i -- \ stat -Lc %U:%G /config/kube-proxy-config.yaml done Verify that the kube-proxy-config.yaml file has ownership root:root.'
+remediation:
+  type: iac_patch
+  command: Use chown to set proxy file to root:root.

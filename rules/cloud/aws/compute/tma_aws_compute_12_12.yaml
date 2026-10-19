@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-12.12
+title: Ensure encryption in transit is enabled for Lambda environment variables
+description: As you can set your own environmental variables for Lambda it is important to also encrypt them for in transit protection. Lambda environment variables should be encrypted in transit for client-side protection as they can store sensitive information.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- compute
+- encryption
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.12 Ensure encryption in transit is enabled for Lambda environment variables
+audit:
+  type: manual
+  command: 'From the Console 1. Login to the AWS Console using https://console.aws.amazon.com/lambda/. 2. In the left column, under AWS Lambda, click Functions. 3. Under Function name click on the name of the function that you want to review 4. Click the Configuration tab 5. In the left column, click Environment variables. 6. In the Environment variables section, click Edit 7. On the Edit environment variables page, review the Values. If they are a long value that resembles this: AQICAHhxbKJYcFAU16CbU4IVpzi5CwK Encryption is in place for that Key. If the value is in plain text refer to the remediation below. 8. Repeat steps 2 – 7 for each Lambda function available within the current AWS region. 9. Repeat this Audit for all the other AWS regions. From the Command line 1. Run ''aws lambda list-functions'' aws lambda list-functions --output table --query "Functions[*].FunctionName" This command will provide a table titled ListFunctions 2. Run aws lambda get-function aws lambda get-function
+    --function-name "name_of_function" --query "Configuration.Environment" This will provide an output of the environment variables created for that function. 3. Review the Values in the table. If they contain a l...'
+remediation:
+  type: iac_patch
+  command: From the Console 1. Login to the AWS Console using https://console.aws.amazon.com/lambda/. 2. In the left column, under AWS Lambda, click Functions. 3. Under Function name click on the name of the function that you want to review 4. Click the Configuration tab 5. In the left column, click Environment variables. 6. In the Environment variables section, click Edit 7. Click the check box for Enable helpers for encryption in transit 8. Click the Encrypt option for all the variable that need to be encrypted. 9. Repeat steps 2 – 8 for each Lambda function identified in the Audit within the current AWS region. 10. Repeat this remediation for all the other AWS regions.

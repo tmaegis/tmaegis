@@ -1,0 +1,50 @@
+id: TMA-OL7-4.4.2.2.7
+title: Ensure password dictionary check is enabled
+description: The pwquality dictcheck option sets whether to check for the words from the cracklib dictionary.
+target: linux
+os_family:
+- ol-7
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 7 Benchmark v4.0.0 - 4.4.2.2.7
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -Psi -- ''"''"''^\h*dictcheck\h*=\h*0\b''"''"'' /etc/security/pwquality.conf'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; o=$(bash -c ''grep -psi -- ''"''"''^\h*password\h+(requisite|required|sufficient)\h+pam_pwquality\.so\h+([^#\n r]+\h+)?dictcheck\h*=\h*0\b''"''"'' /etc/pam.d/{password,system}-auth'' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    PAMF="/etc/pam.d/system-auth /etc/pam.d/password-auth /etc/pam.d/system-password /etc/pam.d/common-auth /etc/pam.d/common-password /etc/pam.d/common-account /etc/pam.d/common-session /etc/pam.d/common-session-noninteractive /etc/pam.d/postlogin"
+    # tma_pam_sed EXPR : sed -E on every existing PAM stack file (follows symlinks, backs up once)
+    tma_pam_sed() { for f in $PAMF /usr/share/pam-configs/unix; do
+      [ -e "$f" ] || continue; tma_bak "$f"; sed -i --follow-symlinks -E "$1" "$f"; done; }
+    # tma_conf_set FILE KEY VALUE : "key = value", replacing active or commented key lines
+    tma_conf_set() { f=$1; k=$2; v=$3; mkdir -p "$(dirname "$f")"; [ -e "$f" ] || : > "$f"; tma_bak "$f"
+      sed -i -E "/^[[:space:]]*#?[[:space:]]*$k[[:space:]]*=/d" "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; }
+    tma_conf_del() { for f in $2; do [ -e "$f" ] || continue; tma_bak "$f"; sed -i -E "/^[[:space:]]*$1[[:space:]]*=/d" "$f"; done; }
+    F="/etc/security/pwquality.conf $(ls /etc/security/pwquality.conf.d/*.conf 2>/dev/null)"
+    tma_conf_del dictcheck "$F"
+    tma_conf_set /etc/security/pwquality.conf dictcheck 1
+    tma_pam_sed '/pam_pwquality\.so/ s/[[:space:]]+dictcheck[[:space:]]*=[[:space:]]*0\b//g'
+    true
+  guidance: "Edit /etc/security/pwquality.conf and comment out or remove any instance of dictcheck = 0: Example: # sed -ri 's/^\\s*dictcheck\\s*=/# &/' /etc/security/pwquality.conf Run the following script to remove setting dictcheck on the pam_pwquality.so module in the PAM files: #!/usr/bin/env bash { for l_pam_file in system-auth password-auth; do sed -ri 's/(^\\s*password\\s+(requisite|required|sufficient)\\s+pam_pwquality\\.so.*)(\\s+ dictcheck\\s*=\\s*\\S+)(.*$)/\\1\\4/' /etc/pam.d/\"$l_pam_file\" done }"

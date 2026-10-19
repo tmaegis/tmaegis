@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.7
+title: Ensure pwd_algorithm is configured
+description: 'Defines the loadable password algorithm used when storing user passwords. A development since AIX 5.1 was the ability to use different password algorithms as defined in /etc/security/pwdalg.cfg. The traditional UNIX password algorithm is crypt, which is a one-way hash function supporting only 8 character passwords. Audit: reads `lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm`.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.7 Ensure pwd_algorithm is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/login.cfg -s usw -a pwd_algorithm 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*pwd_algorithm=\([^ ]*\).*/\1/p'); if [ "$v" = 'ssha512' ]; then echo compliant; else echo "pwd_algorithm=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/login.cfg -s usw -a pwd_algorithm=ssha512

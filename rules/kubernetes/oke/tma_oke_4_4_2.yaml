@@ -1,0 +1,17 @@
+id: TMA-OKE-4.4.2
+title: Consider external secret storage
+description: External secret storage for OKE means keeping application secrets outside native Kubernetes Secret objects and retrieving them from a managed service such as OCI Vault when workloads need them. This approach lets OKE workloads consume secrets through integrations such as the OCI Secrets Store CSI Driver Provider with the Secrets Store CSI Driver, instead of relying only on Kubernetes to store and distribute sensitive values. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- policies
+- secrets
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.4.2 Consider external secret storage
+audit:
+  type: manual
+  command: Review the OKE cluster’s secrets architecture and verify that required workloads use an external secrets store such as OCI Vault instead of relying only on native Kubernetes Secret objects. The audit should confirm both the integration path and the workload access model, because external secret storage in OKE typically depends on the OCI Secrets Store CSI Driver Provider, the Secrets Store CSI Driver, and OCI IAM access through OKE workload identity.
+remediation:
+  type: iac_patch
+  command: Move sensitive application secrets out of native Kubernetes Secret objects and into an external store such as OCI Vault. Then update OKE workloads to retrieve those secrets through the OCI Secrets Store CSI Driver Provider with the Secrets Store CSI Driver, using OCI IAM access through OKE workload identity. This shifts encryption, access control, rotation, and auditing to OCI instead of leaving those functions primarily in Secret objects stored inside the cluster. • Create the required secrets in OCI Vault and define workload access with least privilege OCI IAM policies. • Install and configure the OCI Secrets Store CSI Driver Provider and the Secrets Store CSI Driver for OKE. • Update workload manifests to mount external secrets through a SecretProviderClass instead of reading only native Kubernetes Secret objects.

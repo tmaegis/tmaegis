@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.3.11
+title: Ensure 'App Service authentication' is set to 'Enabled'
+description: App Service authentication can prevent anonymous HTTP requests from reaching an app, or authenticate those with tokens before they reach the app. If an anonymous request is received from a browser, App Service will redirect to a login page. To handle the login process, a choice from a set of identity providers can be made, or a custom authentication mechanism can be implemented. By enabling authentication, every incoming HTTP request passes through it before being handled by the application code. It also handles authentication of users with the specified provider (Entra ID, Facebook, Google, Microsoft Account, and Twitter), validation, storage and refreshing of tokens, managing the authenticated sessions, and injecting identity information into request headers.
+target: azure
+level: 2
+severity: medium
+tags:
+- auth
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.11 Ensure 'App Service authentication' is set to 'Enabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Authentication. 4. Ensure that App Service authentication is set to Enabled. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the authentication setting: For v1 auth commands: az webapp auth show --resource-group <resource-group-name> --name <function- app-name> --query enabled For v2 auth commands: az webapp auth show --resource-group <resource-group-name --name <function- app-name> --query properties.platform.enabled Ensure that true is returned. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: c75248c1-ea1d-4a9c-8fc9-29a6aabd5da8 - Name: ''Function apps should have authentication enabled'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Authentication. 4. If an identity provider is not configured: 1. Click Add identity provider. 2. Provide appropriate configuration for an identity provider and click Add. 5. If App Service authentication is set to Disabled: 1. Click Enable authentication. 6. Repeat steps 1-5 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to enable authentication: az webapp auth update --resource-group <resource-group-name> --name <function-app-name> --enabled true Note: In order to access App Service authentication settings for an app using the Microsoft API, the Website Contributor permission at the subscription level is required. A custom role can be created instead of Website Contributor to provide more specific permissions and maintain the principle of least privileged
+    access.'

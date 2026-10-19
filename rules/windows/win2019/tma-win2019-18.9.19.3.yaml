@@ -1,0 +1,21 @@
+id: TMA-WIN2019-18.9.19.3
+title: 'Ensure ''Configure security policy processing: Process even if the Group Policy objects have not changed'' is set to ''Enabled: TRUE'''
+description: 'The "Process even if the Group Policy objects have not changed" option updates and reapplies security policies even if the security policies have not changed. This setting affects all policy settings within the built-in security template of Group Policy (e.g. Windows Settings\Security Settings). The recommended state for this setting is: Enabled: TRUE (checked).'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 18.9.19.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{827D319E-6EAC-11D2-A4EA-00C04F79F83A}'' -Name ''NoGPOListChanges'' -ErrorAction SilentlyContinue).''NoGPOListChanges''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''NoGPOListChanges='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{827D319E-6EAC-11D2-A4EA-00C04F79F83A}')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{827D319E-6EAC-11D2-A4EA-00C04F79F83A}' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{827D319E-6EAC-11D2-A4EA-00C04F79F83A}' -Name 'NoGPOListChanges' -Value 0 -PropertyType DWord -Force | Out-Null

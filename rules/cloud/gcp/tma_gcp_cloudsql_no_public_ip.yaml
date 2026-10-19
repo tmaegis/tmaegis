@@ -1,0 +1,19 @@
+id: TMA-GCP-CLOUDSQL-NO-PUBLIC-IP
+title: Ensure Cloud SQL instances do not have public IPs
+description: A public IPv4 address exposes the instance to the Internet, guarded only by authorised networks. Every instance must have ipConfiguration.ipv4Enabled false (private IP / PSC only). Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 2
+severity: high
+tags:
+- gcp
+- database
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Cloud SQL - no public IP (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud sql instances list --format=''value(name,settings.ipConfiguration.ipv4Enabled)'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''NF && $2 == "True" { n++; print "public IP: " $1 } END { if (!n) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure private IP (gcloud sql instances patch <instance> --network=<vpc> ...) then gcloud sql instances patch <instance> --no-assign-ip. Enforce with constraints/sql.restrictPublicIp.

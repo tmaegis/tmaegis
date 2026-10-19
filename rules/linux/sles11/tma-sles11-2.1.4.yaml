@@ -1,0 +1,47 @@
+id: TMA-SLES11-2.1.4
+title: Ensure echo services are not enabled
+description: echo is a network service that responds to clients with the data sent to it by the client. This service is intended for debugging and testing purposes. It is recommended that this service be disabled.
+target: linux
+os_family:
+- sles-11
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 11 Benchmark v2.1.1 - 2.1.4
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v chkconfig >/dev/null 2>&1 || { echo "step1: chkconfig not installed"; return 1; }; o=$(bash -c ''chkconfig --list'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''xinetd based services:'' || { echo step1: missing ''xinetd based services:''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''echo: off'' || { echo step1: missing ''echo: off''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''echo-udp: off'' || { echo step1: missing ''echo-udp: off''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    if command -v chkconfig >/dev/null 2>&1; then for s in echo echo-udp; do chkconfig "$s" off; done; fi
+    true
+  guidance: "Run the following commands to disable echo and echo -udp: # chkconfig echo off # chkconfig echo-udp off"

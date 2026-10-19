@@ -1,0 +1,17 @@
+id: TMA-GKE-5.9.1
+title: Use CMEK protected StorageClasses for GKE Persistent Disk volumes
+description: Use CMEK protected StorageClass objects for GKE Persistent Disk volumes so newly provisioned Persistent Disks are encrypted with an approved Cloud KMS key. This applies to dynamically provisioned Persistent Disk volumes that use the Compute Engine Persistent Disk CSI driver and the disk-encryption-kms-key parameter. The benchmark marks this recommendation Manual.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+- secrets
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.9.1 Use CMEK protected StorageClasses for GKE Persistent Disk volumes
+audit:
+  type: manual
+  command: Review GKE StorageClass objects and verify that Persistent Disk classes use the Compute Engine Persistent Disk CSI driver with an approved Cloud KMS key. The disk-encryption-kms-key parameter should contain the fully qualified Cloud KMS key resource path used to encrypt newly provisioned Persistent Disk volumes.
+remediation:
+  type: iac_patch
+  command: Remediate any StorageClass or Persistent Disk that does not use an approved Cloud KMS key. CMEK for GKE Persistent Disk volumes is applied through a CMEK protected StorageClass for new dynamically provisioned volumes. Existing Persistent Disks cannot be converted to CMEK in place, so noncompliant volumes must be replaced or migrated. • Grant the Compute Engine service agent for the cluster project roles/cloudkms.cryptoKeyEncrypterDecrypter on the approved Cloud KMS key. • Create a new CMEK protected StorageClass using the Persistent Disk CSI driver, pd.csi.storage.gke.io, and the approved disk-encryption-kms-key value. • Update new PersistentVolumeClaims to use the CMEK protected StorageClass. If this should be the default storage option, mark the CMEK protected StorageClass as the default only after validating the key, location, and access permissions.

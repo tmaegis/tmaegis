@@ -1,0 +1,18 @@
+id: TMA-M365-1.2.2
+title: Ensure sign-in to shared mailboxes is blocked
+description: Shared mailboxes are used when multiple people need access to the same mailbox, such as a company information or support email address, reception desk, or other function that might be shared by multiple people. Users with permissions to the group mailbox can send as or send on behalf of the mailbox email address if the administrator has given that user permissions to do that. This is particularly useful for help and support mailboxes because users can send emails from "Contoso Support" or "Building A Reception Desk." Shared mailboxes are created with a corresponding user account using a system generated password that is unknown at the time of creation. The recommended state is Sign in blocked for Shared mailboxes. The intent of the shared mailbox is to only allow delegated access from other mailboxes. An admin could reset the password, or an attacker could potentially gain access to t...
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 1.2.2 Ensure sign-in to shared mailboxes is blocked
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft 365 admin center https://admin.microsoft.com/ 2. Expand Teams & groups and select Shared mailboxes. 3. Take note of all shared mailboxes. 4. Expand Users and select Active users. 5. Select a shared mailbox account to open its properties pane, and review. 6. Verify that the text under the name reads Sign-in blocked. 7. Repeat for any additional shared mailboxes. Note: If sign-in is not blocked there will be an option to Block sign-in. This means the shared mailbox is out of compliance with this recommendation. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline 2. Connect to Microsoft Graph using Connect-MgGraph -Scopes "User.Read.All" 3. Run the following PowerShell commands: $MBX = Get-EXOMailbox -RecipientTypeDetails SharedMailbox -ResultSize Unlimited $MBX | ForEach-Object { Get-MgUser -UserId $_.ExternalDirectoryObjectId ` -Property DisplayName, UserPrincipalName, AccountEnabled } | Format-Table
+    DisplayName, UserPrincipalName, AccountEnabled 4. Ensure AccountEnabled is set to False for all Shared Mailboxes.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft 365 admin center https://admin.microsoft.com/ 2. Click to expand Teams & groups and select Shared mailboxes. 3. Take note of all shared mailboxes. 4. Click to expand Users and select Active users. 5. Select a shared mailbox account to open its properties pane and then select Block sign-in. 6. Check the box for Block this user from signing in. 7. Repeat for any additional shared mailboxes. To remediate using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "User.ReadWrite.All" 2. Connect to Exchange Online using Connect-ExchangeOnline. 3. To disable sign-in for a single account: $MBX = Get-EXOMailbox -Identity TestUser@example.com Update-MgUser -UserId $MBX.ExternalDirectoryObjectId -AccountEnabled:$false The following can be used block sign-in to all Shared Mailboxes: $MBX = Get-EXOMailbox -RecipientTypeDetails SharedMailbox $MBX | ForEach-Object { Update-MgUser -UserId $_.ExternalDirectoryObjectId - AccountEnabled:$false
+    }'

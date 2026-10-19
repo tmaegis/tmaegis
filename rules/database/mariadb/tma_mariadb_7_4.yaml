@@ -1,0 +1,19 @@
+id: TMA-MARIADB-7.4
+title: Ensure Password Complexity Policies are in Place
+description: 'Passwords should be configured with a minimum length of 14 characters and should be checked against dictionaries of common, known, and expected passwords. Requires simple_password_check and cracklib_password_check ACTIVE with FORCE_PLUS_PERMANENT, simple_password_check_minimal_length >= 14 and strict_password_validation ON (the dictionary contents are not checked). Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- authentication
+- password
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 7.4 Ensure Password Complexity Policies are in Place
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF((SELECT COUNT(*) FROM information_schema.PLUGINS WHERE LOWER(PLUGIN_NAME) IN ('simple_password_check', 'cracklib_password_check') AND PLUGIN_STATUS = 'ACTIVE' AND LOAD_OPTION = 'FORCE_PLUS_PERMANENT') = 2 AND (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE LOWER(VARIABLE_NAME) = 'simple_password_check_minimal_length') >= 14 AND @@global.strict_password_validation = 1, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Install the plugins (INSTALL SONAME ''simple_password_check''; INSTALL SONAME ''cracklib_password_check''; the cracklib plugin may need an OS package) and add under [mariadbd]: plugin_load_add = simple_password_check, simple_password_check = FORCE_PLUS_PERMANENT, simple_password_check_minimal_length = 14, plugin_load_add = cracklib_password_check, cracklib_password_check = FORCE_PLUS_PERMANENT, strict_password_validation = ON; restart.'

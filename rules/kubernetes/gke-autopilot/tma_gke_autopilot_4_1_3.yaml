@@ -1,0 +1,17 @@
+id: TMA-GKE-AUTOPILOT-4.1.3
+title: Minimize wildcard use in Roles and ClusterRoles
+description: Kubernetes Roles and ClusterRoles define what actions users, groups, and Kubernetes service accounts can perform against Kubernetes API resources in GKE Autopilot clusters. Wildcard permissions should be minimized because the * character applies broadly across API groups, resources, or verbs and can grant more access than intended. Roles should explicitly define only the API groups, resources, and verbs required for the subject’s function. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 1
+severity: medium
+tags:
+- gke-autopilot
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 4.1.3 Minimize wildcard use in Roles and ClusterRoles
+audit:
+  type: manual
+  command: Review Kubernetes RBAC roles in GKE Autopilot clusters to identify wildcard permissions in Roles and ClusterRoles. The audit should check for * in apiGroups, resources, or verbs, because wildcard permissions can unintentionally grant access to current or future Kubernetes APIs, resources, custom resources, or actions. After identifying wildcard rules, review the related RoleBinding and ClusterRoleBinding objects to determine which users, groups, or Kubernetes service accounts receive the permissions. RBAC access should be reviewed regularly and aligned to least privilege.
+remediation:
+  type: iac_patch
+  command: 'Replace wildcard permissions with explicit RBAC rules that define only the required API groups, resources, and verbs. Remediation should focus on preserving required access while removing broad * grants that could expand privileges as APIs, resources, or CRDs are added. Validate affected users, workloads, controllers, and automation before removing wildcard access. For GKE Autopilot clusters, remediation remains focused on Kubernetes RBAC objects, including Roles, ClusterRoles, RoleBindings, and ClusterRoleBindings. • Replace verbs: ["*"] with only the required actions, such as get, list, watch, create, update, patch, or delete. • Replace resources: ["*"] with only the required Kubernetes resources or custom resources. • Replace apiGroups: ["*"] with the specific API groups required by the subject’s function.'

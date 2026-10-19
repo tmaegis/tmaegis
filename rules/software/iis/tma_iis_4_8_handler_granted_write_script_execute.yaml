@@ -1,0 +1,19 @@
+id: TMA-IIS-4.8
+title: Ensure Handler is not granted Write and Script/Execute
+description: Handler mappings can be configured to give permissions to Read, Write, Script, or Execute depending on what the use is for - reading static content, uploading files, executing scripts, etc. It is recommended to grant a handler either Execute/Script or Write permissions, but not both. The server-level handlers accessPolicy must not contain Write together with Script or Execute. PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 1
+severity: high
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.8 Ensure Handler is not granted Write and Script/Execute
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $p = [string](Get-WebConfiguration -Filter 'system.webServer/handlers' -PSPath 'MACHINE/WEBROOT/APPHOST').accessPolicy; if ($p -match 'Write' -and $p -match 'Script|Execute') { 'noncompliant' } else { 'compliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/handlers -Name accessPolicy -Value 'Read,Script'

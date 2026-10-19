@@ -1,0 +1,17 @@
+id: TMA-FIREFOX-DNS-OVER-HTTPS
+title: Ensure 'Configure DNS Over HTTPS' is set to disabled
+description: DNS over HTTPS sends lookups to a third-party resolver, bypassing enterprise DNS filtering and logging. Set Locked=1 in the same key to stop users re-enabling it. Audit reads the Group Policy value HKLM:\SOFTWARE\Policies\Mozilla\Firefox\DNSOverHTTPS\Enabled (prints the value or 'unset'); compliant when it is 0. An unset policy means the browser default applies and is reported as a FAIL. Remediation writes the policy value locally; in a domain, set it through the ADMX template instead so GPO does not revert it.
+target: firefox
+level: 1
+severity: medium
+tags:
+- firefox
+- dns
+reference: CIS Mozilla Firefox Benchmark - Configure DNS Over HTTPS
+audit:
+  type: registry
+  command: $v = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Mozilla\Firefox\DNSOverHTTPS' -Name 'Enabled' -ErrorAction SilentlyContinue).'Enabled'; if ($null -eq $v) { 'unset' } else { "$v" }
+  expected_output: '0'
+remediation:
+  type: command
+  command: $p = 'HKLM:\SOFTWARE\Policies\Mozilla\Firefox\DNSOverHTTPS'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'Enabled' -Value 0 -Type DWord

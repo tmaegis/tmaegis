@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.3.4
+title: Ensure that ALTER access authority in DISCRETE profiles is limited
+description: When a RACF profile is a DISCRETE profile the ALTER level of access not only grants access to the resources protected by the profile, but also allows changes to most fields in the base segment of the profile itself, including the default access and the access lists. Failure to control ALTER access authority with IRR.ALTER prefixed profiles in the FACILITY class can mean that users that require ALTER access to a resource are also able to make RACF changes, resulting in separation of duties concerns.
+target: ibm-z
+level: 2
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.3.4 Ensure that ALTER access authority in DISCRETE profiles is limited
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The FACILITY entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no IRR.ALTER prefixed entries Request reports generated using IRRDBU00 output that ... (full steps: CIS section 2.3.4)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To create a IRR.ALTER.** profile use the RACF RDEFINE command: RDEFINE FACILITY IRR.ALTER.** + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''LIMIT RACF ALTER ACCESS AUTHORITY IN DISCRETE PROFILES'') SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER FACILITY IRR.ALTER.** + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT IRR.ALTER.** CLASS(FACILITY) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(FACILITY) To remove non-compliant IRR.ALTER prefixed profiles use the RACF RDELETE command: RDELETE FACILITY IRR.ALTER.<non-compliant>
+    SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) ... (see CIS section 2.3.4)'

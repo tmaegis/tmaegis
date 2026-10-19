@@ -1,0 +1,25 @@
+id: TMA-LNX-PAM-MAXDAYS
+title: Ensure password expiration is 365 days or less
+description: PASS_MAX_DAYS in /etc/login.defs should be 365 or less.
+target: linux
+os_family:
+- ubuntu-22.04
+- ubuntu-24.04
+- rocky-9
+level: 1
+severity: medium
+tags:
+- password
+- accounts
+reference: CIS Linux Benchmark - User Accounts and Environment / Shadow Password Suite Parameters
+audit:
+  type: file_regex
+  file_path: /etc/login.defs
+  pattern: (?m)^\s*PASS_MAX_DAYS\s+([1-9]|[1-9]\d|[12]\d\d|3[0-5]\d|36[0-5])\s*$
+remediation:
+  type: file_line
+  file_path: /etc/login.defs
+  match_regex: (?m)^\s*#?\s*PASS_MAX_DAYS\b.*$
+  replace_line: PASS_MAX_DAYS 365
+  backup_files:
+  - /etc/login.defs

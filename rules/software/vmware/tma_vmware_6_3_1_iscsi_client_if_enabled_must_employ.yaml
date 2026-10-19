@@ -1,0 +1,27 @@
+id: TMA-VMWARE-6.3.1
+title: Host iSCSI client, if enabled, must employ bidirectional/mutual CHAP authentication
+description: Implementing bidirectional CHAP authentication for iSCSI connections elevates security by necessitating mutual verification between the initiator (client) and target (server), ensuring data integrity during transmission. Configuration involves setting the iSCSI storage adapter authentication to "Use bidirectional CHAP" and providing the requisite credentials. The audit lists iSCSI adapters (esxcli iscsi adapter list) and requires CHAP level "required" in both uni and mutual directions on each; with no iSCSI adapters the rule passes. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- services
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 6.3.1 Host iSCSI client, if enabled, must employ bidirectional/mutual CHAP authentication
+audit:
+  type: command
+  command: |-
+    out=$(esxcli iscsi adapter list 2>/dev/null) || exit 1
+    ad=$(printf '%s\n' "$out" | awk 'NR > 2 && $1 ~ /^vmhba/ {print $1}')
+    bad=''
+    for a in $ad; do
+      u=$(esxcli iscsi adapter auth chap get -A "$a" -d uni 2>/dev/null | sed -n 's/^ *Level: *//p' | head -n 1)
+      m=$(esxcli iscsi adapter auth chap get -A "$a" -d mutual 2>/dev/null | sed -n 's/^ *Level: *//p' | head -n 1)
+      [ "$u" = required ] && [ "$m" = required ] || bad="$bad $a(uni=${u:-?},mutual=${m:-?})"
+    done
+    [ -z "$bad" ] && echo compliant || echo "iSCSI adapters without bidirectional CHAP:$bad"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enable bidirectional CHAP authentication for iSCSI traffic, perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand Storage. 3. Select Storage Adapters then select the iSCSI Adapter. 4. Under Properties click on Edit next to Authentication. 5. Next to Authentication Method select Use bidirectional CHAP from the dropdown. 6. Specify the outgoing CHAP name. ; Make sure that the name you specify matches the name configured on the storage side. o To set the CHAP name to the iSCSI adapter name, select "Use initiator name".'

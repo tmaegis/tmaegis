@@ -1,0 +1,24 @@
+id: TMA-CHECKPOINT-1.7
+title: Ensure Lockout users after password expiration is set to 1
+description: 'Lockout users after password expiration. After a user''s password has expired, they have this number of days to log in and change it. If they do change their password within that number of days they will be unable to log in: They are locked out. A value of never allows the user to wait as long as they want to change their password. PASS requires expiration-lockout-days 1. Audited against the Gaia clish ''show configuration'' output (run ''show configuration'' in clish on each gateway and management server and save the full output).'
+target: checkpoint
+level: 1
+severity: high
+tags:
+- checkpoint
+- authentication
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 1.7 Ensure Lockout users after password expiration is set to 1
+audit:
+  type: config_regex
+  pattern: (?m)^set password-controls expiration-lockout-days 1[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    set password-controls expiration-lockout-days 1
+    save config
+    # CIS guidance:
+    Run the following command to set the expiration-lockout-days setting. CLI:
+    set password-controls expiration-lockout-days 1
+    GUI:
+    Navigate to User Management > Password Policy > Mandatory Password Changes > Lockout users after password expiration:
+    Checked 'Lockout user after' setting and set to 1 day.

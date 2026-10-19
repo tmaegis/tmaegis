@@ -1,0 +1,25 @@
+id: TMA-JUNIPER-JUNOS-4.1.4
+title: Ensure Bogon Filtering is set (where EBGP is used)
+description: 'Bogon prefixes should be filtered when using eBGP. Bogon Networks are those IP Address blocks which should never appear on the Internet. Examples include loopback addresses, RFC1918 private addresses and IP blocks which have not yet been assigned by the IANA (Internet Assigned Numbers Authority) to one of the ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- routing
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.1.4 Ensure Bogon Filtering is set (where EBGP is used)
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Not scored or auditable.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! JUNOS offers a variety of options for filtering Bogons and Martians, which is why this item is not scored. Some of the more common options are discussed below. 1
+    - The Martian Table Most Martian space (but not all, else you would not be able to use your router on private networks) is blocked using the Martian Routing Table, which is discussed elsewhere in this Benchmark and configured under the hierarchy. Route updates for prefixes in this special table are ignored, so adding Bogons here will prevent them being learned through any routing protocol. 2
+    - Ingress Prefix Filtering Ingress Filtering should be used on eBGP sessions to prevent your own prefixes being advertised back to your network or, in the case of ISP networks, customer networks advertising prefixes other than those allocated to them. The other filtering types are covered previously. Prefix lists are configured under the hierarchy, but are discussed here as they are applied under the hierarchy. First configure a policy:
+    edit policy-options policy-statement <policy name> term <term name>
+    set policy-options policy-statement <policy name> <term name> from route-filter <network>/<mask> <exact | orlonger | prefix-length-range <start>-<end>> reject The last stage should be repeated for each prefix required, but as several options are shown, a couple of examples are given below:
+    set policy-options <policy name> <term name> from route-filter 0.0.0.0/0 exact reject
+    set policy-options <policy name> <term name> from route-filter 10.0.0.0/8 orlonger reject
+    ! ... see the benchmark for the full procedure

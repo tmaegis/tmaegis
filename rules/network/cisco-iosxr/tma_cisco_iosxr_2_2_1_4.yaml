@@ -1,0 +1,20 @@
+id: TMA-CISCO-IOSXR-2.2.1.4
+title: Set 'key' for each 'ntp server'
+description: 'Specifies the authentication key for NTP. This authentication feature provides protection against accidentally synchronizing the ntp system to another system that is not trusted, because the other system must know the correct authentication key. CIS marks this Manual; automated: fails if any NTP server has no ''key <id>''. Audited against the hierarchical output of ''show running-config'' (run ''terminal length 0'' first; not ''show running-config formal'').'
+target: cisco-iosxr
+level: 2
+severity: medium
+tags:
+- cisco-iosxr
+- network
+- ntp
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 2.2.1.4 Set 'key' for each 'ntp server'
+audit:
+  type: config_regex
+  pattern: (?m)^ntp[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+server (?:(?:[^k \t\n][^ \t\n]*|k(?:|[^e \t\n][^ \t\n]*|e(?:|[^y \t\n][^ \t\n]*|y(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^k \t\n][^ \t\n]*|k(?:|[^e \t\n][^ \t\n]*|e(?:|[^y \t\n][^ \t\n]*|y(?:[^ \t\n][^ \t\n]*)))))?$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure each NTP Server to use a key ring using the following command.
+    ntp server {ntp-server_ip_address} key {ntp_key_id}

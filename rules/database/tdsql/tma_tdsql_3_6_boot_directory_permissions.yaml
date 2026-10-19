@@ -1,0 +1,17 @@
+id: TMA-TDSQL-3.6
+title: Ensure Correct Permissions on the TDSQL Boot Directory
+description: 'The boot directory (boot/) contains Python modules, SSL certificates, and initialization scripts. Because it includes SSL private keys and operations modules, it must be properly protected. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql). Counts files that grant the listed permission to other users; any match fails, and a missing directory fails. (o+rw). Expected: directory 0750, CA keys 0600.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.6 Ensure Correct Permissions on the TDSQL Boot Directory
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_HOME:-/data/tdsql}/boot"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_HOME:-/data/tdsql}/boot"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" ! -type l -perm /o+rw -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: chmod 750 <tdsql>/boot; chown -R tdsql:tdsql <tdsql>/boot; chmod 600 <tdsql>/boot/ca.key <tdsql>/boot/ca-key.pem

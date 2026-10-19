@@ -1,0 +1,51 @@
+id: TMA-DOCKER-2.12
+title: Ensure base device size is not changed until needed
+description: Increasing the base device size (dm.basesize) can affect all images and containers and should only be done when needed. Compliant when no dm.basesize storage option is set on the dockerd command line or in /etc/docker/daemon.json.
+target: docker
+level: 2
+severity: low
+tags:
+- docker
+- daemon
+- storage
+reference: CIS Docker Benchmark v1.9.0 - 2.12 Ensure base device size is not changed until needed
+audit:
+  type: command
+  command: args=$(ps -eo args 2>/dev/null) || exit 1; s=$(printf '%s\n' "$args" | grep '[d]ockerd'; cat /etc/docker/daemon.json 2>/dev/null); printf '%s\n' "$s" | grep -q 'dm\.basesize' && echo noncompliant || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v docker >/dev/null 2>&1 || command -v dockerd >/dev/null 2>&1 || exit 0
+    command -v jq >/dev/null 2>&1 || { echo "jq is required to edit /etc/docker/daemon.json" >&2; exit 1; }
+    f=/etc/docker/daemon.json
+    mkdir -p /etc/docker
+    [ -s "$f" ] || echo '{}' > "$f"
+    jq -e . "$f" >/dev/null 2>&1 || { echo "$f is not valid JSON, not touching it" >&2; exit 1; }
+    cp -p "$f" "$f.tmaegis.bak"
+    jq 'if .["storage-opts"] then .["storage-opts"] |= map(select(test("dm\\.basesize")|not)) else . end' "$f.tmaegis.bak" > "$f.tma.new" || { rm -f "$f.tma.new"; exit 1; }
+    if command -v dockerd >/dev/null 2>&1 && ! dockerd --validate --config-file "$f.tma.new" >/dev/null 2>&1; then
+      rm -f "$f.tma.new"; echo "dockerd rejected the new configuration, left unchanged" >&2; exit 1; fi
+    if cmp -s "$f.tma.new" "$f"; then rm -f "$f.tma.new"; exit 0; fi
+    cat "$f.tma.new" > "$f"; rm -f "$f.tma.new"
+    # reload (SIGHUP) only; a full restart interrupts containers unless live-restore is on
+    systemctl reload docker 2>/dev/null || true; true
+  guidance: "Remove dm.basesize from \"storage-opts\" in /etc/docker/daemon.json and from --storage-opt start-up flags unless it is genuinely needed, then restart the Docker daemon."

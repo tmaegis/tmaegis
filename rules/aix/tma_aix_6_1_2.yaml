@@ -1,0 +1,17 @@
+id: TMA-AIX-6.1.2
+title: Ensure sudo logging is active
+description: 'All commands executed via sudo should be logged to either syslog (default) or a dedicated log file Note: visudo edits the sudoers file in a safe fashion, analogous to vipw(8). visudo locks the sudoers file against multiple simultaneous edits, provides basic sanity checks, and checks or parse errors. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- audit
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 6.1.2 Ensure sudo logging is active
+audit:
+  type: command
+  command: c=$(cat /etc/sudoers /etc/sudoers.d/* 2>/dev/null); [ -n "$c" ] || exit 1; if printf '%s\n' "$c" | grep -Eiq "^[[:blank:]]*Defaults[[:blank:]]+logfile=[^[:blank:]]+"; then echo compliant; elif printf '%s\n' "$c" | grep -Eiq "^[[:blank:]]*Defaults[[:blank:]]+syslog_(bad|good)pri=none"; then echo "sudo syslog priority set to none"; else echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the file /etc/sudoers or a file in /etc/sudoers.d/ with /usr/sbin/visudo -f <PATH TO FILE> Remove any lines which are found containing: Defaults syslog_badpri=none -OR- Defaults syslog_goodpri=none -OR- If you do not want to log sudo commands to syslog, to use as sudo specific log file, edit the file /etc/sudoers or a file in /etc/sudoers.d/ with /usr/sbin/visudo -f <PATH TO FILE>: Defaults logfile="<PATH TO CUSTOM LOG FILE>" Example: Defaults logfile="/var/log/sudo.log"'

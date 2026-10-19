@@ -1,0 +1,17 @@
+id: TMA-AWS-EBS-DEFAULT-ENCRYPTION
+title: Ensure EBS volume encryption by default is enabled in all regions
+description: With encryption by default every new EBS volume and snapshot copy is encrypted, so no unencrypted volume can be created by mistake. Checked in every enabled region. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- storage
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Storage - EBS encryption by default (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  v=$(aws ec2 get-ebs-encryption-by-default --region \"$r\" --query EbsEncryptionByDefault --output text 2>/dev/null) || exit 1\n  [ \"$v\" = True ] || { echo \"not encrypted by default: $r\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'aws ec2 enable-ebs-encryption-by-default --region <region> for each listed region (optionally aws ec2 modify-ebs-default-kms-key-id); Terraform: aws_ebs_encryption_by_default.'

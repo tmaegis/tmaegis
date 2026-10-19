@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-4.2.15
+title: Ensure that the Federal Information Processing Standards (FIPS) are used for the cryptographic modules
+description: The National Institute of Standards and Technology (NIST) issues the FIPS 140 Publication Series to coordinate the requirements and standards for cryptography modules that include both hardware and software components. Protection of a cryptographic module within a security system is necessary to maintain the confidentiality and integrity of the information protected by the module. This standard specifies the security requirements that will be satisfied by a cryptographic module. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 2
+severity: high
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 4.2.15 Ensure that the Federal Information Processing Standards (FIPS) are used for the cryptographic modules
+audit:
+  type: manual
+  command: The FIPS standard can be enforced by setting the system properties - Dcom.ibm.jsse2.usefipsprovider=true and - Dcom.ibm.jsse2.usefipsProviderName=IBMJCEPlusFIPS when using IBM JDK. For other JDKs, follow their specific instructions. grep -w -R -i '-Dcom.ibm.jsse2.usefipsprovider=true' ${server.config.dir} grep -w -R -i '-Dcom.ibm.jsse2.usefipsProviderName=IBMJCEPlusFIPS' ${server.config.dir} In addition, configure to use the IBMJCEPlusFIPS security provider in the $JAVA_HOME/jre/lib/security/java.security file. grep -w -R -i 'com.ibm.crypto.plus.provider.IBMJCEPlusFIPS' ${JAVA_HOME}
+remediation:
+  type: iac_patch
+  command: Configure the system property -Dcom.ibm.jsse2.usefipsprovider to true and - Dcom.ibm.jsse2.usefipsProviderName to IBMJCEPlusFIPS in the jvm.options file. The link in reference section provides more information on how to customize the Liberty environment with system properties. -Dcom.ibm.jsse2.usefipsprovider=true -Dcom.ibm.jsse2.usefipsProviderName=`IBMJCEPlusFIPS` ... In addition, configure the IBMJCEPlusFIPS provider in the $JAVA_HOME/jre/lib/security/java.security file. security.provider.1=com.ibm.crypto.plus.provider.IBMJCEPlusFIPS ...

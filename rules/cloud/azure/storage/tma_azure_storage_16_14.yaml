@@ -1,0 +1,17 @@
+id: TMA-AZURE-STORAGE-16.14
+title: Ensure Azure Resource Manager Delete locks are applied to Azure Storage Accounts
+description: Azure Resource Manager CannotDelete (Delete) locks prevent users from accidentally or maliciously deleting a storage account. With a Delete lock in place the account remains modifiable and usable, but deleting the account resource first requires a user with the appropriate permissions to remove the lock. A Delete lock protects the account resource itself; it does not protect the blob, queue, table, or file data inside the account - data-plane deletions performed with account keys, SAS, or RBAC still succeed. Applying a Delete lock prevents accidental or unauthorized deletion of the entire storage account resource - a fundamental protective control against loss of the account. The lock guards the account resource, not the data within it.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.14 Ensure Azure Resource Manager Delete locks are applied to Azure Storage Accounts
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Navigate to the storage account in the Azure Portal. 2. Under Settings, select Locks. 3. Confirm a Delete lock exists on the storage account. Audit from Azure CLI az lock list \ --resource-group <resource-group> \ --resource-name <storage-account> \ --resource-type "Microsoft.Storage/storageAccounts" The output should list a lock with "level": "CanNotDelete"; the absence of such a lock is non-compliant. Audit from PowerShell Get-AzResourceLock -ResourceGroupName <resource-group> -ResourceName <storage-account> -ResourceType "Microsoft.Storage/storageAccounts" A lock whose Properties.level is CanNotDelete should be returned. Note: there is no built-in Azure Policy that audits resource locks on storage accounts; a custom or community policy can check for a Microsoft.Authorization/locks resource with an AuditIfNotExists effect.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Navigate to the storage account in the Azure portal. 2. Under the Settings section, select Locks. 3. Select Add. 4. Provide a Name, and choose Delete for the type of lock. 5. Add a note about the lock if desired. Remediate from Azure CLI Replace the information within <> with appropriate values: az lock create --name <lock> \ --resource-group <resource-group> \ --resource <storage-account> \ --lock-type CanNotDelete \ --resource-type Microsoft.Storage/storageAccounts Remediate from PowerShell Replace the information within <> with appropriate values: New-AzResourceLock -LockLevel CanNotDelete ` -LockName <lock> ` -ResourceName <storage-account> ` -ResourceType Microsoft.Storage/storageAccounts ` -ResourceGroupName <resource-group>'

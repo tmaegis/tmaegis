@@ -1,0 +1,27 @@
+id: TMA-CISCO-FTD-1.4.2.2
+title: Configure Central Logging for FMC Managed Devices
+description: 'Syslog allows for central logging in almost every environment. In higher security environments, SNMPv3 Traps should be used (see Recommendation x.x.x). Central logging is critical in almost every environment. Central logging facilitates: - detecting security events - Incident response to security events - detection of operational events and problems - detection of trends in the environment, especially if a ... Checks the LINA config pushed by the Platform Settings syslog policy: requires ''logging enable'' and a ''logging host''. Automated checks run against the FTD LINA configuration from ''show running-config'' on the FTD CLI (configuration is pushed by the FMC); FMC GUI settings are manual checks.'
+target: cisco-ftd
+level: 1
+severity: medium
+tags:
+- cisco-ftd
+- network
+- logging
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 1.4.2.2 Configure Central Logging for FMC Managed Devices
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^logging enable\s*$.*^logging host \S+ \S+)|(?s:^logging host \S+ \S+.*^logging enable\s*$)
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Navigate to devices / platform settings
+    - Edit or create a Platform Settings Policy
+    - Under Syslog, make the following configuration changes:
+    - Set "Enable Logging"
+    - If applicable, set "Enable Logging on failover standby unit"
+    - Under "VPN Logging Settings", enable "Enable Logging to FMC", and set a logging level of "Informational"
+    - Under "Logging Destinations" set the logging destination to "Syslog Servers" in lower security environments.
+    - Understand that this setting sends the logs in clear text, so ensure that you secure the path between the logging devices and the syslog server
+    - Under "Syslog Servers" set the server(s) IP addresses, Protocol and Port to match your syslog server.
+    - Under "Reachable By", set the appropriate interface that should send syslog logs.

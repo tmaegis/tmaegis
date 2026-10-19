@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-2.1
+title: Ensure the file permissions mask is correct
+description: Files are always created using a default set of permissions. File permissions can be restricted by applying a permissions mask called the umask. The postgres user account should use a umask of 0077 to deny file access to all user accounts except the owner.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- filesystem
+- permissions
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 2.1 Ensure the file permissions mask is correct
+audit:
+  type: manual
+  command: As root run su - postgres -c umask. The umask must be 0077 or more restrictive for the postgres user (check .bash_profile, .profile and .bashrc of the postgres home); otherwise this is a fail.
+remediation:
+  type: iac_patch
+  command: As postgres add 'umask 077' to the profile file in use (e.g. ~postgres/.bash_profile) and re-login to confirm umask prints 0077.

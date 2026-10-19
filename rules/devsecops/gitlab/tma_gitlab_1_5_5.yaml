@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.5.5
+title: Ensure scanners are in place for open-source vulnerabilities in used packages
+description: Detect, prevent and monitor known open-source vulnerabilities in packages that are being used. Open-source vulnerabilities might exist before one starts to use a package, but they are also discovered over time. New attacks and vulnerabilities are announced every now and then. It is important to keep track of these and to monitor whether the dependencies used are affected by the recent vulnerability. Detecting and fixing those packages' vulnerabilities decreases the attack surface within deployed and running applications that use such packages. It prevents security flaws from reaching the production environment which could eventually lead to a security breach.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.5.5 Ensure scanners are in place for open-source vulnerabilities in used packages
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediation: For every repository that is in use, set a dependency scanning tool to detect, prevent, and monitor vulnerabilities in project packages by performing the following: 1. On GitLab, navigate to the main page of the repository. 2. Configure Dependency Scanning to run on this project.'

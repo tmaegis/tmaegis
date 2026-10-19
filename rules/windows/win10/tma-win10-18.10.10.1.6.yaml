@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.10.1.6
+title: '(BL) Ensure ''Choose how BitLocker-protected fixed drives can be recovered: Omit recovery options from the BitLocker setup wizard'' is set to ''Enabled: True'''
+description: 'This policy setting allows you to control how BitLocker-protected fixed data drives are recovered in the absence of the required credentials. This policy setting is applied when you turn on BitLocker. Select "Omit recovery options from the BitLocker setup wizard" to prevent users from specifying recovery options when they enable BitLocker on a drive. This means that you will not be able to specify which recovery option to use when you enable BitLocker, instead BitLocker recovery options for the drive are determined by the policy setting. The recommended state for this setting is: Enabled: True'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.10.1.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE'' -Name ''FDVHideRecoveryPage'' -ErrorAction SilentlyContinue).''FDVHideRecoveryPage''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''FDVHideRecoveryPage='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\FVE' -Name 'FDVHideRecoveryPage' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,19 @@
+id: TMA-MCP-1.2
+title: Ensure server capability baseline is established and documented
+description: A documented capability baseline is defined and maintained for each MCP server, recording which protocol components and settings it is approved to expose and which extensions it is approved to negotiate. Under the 2026-07-28 revision, a server advertises this configuration in the capabilities object returned by server/discover, where core components appear as top-level keys (Tools, Resources, Prompts, Completions), each with its own settings such as tools.listChanged or resources.subscribe, and extensions appear in the extensions map keyed by a reverse-DNS ID such as io.modelcontextprotocol/tasks. The baseline records the full object with its values, not just the names, because a configuration can change materially without any name being added, for example by enabling tools.listChanged or raising an extension limit. It is stored as the canonical JSON capability object, a versioned art...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 1.2 Ensure server capability baseline is established and documented
+audit:
+  type: manual
+  command: 'Compare the full capability configuration the server advertises through server/discover against the approved baseline, and flag any deviation as drift. The comparison covers every nested setting, not only the names, so a change to a value such as tools.listChanged or an extension setting is drift even though no name changed. Maintain the baseline per server as the canonical JSON capability object, for example <BASELINE_DIR>/<SERVER>.capabilities.json. Run the following script to retrieve the advertised configuration and compare it against the baseline: MCP_URL="https://<SERVER_URL>/mcp" BASELINE="<BASELINE_DIR>/<SERVER>.capabilities.json" LEAF=''(paths(type | IN("string","number","boolean","null")), paths(type == "object" and length == 0), paths(type == "array" and length == 0)) as $p | ($p | tojson) + "\t" + (getpath($p) | tojson)'' resp=$(curl -sS --connect-timeout 5 --max-time 20 -X POST "$MCP_URL" \ -H ''Content-Type: application/json'' \ -H ''Accept: application/json, text/event-stream''
+    \ -H ''MCP-Protocol-Version: 2026-07-28'' \ -H ''Mcp-Method: server/discover'' \ -d ''{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelconte xtprotocol/protocolVersion":"...'
+remediation:
+  type: iac_patch
+  command: 'Establish the baseline from a server in a known-good state, have it reviewed, and store it in the enterprise registry under change control. Run the following script to capture the baseline as the canonical JSON capability object. Capturing from a drifted server writes the drift into the baseline, so capture only from a server in its approved state. The script leaves any existing baseline untouched if the configuration cannot be retrieved or the server advertises an empty set: MCP_URL="https://<SERVER_URL>/mcp" BASELINE="<BASELINE_DIR>/<SERVER>.capabilities.json" mkdir -p "$(dirname "$BASELINE")" LEAF=''(paths(type | IN("string","number","boolean","null")), paths(type == "object" and length == 0), paths(type == "array" and length == 0)) as $p | $p | tojson'' resp=$(curl -sS --connect-timeout 5 --max-time 20 -X POST "$MCP_URL" \ -H ''Content-Type: application/json'' \ -H ''Accept: application/json, text/event-stream'' \ -H ''MCP-Protocol-Version: 2026-07-28'' \ -H ''Mcp-Method:
+    server/discover'' \ -d ''{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelconte xtprotocol/protocolVersion":"2026-07- 28","io.modelcontextprotocol/clientInfo":{"name":"cis-benchmark- audi...'

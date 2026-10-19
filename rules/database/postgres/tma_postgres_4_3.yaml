@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-4.3
+title: Ensure excessive administrative privileges are revoked
+description: With respect to PostgreSQL administrative SQL commands, only superusers should have elevated privileges. PostgreSQL regular, or application, users should not possess the ability to create roles, create new databases, manage replication, or perform any other action deemed privileged.
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- authorization
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.3 Ensure excessive administrative privileges are revoked
+audit:
+  type: manual
+  command: Run psql -c "\du+" and review role attributes (Superuser, Create role, Create DB, Replication, Bypass RLS). Only designated administrative roles may hold them; any regular role with administrative attributes is a fail.
+remediation:
+  type: iac_patch
+  command: Revoke unneeded attributes, e.g. ALTER ROLE <role> NOSUPERUSER NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS;

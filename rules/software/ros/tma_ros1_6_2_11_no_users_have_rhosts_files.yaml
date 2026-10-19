@@ -1,0 +1,23 @@
+id: TMA-ROS1-6.2.11
+title: Ensure no users have .rhosts files
+description: While no .rhosts files are shipped by default, users can easily create them. The audit requires no interactive user to have a .rhosts file. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.11 Ensure no users have .rhosts files
+audit:
+  type: command
+  shell: bash
+  command: |-
+    users=$(awk -F: '($1 !~ /^(root|halt|sync|shutdown)$/ && $7 !~ /(nologin|false)$/) {print $1":"$6}' /etc/passwd) || exit 1
+    bad=$(printf '%s\n' "$users" | while IFS=: read -r u d; do [ -d "$d" ] || continue; [ -e "$d/.rhosts" ] && echo "$d/.rhosts"; done)
+    [ -z "$bad" ] && echo compliant || { printf '%s\n' "$bad"; echo '.rhosts files present'; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Making global modifications to users' files without alerting the user community can result in unexpected outages and unhappy users. Therefore, it is recommended that a monitoring policy be established to report user .rhosts files and determine the action to be taken in accordance with site policy.

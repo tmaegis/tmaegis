@@ -1,0 +1,25 @@
+id: TMA-ROS1-4.1.10
+title: Ensure use of privileged commands is collected
+description: 'Monitor privileged programs (those that have the setuid and/or setgid bit set on execution) to determine if unprivileged users are running these commands. Note: Systems may have been customized to change the default UID_MIN. The audit finds SUID/SGID programs on local filesystems and requires a loaded "-F path=<program> -F perm=x ... -k privileged" rule for each (auditctl -l). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.10 Ensure use of privileged commands is collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    files=$(findmnt -rn -l -o TARGET,FSTYPE | awk '$2 ~ /^(ext[234]|xfs|btrfs|zfs)$/ {print $1}' | while read -r m; do find "$m" -xdev \( -perm -4000 -o -perm -2000 \) -type f 2>/dev/null; done | sort -u)
+    bad=$(for f in $files; do printf '%s\n' "$out" | grep -Fq -- "path=$f " || echo "$f"; done)
+    [ -z "$bad" ] && echo compliant || { echo 'privileged programs without an audit rule:'; printf '%s\n' "$bad" | head -n 20; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To remediate this issue, the system administrator will have to execute a find command to locate all the privileged programs and then add an audit line for each one of them. The audit parameters associated with this are as follows: -F path=" $1 " - will populate each file name found through the find command and processed by awk. -F perm=x - will write an audit record if the file is executed. -F auid>=1000 - will write a record if the user executing the command is not a privileged user. -F auid!= 4294967295 - will ignore Daemon events All audit records should be tagged with the identifier "privileged".'

@@ -1,0 +1,18 @@
+id: TMA-TDSQL-3.9
+title: Ensure Correct Permissions on MySQL Binary Log Files
+description: Binary log files (binlog.*, mysql-bin.*) contain records of all data modifications and must have restrictive permissions. Searches /data/tdsql (the benchmark path). Counts binlog.*, mysql-bin.* and relay-log.* files readable by other users; expected 0640.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+- logging
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.9 Ensure Correct Permissions on MySQL Binary Log Files
+audit:
+  type: command
+  command: n=0; for p in "/data/tdsql"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "/data/tdsql"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" -type f \( -name 'binlog.*' -o -name 'mysql-bin.*' -o -name 'relay-log.*' \) -perm /o+r -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: find /data/tdsql \( -name 'binlog.*' -o -name 'mysql-bin.*' -o -name 'relay-log.*' \) -exec chmod 640 {} +

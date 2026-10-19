@@ -1,0 +1,18 @@
+id: TMA-TDSQL-3.2
+title: Ensure Correct Permissions on TDSQL Log Directories
+description: 'TDSQL log directories should have restrictive permissions. Log files may contain sensitive information. TDSQL uses several log directories: OSS logs: ../log/sys_tdsql_oss_log Manager logs: ../log/sys_manager Manager statistics: ../log/stat_manager Backup logs: ../log/sys_backup The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql). Counts files that grant the listed permission to other users; any match fails, and a missing directory fails. (o+r). Expected: directories 0750, files 0640.'
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- permissions
+- logging
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.2 Ensure Correct Permissions on TDSQL Log Directories
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_HOME:-/data/tdsql}/log"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_HOME:-/data/tdsql}/log"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" ! -type l -perm /o+r -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: chmod 750 <tdsql>/log; chown -R tdsql:tdsql <tdsql>/log; find <tdsql>/log -type f -exec chmod 640 {} +; find <tdsql>/log -type d -exec chmod 750 {} +

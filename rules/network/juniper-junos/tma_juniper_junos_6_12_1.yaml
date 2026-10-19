@@ -1,0 +1,19 @@
+id: TMA-JUNIPER-JUNOS-6.12.1
+title: Ensure External SYSLOG Host is Set with Any Facility and Informational Severity
+description: Logging data must be sent to at least one external SYSLOG server. Log information from a JUNOS Device can be vital in detecting an attack and to allow incidents to be analyzed, investigated and (where appropriate) prosecuted. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.12.1 Ensure External SYSLOG Host is Set with Any Facility and Informational Severity
+audit:
+  type: config_regex
+  pattern: (?m)^set system syslog host \S+ any (?:any|info)\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! SYSLOG data is recorded locally by default, you can configure external SYSLOG servers by issuing the following command from the hierarchy;
+    set system syslog host <Server> any <Severity> Where: - <Server> is the IP Address or Fully Qualified Domain Name of the Remote Syslog Server - <Severity> should be either any or info Some SYSLOG or SIEM Servers may require additional configuration items such as explicit-priority or structured-data options to be configured. It is possible to filter SYSLOG messages to be forwarded to the host using a match or match-string condition. This should not be set for the device's the Remote SYSLOG Host/s configured in meeting this Recommendation.

@@ -1,0 +1,17 @@
+id: TMA-AIX-4.6.2.3
+title: Ensure ftpd umask is configured
+description: 'The umask of the ftpd service should be set to at least 027 in order to prevent the FTP daemon process from creating world-accessable, group-writeable files by default. The umask of the ftpd service should be set to at least 027 in order to prevent the FTP daemon process from creating world-accessable and group-writeable files by default. Audit: when ftp is enabled in inetd.conf, ftpd must run with -u 027 (or stricter 077).'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.6.2.3 Ensure ftpd umask is configured
+audit:
+  type: command
+  command: l=$(grep "^ftp[[:blank:]]" /etc/inetd.conf 2>/dev/null); if [ -n "$l" ]; then printf '%s\n' "$l" | grep -Eq -- "-u[[:blank:]]*0?(027|077)" && echo compliant || echo "$l"; else echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set the default umask of the ftp daemon: [[ $(grep -c "^ftp[[:blank:]]" /etc/inetd.conf) -gt 0 ]] && chsubserver -c -v ftp -p tcp "ftpd -l -u 027" && refresh -s inetd || RC=0 NOTE: The umask above restricts write permissions for both group and other. All access for other is removed.'

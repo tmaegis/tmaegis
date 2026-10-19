@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-16.5
+title: Ensure that 'Enable Infrastructure Encryption' for Each Storage Account in Azure Storage is Set to 'Enabled'
+description: Enabling encryption at the hardware level on top of the default software encryption for Storage Accounts accessing Azure storage solutions. Azure Storage automatically encrypts all data in a storage account at the network level using 256-bit AES encryption, which is one of the strongest, FIPS 140-2-compliant block ciphers available. Customers who require higher levels of assurance that their data is secure can also enable 256-bit AES encryption at the Azure Storage infrastructure level for double encryption. Double encryption of Azure Storage data protects against a scenario where one of the encryption algorithms or keys may be compromised. Similarly, data is encrypted even before network transmission and in all backups. In this scenario, the additional layer of encryption continues to protect your data. For the most secure implementation of key based encryption, it is recommended to...
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.5 Ensure that 'Enable Infrastructure Encryption' for Each Storage Account in Azure Storage is Set to 'Enabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Security + networking (or the account Overview > Properties), confirm Infrastructure encryption is Enabled. Audit from Azure CLI For each storage account, verify the account-level infrastructure-encryption flag is true: az storage account show \ --name <storage-account> \ --resource-group <resource-group> \ --query "encryption.requireInfrastructureEncryption" A result of true is compliant; false or null is non-compliant. Do not audit blob-level serverEncrypted - it reports ordinary service-side encryption, which is always true even when infrastructure (double) encryption is off. Audit from PowerShell (Get-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account>).Encryption.RequireInfrastructureEncryption True is compliant; False or empty is non-compliant. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the
+    associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. During Storage Account creation, in the Encryption tab, check the box next to Enable infrastructure encryption. Remediate from Azure CLI Replace the information within <> with appropriate values: az storage account create \ --name <storage-account> \ --resource-group <resource-group> \ --location <location> \ --sku Standard_RAGRS \ --kind StorageV2 \ --require-infrastructure-encryption Remediate from PowerShell Replace the information within <> with appropriate values: New-AzStorageAccount -ResourceGroupName <resource_group> ` -AccountName <storage-account> ` -Location <location> ` -SkuName "Standard_RAGRS" ` -Kind StorageV2 ` -RequireInfrastructureEncryption Enabling Infrastructure Encryption after Storage Account Creation If infrastructure encryption was not enabled on blob storage creation, there is no official way to enable it. Please see the additional information section.'

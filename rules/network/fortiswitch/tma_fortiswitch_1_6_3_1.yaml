@@ -1,0 +1,35 @@
+id: TMA-FORTISWITCH-1.6.3.1
+title: Ensure default Admin ports are changed
+description: FortiSwitch admin ports listen on the common ports of 80 and 443. This is default behavior. While interface access is controlled by configuring network interfaces, the FortiSwitch still listens on the admin ports that have been configured, which can also cause a conflict should 80 or 443 be needed as part of additional configuration later on. FAILs if the SSH admin port is still 22 or the HTTPS admin port is still 443. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: medium
+tags:
+- fortiswitch
+- authentication
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.6.3.1 Ensure default Admin ports are changed
+audit:
+  type: config_regex
+  pattern: (?m)(?:^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set admin-ssh-port 22[ \t]*$|^config system web\n(?:[ \t]+[^\n]*\n)*?[ \t]+set https-port 443[ \t]*$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set admin-ssh-port 4422
+    end
+    config system web
+        set https-port 4443
+    end
+    # CIS guidance:
+    CLI for changing SSH port:
+    config system global
+        set admin-ssh-port 4422 **(or any other uncommon port)**
+    end
+    CLI for changing HTTPS port:
+    config system web
+        set https-port 4443 **(or any other uncommon port)**
+    end
+    OR From Web GUI:
+    1. System > Admin > Settings
+    2. Change the ports/settings under 'Console Access' and 'Web Interface' sections.

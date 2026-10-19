@@ -1,0 +1,24 @@
+id: TMA-CISCO-ASA-3.4
+title: Ensure non-default application inspection is configured correctly
+description: 'Enables the inspection of an application that is not in the default global policy application inspection. By default, the ASA configuration includes a policy that matches all default application inspection traffic and applies certain inspections to the traffic on all interfaces (global policy). Not all inspections are enabled by default. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 3.4 Ensure non-default application inspection is configured correctly
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Step 1: Run the following to determine whether the protocol <protocol_name> to be inspected is included in the default policy hostname#sh run policy-map | in __inspect.<protocol_name> The output should look like: inspect protocol_name The example below confirms that the FTP protocol is inspected Asa# sh run policy-map | in __inspect.ftp inspect ftp - Step 2: If an output is displayed, the system is compliant. If not, there is a finding.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Run the following to enable the inspection of the protocol:
+    policy-map global_policy
+    class inspection_default
+    inspect <protocol_name>
+    exit
+    exit
+    service-policy global_policy global

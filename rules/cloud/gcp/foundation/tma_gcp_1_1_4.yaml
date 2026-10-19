@@ -1,0 +1,18 @@
+id: TMA-GCP-1.1.4
+title: Ensure Organization Policies Are Configured For Centralized Constraints
+description: Ensure that one or more baseline Organization Policies are configured at the organization or folder level in accordance with enterprise security requirements. Organization Policies act as preventive guardrails that set centralized constraints on how resources can be configured across all projects within the organization hierarchy. These policies can enforce security invariants such as preventing public IP addresses on compute instances, requiring OS Login for SSH access, restricting resource locations to approved regions, enforcing uniform bucket-level access on Cloud Storage, or limiting IAM policy member domains to prevent external sharing. Organization Policies do not grant permissions but instead set organization-wide limits on resource configurations and service usage, regardless of local project-level IAM policies. Without baseline guardrail Organization Policies, each project c...
+target: gcp
+level: 2
+severity: medium
+tags:
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 1.1.4 Ensure Organization Policies Are Configured For Centralized Constraints
+audit:
+  type: manual
+  command: 'From Google Cloud Admin Console Pre-requisite: Document or confirm your organization''s baseline guardrail requirements. Common examples include: - Restrict resource locations to approved regions only (constraints/gcp.resourceLocations) - Require OS Login for SSH access (constraints/compute.requireOsLogin) - Restrict public IP addresses on VMs (constraints/compute.vmExternalIpAccess) - Enforce uniform bucket-level access (constraints/storage.uniformBucketLevelAccess) - Restrict domain sharing to organization domains only (constraints/iam.allowedPolicyMemberDomains) 1. List all Organization Policies configured at the organization level o Navigate to Google Cloud Console at https://console.cloud.google.com o Select your organization from the organization dropdown at the top o Go to IAM & Admin → Organization Policies o Review the list of policies that have been set at the organization level o Verify that baseline security constraints from your documented requirements are configured
+    o For each configured policy, click on it to view: ▪ Whether it is enforced or not ▪ Whether it allows exceptions (via policy inheritance or tags) ▪ The specific values configured (e.g., allowed regions,...'
+remediation:
+  type: iac_patch
+  command: 'IMPORTANT: Before enforcing Organization Policies, it is strongly recommended to use dry run mode to test policies without blocking any operations. Dry run mode allows you to preview what resources would be blocked and review violations in Cloud Asset Inventory before actual enforcement. This prevents unintended disruption to existing workloads. From Google Cloud Admin Console 1. Design or confirm baseline Organization policies o Navigate to Google Cloud Console at https://console.cloud.google.com o Select your organization from the organization dropdown o Go to IAM & Admin → Organization Policies o Review existing policies and identify gaps based on your security requirements o Document which constraints need to be configured 2. Configure organization policies at Organization level for each baseline security constraint identified in Step 1: o In the Organization Policies page, search for the constraint (e.g., compute.requireOsLogin) o Click Manage policy for that constraint
+    o Select Override parent''s policy to configure the policy o Configure the policy based on the constraint type: ▪ For boolean constraints (e.g., require OS Login, skip default network): ▪ Click on Add a rule...'

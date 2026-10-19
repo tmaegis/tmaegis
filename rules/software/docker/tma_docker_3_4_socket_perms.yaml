@@ -1,0 +1,21 @@
+id: TMA-DOCKER-3.4
+title: Ensure that docker.socket file permissions are set to 644 or more restrictive
+description: The docker.socket unit file must have mode 644 or more restrictive so that it cannot be modified by non-root users. The audit flags any existing candidate path (/usr/lib/systemd/system/docker.socket, /lib/systemd/system/docker.socket, /etc/systemd/system/docker.socket) with permission bits outside 644; not applicable when none exists.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.4 Ensure that docker.socket file permissions are set to 644 or more restrictive
+audit:
+  type: command
+  command: for f in /usr/lib/systemd/system/docker.socket /lib/systemd/system/docker.socket /etc/systemd/system/docker.socket; do [ -e "$f" ] || continue; out=$(find "$f" -maxdepth 0 -perm /7133) || exit 1; [ -z "$out" ] || { echo "$f"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/lib/systemd/system/docker.socket
+  - /lib/systemd/system/docker.socket
+  - /etc/systemd/system/docker.socket
+remediation:
+  type: command
+  command: for f in /usr/lib/systemd/system/docker.socket /lib/systemd/system/docker.socket /etc/systemd/system/docker.socket; do if [ -e "$f" ]; then chmod 644 "$f" || exit 1; fi; done

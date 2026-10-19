@@ -1,0 +1,21 @@
+id: TMA-EKS-AUTO-4.2.4
+title: Require workload pods to run with hostNetwork set to false
+description: 'Require workload pods to run with hostNetwork set to false or leave it unset by restricting spec.hostNetwork: true in EKS Auto Mode workload namespaces. In EKS, Pod Security Standards can be applied through the built-in Pod Security Admission controller or an equivalent policy engine, using at least the baseline profile where host network sharing is not approved and restricted for stronger workload namespace hardening. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.'
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.2.4 Require workload pods to run with hostNetwork set to false
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.hostNetwork}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($3=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure Pod Security Admission on workload namespaces so pods that request spec.hostNetwork: true are denied at admission time. For this control, baseline is sufficient because it prohibits hostNetwork, while restricted provides stronger hardening for workload namespaces that can meet the additional requirements. Use enforce'' for remediation because it rejects violating pods and use warnandaudit` for visibility but do not treat it as enforcement. Configure each workload namespace to enforce the restricted profile. kubectl label ns $NAMESPACE pod-security.kubernetes.io/enforce=restricted --overwrite If restricted is too disruptive for a valid workload namespace, enforce baseline as the minimum profile for this specific control.'

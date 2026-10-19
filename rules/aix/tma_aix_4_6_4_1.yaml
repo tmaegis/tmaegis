@@ -1,0 +1,17 @@
+id: TMA-AIX-4.6.4.1
+title: Ensure sendmail version information is hidden
+description: 'The recommendation is to change both the default sendmail greeting and HELP output to not display the sendmail version. The sendmail deamon has a history of security vulnerabilities. The recommendation is to change the default sendmail settings that display the sendmail version and other related information. Audit: SmtpGreetingMessage must be set without "Sendmail $b" and /etc/mail/helpfile must exist.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- services
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.6.4.1 Ensure sendmail version information is hidden
+audit:
+  type: command
+  command: '[ -r /etc/mail/sendmail.cf ] || exit 1; l=$(grep -i "^O SmtpGreetingMessage" /etc/mail/sendmail.cf); if [ -z "$l" ]; then echo "SmtpGreetingMessage not set"; else case "$l" in *"Sendmail \$b"*) echo "version disclosed: $l";; *) [ -e /etc/mail/helpfile ] && echo compliant || echo "sendmail helpfile missing";; esac; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create a backup copy of /etc/mail/sendmail.cf: cp -p /etc/mail/sendmail.cf /etc/mail/sendmail.cf.pre_cis Edit: vi /etc/mail/sendmail.cf Replace: O SmtpGreetingMessage=$j Sendmail $b With: O SmtpGreetingMessage=mailerready Ensure Sendmail helpfile exists test -e /etc/mail/helpfile || touch /etc/mail/helpfile'

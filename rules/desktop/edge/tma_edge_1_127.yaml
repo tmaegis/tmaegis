@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.127
+title: Ensure 'Enhanced Security Mode configuration for Intranet zone sites' is set to 'Disabled'
+description: 'This policy setting controls whether Microsoft Edge will apply enhanced security mode on Intranet zone sites. Enhanced security mode in Microsoft Edge mitigates memory- related vulnerabilities by disabling just-in-time (JIT) JavaScript compilation and enabling additional operating system protections for the browser. The recommended state for this setting is: Disabled. Rationale: Enhanced security mode provides ''defense-in-depth'' protection that makes it more difficult for a malicious site to use an unpatched vulnerability to write to executable memory. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:EnhanceSecurityModeBypassIntranet (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.127 Ensure 'Enhanced Security Mode configuration for Intranet zone sites' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''EnhanceSecurityModeBypassIntranet'' -ErrorAction SilentlyContinue).''EnhanceSecurityModeBypassIntranet''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'EnhanceSecurityModeBypassIntranet' -Value 0 -PropertyType DWord -Force | Out-Null

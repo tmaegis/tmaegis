@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-1.1
+title: Ensure root does not have ownership of Websphere Liberty binaries
+description: Preventing the root user from owning files in the ${wlp.install.dir} directory prevents unauthorized commands or files from being run. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 1
+severity: high
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 1.1 Ensure root does not have ownership of Websphere Liberty binaries
+audit:
+  type: manual
+  command: 'Check to ensure that no files or directories underneath ${wlp.install.dir} are owned by the root user or root group: ls -l -R ${wlp.install.dir} | awk ''{print $3, $4}'' Expected result: You should not see the root user or root group referenced in the output.'
+remediation:
+  type: iac_patch
+  command: 'Set the ownership and group of ${wlp.install.dir} to something other than root: chown -R <non-root user>:<non-root group> ${wlp.install.dir}'

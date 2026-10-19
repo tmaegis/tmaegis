@@ -1,0 +1,17 @@
+id: TMA-TDSQL-1.6
+title: Ensure Operating System Patches Are Up to Date
+description: The operating system hosting TDSQL should have the latest security patches installed. Counts pending security updates (dnf/yum updateinfo list security, or apt list --upgradable entries from security pockets). Uses the locally cached repository metadata; refresh it (yum makecache / apt update) before scanning.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- patching
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.6 Ensure Operating System Patches Are Up to Date
+audit:
+  type: command
+  command: if command -v dnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then pm=$(command -v dnf || command -v yum); out=$($pm -q updateinfo list security 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -c '[^[:space:]]' || true; elif command -v apt >/dev/null 2>&1; then out=$(apt list --upgradable 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -ci security || true; else exit 1; fi
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Apply security updates during a maintenance window: yum update --security (RHEL/CentOS) or apt update && apt upgrade (Debian/Ubuntu), restarting TDSQL components one node at a time.'

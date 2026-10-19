@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.24.1
+title: Ensure 'Enable startup boost' is set to 'Disabled'
+description: "This policy setting allows Microsoft Edge processes to start at OS sign-in and restart in background after the last browser window is closed. If Microsoft Edge is running in background mode, the browser might not close when the last window is closed, and the browser won\xB4t be restarted in background when the window closes. Rationale: Allowing processes from the browser to run in the background could allow a malicious script or code to continue running once the browser windows are closed. Audit reads the Group Policy registry value and prints 'compliant', 'unset' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge:StartupBoostEnabled (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it."
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.24.1 Ensure 'Enable startup boost' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''StartupBoostEnabled'' -ErrorAction SilentlyContinue).''StartupBoostEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'StartupBoostEnabled' -Value 0 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-4.2
+title: Ensure claims-based authentication is used for all web applications and zones of a SharePoint 2019 farm
+description: Claims-based authentication enables systems and applications to authenticate a user without requiring the user to disclose more personal information than necessary. SharePoint continues to offer support for both claims and classic authentication modes. Claims-based identity is an identity model in SharePoint that includes features such as authentication across users of Windows-based systems and... Prints the number of web applications not using claims-based authentication (UseClaimsAuthentication is not True) (expected 0). Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: medium
+tags:
+- sharepoint
+- authentication
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 4.2 Ensure claims-based authentication is used for all web applications and zones of a SharePoint 2019 farm
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $bad = @(Get-SPWebApplication -ErrorAction Stop | Where-Object { $_.UseClaimsAuthentication -ne $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Convert classic-mode web applications to claims (SharePoint 2019: Convert-SPWebApplication -Identity <url> -From Legacy -To Claims -RetainPermissions after testing; the benchmark shows $wa.UseClaimsAuthentication = 1; $wa.Update()).'

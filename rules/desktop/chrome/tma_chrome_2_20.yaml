@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.20
+title: Ensure 'Allow Web Authentication requests on sites with broken TLS certificates' Is Disabled
+description: 'This policy setting controls the WebAuthn API and its interaction with sites that have a broken TLS certificate. It can be configured to either: - Disabled (0): Do not allow WebAuthn API requests on sites with broken TLS certificates. - Enabled (1): Allow WebAuthn API requests on sites with broken TLS certificates. Rationale: Setting this policy will block the ability to authenticate to any website that does not have a valid TLS certificate since the identity of the site cannot be verified. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:AllowWebAuthnWithBrokenTlsCerts (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.20 Ensure 'Allow Web Authentication requests on sites with broken TLS certificates' Is Disabled
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''AllowWebAuthnWithBrokenTlsCerts'' -ErrorAction SilentlyContinue).''AllowWebAuthnWithBrokenTlsCerts''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'AllowWebAuthnWithBrokenTlsCerts' -Value 0 -PropertyType DWord -Force | Out-Null

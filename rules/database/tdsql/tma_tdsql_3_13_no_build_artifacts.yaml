@@ -1,0 +1,17 @@
+id: TMA-TDSQL-3.13
+title: Ensure Build and Deployment Artifacts Are Removed from Production
+description: 'Build artifacts and development-time files should not exist on production servers: Build directory (build/) and its temporary build scripts Source code directory (src/) Version control directory (.git) Test scripts and test data The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql). Counts build directories, .git directories, setenv.sh, C/C++ sources and CMakeLists.txt under the installation; production should have none.'
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- hardening
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.13 Ensure Build and Deployment Artifacts Are Removed from Production
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_HOME:-/data/tdsql}"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_HOME:-/data/tdsql}"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" \( -type d \( -name build -o -name .git \) -o -name setenv.sh -o -name '*.cpp' -o -name '*.h' -o -name CMakeLists.txt \) -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove build and source artifacts from production nodes (e.g. <tdsql>/build, <tdsql>/src, <tdsql>/.git, CMakeLists.txt, Makefile) after taking a backup and confirming they are not used at runtime.

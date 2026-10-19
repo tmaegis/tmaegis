@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-3.1.3
+title: Forbid Dial in Access
+description: Dial in access should not be used on sensitive routers. Some JUNOS routers support the use of a dial in modem connection for Telnet/SSH administration of the router from a remote connection over the telephone network. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 3.1.3 Forbid Dial in Access
+audit:
+  type: config_regex
+  pattern: (?m)^set interfaces dl\d+ [^\n]*\bincoming-map\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have configured a dialer interface to accept incoming calls, you should disable it using the following commands from the hierarchy (where n indicates the interface number);
+    delete interfaces interface dl <n>

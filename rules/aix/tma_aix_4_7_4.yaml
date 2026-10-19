@@ -1,0 +1,17 @@
+id: TMA-AIX-4.7.4
+title: Ensure logintimeout is configured
+description: 'Defines the number of seconds during which the password must be typed at login. In setting the logintimeout attribute, a password must be entered within a specified time period. Audit: reads `lssec -f /etc/security/login.cfg -s usw -a logintimeout`.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.7.4 Ensure logintimeout is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/login.cfg -s usw -a logintimeout 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*logintimeout=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 1 ] && [ "$v" -le 30 ]; then echo compliant; else echo "logintimeout=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/login.cfg -s usw -a logintimeout=30

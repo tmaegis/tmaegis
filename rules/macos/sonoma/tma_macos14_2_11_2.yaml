@@ -1,0 +1,43 @@
+id: TMA-MACOS14-2.11.2
+title: Audit Touch ID
+description: Apple has integrated Touch ID with macOS and allows fingerprint use for many common operations. All use of Touch ID requires the presence of a password and the use of that password after every reboot, or when more than 48 hours has elapsed since the device was last unlocked. Touch ID is not a password replacement. The use of Touch ID can, however, make the use of passwords more secure for authorized users with physical access to a Mac. Normal day-to-day work operations can eliminate the use of console password entry unless a reboot is required other than on Monday morning. The infrequency of password screen unlock can enable a more complicated pass phrase that is seldom used. When Touch ID is used it remediates the risk of shoulder surfing (including video surveillance) to capture console credentials. There have been many reported shoulder surfing password captures on iOS devices. Rep...
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.11.2 Audit Touch ID
+audit:
+  type: command
+  command: "s=$(/usr/sbin/sysadminctl -screenLock status 2>&1) || exit 1\np=$(/usr/bin/osascript -l JavaScript <<'EOS'\nfunction run() {\n  let pref1 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.screensaver').objectForKey('askForPassword'))\n  let pref2 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.screensaver').objectForKey('askForPasswordDelay'))\n  if ( pref1 == 1 && pref2 <= 5 ) {\n    return(\"true\")\n  } else {\n    return(\"false\")\n  }\n}\nEOS\n)\nif printf '%s' \"$s\" | /usr/bin/grep -qE 'screenLock delay is (immediate|5 seconds)' || [ \"$p\" = true ]; then echo compliant; else echo \"$s\"; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.screensaver" 'askForPassword' -int 1
+    /usr/bin/defaults write "/Library/Preferences/com.apple.screensaver" 'askForPasswordDelay' -int 0
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.screensaver" 'askForPassword' -int 1; true
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.screensaver" 'askForPasswordDelay' -int 0; true
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to set Touch ID to your organization's requirements: 1. Open System Settings 2. Select Touch ID & Password 3. Set the Touch ID settings to your organization's requirements Terminal Method: For each user, run the following commands to set Touch ID to your organization's requirements: Use this command for Touch ID to unlock the system. Use 0 to disable unlock or 1 to enable unlock: % /usr/bin/sudo -u <username> /usr/bin/bioutil -w -u <0,1> Use this command for Touch ID to use Apple Pay. Use 0 to disable Apple Pay or 1 to enable Apple Pay: % /usr/bin/sudo -u <username> /usr/bin/bioutil -w -a <0,1> Use this command to set the timeout at the system level: % /usr/bin/sudo usr/bin/bioutil -w -s -o <value≤172800> example: % /usr/bin/sudo -u <username> /usr/bin/bioutil -w -u 1 % /usr/bin/sudo -u <username> /usr/bin/bioutil -w -a 1 % /usr/bin/sudo usr/bin/bioutil -w -s -o 86400 Note: The -s notates a system configuration and does not need to be ran for each user."

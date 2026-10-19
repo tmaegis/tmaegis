@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.16
+title: Check for Duplicate UIDs
+description: 'Although the useradd program will not let you create a duplicate User ID (UID), it is possible for an administrator to manually modify passwd and change the UID field. Users must be assigned unique UIDs for accountability and to ensure appropriate access protections. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.16 Check for Duplicate UIDs
+audit:
+  type: command
+  command: command -v logins >/dev/null 2>&1 || exit 1; out=$( { logins -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if there exists any users who share a common UID, and work with those users to determine the best course of action in accordance with site policy.

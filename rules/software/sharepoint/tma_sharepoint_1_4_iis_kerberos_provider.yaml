@@ -1,0 +1,16 @@
+id: TMA-SHAREPOINT-1.4
+title: Ensure that the underlying Internet Information Services (IIS) Authentication module is set to use Kerberos as its Authentication Provider
+description: The Kerberos protocol is a more secure protocol than NTLM and is based on ticketing. In this scheme, a user provides a valid user name and password to an authentication server. Then, the authentication server grants the user a ticket. The ticket can be used on the network to request network resources. Manual review.
+target: sharepoint
+level: 1
+severity: medium
+tags:
+- sharepoint
+- authentication
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 1.4 Ensure that the underlying Internet Information Services (IIS) Authentication module is set to use Kerberos as its Authentication Provider
+audit:
+  type: manual
+  command: For each SharePoint IIS site check the NTAuthenticationProviders / Windows Authentication providers (IIS Manager > Authentication > Windows Authentication > Providers, or appcmd/adsutil on legacy IIS). Verify Negotiate is listed (Negotiate,NTLM) so Kerberos is used; NTLM only (the default) is non-compliant.
+remediation:
+  type: iac_patch
+  command: Set the Windows Authentication providers of each SharePoint site to Negotiate,NTLM (IIS Manager > Authentication > Windows Authentication > Providers, or adsutil set w3svc/<id>/root/NTAuthenticationProviders Negotiate,NTLM) and register the required SPNs.

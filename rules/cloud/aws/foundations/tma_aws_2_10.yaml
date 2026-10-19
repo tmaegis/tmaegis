@@ -1,0 +1,20 @@
+id: TMA-AWS-2.10
+title: Ensure multi-factor authentication (MFA) is enabled for all IAM users that have a console password
+description: Multi-Factor Authentication (MFA) adds an extra layer of authentication assurance beyond traditional credentials. With MFA enabled, when a user signs in to the AWS Console, they are prompted for their username and password as well as an authentication code from their physical or virtual MFA device. It is recommended that MFA be enabled for all IAM users that have a console password. Enabling MFA increases security for console access by requiring the authenticating principal to possess a device that generates a time-sensitive authentication code, in addition to their credentials.
+target: aws
+level: 1
+severity: high
+tags:
+- auth
+- aws
+- cloud
+- iam
+- mfa
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.10 Ensure multi-factor authentication (MFA) is enabled for all IAM users that have a console password
+audit:
+  type: manual
+  command: 'Perform the following to determine if a MFA device is enabled for all IAM users having a console password: From Console: 1. Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/iam 2. In the left pane, select Users 3. If the MFA or Password age columns are not visible, click the gear icon in the upper right corner and enable them 4. Ensure that for each user where the Password age column shows a value, the MFA column shows Virtual, U2F Security Key, or Hardware. From Command Line: 1. Run the following command: aws iam generate-credential-report aws iam get-credential-report --query ''Content'' --output text | base64 -d | cut -d, -f1,4,8 2. The output of this command will produce a table similar to the following: user,password_enabled,mfa_active elise,false,false brandon,true,true rakesh,false,false helene,false,false paras,true,true anitha,false,false 3. For any column having password_enabled set to true , ensure mfa_active is also
+    set to true.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to enable MFA: From Console: 1. Sign in to the AWS Management Console and open the IAM console at ''https://console.aws.amazon.com/iam/'' 2. In the left pane, select Users. 3. Select the IAM user 4. Choose the Security credentials tab 5. Under Multi-factor authentication (MFA), select Assign MFA device 6. Select Virtual MFA device (or hardware/security key as applicable), then choose Continue 7. Configure the MFA device by: - Scanning the QR code, or - Entering the secret key manually 8. Enter two consecutive authentication codes 9. Select Assign MFA'

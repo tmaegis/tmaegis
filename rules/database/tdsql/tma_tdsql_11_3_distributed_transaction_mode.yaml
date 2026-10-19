@@ -1,0 +1,17 @@
+id: TMA-TDSQL-11.3
+title: Ensure the Distributed Transaction Mode Is Securely Configured
+description: TDSQL supports multiple distributed transaction modes, of which XA_TRANSACTION mode provides cross-shard ACID guarantees. Runs the mysql client against the SQLEngine (compute node) selected by TDSQL_SQLENGINE_OPTS (falls back to TDSQL_MYSQL_OPTS); keep the password in ~/.my.cnf or a login path.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- transactions
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 11.3 Ensure the Distributed Transaction Mode Is Securely Configured
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_SQLENGINE_OPTS:-${TDSQL_MYSQL_OPTS:-}} -NBe "SHOW GLOBAL VARIABLES LIKE 'tdsql_transaction_mode'" 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | awk -F'\t' '$1 == "tdsql_transaction_mode" {print toupper($2)}'); case "$v" in XA_TRANSACTION) echo compliant;; *) echo "value '$v'";; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set { "Name": "tdsql_transaction_mode", "value": "XA_TRANSACTION" } through the OSS management platform.'

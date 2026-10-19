@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-1.7
+title: Ensure Encryption at Rest Keys Are Managed by an External KMS and Retrieved at Startup
+description: CockroachDB supports the use of external key management systems (KMS), such as HashiCorp Vault, to securely manage and deliver encryption keys used for encryption at rest. External key managers provide a centralized and auditable way to store and rotate keys and supply them dynamically to CockroachDB at startup.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- encryption
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 1.7 Ensure Encryption at Rest Keys Are Managed by an External KMS and Retrieved at Startup
+audit:
+  type: manual
+  command: 'Run ps -ef | grep -- "--enterprise-encryption": every encrypted store must have --enterprise-encryption=path=...,key=...,old-key=...,rotation-period=... Check the systemd unit and wrapper scripts (grep -Ri vault /etc/cockroach /etc/systemd/system) to confirm the store key is fetched from an external KMS (e.g. Vault) at startup rather than kept on the data volume.'
+remediation:
+  type: iac_patch
+  command: '1. Deploy or connect to a supported key management system: Such as HashiCorp Vault, AWS KMS, or another trusted external provider. 2. Configure the Systemd Service to enable encryption: Edit the service file at /etc/systemd/system/cockroach.service.'

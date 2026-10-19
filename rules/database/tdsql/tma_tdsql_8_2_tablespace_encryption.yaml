@@ -1,0 +1,16 @@
+id: TMA-TDSQL-8.2
+title: Ensure InnoDB Tablespace Encryption Is Enabled for Sensitive Tables
+description: TDSQL supports per-table InnoDB transparent encryption through ENCRYPTION='Y'. Every table in the organization's approved sensitive-data inventory must be encrypted. The default algorithm for international deployments is AES.
+target: tdsql
+level: 2
+severity: high
+tags:
+- tdsql
+- encryption
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 8.2 Ensure InnoDB Tablespace Encryption Is Enabled for Sensitive Tables
+audit:
+  type: manual
+  command: '1. Obtain the approved inventory of schemas and tables containing sensitive data. 2. Query those tablespaces: SELECT NAME, ENCRYPTION, ENCRYPTION_ALGORITHM FROM information_schema.INNODB_TABLESPACES WHERE NAME IN (''schema1/table1'', ''schema2/table2''); SHOW GLOBAL VARIABLES LIKE ''innodb_encryption_algorithm''; Confirm every in-scope table has ENCRYPTION = ''Y'' and algorithm AES.'
+remediation:
+  type: iac_patch
+  command: 'Ensure 8.1 is satisfied, then create or alter each sensitive table through the approved change process: CREATE TABLE schema_name.sensitive_table (...) ENCRYPTION=''Y''; ALTER TABLE schema_name.existing_sensitive_table ENCRYPTION=''Y''; Set innodb_encryption_algorithm to AES through Instance Management -> Parameter Configuration -> Parameter Settings when required.'

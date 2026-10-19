@@ -1,0 +1,41 @@
+id: TMA-ALMA9-5.4.1.6
+title: Ensure all users last password change date is in the past
+description: All users should have a password change date in the past.
+target: linux
+os_family:
+- almalinux-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS AlmaLinux OS 9 Benchmark v3.0.0 - 5.4.1.6
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n while IFS= read -r l_user; do\n l_change_raw=$(chage --list \"$l_user\" | grep '\"'\"'^Last password change'\"'\"' | cut - d: -f2 | tr -d '\"'\"' '\"'\"')\n [ \"$l_change_raw\" = \"never\" ] && continue\n l_change=$(date -u -d \"$l_change_raw\" +%s 2>/dev/null) || continue\n if [[ \"$l_change\" -gt \"$(date +%s)\" ]]; then\n echo \"User: \\\"$l_user\\\" last password change was \\\"$l_change_raw\\\"\"\n fi\n done < <(awk -F: '\"'\"'$2~/^\\$.+\\$/{print $1}'\"'\"' /etc/shadow)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    today=$(date +%F)
+    awk -F: '$2 ~ /^\$.+\$/ {print $1}' /etc/shadow | while read -r u; do
+      l=$(chage --list "$u" 2>/dev/null | sed -n 's/^Last password change[^:]*: //p')
+      case "$l" in never|"") continue;; esac
+      [ "$(date -d "$l" +%s 2>/dev/null || echo 0)" -gt "$(date +%s)" ] && chage -d "$today" "$u"
+    done
+    true
+  guidance: "Investigate any users with a password change date in the future and correct them. Locking the account, expiring the password, or resetting the password manually may be appropriate. Examples Reset last change date to today for a single user: # chage -d \"$(date +%Y-%m-%d)\" <user> Force password change on next login (recommended companion): # chage -d 0 <user>"

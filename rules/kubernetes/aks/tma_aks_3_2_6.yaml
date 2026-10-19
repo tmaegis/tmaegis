@@ -1,0 +1,17 @@
+id: TMA-AKS-3.2.6
+title: Ensure that the kubelet eventRecordQPS setting is configured to a level that ensures appropriate event capture.
+description: In AKS, eventRecordQPS is the worker-node kubelet setting that controls the maximum rate at which the kubelet can create Kubernetes events. These events provide operational visibility into node and pod activity, and the setting helps determine whether the kubelet records that activity at a rate that matches the workload running on the node. An appropriate value is one that supports expected event volume without excessive throttling. Reported as a manual review because it needs site-specific judgement.
+target: aks
+level: 2
+severity: low
+tags:
+- aks
+- worker-node
+- kubelet
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.2.6 Ensure that the kubelet eventRecordQPS setting is configured to a level that ensures appropriate event capture.
+audit:
+  type: manual
+  command: 'On each node (or in a kubectl debug node/$NODE_NAME shell): Run the following command on each node to find the appropriate kubeconfig value: ps -efww | grep ''[k]ubelet'' | grep -- ''--event-qps'' The command line output should show the --event-qps=0 or set to another appropriate numberic value Audit Method 2: If using the api configz endpoint consider searching for the status of eventRecordQPS by extracting the live configuration from the nodes running kubelet. Set the local proxy port and the following variables and provide proxy port number and node name.'
+remediation:
+  type: iac_patch
+  command: 'Remediation: There is no documented Microsoft-supported setting that lets you directly change eventRecordQPS through the standard AKS kubelet customization subset. Because of that, remediation should begin with confirming the effective running value on the worker node and determining whether there is an actual event-capture problem, rather than assuming a file-level mismatch requires correction. Manual edits to node-local kubelet files are not the preferred AKS approach because they fall outside the managed configuration model and may not persist through lifecycle operations such as node replacement, upgrade, scale, or reboot. If the value appears incorrect because of prior customization or node drift, the cleanest supported path is to return the node pool to AKS-managed behavior, typically by recreating the affected node pool.'

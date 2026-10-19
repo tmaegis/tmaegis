@@ -1,0 +1,19 @@
+id: TMA-AZURE-DB-5.9
+title: Ensure server parameter 'tls_version' is set to 'TLSv1.2' (or higher) for MySQL flexible server
+description: Ensure tls_version on MySQL flexible servers is set to use TLS version 1.2 or higher. The Secure Sockets Layer (SSL) protocol encrypts network traffic transiting between server and client. Using only the most recent versions of SSL protocols (TLS version 1.2 and higher) eliminates susceptibility to known exploited vulnerabilities of outdated versions of TLS. If TLS 1.2 does not provide additional granular configuration options for supported cipher suites, there's a chance that default ciphers which employ Cipher Block Chaining (CBC) mode may be enabled which would introduce Padding Oracle types of vulnerabilities. TLS 1.3 does not support CBC mode ciphers by default and by default supports GCM ciphers which include an extra authentication step during the clear text to cipher text encryption process. TLS version 1.3 is preferable where it is possible to implement. Versions 1.0 and 1.1...
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- database
+- tls
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 5.9 Ensure server parameter 'tls_version' is set to 'TLSv1.2' (or higher) for MySQL flexible server
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Login to Azure Portal using https://portal.azure.com. 2. Go to Azure Database for MySQL flexible servers. 3. For each database, under Settings, click Server parameters. 4. In the filter bar, type tls_version. 5. Ensure tls_version is set to TLSv1.2 (or higher). Audit from Azure CLI Ensure the value of the below command contains TLSv1.2 or higher, and does not contain anything lower than TLSv1.2: az mysql flexible-server parameter show --resource-group <resourceGroup> -- server-name <serverName> --name tls_version Example output: { "allowedValues": "TLSv1,TLSv1.1,TLSv1.2", "dataType": "Set", "defaultValue": "TLSv1.2", "description": "Which protocols the server permits for encrypted connections. By default, TLS 1.2 is enforced", "id": "/subscriptions/<subscriptionId>/resourceGroups/<resourceGroupName>/providers /Microsoft.DBforMySQL/flexibleServers/<serverName>/configurations/tls_version ", "isConfigPendingRestart": "False", "isDynamicConfig": "False",
+    "isReadOnly": "False", "name": "tls_version", "resourceGroup": "<resourceGroupName>", "source": "system-default", "systemData": null, "type": "Microsoft.DBforMySQL/flexibleServers/configurations", "value":...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Login to Azure Portal using https://portal.azure.com. 2. Go to Azure Database for MySQL flexible servers. 3. For each database, under Settings, click Server parameters. 4. In the filter bar, type tls_version. 5. Click on the VALUE dropdown next to tls_version, and check TLSv1.2 (or higher). 6. Uncheck anything lower than TLSv1.2. 7. Click Save. Remediate from Azure CLI Use the below command to update MySQL flexible servers to use TLS version 1.2: az mysql flexible-server parameter set --resource-group <resourceGroup> -- server-name <serverName> --name tls_version --value TLSv1.2 Remediate from PowerShell Use the below command to update MySQL flexible servers to use TLS version 1.2: Update-AzMySqlFlexibleServerConfiguration -ResourceGroupName <resourceGroup> -ServerName <serverName> -Name tls_version -Value TLSv1.2'

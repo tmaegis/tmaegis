@@ -1,0 +1,20 @@
+id: TMA-MCP-5.4.1
+title: Ensure path traversal and arbitrary filesystem access are prevented
+description: The server normalizes and canonicalizes every filesystem path supplied as a tool or resource parameter before any access-control check or filesystem operation. Canonicalization resolves symbolic links, for example os.path.realpath() in Python or fs.realpathSync() in Node.js, before comparing the resolved path against the configured allowlist of approved directories. Symlink bypass and ../ directory traversal are two independent attack paths, and each is guarded. The read is rejected unless the resolved real path is the approved root itself or a descendant of it, compared by path component and not by string prefix, so an approved root such as /srv/approved does not admit a sibling such as /srv/approved_evil. Every rejected attempt is logged as a security event. Without canonicalization, a ../ sequence or a symlink can resolve to a file outside the approved scope while passing a naive c...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- access-control
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.4.1 Ensure path traversal and arbitrary filesystem access are prevented
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_5_4_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 5.4.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure the server's path-handling middleware to canonicalize every supplied path, resolving symlinks and ../ via realpath or realpathSync, before any access check. Reject the read unless the resolved real path is the approved root or a descendant of it, compared by path component rather than by string prefix, and log rejected attempts as security events. Set the approved directories in server configuration. For defense in depth, add kernel-enforced confinement that resolves beneath the root without following symlinks, and apply the OS-level isolation Recommendations in Section 9. This is server middleware, so there is no portable command for the canonicalization logic itself.

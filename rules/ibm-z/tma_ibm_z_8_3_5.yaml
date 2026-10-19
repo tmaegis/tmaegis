@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.3.5
+title: Ensure that access to JESJOBS JOBCLASS resources is controlled
+description: Resources with a JOBCLASS high-level qualifier in the JESJOBS resource class control the use of the job classes. Attributes of a job class such as bypass label processing (BLP) need to be restricted to appropriate users. Additionally, job classes can be associated with batch initiators that are reserved for appropriate applications.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.3.5 Ensure that access to JESJOBS JOBCLASS resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY and JESJOBS appear. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY and JESJOBS appear. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the JESJOBS entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no JOBCLASS prefixed entries Request reports generated using ... (full steps: CIS section 8.3.5)'
+remediation:
+  type: iac_patch
+  command: 'To activate a class use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) SETROPTS CLASSACT(JESJOBS) To enable generic profile checking for the a class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) SETROPTS GENERIC(JESJOBS) To RACLIST the a class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To enable enforcement of JOBCLASS security use the RACF RDEFINE and SETROPTS commands: RDEFINE FACILITY JES.JOBCLASS.OWNER + DATA(''ENFORCE JESJOBS JOBCLASS PROFILES FOR JOB OWNERS'') RDEFINE FACILITY JES.JOBCLASS.SUBMITTER + DATA(''ENFORCE JESJOBS JOBCLASS PROFILES FOR JOB SUBMITTERS'') SETROPTS REFRESH RACLIST(FACILITY) To create a JESJOBS profile use the RACF RDEFINE command: RDEFINE JESJOBS JOBCLASS.** + UACC(READ) + AUDIT(ALL(READ)) + DATA(''CATCH-ALL PROFILE'') To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER command: RALTER JESJOBS JOBCLASS.** + UACC(READ) + AUDIT(ALL(READ)) + NOWARNING To remove a non-compliant
+    access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(JESJOBS) + DELETE ID(<non-compliant>) To remove a non-compliant GAC entry you need to use both RACF RALTER and ... (see CIS section 8.3.5)'

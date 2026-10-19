@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.140
+title: Ensure 'Specify if online OCSP/CRL checks are required for local trust anchors' is set to 'Enabled'
+description: 'This policy setting controls whether online certificate revocation checks (OCSP/CRL) are required and if a check online is not possible the certificate will be treated as though it is revoked. The recommended state for this is: Enabled. Rationale: Certificates should always be validated, not doing so could potentially allow a revoked certificate to be used to give a false sense of a secure connection. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:RequireOnlineRevocationChecksForLocalAnchors (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.140 Ensure 'Specify if online OCSP/CRL checks are required for local trust anchors' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''RequireOnlineRevocationChecksForLocalAnchors'' -ErrorAction SilentlyContinue).''RequireOnlineRevocationChecksForLocalAnchors''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RequireOnlineRevocationChecksForLocalAnchors' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,18 @@
+id: TMA-SHAREPOINT-6.2
+title: Ensure SharePoint is configured with HTTPS connections
+description: By default, communication between Web servers and service applications within a farm takes place by using HTTP with a binding to TCP 32843. Configurations should be changed to enable SSL/TLS based HTTPS connections with a binding to TCP port 32844 instead. Prints the number of web service applications whose default endpoint listens on plain http (expected 0). Service applications without an HTTP-based endpoint are skipped. Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: medium
+tags:
+- sharepoint
+- tls
+- service-applications
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 6.2 Ensure SharePoint is configured with HTTPS connections
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $bad = @(Get-SPServiceApplication -ErrorAction Stop | Where-Object { $_.PSObject.Properties['DefaultEndpoint'] -and $null -ne $_.DefaultEndpoint } | Where-Object { @($_.DefaultEndpoint.ListenUris | Where-Object { $_.Scheme -eq 'http' }).Count -gt 0 }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-SPServiceApplication -Identity <service application> -DefaultEndpoint https (or Central Administration > Service Applications > select the application > Publish > choose https).

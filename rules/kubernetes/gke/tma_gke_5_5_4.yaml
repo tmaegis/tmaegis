@@ -1,0 +1,19 @@
+id: TMA-GKE-5.5.4
+title: Enroll GKE clusters in release channels for automated version management
+description: Enroll GKE clusters in an appropriate release channel to automate version management and align cluster upgrades with the organization’s required balance of feature availability, upgrade predictability, and production stability. Release channels let teams choose how quickly clusters receive supported Kubernetes versions, patches, security fixes, and GKE updates without manually selecting every version. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 1
+severity: low
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.5.4 Enroll GKE clusters in release channels for automated version management
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(releaseChannel.channel)') || exit 1
+    if case "$v" in REGULAR|STABLE) true;; *) false;; esac; then echo compliant; else echo "noncompliant: releaseChannel.channel=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enroll the existing GKE cluster in an approved release channel rather than recreating the cluster. Use regular or stable unless the organization has approved another channel for a documented use case. Before changing the release channel, confirm that the cluster control plane version is available in the target channel and configure maintenance windows or exclusions if upgrade timing needs to be controlled. gcloud container clusters update $CLUSTER_NAME \ --location=$LOCATION \ --project=$PROJECT_ID \ --release-channel=$RELEASE_CHANNEL After remediation, rerun the audit command and verify that .releaseChannel.channel returns the approved channel. For clusters enrolled in a release channel, node auto-upgrade is managed as part of the GKE release channel upgrade process, so maintenance policies should be reviewed to reduce workload disruption during automatic upgrades.

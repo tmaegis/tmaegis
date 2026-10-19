@@ -1,0 +1,24 @@
+id: TMA-APACHE-5.3
+title: Ensure Options for Other Directories Are Minimized
+description: The Apache Options directive allows for specific configuration of options, including execution of CGI, following symbolic links, server side includes, and content negotiation. No Options directive inside a <Directory> block may enable Includes, IncludesNOEXEC or All. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file.
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- features
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 5.3 Ensure Options for Other Directories Are Minimized
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk '/^<[Dd]irectory/{dd=1; next} /^<\/[Dd]irectory>/{dd=0; next} dd && tolower($1)=="options"{for(i=2;i<=NF;i++){t=tolower($i); if(t~/^\+?includes(noexec)?$/
+    || t~/^\+?all$/) bad=1}} END{print bad?"noncompliant":"compliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Remove Includes (and All) from Options in every <Directory> block; use only the options each directory needs. Then run apachectl configtest and reload Apache.

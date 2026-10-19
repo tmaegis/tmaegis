@@ -1,0 +1,35 @@
+id: TMA-SLES15-5.3.2.4.1
+title: Ensure pam_unix does not include nullok
+description: The nullok argument overrides the default action of pam_unix.so to not permit the user access to a service if their official password is blank.
+target: linux
+os_family:
+- sles-15
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 15 Benchmark v2.0.1 - 5.3.2.4.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v pam-config >/dev/null 2>&1 || { echo "step1: pam-config not installed"; return 1; }; o=$(bash -c ''pam-config --query --unix --unix-nullok'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v pam-config >/dev/null 2>&1 && pam-config -d --unix-nullok; true
+  guidance: "Run the following command to delete the nullok argument from the pam_unix.so module: # pam-config -d --unix-nullok"

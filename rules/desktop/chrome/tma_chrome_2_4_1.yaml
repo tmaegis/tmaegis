@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.4.1
+title: 'Ensure ''Supported authentication schemes'' is set to ''Enabled: ntlm, negotiate'''
+description: 'Specifies which HTTP authentication schemes are supported by Google Chrome. Disabled (0): Allows all supported authentication schemes. The recommended state for this setting is: Enabled with the value of ntlm, negotiate Rationale: Possible values are ''basic'', ''digest'', ''ntlm'' and ''negotiate''. Basic and Digest authentication do not provide sufficient security and can lead to submission of user passwords in plaintext or minimal protection (Integrated Authentication is supported for negotiate and ntlm challenges only). Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:AuthSchemes (REG_SZ); compliant when it is ''ntlm,negotiate'' (whitespace-insensitive). Remediation writes ntlm,negotiate locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.4.1 Ensure ''Supported authentication schemes'' is set to ''Enabled: ntlm, negotiate'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''AuthSchemes'' -ErrorAction SilentlyContinue).''AuthSchemes''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and ("$v" -replace ''\s'','''') -eq ''ntlm,negotiate'')) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'AuthSchemes' -Value 'ntlm,negotiate' -PropertyType String -Force | Out-Null

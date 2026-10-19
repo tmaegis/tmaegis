@@ -1,0 +1,19 @@
+id: TMA-CASSANDRA-2.2
+title: Ensure that authorization is enabled for Cassandra databases
+description: Authorization is pluggable in Cassandra and is configured using the authorizer setting in cassandra.yaml. Cassandra ships with two options included in the default distribution, AllowAllAuthenticator and CassandraAuthorizer. The default, AllowAllAuthenticator performs no checking which grants all permissions to all roles. Checks /etc/cassandra/cassandra.yaml (package install; SKIP when it does not exist).
+target: cassandra
+level: 1
+severity: critical
+tags:
+- cassandra
+- authorization
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 2.2 Ensure that authorization is enabled for Cassandra databases
+audit:
+  type: file_regex
+  file_path: /etc/cassandra/cassandra.yaml
+  pattern: (?m)^authorizer:[ \t]*(?:\n(?:[ \t]*(?:#[^\n]*)?\n|[ \t]+[^\n]*\n)*?[ \t]+class_name[ \t]*:[ \t]*)?['\x22]?(?:[\w.]*\.)?(?:CassandraAuthorizer)\b
+  requires_file:
+  - /etc/cassandra/cassandra.yaml
+remediation:
+  type: iac_patch
+  command: 'Set ''authorizer: CassandraAuthorizer'' in cassandra.yaml, rolling-restart the nodes, then grant least-privilege permissions to roles.'

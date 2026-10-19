@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-16.2.2
+title: Ensure that 'Public Network Access' is 'Disabled' for storage accounts
+description: Disable public network access to prevent exposure to the internet and reduce the risk of unauthorized access. Use private endpoints to securely manage access within trusted networks. Disallowing public network access for a storage account overrides the public access settings for individual containers in that storage account. Disabling public network access improves security by ensuring that a storage account is not exposed on the public internet. The default network configuration for a storage account permits a user with appropriate permissions to configure public network access to containers and blobs in a storage account. Keep in mind that public access to a container is always turned off by default and must be explicitly configured to permit anonymous requests. It grants read-only access to these resources without sharing the account key, and without requiring a shared access signa...
+target: azure
+level: 2
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- network
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.2.2 Ensure that 'Public Network Access' is 'Disabled' for storage accounts
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage Accounts. 2. For each storage account, under the Security + networking section, click Networking. 3. Ensure the Public network access setting is set to Disabled. Audit from Azure CLI Ensure publicNetworkAccess is Disabled az storage account show --name <storage-account> --resource-group <resource- group> --query "{publicNetworkAccess:publicNetworkAccess}" Audit from PowerShell For each Storage Account, ensure PublicNetworkAccess is Disabled Get-AzStorageAccount -Name <storage account name> -ResourceGroupName <resource group name> |select PublicNetworkAccess Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: b2982f36-99f2-4db5-8eff-283140c09693 - Name: ''Storage accounts
+    should disable public network access'''
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal First, follow Microsoft documentation and create shared access signature tokens for your blob containers. Then, 1. Go to Storage Accounts. 2. For each storage account, under the Security + networking section, click Networking. 3. Set Public network access to Disabled. 4. Click Save. Remediate from Azure CLI Set 'Public Network Access' to Disabled on the storage account az storage account update --name <storage-account> --resource-group <resource-group> --public-network-access Disabled Remediate from PowerShell For each Storage Account, run the following to set the PublicNetworkAccess setting to Disabled Set-AzStorageAccount -ResourceGroupName <resource group name> -Name <storage account name> -PublicNetworkAccess Disabled

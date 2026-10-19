@@ -1,0 +1,16 @@
+id: TMA-APACHE-5.4
+title: Ensure Default HTML Content Is Removed
+description: 'Apache installations have default content that is not needed or appropriate for production use. The primary function for this sample content is to provide a default web site, provide user manuals or to demonstrate special features of the web server. All content that is not needed should be removed. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- features
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 5.4 Ensure Default HTML Content Is Removed
+audit:
+  type: manual
+  command: 'Perform the following to determine if the recommended state is implemented: 1. Verify the document root directory and the configuration files do not provide for default index.html or welcome page, 2. Ensure the Apache User Manual content is not installed by checking the configuration files for manual location directives. 3. Verify the Apache configuration files do not have the Server Status handler configured. 4. Verify that the Server Information handler is not configured. 5. Verify that any other handler configurations such as perl-status is not enabled.'
+remediation:
+  type: iac_patch
+  command: 'Review all pre-installed content and remove content which is not required. In particular look for the unnecessary content which may be found in the document root directory, a configuration directory such as conf/extra directory, or as a Unix/Linux package. 1. Remove the default index.html or welcome page if it is a separate package. If it is part of main Apache httpd package such as it is on Red Hat Linux, then comment out the configuration as shown below. Removing a file such as the welcome.conf, is not recommended as it may get replaced if the package is updated. # # This configuration file enables the default "Welcome" # page if there is no default index page present for # the root URL. To disable the Welcome page, comment # out all the lines below. # ## <LocationMatch "^/+$"\> ## Options -Indexes ## ErrorDocument 403 /error/noindex.html ## </LocationMatch\> 2.'

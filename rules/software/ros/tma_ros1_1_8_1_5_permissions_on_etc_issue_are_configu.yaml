@@ -1,0 +1,25 @@
+id: TMA-ROS1-1.8.1.5
+title: Ensure permissions on /etc/issue are configured
+description: The contents of the /etc/issue file are displayed to users prior to login for local terminals. The audit requires /etc/issue to be root:root with mode 644 or stricter. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: low
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.8.1.5 Ensure permissions on /etc/issue are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    [ -e /etc/issue ] || { echo '/etc/issue not found'; exit 1; }
+    set -- $(stat -Lc '%a %u %g' /etc/issue) || exit 1
+    m=$((8#$1)); [ $((m & ~8#0644)) -eq 0 ] || { echo "/etc/issue mode $1 exceeds 0644"; exit 1; }
+    [ "$2" = 0 ] || { echo "/etc/issue uid $2"; exit 1; }
+    case " 0 " in *" $3 "*) echo compliant ;; *) echo "/etc/issue gid $3" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to set permissions on /etc/issue : # chown root:root /etc/issue # chmod u-x,go-wx /etc/issue'

@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.29
+title: Ensure 'Insecure Hashes in TLS Handshakes Enabled' Is Disabled
+description: 'This setting controls the ability for Google Chrome to allow legacy or insecure hashes during the TLS handshake. It can be configured to either: - Disabled (0): Do Not Allow Insecure Hashes in TLS Handshakes - Enabled (1): Allow Insecure Hashes in TLS Handshakes If the value for InsecureHashesInTLSHandshakesEnabled is not changed from the default, it will behave as if it is enabled. Rationale: Setting this policy to disabled will block Google Chrome from using insecure hashes. Using insecure, or legacy, hashes could allow sensitive data to be exposed. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:InsecureHashesInTLSHandshakesEnabled (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.29 Ensure 'Insecure Hashes in TLS Handshakes Enabled' Is Disabled
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''InsecureHashesInTLSHandshakesEnabled'' -ErrorAction SilentlyContinue).''InsecureHashesInTLSHandshakesEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'InsecureHashesInTLSHandshakesEnabled' -Value 0 -PropertyType DWord -Force | Out-Null

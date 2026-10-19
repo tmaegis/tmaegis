@@ -1,0 +1,17 @@
+id: TMA-M365-6.2.2
+title: Ensure mail transport rules do not whitelist specific domains
+description: 'Mail flow rules (transport rules) in Exchange Online can be configured to set the spam confidence level (SCL) of a message to -1, which bypasses spam and phishing filtering. When a rule applies this action to messages based on the sender''s domain, all mail from that domain is treated as trusted and skips anti-malware and anti-phishing evaluation regardless of message content. Whitelisting domains in transport rules bypasses regular malware and phishing scanning, which can enable an attacker to launch attacks against your users from a safe haven domain. Note: If an organization identifies a business need for an exception, the domain should only be whitelisted if inbound emails from that domain originate from a specific IP address. These exceptions should be documented and regularly reviewed.'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 6.2.2 Ensure mail transport rules do not whitelist specific domains
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Exchange admin center https://admin.exchange.microsoft.com 2. Click to expand Mail Flow and then select Rules. 3. Review each rule and ensure that a single rule does not contain both of these properties together: o Under Apply this rule if: Sender''s address domain portion belongs to any of these domains: ''<domain>'' o Under Do the following: Set the spam confidence level (SCL) to ''-1'' Note: Setting the spam confidence level to -1 indicates the message is from a trusted sender, so the message bypasses spam filtering. The recommendation fails if any external domain has a SCL of -1. To audit using PowerShell: 1. Connect to Exchange online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Get-TransportRule | Where-Object { $_.setscl -eq -1 -and $_.SenderDomainIs - ne $null } | ft Name,SenderDomainIs,SetSCL 3. Transport rules that fail the audit will be shown. If no output is shown, the recommendation passes. To pass,
+    all rules with SetSCL set to -1 must not include any domains in the SenderDomainIs property.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Exchange admin center https://admin.exchange.microsoft.com 2. Click to expand Mail Flow and then select Rules. 3. For each rule that sets the spam confidence level to -1 for a specific domain, select the rule and click Delete. To remediate using PowerShell: 1. Connect to Exchange online using Connect-ExchangeOnline. 2. To remove a specific non-compliant rule: Remove-TransportRule -Identity "RuleName" Note: If the rule serves a legitimate purpose beyond domain whitelisting, consider modifying it to remove the SenderDomainIs condition or the SetSCL -1 action rather than deleting it entirely.'

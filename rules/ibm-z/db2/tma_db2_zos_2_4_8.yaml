@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.4.8
+title: Secure SQLADM authority access
+description: The SQLADM authority includes certain system privileges that allow its holder to issue SQL EXPLAIN statements, execute the PROFILE commands, run the RUNSTATS and MODIFY STATISTICS utilities on all user databases, and execute stored procedures or functions and any packages that are executed within the routines.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.4.8 Secure SQLADM authority access
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check SQLADM authority access: SELECT GRANTEE, GRANTEETYPE FROM SYSIBM.SYSUSERAUTH WHERE SQLADMAUTH IN (''G'',''Y''); If PUBLIC has SQLADM access, follow the remediation steps. Review the access list to ensure that the grants are aligned with your organization''s access policies. For external security users: Issue the RACF RLIST command to list the profile that controls access to the SQLADM authority in the MDSNSM class. Examine the universal access (UACC) and user (USER) settings for the ... (full steps: CIS section 2.4.8)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the following SQL statement to revoke SQLADM access from PUBLIC: REVOKE SQLADM FROM PUBLIC; For external security users: Issue the RACF RALTER command to update the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

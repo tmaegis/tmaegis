@@ -1,0 +1,19 @@
+id: TMA-AZURE-DB-3.7
+title: Ensure that Cosmos DB Logging is Enabled
+description: Cosmos DB logs should be captured to track events relevant to auditing and diagnostics. Logging of changes, events, and information related to Cosmos DB provides a diagnostic tool and a forensic record of activity. An effective set of logs help provide integrity and availability to the service and contribute to the effectiveness of detective systems such as a SIEM.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- database
+- logging
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 3.7 Ensure that Cosmos DB Logging is Enabled
+audit:
+  type: manual
+  command: 'NOTE: This procedure assumes a Log Analytics Workspace or other logging destination already exists. Please see attached resources on this setup. Audit from Azure Portal 1. From Azure CosmosDB, select the database you wish to audit. 2. Scroll down in the left column and select > Monitoring. 3. Select Diagnostic Settings. 4. Determine if there are any diagnostic settings that are being sent to a logging location. You will need to open each listed and determine if allLogs under Category groups is checked. Audit from PowerShell 1. Get the CosmosDB accounts for a specific resource group. Repeat for each resource group as necessary. Get-AzCosmosDBAccount -ResourceGroupName <resource group name> 2. For each CosmosDB, determine which log categories are enabled for each account using the Id of each CosmosDB Account. Get-AzDiagnosticSetting -ResourceId <CosmosDB Account Id> 3. Within the output of the above command, ensure the log categories have Enabled set to true'
+remediation:
+  type: iac_patch
+  command: 'NOTE: This procedure assumes a Log Analytics Workspace or other logging destination already exists. Please see attached resources on this setup. Remediate from Azure Portal 1. From Azure CosmosDB, select the database you wish to audit. 2. Scroll down in the left column and select > Monitoring. 3. Select Diagnostic Settings. 4. Select + Add Diagnostic Setting 5. Enter your name for this setting in Diagnostic Setting Name. 6. Select allLogs under Category groups 7. Select Send to Log Analytics workspace or other logging solution under Destination details. 8. Select your Azure subscription, and your log analytics workspace, or other connection details depending on your logging solution. 9. Select Save in the top left corner. Remediate from PowerShell For each CosmosDB account out of compliance, enable the logging by running the following command: $categories = @( @{ Category="ControlPlaneRequests"; Enabled=$true; RetentionPolicy=@{ Enabled=$false; Days=0 } }, @{ Category="DataPlaneRequests";
+    Enabled=$true; RetentionPolicy=@{ Enabled=$false; Days=0 } }, @{ Category="MongoRequests"; Enabled=$true; RetentionPolicy=@{ Enabled=$false; Days=0 } }, @{ Category="SqlRequests"; Enabled=$true...'

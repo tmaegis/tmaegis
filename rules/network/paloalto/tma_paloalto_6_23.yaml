@@ -1,0 +1,24 @@
+id: TMA-PALOALTO-6.23
+title: Ensure that 'Cloud Inline Categorization' on URL Filtering profiles are enabled if 'Advanced Threat Prevention' is available
+description: 'Enable both ''Local Inline Categorization'' and ''Cloud Inline Categorization'' on URL Filtering profiles to evaluate suspicious web page contents in real-time to protect users against zero-day threats. PASS requires local-inline-cat yes and cloud-inline-cat yes on URL filtering profiles. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.23 Ensure that 'Cloud Inline Categorization' on URL Filtering profiles are enabled if 'Advanced Threat Prevention' is available
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles url-filtering (?:"[^"\n]*"|\S+) local-inline-cat yes[ \t]*$(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles url-filtering (?:"[^"\n]*"|\S+) cloud-inline-cat yes[ \t]*$|^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles url-filtering (?:"[^"\n]*"|\S+) cloud-inline-cat yes[ \t]*$(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles url-filtering (?:"[^"\n]*"|\S+) local-inline-cat yes[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles url-filtering <profile> local-inline-cat yes
+    set profiles url-filtering <profile> cloud-inline-cat yes
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > URL Filtering Go to Inline Categorization tab. Tick the checkbox for both Enable local inline categorization and Enable cloud inline categorization. Note that:
+    1. Firewall device certificate is used to authenticate to the Advanced Threat Prevention inline cloud analysis service. This step is required before 'Inline Cloud Analysis' can be used. Refer to reference for detailed guide.
+    2. 'Local Inline Categorization' can be enabled with just the URL Filtering license (no Advanced Threat Prevention is needed).

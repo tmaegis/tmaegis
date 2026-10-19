@@ -1,0 +1,33 @@
+id: TMA-ARUBA-CX-1.13
+title: Schedule Configuration Backup Job
+description: Create a job to periodically backup the configuration to a remote server. PASS requires a job that copies the running-config to a remote server and a schedule. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: low
+tags:
+- aruba-cx
+- backup
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.13 Schedule Configuration Backup Job
+audit:
+  type: config_regex
+  pattern: (?m)(?:^job \S+(?s:.*?)^[ \t]+\d+ cli copy running-config \S+(?s:.*?)^schedule \S+|^job \S+(?s:.*?)^schedule \S+(?s:.*?)^[ \t]+\d+ cli copy running-config \S+|^[ \t]+\d+ cli copy running-config \S+(?s:.*?)^job \S+(?s:.*?)^schedule \S+|^[ \t]+\d+ cli copy running-config \S+(?s:.*?)^schedule \S+(?s:.*?)^job \S+|^schedule \S+(?s:.*?)^job \S+(?s:.*?)^[ \t]+\d+ cli copy running-config \S+|^schedule \S+(?s:.*?)^[ \t]+\d+ cli copy running-config \S+(?s:.*?)^job \S+)
+remediation:
+  type: iac_patch
+  command: |-
+    job backup_config
+        1 cli copy running-config tftp://192.168.0.100/switch.cfg cli vrf mgmt
+    schedule backup_config
+        1 job backup_config
+        trigger every days 1 start 12:04 2024-03-18
+        enable
+    # CIS guidance:
+    Create a job to backup the configuration to a remote server
+    job backup_config
+    1 cli copy running-config
+    tftp://192.168.0.100/switch.cfg cli vrf mgmt Schedule the job to run periodically:
+    schedule backup_config
+    1 job backup_config
+    trigger every days 1 start 12:04
+    2024-03-18
+    enable
+    exit

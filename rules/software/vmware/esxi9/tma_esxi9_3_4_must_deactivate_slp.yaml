@@ -1,0 +1,36 @@
+id: TMA-ESXI9-3.4
+title: Host must deactivate SLP
+description: The Service Location Protocol (SLP) is used for the discovery and selection of network services in local area networks, which simplifies configuration by allowing computers to find necessary services automatically. The practice of deactivating SLP when not in use aligns with the principle of minimizing the attack surface by shutting down non-essential services. The audit runs /etc/init.d/slpd status and requires "not running". Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 3.4 Host must deactivate SLP
+audit:
+  type: command
+  command: |-
+    st=$(/etc/init.d/slpd status 2>&1)
+    case "$st" in *'not running'*) echo compliant ;; *running*) echo 'slpd is running' ;; *) echo "slpd status: $st"; exit 1 ;; esac
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -x /etc/init.d/slpd ] || exit 0
+    /etc/init.d/slpd stop; chkconfig slpd off 2>/dev/null; true
+  guidance: "1. Stop SLP if running: /etc/init.d/slpd stop Note: Confirm no operational dependency requires SLP before disabling it."

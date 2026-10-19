@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-4.4
+title: Enable Auditing of Process and Privilege Events
+description: 'The Solaris Audit service can be configured to record the use of privileges by processes running on the system. This will capture events such as the setting of UID and GID values, setting of privileges, as well as the use of functionality such as chroot(2). This recommendation will provide an audit trail that contains information related to the use of privileges by processes running on the system. The Solaris Audit service is used to provide a more centralized and complete window into activities such as these. Audit: each listed event must carry the cis class in /etc/security/audit_event.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- audit
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 4.4 Enable Auditing of Process and Privilege Events
+audit:
+  type: command
+  command: '[ -r /etc/security/audit_event ] || exit 1; r=compliant; for e in AUE_CHROOT AUE_SETREUID AUE_SETREGID AUE_FCHROOT AUE_PFEXEC AUE_SETUID AUE_NICE AUE_SETGID AUE_PRIOCNTLSYS AUE_SETEGID AUE_SETEUID AUE_SETPPRIV AUE_SETSID AUE_SETPGID; do awk -F: -v e="$e" ''$2==e && $4 ~ /(^|,)cis(,|$)/ {f=1} END {exit !f}'' /etc/security/audit_event || r="$e not assigned to the cis class"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enforce this setting, run the following commands to modify the /etc/security/audit_event file and add the cis audit class to the following audit events: # awk ''BEGIN{FS=":"; OFS=":"} {if ($2 ~ /AUE_CHROOT|AUE_SETREUID|AUE_SETREGID|AUE_FCHROOT|AUE_PFEXEC|AUE_SETUID|AUE_N ICE|AUE_SETGID|AUE_PRIOCNTLSYS|AUE_SETEGID|AUE_SETEUID|AUE_SETPPRIV|AUE_SETSI D|AUE_SETPGID/) $4=$4",cis";} {print} '' /etc/security/audit_event > /etc/security/audit_event.CIS # cp /etc/security/audit_event.CIS /etc/security/audit_event'

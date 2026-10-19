@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-6.1
+title: Ensure login via "local" UNIX Domain Socket is configured correctly
+description: A remote host login, via SSH, is arguably the most secure means of remotely accessing and administering the YugabyteDB server. Once connected to the YugabyteDB server, using the ysqlsh client, via UNIX DOMAIN SOCKETS, while using the peer authentication method is the most secure mechanism available for local database connections.
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- authentication
+reference: CIS YugabyteDB Benchmark v2.0.0 - 6.1 Ensure login via "local" UNIX Domain Socket is configured correctly
+audit:
+  type: manual
+  command: 'As the yugabyte OS user run ./bin/ysqlsh -U yugabyte -d yugabyte (should succeed), then as another OS user (su - user1) run the same command: it must fail (e.g. Peer authentication failed). Review local rules in --ysql_hba_conf_csv / pg_hba_file_rules: no trust for local connections other than the intended superuser path.'
+remediation:
+  type: iac_patch
+  command: 'Creation of a database account that matches the local account allows PEER authentication: # ./bin/ysqlsh -c "CREATE ROLE user1 WITH LOGIN;" CREATE ROLE Execute the following as the UNIX user account, the default authentication rules should now permit the login: # su - user1 # whoami user1 # ./bin/ysqlsh -d yugabyte yugabyte=# As per the host-based authentication rules in $PGDATA/pg_hba.conf, all login attempts via UNIX DOMAIN SOCKETS are ...'

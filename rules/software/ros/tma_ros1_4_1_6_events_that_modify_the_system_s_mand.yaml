@@ -1,0 +1,26 @@
+id: TMA-ROS1-4.1.6
+title: Ensure events that modify the system's Mandatory Access Controls are collected
+description: Monitor AppArmor mandatory access controls. The parameters below monitor any write access (potential additional, deletion or modification of files in the directory) or attribute changes to /etc/apparmor and /etc/apparmor.d directories. The audit inspects the loaded rules (auditctl -l). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.6 Ensure events that modify the system's Mandatory Access Controls are collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)MAC-policy( |$)' | grep -Fq -- '-w /etc/apparmor/ ' || { echo 'missing watch: -w /etc/apparmor/ -k MAC-policy'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)MAC-policy( |$)' | grep -Fq -- '-w /etc/apparmor.d/ ' || { echo 'missing watch: -w /etc/apparmor.d/ -k MAC-policy'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/MAC-policy.rules and add the following lines: -w /etc/apparmor/ -p wa -k MAC-policy -w /etc/apparmor.d/ -p wa -k MAC-policy'

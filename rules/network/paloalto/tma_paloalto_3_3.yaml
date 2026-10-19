@@ -1,0 +1,24 @@
+id: TMA-PALOALTO-3.3
+title: Ensure 'Passive Link State' and 'Preemptive' are configured appropriately
+description: 'Set the Passive Link State to auto, and uncheck the Preemptive option to disable it. PASS requires passive-link-state auto; also confirm election-option preemptive is not set to yes. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- hardening
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 3.3 Ensure 'Passive Link State' and 'Preemptive' are configured appropriately
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig high-availability group (?:\d+ )?mode active-passive passive-link-state auto[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig high-availability group mode active-passive passive-link-state auto
+    set deviceconfig high-availability group election-option preemptive no
+    commit
+    # CIS guidance:
+    To set Active/Passive Settings correctly:
+    Navigate to Device > High Availability > General > Active/Passive Settings. Set Passive Link State to auto. To set Election Settings correctly:
+    Navigate to Device > High Availability > Election Settings. Set Preemptive to be disabled.

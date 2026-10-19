@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.9.28.7
+title: Ensure 'Turn on convenience PIN sign-in' is set to 'Disabled'
+description: 'This policy setting allows you to control whether a domain user can sign in using a convenience PIN. In Windows 10, convenience PIN was replaced with Passport, which has stronger security properties. To configure Passport for domain users, use the policies under Computer Configuration\Administrative Templates\Windows Components\Microsoft Passport for Work. Note: The user''s domain password will be cached in the system vault when using this feature. Note #2: If this setting is Disabled, Windows Hello will not allow Windows Hello Face or Fingerprint to be configured. An exception to this recommen'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.9.28.7
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System'' -Name ''AllowDomainPINLogon'' -ErrorAction SilentlyContinue).''AllowDomainPINLogon''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowDomainPINLogon='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Name 'AllowDomainPINLogon' -Value 0 -PropertyType DWord -Force | Out-Null

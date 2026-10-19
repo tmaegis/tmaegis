@@ -1,0 +1,20 @@
+id: TMA-AWS-EUC-2.3
+title: Ensure WorkSpace volumes are encrypted.
+description: Encrypt WorkSpaces root volume (C:drive for Windows and root for Amazon Linux) and user volume (D:drive for Windows and /home for Amazon Linux). When you launch a WorkSpace, you can encrypt the root volume and the user volume. This ensures that the data stored at rest for WorkSpaces is encrypted.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- encryption
+- euc
+reference: CIS AWS End User Compute Services Benchmark v1.2.0 - 2.3 Ensure WorkSpace volumes are encrypted.
+audit:
+  type: manual
+  command: 'Perform the following steps to confirm that data at rest is encrypted for WorkSpaces From the Console: 1. Login to the WorkSpaces dashboard at https://console.aws.amazon.com/workspaces/. 2. In the left pane click WorkSpaces to access the instances listing page. 3. Check the storage volume(s) encryption status for each Amazon WorkSpaces instance available in the current AWS region - It will be listed in the Volume Encryption column If the value listed in the Volume Encryption column is Disabled, the selected AWS WorkSpaces instance volumes are not encrypted. 4. Change the AWS region from the navigation bar and repeat step 3 for all other regions. From the Command line: 1. Run describe-workspaces command (OSX/Linux/UNIX) using custom query filters to list the IDs of all AWS WorkSpaces instances available within the selected region: aws workspaces describe-workspaces --region us-east-1 --output table --query ''Workspaces[*].WorkspaceId'' 2. The command output should return a table
+    with the requested WorkSpaces IDs: -------------------- |DescribeWorkspaces| +------------------+ | ws-aaabbbccc | | ws-ccceeefff | +------------------+ 3. Execute again describe-workspaces command (OSX/Lin...'
+remediation:
+  type: iac_patch
+  command: 'Perform the following steps to encrypt WorkSpace volumes From the Console: 1. Login to the WorkSpaces console at https://console.aws.amazon.com/workspaces/ 2. Click Launch WorkSpaces and complete the first three steps. 3. For the WorkSpaces Configuration step, do the following: - Select the volumes to encrypt: Root Volume, User Volume, or both volumes. - For Encryption Key, select an AWS KMS CMK. The CMK that you select must be symmetric. 4. Click Next Step. 5. Click Launch WorkSpaces. NOTE: To encrypt existing AWS WorkSpaces data you must re-create the necessary WorkSpaces instances with the volumes encryption feature enabled as outlined above. From the Command line: 1. Run the create-workspaces command aws workspaces create-workspaces --workspaces DirectoryId=`your_directoryID`, UserName=`user_for_workspace`, BundleId=`bundle_to_build`, VolumeEncryptionKey=`AWS_KMS_customer_master_key_(CMK)`, UserVolumeEncryptionEnabled=`true`, RootVolumeEncryptionEnabled=''true'', WorkspaceProperties={RunningMode=`AUTO_STOP`,
+    RunningModeAutoStopTimeoutInMinutes=`10`, RootVolumeSizeGib=`root_GB`, UserVolumeSizeGib=`user_GB`, ComputeTypeName=`STANDARD`} 2. You will receive output highlighting: -...'

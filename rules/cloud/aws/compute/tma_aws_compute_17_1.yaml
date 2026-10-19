@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-17.1
+title: Ensure Image Builder distribution configurations do not publicly share AMIs
+description: EC2 Image Builder pipelines reference a distribution configuration that controls how the AMI produced by each pipeline run is shared. The distribution config's AmiDistributionConfiguration.LaunchPermission field can grant public access ({"UserGroups":["all"]}) so that every AMI built by the pipeline is published publicly on creation. This control audits Image Builder distribution configurations directly to catch misconfigured pipelines before they produce public AMIs on their next run. AMIs contain the full filesystem of a configured instance, including pre-installed applications, configuration files, internal CA certificates, agent configurations, and potentially residual credentials. A publicly shared AMI allows any AWS account to launch an instance from it and inspect all contents.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 17.1 Ensure Image Builder distribution configurations do not publicly share AMIs
+audit:
+  type: manual
+  command: '1. List all Image Builder distribution configurations in the region: aws imagebuilder list-distribution-configurations --region $AWS_REGION \ --query ''distributionConfigurationSummaryList[].[name,arn]'' --output table 2. For each distribution configuration returned above, inspect its AMI distribution settings to check whether any region grants public launch permissions: aws imagebuilder get-distribution-configuration --distribution-configuration- arn <arn> \ --region $AWS_REGION \ --query ''distributionConfiguration.distributions[].{Region:region,LaunchPermission:am iDistributionConfiguration.launchPermission}'' \ --output json - The distribution configuration Fails if any region''s launchPermission includes "userGroups": ["all"]. This indicates that AMIs produced by any pipeline using this distribution config will be publicly accessible. 3. For each distribution configuration that Failed the audit, identify the Image Builder pipelines that reference it (so you understand the
+    blast radius): aws imagebuilder list-image-pipelines --region $AWS_REGION \ --filters name=distributionConfigurationArn,values=<arn> \ --query ''imagePipelineList[].[name,arn,status]'' --output table'
+remediation:
+  type: iac_patch
+  command: '1. For each distribution configuration that Failed the audit, retrieve its current distributions block and remove the userGroups: ["all"] entry from each region''s amiDistributionConfiguration.launchPermission. The remediation requires a full updated distribution config to be sent — the AWS API doesn''t support patching individual fields: # Retrieve current config aws imagebuilder get-distribution-configuration --distribution-configuration- arn <arn> \ --region $AWS_REGION --query ''distributionConfiguration'' > /tmp/dist- config.json # Edit /tmp/dist-config.json: in each distributions[].amiDistributionConfiguration.launchPermission, # remove the "userGroups": ["all"] entry. To restrict to specific accounts, replace with: # "userIds": ["<account-id-1>", "<account-id-2>"] # To make AMIs private to the source account only, remove the launchPermission key entirely. # Apply the updated config aws imagebuilder update-distribution-configuration --distribution- configuration-arn <arn>
+    \ --region $AWS_REGION --distributions file:///tmp/dist-config.json 2. Verify by repeating audit step 2 on the distribution configuration. 3. Trigger a test run of any affected pipeline and verify the resulti...'

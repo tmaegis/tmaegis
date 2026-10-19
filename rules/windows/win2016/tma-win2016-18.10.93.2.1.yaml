@@ -1,0 +1,21 @@
+id: TMA-WIN2016-18.10.93.2.1
+title: Ensure 'Configure Automatic Updates' is set to 'Enabled'
+description: 'This policy setting specifies whether computers in your environment will receive security updates from Windows Update or WSUS. If you configure this policy setting to Enabled, the operating system will recognize when a network connection is available and then use the network connection to search Windows Update or your designated intranet site for updates that apply to them. After you configure this policy setting to Enabled, select one of the following four options in the Configure Automatic Updates Properties dialog box to specify how the service will work: • 2 - Notify for download and auto '
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 18.10.93.2.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU'' -Name ''NoAutoUpdate'' -ErrorAction SilentlyContinue).''NoAutoUpdate''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''NoAutoUpdate='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' -Name 'NoAutoUpdate' -Value 0 -PropertyType DWord -Force | Out-Null

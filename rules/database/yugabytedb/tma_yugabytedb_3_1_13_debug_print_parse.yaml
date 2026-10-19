@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.13
+title: Ensure 'debug_print_parse' is disabled
+description: The debug_print_parse setting enables printing the resulting parse tree for each executed query. These messages are emitted at the LOG message level. Unless directed otherwise by your organization's logging policy, it is recommended this setting be disabled by setting it to off. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass.
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.13 Ensure 'debug_print_parse' is disabled
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SHOW debug_print_parse" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'off'
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="debug_print_parse='off'" on every YB-TServer and restart it.

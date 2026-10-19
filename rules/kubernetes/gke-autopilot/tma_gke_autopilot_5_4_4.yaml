@@ -1,0 +1,20 @@
+id: TMA-GKE-AUTOPILOT-5.4.4
+title: Ensure private GKE nodes are configured without external IP addresses
+description: Configure GKE Autopilot nodes without external IP addresses so worker nodes are reachable only through internal network paths. Private nodes reduce direct exposure of the node network interface to external clients while still allowing the cluster to run workloads and communicate with the control plane through internal connectivity. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke-autopilot
+level: 2
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+- network
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.4.4 Ensure private GKE nodes are configured without external IP addresses
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(privateClusterConfig.enablePrivateNodes)') || exit 1
+    if [ "$v" = True ]; then echo compliant; else echo "noncompliant: privateClusterConfig.enablePrivateNodes=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediate by enabling private nodes at the cluster level for GKE Autopilot workloads. Private nodes provision GKE nodes with internal IP addresses only. For Autopilot clusters, update the cluster level private node configuration instead of updating individual node pools. The cluster update takes effect after GKE reschedules workloads onto nodes that match the configuration. Enable private nodes as the cluster level default for GKE Autopilot workloads: gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-private-nodes \ --enable-ip-alias If workload level placement is required, configure the workload to schedule on private nodes by using the cloud.google.com/private-node=true node selector. Note: After remediation, rerun the audit command and confirm that the cluster level default returns true.'

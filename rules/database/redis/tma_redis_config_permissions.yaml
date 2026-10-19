@@ -1,0 +1,21 @@
+id: TMA-REDIS-CONFIG-PERMISSIONS
+title: Ensure redis.conf is not writable by group or readable by others
+description: redis.conf contains requirepass and ACL secrets; restrict it to mode 640 or stricter. Checks /etc/redis/redis.conf (SKIP when it does not exist; RHEL uses /etc/redis.conf).
+target: redis
+level: 1
+severity: medium
+tags:
+- redis
+- database
+- permissions
+- filesystem
+reference: CIS Redis Benchmark - File Permissions / Configuration File (verify section number for your release)
+audit:
+  type: command
+  command: p=$(stat -c %a /etc/redis/redis.conf 2>/dev/null) || exit 1; if [ $((0$p & 037)) -eq 0 ]; then echo compliant; else echo "mode $p"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/redis/redis.conf
+remediation:
+  type: command
+  command: chmod 640 /etc/redis/redis.conf

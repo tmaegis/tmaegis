@@ -1,0 +1,69 @@
+id: TMA-ALMA9-5.4.3.2
+title: Ensure default user shell timeout is configured
+description: 'TMOUT is a shell environment variable that sets an interactive shell''s idle timeout, in seconds: after TMOUT seconds with no input, the shell exits. TMOUT=<n> sets the timeout to n seconds (a value of 0 disables it); marking the variable readonly prevents a user from overriding it during the session, and exporting it applies it to the user''s shell environment.'
+target: linux
+os_family:
+- almalinux-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS AlmaLinux OS 9 Benchmark v3.0.0 - 5.4.3.2
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n{\n   l_max=900\n   a_files=()\n   while IFS= read -r l_file; do a_files+=(\"$l_file\"); done < <(grep -Pls -- '\"'\"'^([^#\\n\\r]+)?\\bTMOUT\\b'\"'\"' \\\n      /etc/*bashrc /etc/profile /etc/profile.d/*.sh /etc/profile.d/sh.local \\\n      /usr/etc/profile.d/*.sh /usr/etc/profile.d/sh.local 2>/dev/null)\n   l_set=0\n   for l_file in \"${a_files[@]}\"; do\n      l_val=\"$(grep -Po -- '\"'\"'^([^#\\n\\r]+)?\\bTMOUT=\\d+\\b'\"'\"' \"$l_file\" | awk -F= '\"'\"'{v=$2} END{if (NR>0) print v}'\"'\"')\"\n      [ -z \"$l_val\" ] && continue\n      l_set=1\n      l_ro=\"$(grep -P -- '\"'\"'^\\h*(typeset\\h\\- xr\\hTMOUT=\\d+|([^#\\n\\r]+)?\\breadonly\\h+TMOUT\\b)'\"'\"' \"$l_file\")\"\n      l_exp=\"$(grep -P -- '\"'\"'^\\h*(typeset\\h\\- xr\\hTMOUT=\\d+|([^#\\n\\r]+)?\\bexport\\b([^#\\n\\r]+\\b)?TMOUT\\b)'\"'\"' \"$l_file\")\"\n      [ \"$l_val\" -gt 0 ] && [ \"$l_val\" -le \"$l_max\" ] || echo \"$l_file: TMOUT=$l_val is out of range (must\
+    \ be >0 and <=$l_max)\"\n      [ -n \"$l_ro\" ]  || echo \"$l_file: TMOUT is not marked readonly\"\n      [ -n \"$l_exp\" ] || echo \"$l_file: TMOUT is not exported\"\n   done\n   [ \"$l_set\" -eq 0 ] && echo \"TMOUT is not set in any shell initialization file\"\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # make every umask line in the given files at least 027
+    tma_umask_fix() { for f in "$@"; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      grep -Eqi '^[[:space:]]*umask[[:space:]]' "$f" || continue
+      t=$(mktemp); ch=0
+      while IFS= read -r line || [ -n "$line" ]; do
+        if [[ $line =~ ^([[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+)0*([0-7]{1,4})([[:space:]#].*)?$ ]]; then
+          v=$((8#${BASH_REMATCH[2]})); n=$((v | 8#027))
+          if [ "$n" != "$v" ]; then line="${BASH_REMATCH[1]}$(printf '%03o' $n)${BASH_REMATCH[3]}"; ch=1; fi
+        elif [[ $line =~ ^[[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+[ugoa]*= ]] && [[ $line =~ (g=[rwx]*w|o=[rwx]*[rwx]) ]]; then
+          line="umask 027"; ch=1
+        fi
+        printf '%s\n' "$line" >> "$t"
+      done < "$f"
+      if [ $ch = 1 ]; then tma_bak "$f"; cat "$t" > "$f"; fi
+      rm -f "$t"
+    done; }
+    N=900
+    # one authoritative file; any other TMOUT assignment is commented out (audit demands readonly+export in each file mentioning it)
+    for f in /etc/profile /etc/bashrc /etc/bash.bashrc /etc/bash/bashrc /etc/profile.d/*.sh; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      [ "$f" = /etc/profile.d/50-tmaegis-tmout.sh ] && continue
+      grep -Eq '^[^#]*\bTMOUT\b' "$f" || continue
+      tma_bak "$f"; sed -i -E '/^[[:space:]]*#/! s/^([^#]*\bTMOUT\b.*)$/# tmaegis: \1/' "$f"
+    done
+    mkdir -p /etc/profile.d
+    printf '# CIS: idle shell timeout\nTMOUT=%s\nreadonly TMOUT\nexport TMOUT\n' "$N" > /etc/profile.d/50-tmaegis-tmout.sh
+    chmod 644 /etc/profile.d/50-tmaegis-tmout.sh
+    for f in /etc/bash/bashrc /etc/profile; do [ -f "$f" ] && ! grep -q '^TMOUT=' "$f" && [ "$f" = /etc/bash/bashrc ] && printf 'TMOUT=%s\nreadonly TMOUT\nexport TMOUT\n' "$N" >> "$f"; done
+    true
+  guidance: "Configure TMOUT in a single file. Because best practice marks TMOUT readonly, a second assignment from a later-sourced file produces a \"TMOUT: readonly variable\" error at every login, so it must be set exactly once. 1. Run the following command to locate any existing TMOUT assignments in the shell initialization files: # grep -PHrs -- '\\bTMOUT\\b' /etc/profile /etc/profile.d/ /etc/bashrc /etc/*bashrc 2. In each file returned in step one, remove or comment out the TMOUT lines so TMOUT is no longer set in more than one location. 3. Create a single drop-in file in /etc/profile.d/ that sets, marks readonly, and exports TMOUT in one statement, using a value greater than 0 and no greater than 900 s…"

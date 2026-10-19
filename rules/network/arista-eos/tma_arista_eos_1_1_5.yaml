@@ -1,0 +1,19 @@
+id: TMA-ARISTA-EOS-1.1.5
+title: NTP authentication
+description: NTP authentication verifies that time updates come from a trusted server, preventing bad actors from spoofing time or altering your clock. The NTP authentication model is the opposite of the typical client-server authentication model. NTP authentication enables an NTP client or peer to authenticate time received from their servers and peers. Authentication support allows the NTP client to verify that servers are in fact known and trusted and not intruders intending accidentally or intentionally to masquerade as a legitimate server. Requires 'ntp authentication-key' and 'ntp trusted-key'. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 2
+severity: high
+tags:
+- arista-eos
+- network
+- ntp
+reference: CIS Arista EOS Benchmark v1.0.0 - 1.1.5 NTP authentication
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^ntp authentication-key \d+ \S+ \S.*^ntp trusted-key \d+)|(?s:^ntp trusted-key \d+.*^ntp authentication-key \d+ \S+ \S)
+remediation:
+  type: iac_patch
+  command: |-
+    ntp authentication-key 1 sha1 timesync
+    ntp trusted-key 1

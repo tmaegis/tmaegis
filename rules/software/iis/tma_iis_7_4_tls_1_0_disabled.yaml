@@ -1,0 +1,19 @@
+id: TMA-IIS-7.4
+title: Ensure TLS 1.0 is Disabled
+description: The TLS 1.0 protocol is not considered cryptographically secure, therefore should be disabled. SCHANNEL\Protocols\TLS 1.0\Server and \Client must both have Enabled=0 and DisabledByDefault=1. Affects every SCHANNEL service; a reboot is required after changes. PowerShell 5.1; reads the registry (run elevated).
+target: iis
+level: 1
+severity: high
+tags:
+- iis
+- tls
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 7.4 Ensure TLS 1.0 is Disabled
+audit:
+  type: registry
+  command: $base = 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols'; $bad = @('Server', 'Client' | Where-Object { $p = Get-ItemProperty -Path "$base\TLS 1.0\$_" -ErrorAction SilentlyContinue; $null -eq $p -or $p.Enabled -ne 0 -or $p.DisabledByDefault -ne 1 }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: 'For both Server and Client: New-Item ''HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\TLS 1.0\Server'' -Force | Out-Null; New-ItemProperty -Path <key> -Name Enabled -Value 0 -PropertyType DWord -Force; New-ItemProperty -Path <key> -Name DisabledByDefault -Value 1 -PropertyType DWord -Force; then reboot.'

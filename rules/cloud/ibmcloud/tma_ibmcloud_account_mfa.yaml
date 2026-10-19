@@ -1,0 +1,17 @@
+id: TMA-IBMCLOUD-ACCOUNT-MFA
+title: Ensure multi-factor authentication is enabled for all users in the account
+description: Account-level MFA forces a second factor for every login. The account setting mfa must not be NONE / NONE_NO_ROPC (TOTP4ALL or a LEVEL setting covers federated users as well). Read-only ibmcloud CLI calls using the current CLI session and targeted region (ibmcloud login, or IBMCLOUD_API_KEY); JSON output is parsed with grep/sed/awk. A missing CLI, plugin or session fails the check.
+target: ibmcloud
+level: 1
+severity: high
+tags:
+- ibmcloud
+- iam
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - Identity and Access Management - account-level MFA (verify section number for your release)
+audit:
+  type: command
+  command: "out=$(ibmcloud iam account-settings --output json 2>/dev/null) || exit 1\nv=$(printf '%s\\n' \"$out\" | sed -n 's/.*\"mfa\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)\ncase \"$v\" in\n  ''|NONE|NONE_NO_ROPC) exit 1 ;;\n  *) echo compliant ;;\nesac"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ibmcloud iam account-settings-update --mfa TOTP4ALL (or LEVEL1-3 for IBMid/App ID users), or Manage > Access (IAM) > Settings > Authentication.

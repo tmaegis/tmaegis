@@ -1,0 +1,38 @@
+id: TMA-VMWARE-2.5
+title: Host must only run binaries delivered via signed VIB
+description: The ESXi host is configured to only execute binaries originating from a valid, signed vSphere Installable Bundle (VIB) to enhance the integrity of the system. This measure thwarts attackers' attempts to use prebuilt toolkits on the host. The parameter governing this behavior is VMkernel.Boot.execInstalledOnly with a recommended setting of True. The audit runs esxcli system settings kernel list -o execInstalledOnly and requires the configured and runtime values to be TRUE. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 2.5 Host must only run binaries delivered via signed VIB
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings kernel list -o execInstalledOnly 2>/dev/null) || exit 1
+    set -- $(printf '%s\n' "$out" | awk '$1=="execInstalledOnly" {print toupper($3), toupper($4); exit}')
+    [ $# -eq 0 ] && { echo 'execInstalledOnly not listed'; exit 1; }
+    [ "$1" = TRUE ] && [ "$2" = TRUE ] && echo compliant || echo "execInstalledOnly configured=$1 runtime=$2"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings kernel set -s execInstalledOnly -v TRUE
+  guidance: "1. Remove unauthorized VIBs and set the kernel option with esxcli system settings kernel set -s execInstalledOnly -v TRUE 2. Reboot if the command or build indicates a reboot is required 3. Re-run the audit command and confirm only approved signed VIB-delivered binaries are executable."

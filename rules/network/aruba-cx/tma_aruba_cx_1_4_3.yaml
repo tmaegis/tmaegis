@@ -1,0 +1,36 @@
+id: TMA-ARUBA-CX-1.4.3
+title: SNMP Traps
+description: Configuring SNMP (Simple Network Management Protocol) traps in AOS-CX switches enables proactive monitoring and management capabilities within the network infrastructure. SNMP traps act as automated notifications that are sent from the switches to a designated management system whenever specific events or thresholds occur, such as high cpu utilization, port status changes, or aaa server unreachability. This ensures real-time visibility into the health and performance of the switches. AOS- CX switches support multiple SNMP traps, which are either enabled by default or through configuration. PASS requires an SNMPv3 trap/inform receiver. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 2
+severity: medium
+tags:
+- aruba-cx
+- snmp
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.4.3 SNMP Traps
+audit:
+  type: config_regex
+  pattern: (?m)^snmp-server host \S+ (?:trap|inform) version v3 user \S+
+remediation:
+  type: iac_patch
+  command: |-
+    snmp-server host 10.0.0.9 trap version v3 user <user> vrf mgmt
+    # CIS guidance:
+    Configure SNMPv2c trap This command is used to configure the trap receivers to which the SNMP agent can send trap notifications - snmp-server host <A.B.C.D | X:X::X:X>  trap version <v1 | v2c> [community WORD] [port <UDP port>] [vrf <VRF_NAME>] Configure SNMPv3 trap This command is used to configure the trap receivers to which the SNMP agent can send SNMPv3 trap notifications.
+    snmp-server host <A.B.C.D | X:X::X:X>  <trap | inform> version v3 user <WORD>
+    [port <UDP port>] [vrf <VRF_NAME>] To enable specific snmp trap -
+    snmp-server trap
+      aaa-server-reachability-status  Enable SNMP trap for AAA server
+    reachability
+                                      status
+      configuration-changes           Enable configuration changes traps
+      cpu-utilization                 Enable high CPU utilization traps
+      link-status                     Enable link status traps for all physical
+                                      interfaces
+      mac-notify                      Enable MAC table change notification traps
+      memory-utilization              Enable high memory utilization traps
+      module                          Enable module event traps
+      port-security                   Enable port-security violation traps.
+                                      (Default: enable)
+      rmon-events                     Enable RMON event traps
+      snmp                            Enable snmp traps

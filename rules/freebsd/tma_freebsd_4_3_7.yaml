@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.3.7
+title: Ensure access to the su command is restricted
+description: 'The su command allows a user to run a command or shell as another user. Normally, the su command can be executed by any user. By uncommenting the pam_wheel.so statement in /etc/pam.d/su, the su command will only allow users in a specific groups to execute su. This group should be empty to reinforce the use of sudo for privileged access. Audit: /etc/pam.d/su must restrict su with pam_group group=<group>, and that group must have no members.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- permissions
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.3.7 Ensure access to the su command is restricted
+audit:
+  type: command
+  command: 'l=$(grep -E "^auth[[:space:]]+(required|requisite)[[:space:]]+pam_group\.so[[:space:]].*group=[^[:space:]]+" /etc/pam.d/su 2>/dev/null | head -n 1); [ -n "$l" ] || { echo "pam_group group= restriction missing in /etc/pam.d/su"; exit 0; }; g=$(printf ''%s\n'' "$l" | sed -n "s/.*group=\([^[:space:]]*\).*/\1/p"); m=$(awk -F: -v g="$g" ''$1==g {print $4}'' /etc/group); [ -z "$m" ] && echo compliant || echo "group $g has members: $m"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create an empty group that will be specified for use of the su command. The group should be named according to site policy. Example: # pw groupadd sugroup Add the following line to the /etc/pam.d/su file, specifying the empty group: auth requisite pam_group.so no_warn group=sugroup root_only fail_safe ruser'

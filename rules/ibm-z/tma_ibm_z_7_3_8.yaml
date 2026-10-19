@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-7.3.8
+title: Ensure access to ICSF operator commands is controlled
+description: 'ICSF has two commands that can be issued at an operator console to display information about ICSF and ICSF resources or make changes to how ICSF is operating: DISPLAY ICSF SETICSF Use of the ICSF operator commands must be restricted to authorized users.'
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.3.8 Ensure access to ICSF operator commands is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that OPERCMDS appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that OPERCMDS appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that OPERCMDS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the OPERCMDS entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering the following resources: o MVS.DISPLAY.ICSF o MVS.SETICSF Request ... (full steps: CIS section 7.3.8)'
+remediation:
+  type: iac_patch
+  command: 'To activate the OPERCMDS class use the RACF SETROPTS command: SETROPTS CLASSACT(OPERCMDS) To enable generic profile checking for the OPERCMDS class use the RACF SETROPTS command: SETROPTS GENERIC(OPERCMDS) To RACLIST the OPERCMDS class use the RACF SETROPTS command: SETROPTS RACLIST(OPERCMDS) To create an OPERCMDS profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE OPERCMDS MVS.DISPLAY.ICSF + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''DISPLAY ICSF COMMAND'') PERMIT MVS.DISPLAY CLASS(OPERCMDS) + ACCESS(READ) ID(SYSPROG) RDEFINE OPERCMDS MVS.SETICSF + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''SETICSF COMMAND'') PERMIT MVS.SETICSF CLASS(OPERCMDS) + ACCESS(READ) ID(SYSPROG) SETROPTS REFRESH RACLIST(OPERCMDS) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER OPERCMDS <profile> + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(OPERCMDS) To remove a non-compliant access list entries
+    use the RACF PERMIT command: PERMIT <profile> CLASS(OPERCMDS) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(OPERCMDS) To remove a non-compliant GAC entry you need to use both ... (see CIS section 7.3.8)'

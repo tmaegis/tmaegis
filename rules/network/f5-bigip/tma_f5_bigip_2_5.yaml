@@ -1,0 +1,23 @@
+id: TMA-F5-BIGIP-2.5
+title: Ensure External Users' has access to needed Partitions only
+description: 'To limit access for remote users to needed partitions only granting a user access to "All Partitions" might provide the users unauthorized access. PASS requires auth remote-user default-partition to name a specific partition rather than all. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- authentication
+reference: CIS F5 Networks Benchmark v1.0.0 - 2.5 Ensure External Users' has access to needed Partitions only
+audit:
+  type: config_regex
+  pattern: (?m)^auth remote-user \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+default-partition (?:[^a\s]\S*|a[^l\s]\S*|al[^l\s]\S*|all\S+)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify auth remote-user default-partition Common
+    tmsh save sys config
+    # CIS guidance:
+    1. Log in to the Configuration utility.
+    2. Go to System > Users > Authentication.
+    3. Under External Users , click "Change".
+    4. For Partition Access , specify which partitions are allowed for External Users.

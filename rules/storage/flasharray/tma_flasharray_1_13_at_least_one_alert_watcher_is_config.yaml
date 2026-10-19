@@ -1,0 +1,18 @@
+id: TMA-FLASHARRAY-1.13
+title: Ensure at least one alert watcher is configured to receive alerts of all severities
+description: 'FlashArray allows configuration of one or more alert watchers, which are email addresses that will receive emails for new system alerts. The minimum severity of alerts that will be sent to each watcher is also configurable. Passes when an enabled alert watcher other than the built-in purestorage.com address exists and a watcher rule sets Minimum Notification Severity to info. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "purealert watcher list --nvp; purepolicy alert-watcher rule list --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- access-control
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 1.13 Ensure at least one alert watcher is configured to receive alerts of all severities
+audit:
+  type: config_regex
+  pattern: (?is)(?:(?m:^|\s)(?:name[ \t]*[=:]?[ \t]*)?[^\s@=]+@(?:[^p\s]\S*|p[^u\s]\S*|pu[^r\s]\S*|pur[^e\s]\S*|pure[^s\s]\S*|pures[^t\s]\S*|purest[^o\s]\S*|puresto[^r\s]\S*|purestor[^a\s]\S*|purestora[^g\s]\S*|purestorag[^e\s]\S*|purestorage[^\.\s]\S*|purestorage\.[^c\s]\S*|purestorage\.c[^o\s]\S*|purestorage\.co[^m\s]\S*|p|pu|pur|pure|pures|purest|puresto|purestor|purestora|purestorag|purestorage|purestorage\.|purestorage\.c|purestorage\.co|purestorage\.com\S+)\s+(?:enabled[ \t]*[=:]?[ \t]*)?true\b.*min(?:imum)?[ _-]?notification[ _-]?severity[ \t]*[=:]?[ \t]*info|min(?:imum)?[ _-]?notification[ _-]?severity[ \t]*[=:]?[ \t]*info.*(?m:^|\s)(?:name[ \t]*[=:]?[ \t]*)?[^\s@=]+@(?:[^p\s]\S*|p[^u\s]\S*|pu[^r\s]\S*|pur[^e\s]\S*|pure[^s\s]\S*|pures[^t\s]\S*|purest[^o\s]\S*|puresto[^r\s]\S*|purestor[^a\s]\S*|purestora[^g\s]\S*|purestorag[^e\s]\S*|purestorage[^\.\s]\S*|purestorage\.[^c\s]\S*|purestorage\.c[^o\s]\S*|purestorage\.co[^m\s]\S*|p|pu|pur|pure|pures|purest|puresto|purestor|purestora|purestorag|purestorage|purestorage\.|purestorage\.c|purestorage\.co|purestorage\.com\S+)\s+(?:enabled[
+    \t]*[=:]?[ \t]*)?true\b)
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, configure an organizational email address to monitor array alerts. From the GUI: ; Navigate to Settings > System and select Alerts and Notifications. ; In the Alert Watchers panel, click the + (Create) icon, enter the desired email address, and click Create. ; To adjust the notification level, click the More Options menu next to the newly created watcher, select Edit, choose the minimum severity, and click Save. ; Ensure the Enabled switch is toggled on. From the CLI: ; Create the watcher: Run the purealert watcher create command. ; Command Syntax: purealert watcher create <EMAIL_ADDRESS>'

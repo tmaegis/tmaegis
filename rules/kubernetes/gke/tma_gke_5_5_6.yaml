@@ -1,0 +1,20 @@
+id: TMA-GKE-5.5.6
+title: Verify Shielded GKE Node integrity monitoring is enabled
+description: Verify Shielded GKE Node integrity monitoring is enabled for GKE node pools. Integrity monitoring validates each Shielded VM boot sequence against a known good baseline and records pass or fail results so administrators can detect potential boot level or kernel level integrity issues on worker nodes. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Every node pool is checked.
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.5.6 Verify Shielded GKE Node integrity monitoring is enabled
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container node-pools list --cluster "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(name,config.shieldedInstanceConfig.enableIntegrityMonitoring)') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F '\t' 'NF && !($2=="True") {print $1 ": " $2}')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a replacement node pool with Shielded GKE Node integrity monitoring enabled. Integrity monitoring is enabled by default for new GKE node pools, but it can also be explicitly enabled during node pool creation by using the --shielded-integrity-monitoring option. gcloud container node-pools create $POOL_NAME \ --cluster $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --shielded-integrity-monitoring Migrate workloads from the noncompliant node pool to the new node pool, validate workload health, and then drain and delete the old node pool. After remediation, rerun the audit command and confirm that enableIntegrityMonitoring returns true.

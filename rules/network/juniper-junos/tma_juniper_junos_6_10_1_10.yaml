@@ -1,0 +1,25 @@
+id: TMA-JUNIPER-JUNOS-6.10.1.10
+title: Ensure Only Suite B Key Exchange Methods are set for SSH
+description: SSH should be configured to use only Suite B key exchange algorithms. SSH (Secure Shell) is the defacto standard protocol used for remote administration of network devices and Unix servers, providing an encrypted and authenticated alternative to Telnet. Fails if key exchange is not restricted or a non-NIST (non Suite B) method is configured. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.1.10 Ensure Only Suite B Key Exchange Methods are set for SSH
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^h\n]|h(?:$|[^ \n]| (?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^\-\n]|-(?:$|[^e\n]|e(?:$|[^x\n]|x(?:$|[^c\n]|c(?:$|[^h\n]|h(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^g\n]|g(?:$|[^e\n]))))))))))))))))))))))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^h\n]|h(?:$|[^ \n]| (?:$|[^k\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^\-\n]|-(?:$|[^e\n]|e(?:$|[^x\n]|x(?:$|[^c\n]|c(?:$|[^h\n]|h(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^g\n]|g(?:$|[^e\n]))))))))))))))))))))))))))))))))))))[^\n]*)?\z)|(?:^set
+    system services ssh key-exchange [^\n]*\b(?:curve25519-sha256|dh-group\S*|group-exchange-sha[12])\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To remove a single non-Suite B Key Exchange method, issue the following command from the hierarchy;
+    delete system services ssh key-exchange <mac name> If multiple insecure Key Exchange methods were set, it will generally be easier to delete all the Key Exchange method restrictions with the following command:
+    delete system services ssh key-exchange Once all insecure methods have been removed, add one or more stronger Key Exchange methods (in this example all Suite B methods available on most JUNOS devices are set in a single command)
+    set system services ssh key-exchange [ ecdh-sha2-nistp256 ecdh-sha2-nistp384 ecdh-sha2-nistp512 ] NOTE
+    - The ecdh-sha2-nistp512 Key Exchange method is not cited specifically in RFC6239, but is acceptable in addition/in place of the other NIST Elliptic Curve Diffie Hellman exchange methods for the purposes of this recommendation. Finally, single Key Exchange methods or a smaller selection of these more secure methods may be selected on the user's discretion.
+    set system services ssh key-exchange <method>

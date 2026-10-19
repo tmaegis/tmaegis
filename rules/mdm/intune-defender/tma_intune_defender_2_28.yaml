@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.28
+title: 'Ensure ''Cloud Block Level'' is set to Enabled: High blocking level'' or higher'
+description: 'This policy setting determines how aggressive Microsoft Defender Antivirus will be in blocking and scanning suspicious files. Threat data from this feature is analyzed in real time using, machine learning models, and behavioral analysis. Options for blocking levels are: • Default blocking level provides strong detection without increasing the risk of detecting legitimate files. • High blocking level applies a strong level of detection while optimizing client performance (but can also give a greater chance of false positives). • High + blocking level applies extra protection measures (might affect client performance and increase the chance of false positives). ... Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.28 Ensure ''Cloud Block Level'' is set to Enabled: High blocking level'' or higher'
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine'' -Name ''MpCloudBlockLevel'' -ErrorAction SilentlyContinue).''MpCloudBlockLevel''; if (-not ($null -ne $v -and @(2,4,6) -contains [int64]$v)) { $bad += ''MpCloudBlockLevel='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via GP, set the following UI path to Enabled: High blocking level, High+ blocking level, or Zero tolerance blocking level: Computer Configuration\Policies\Administrative Templates\Windows Components\Microsoft Defender Antivirus\MpEngine\Select cloud protection level Note: This Group Policy path is provided by the Group Policy template WindowsDefender.admx/adml that is included with the Microsoft Windows 11 version 24H2 Administrative Templates (or newer).'

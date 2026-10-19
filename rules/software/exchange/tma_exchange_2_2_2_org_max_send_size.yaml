@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.2.2
+title: 'Ensure ''Maximum send size: Organization level'' is set to ''25'''
+description: This policy setting limits the size of a message a user can send. Send size includes the header, the message body, and any attachments. For internal message flow, Exchange Server uses the custom X-MS-Exchange- Organization-OriginalSize message header to record the original message size of the message as it enters the Exchange Server organization. Whenever the message is checked against the... Prints compliant when the organization MaxSendSize is 25 MB or less (Unlimited fails). Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- transport
+reference: 'CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.2.2 Ensure ''Maximum send size: Organization level'' is set to ''25'''
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bytes = { param($s) if ("$s" -match '\(([\d,\.\s]+) bytes\)') { [int64]($matches[1] -replace '[^\d]','') } else { [int64]::MaxValue } }; $t = Get-TransportConfig -ErrorAction Stop; if ((& $bytes $t.MaxSendSize) -le 25MB) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-TransportConfig -MaxSendSize 25MB

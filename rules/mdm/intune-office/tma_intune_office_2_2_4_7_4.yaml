@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.4
+title: 'Ensure ''Scan encrypted macros in Excel Open XML workbooks'' is set to ''Enabled: Scan encrypted macros (default)'''
+description: 'This policy setting controls whether encrypted macros in Open XML documents are required to be scanned with anti-virus software before being opened. The recommended state for this setting is: Enabled: Scan encrypted macros (default). Audit: reads the registry value(s) excelbypassencryptedmacroscan that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: high
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.4 Ensure ''Scan encrypted macros in Excel Open XML workbooks'' is set to ''Enabled: Scan encrypted macros (default)'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\security'') -Name ''excelbypassencryptedmacroscan'' -ErrorAction SilentlyContinue).''excelbypassencryptedmacroscan''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':excelbypassencryptedmacroscan='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Scan encrypted macros (default). Microsoft Excel 2016\Excel Options\Security\Scan Encrypted Macros in Excel Open XML Workbooks'

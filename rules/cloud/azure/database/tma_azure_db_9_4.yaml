@@ -1,0 +1,20 @@
+id: TMA-AZURE-DB-9.4
+title: Ensure SQL server's Transparent Data Encryption (TDE) protector is encrypted with Customer-managed key
+description: Transparent Data Encryption (TDE) with Customer-managed key support provides increased transparency and control over the TDE Protector, increased security with an HSM-backed external service, and promotion of separation of duties. With TDE, data is encrypted at rest with a symmetric key (called the database encryption key) stored in the database or data warehouse distribution. To protect this data encryption key (DEK) in the past, only a certificate that the Azure SQL Service managed could be used. Now, with Customer-managed key support for TDE, the DEK can be protected with an asymmetric key that is stored in the Azure Key Vault. The Azure Key Vault is a highly available and scalable cloud-based key store which offers central key management, leverages FIPS 140-2 Level 2 validated hardware security modules (HSMs), and allows separation of management of keys and data for additional sec...
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+- database
+- encryption
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 9.4 Ensure SQL server's Transparent Data Encryption (TDE) protector is encrypted with Customer-managed key
+audit:
+  type: manual
+  command: 'Audit From Azure Portal 1. Go to SQL servers For the desired server instance 2. Click On Transparent data encryption 3. Ensure that Customer-managed key is selected 4. Ensure Make selected key the default TDE protector is checked Audit From Azure CLI az account get-access-token --query "{subscripton:subscription,accessToken:accessToken}" --out tsv | xargs -L1 bash -c ''curl -X GET -H "Authorization: Bearer $1" -H "Content-Type: application/json" https://management.azure.com/subscriptions/$0/resourceGroups/{resourceGroupNa me}/providers/Microsoft.Sql/servers/{serverName}/encryptionProtector?api- version=2015-05-01-preview'' Ensure the output of the command contains properties kind set to azurekeyvault serverKeyType set to AzureKeyVault uri is not null Audit From PowerShell Get-AzSqlServerTransparentDataEncryptionProtector -ServerName <ServerName> - ResourceGroupName <ResourceGroupName> Ensure the output of the command contains properties Type set to AzureKeyVault ServerKeyVaultKeyName
+    set to KeyVaultName_KeyName_KeyIdentifierVersion KeyId set to KeyIdentifier Audit From Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associ...'
+remediation:
+  type: iac_patch
+  command: Remediate From Azure Console 1. Go to SQL servers For the desired server instance 2. Click On Transparent data encryption 3. Set Transparent data encryption to Customer-managed key 4. Browse through your key vaults to Select an existing key or create a new key in the Azure Key Vault. 5. Check Make selected key the default TDE protector Remediate From Azure CLI Use the below command to encrypt SQL server's TDE protector with a Customer- managed key az sql server tde-key set --resource-group <resourceName> --server <dbServerName> --server-key-type {AzureKeyVault} --kid <keyIdentifier> Remediate From PowerShell Use the below command to encrypt SQL server's TDE protector with a Customer- managed Key Vault key Set-AzSqlServerTransparentDataEncryptionProtector -Type AzureKeyVault -KeyId <KeyIdentifier> -ServerName <ServerName> -ResourceGroupName <ResourceGroupName> Select Y when prompted

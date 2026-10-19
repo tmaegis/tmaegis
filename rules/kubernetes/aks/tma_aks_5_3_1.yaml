@@ -1,0 +1,17 @@
+id: TMA-AKS-5.3.1
+title: Encrypt Kubernetes Secrets at rest with AKS KMS protection
+description: Kubernetes Secret data stored by AKS in etcd must be protected with encryption at rest, and, when mapped to Key Management Service, that protection should be implemented through the AKS KMS provider integrated with Azure Key Vault. In AKS, Azure platform encryption remains the baseline storage-layer protection, while KMS adds envelope encryption of Kubernetes secrets before they are committed to etcd. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- managed-services
+- secrets
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.3.1 Encrypt Kubernetes Secrets at rest with AKS KMS protection
+audit:
+  type: manual
+  command: Review each AKS cluster in scope to determine whether Key Management Service (KMS) encryption for Kubernetes Secrets is enabled and correctly configured. Note the Azure platform encryption is always enabled for data at rest, but AKS KMS adds a separate encryption layer that encrypts Kubernetes Secret data before it is written to etcd by using Azure Key Vault–backed keys.
+remediation:
+  type: iac_patch
+  command: For AKS clusters that do not use KMS for Kubernetes Secret encryption, enable AKS KMS so Secret data is encrypted before it is written to etcd. AKS distinguishes this from the baseline Azure platform encryption that is always on at the storage layer, and documents AKS KMS as the added Azure Key Vault–backed encryption layer for Kubernetes secrets. For newer supported clusters, use the current KMS data-encryption model; where customer-managed keys are required, configure the Azure Key Vault key, assign the required managed identity and permissions, enable KMS on the cluster, and then verify the cluster security profile reflects the expected KMS settings. 1. Identify AKS clusters where KMS is not enabled for Kubernetes Secret encryption, using cluster configuration review or Azure Policy. 2.

@@ -1,0 +1,20 @@
+id: TMA-WIN10-17.9.3
+title: Ensure 'Audit Security State Change' is set to include 'Success'
+description: 'This subcategory reports changes in security state of the system, such as when the security subsystem starts and stops. Events for this subcategory include: • 4608: Windows is starting up. • 4609: Windows is shutting down. • 4616: The system time was changed. • 4621: Administrator recovered system from CrashOnAuditFail. Users who are not administrators will now be allowed to log on. Some audit-able activity might not have been recorded. The recommended state for this setting is to include: Success.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 17.9.3
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9210-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9210-69ae-11d9-bed3-505054503030}' /success:enable

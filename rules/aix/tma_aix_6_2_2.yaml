@@ -1,0 +1,51 @@
+id: TMA-AIX-6.2.2
+title: Ensure access to crontab is configured
+description: 'crontab is the program used to install, deinstall, list or execute the tables used to drive the cron daemon. Each user can have their own crontab, and though files are created, they are not intended to be edited directly. If the /var/adm/cron/cron.allow file exists, then you must be listed (one user per line) therein in order to be allowed to use this command. Audit: cron.deny must not exist and cron.allow must exist (review its users).'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 6.2.2 Ensure access to crontab is configured
+audit:
+  type: command
+  command: '[ ! -e /var/adm/cron/cron.deny ] && [ -f /var/adm/cron/cron.allow ] && echo compliant || echo "cron.deny present or cron.allow missing"'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    dir=/var/adm/cron
+    rm -f $dir/cron.deny
+    [ -f $dir/cron.allow ] || { { echo root; ls /var/spool/cron/crontabs 2>/dev/null; } | sort -u > $dir/cron.allow; chown root:sys $dir/cron.allow; chmod 400 $dir/cron.allow; }
+  guidance: "Remove /var/adm/cron/cron.deny if it exists: # /usr/bin/rm /var/adm/cron/cron.deny IF /var/adm/cron/cron.allow does not exist, create the file: # print \"root\\nadm\" > /var/adm/cron/cron.allow IF /var/adm/cron/cron.allow already exists, ensure that it contains at least the root and adm users."

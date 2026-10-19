@@ -1,0 +1,29 @@
+id: TMA-ROS1-1.6.4
+title: Ensure core dumps are restricted
+description: A core dump is the memory of an executable program. It is generally used to determine why a program aborted. It can also be used to glean confidential information from a core file. The system provides the ability to set a soft limit for core dumps, but this can be overridden by the user. The audit requires "* hard core 0" in limits.conf (or limits.d) and fs.suid_dumpable = 0 running and persisted. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.6.4 Ensure core dumps are restricted
+audit:
+  type: command
+  shell: bash
+  command: |-
+    grep -Eqs '^\s*\*\s+hard\s+core\s+0\b' /etc/security/limits.conf /etc/security/limits.d/* || { echo '* hard core 0 not set'; exit 1; }
+    bad=0
+    chk() { case $1 in net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || return 0 ;; esac
+      v=$(sysctl -n "$1" 2>/dev/null) || { echo "$1: not readable"; bad=1; return; }
+      [ "$v" = "$2" ] || { echo "$1 = $v (expected $2)"; bad=1; }
+      p=$(awk -F= -v k="$1" '{gsub(/^[ \t]+|[ \t]+$/, "", $1)} $1 == k {v = $2} END {gsub(/[ \t]/, "", v); print v}' /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf 2>/dev/null)
+      [ "$p" = "$2" ] || { echo "$1 not persisted as $2 in sysctl configuration (${p:-unset})"; bad=1; }; }
+    chk fs.suid_dumpable 0
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add the following line to /etc/security/limits.conf or a /etc/security/limits.d/* file: * hard core 0 Set the following parameter in /etc/sysctl.conf or a /etc/sysctl.d/* file: fs.suid_dumpable = 0 Run the following command to set the active kernel parameter: # sysctl -w fs.suid_dumpable=0 If systemd-coredump is installed: edit /etc/systemd/coredump.conf and add/modify the following lines: Storage=none ProcessSizeMax=0 Run the command: systemctl daemon-reload'

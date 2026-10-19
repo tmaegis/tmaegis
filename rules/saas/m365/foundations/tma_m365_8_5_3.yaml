@@ -1,0 +1,16 @@
+id: TMA-M365-8.5.3
+title: Ensure only people in my org can bypass the lobby
+description: This policy setting controls who can join a meeting directly and who must wait in the lobby until they're admitted by an organizer, co-organizer, or presenter of the meeting. The recommended state is People who were invited, People in my org or Only organizers and co-organizers. For meetings that could contain sensitive information, it is best to allow the meeting organizer to vet anyone not directly sent an invite before admitting them to the meeting. This will also prevent the anonymous user from using the meeting link to have meetings at unscheduled times.
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 8.5.3 Ensure only people in my org can bypass the lobby
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Teams admin center https://admin.teams.microsoft.com. 2. Click Settings & policies and select the Global (Org-wide default) settings tab. 3. Select Meetings to open the meeting settings section. 4. Under meeting join & lobby verify Who can bypass the lobby is set to one of the following: o People who were invited o People in my org o Only organizers and co-organizers To audit using PowerShell: 1. Connect to Teams PowerShell using Connect-MicrosoftTeams. 2. Run the following command to verify the recommended state: Get-CsTeamsMeetingPolicy -Identity Global | fl AutoAdmittedUsers 3. Verify that the returned value is one of the following strings: o InvitedUsers o EveryoneInCompanyExcludingGuests o OrganizerOnly'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Teams admin center https://admin.teams.microsoft.com. 2. Click Settings & policies and select the Global (Org-wide default) settings tab. 3. Select Meetings to open the meeting settings section. 4. Under meeting join & lobby set Who can bypass the lobby to one of the following: o People who were invited o People in my org o Only organizers and co-organizers To remediate using PowerShell: 1. Connect to Teams PowerShell using Connect-MicrosoftTeams. 2. Run one of the following PowerShell commands depending on the desired compliant state: To set to People who were invited: Set-CsTeamsMeetingPolicy -Identity Global -AutoAdmittedUsers "InvitedUsers" To set to People in my org: Set-CsTeamsMeetingPolicy -Identity Global -AutoAdmittedUsers "EveryoneInCompanyExcludingGuests" To set to Only organizers and co-organizers: Set-CsTeamsMeetingPolicy -Identity Global -AutoAdmittedUsers "OrganizerOnly"'

@@ -1,0 +1,23 @@
+id: TMA-KUBERNETES-5.1.5
+title: Ensure that default service accounts are not actively used.
+description: 'The default service account should not be used to ensure that rights granted to applications can be more easily audited and reviewed. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Fails when a default service account does not set automountServiceAccountToken: false or is bound to a Role/ClusterRole. The benchmark marks this Manual; this audit automates its kubectl inventory step.'
+target: kubernetes
+level: 1
+severity: high
+tags:
+- kubernetes
+- policies
+- rbac
+reference: CIS Kubernetes Benchmark v2.1.0 - 5.1.5 Ensure that default service accounts are not actively used.
+audit:
+  type: command
+  command: |-
+    sa=$(kubectl get serviceaccounts -A -o go-template='{{range .items}}{{if eq .metadata.name "default"}}{{.metadata.namespace}} {{.automountServiceAccountToken}}{{"\n"}}{{end}}{{end}}') || exit 1
+    rb=$(kubectl get rolebindings,clusterrolebindings -A -o go-template='{{range .items}}{{$b:=.metadata.name}}{{$bn:=.metadata.namespace}}{{range .subjects}}{{if eq .kind "ServiceAccount"}}{{if eq .name "default"}}{{if .namespace}}{{.namespace}}{{else}}{{$bn}}{{end}} {{$b}}{{"\n"}}{{end}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$sa" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && $2!="false" {print "automount: " $1}')
+    bad2=$(printf '%s\n' "$rb" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex {print "binding: " $0}')
+    if [ -z "$bad$bad2" ]; then echo compliant; else printf '%s\n%s\n' "$bad" "$bad2" | grep . | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create explicit service accounts wherever a Kubernetes workload requires specific access to the Kubernetes API server. Modify the configuration of each default service account to include this value automountServiceAccountToken: false'

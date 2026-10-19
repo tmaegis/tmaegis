@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.13
+title: Check Groups in passwd
+description: 'Over time, system administration errors and changes can lead to groups being defined in passwd but not in group. Groups defined in passwd but not in group file pose a threat to system security since group permissions are not properly managed. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.13 Check Groups in passwd
+audit:
+  type: command
+  command: 'command -v logins >/dev/null 2>&1 || exit 1; out=$( { logins -xo | awk -F: ''($3 == "") { print $1 }'' ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if any groups are in passwd but not in group, and work with those users or group owners to determine the best course of action in accordance with site policy.

@@ -1,0 +1,21 @@
+id: TMA-ARUBA-CX-1.5.3.1
+title: Local Authorization
+description: Authorization controls authenticated users command execution and switch interaction privileges. Local authorization uses role-based access control (RBAC) to provide role- based privilege levels plus optional user-defined local user groups with command execution rules. Authorization occurs only after successful authentication. Administrators have full command execution and switch interaction privilege. Operators are limited to the use of several nonsensitive show commands. Auditors are limited to a few auditing-related commands. PASS requires command authorization with the local method. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- hardening
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.5.3.1 Local Authorization
+audit:
+  type: config_regex
+  pattern: (?m)^aaa authorization commands (?:default|console|ssh|telnet) [^\n]*\blocal\b
+remediation:
+  type: iac_patch
+  command: |-
+    aaa authorization commands default local
+    # CIS guidance:
+    To enable local as primary authorization method -
+    aaa authorization commands {default | console | ssh | telnet}
+    local

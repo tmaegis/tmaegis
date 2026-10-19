@@ -1,0 +1,30 @@
+id: TMA-FORTISWITCH-2.5.2
+title: Dynamic ARP Inspection
+description: Dynamic ARP Inspection (DAI) is a security feature available on switches that validates ARP packets on the network to prevent ARP spoofing and ARP-based man-in-the- middle attacks. It verifies ARP requests and responses against trusted sources, such as DHCP snooping and static ARP entries. PASS requires arp-inspection enable on at least one VLAN; confirm all user VLANs. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: high
+tags:
+- fortiswitch
+- threat-prevention
+reference: CIS FortiSwitch Benchmark v1.0.0 - 2.5.2 Dynamic ARP Inspection
+audit:
+  type: config_regex
+  pattern: (?m)^config switch vlan\n(?:[ \t]+[^\n]*\n)*?[ \t]+set arp-inspection enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config switch vlan
+        edit <vlan-id>
+            set arp-inspection enable
+        next
+    end
+    # CIS guidance:
+    Following command enables Dynamic ARP inspection on the current VLAN, which means that ARP packets received from untrusted interfaces are discarded if they have an Invalid IP-to-MAC address binding. From the CLI:
+    config switch vlan
+        edit <vlan-id>
+            set arp-inspection enable
+        end
+    From the GUI:
+    1. Switch > VLAN > Select a VLAN > Edit
+    2. Under the DHCP Snooping section check the checkbox for "Dynamic ARP Inspection". By default, all ports are untrusted so you will need to specify trusted ports for uplinks to DHCP Servers or to a directly connected DHCP Server. Refer to the DHCP Snooping section for the DHCP snooping configuration.

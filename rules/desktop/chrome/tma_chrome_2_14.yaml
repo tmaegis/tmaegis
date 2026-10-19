@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.14
+title: Ensure 'Require Site Isolation for every site' is set to 'Enabled'
+description: 'This setting controls if every website will load into its own process. Disabled (0): Doesn''t turn off site isolation, but it lets users opt out. The recommended state for this setting is: Enabled (1) Rationale: Chrome will load each website in its own process. Even if a site bypasses the same- origin policy, the extra security will help stop the site from stealing your data from another website. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:SitePerProcess (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.14 Ensure 'Require Site Isolation for every site' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''SitePerProcess'' -ErrorAction SilentlyContinue).''SitePerProcess''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SitePerProcess' -Value 1 -PropertyType DWord -Force | Out-Null

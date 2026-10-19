@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.1.1.4
+title: Ensure logging is configured
+description: The /etc/syslog.conf, /etc/syslog.d/*.conf and /usr/local/etc/syslog.d/*.conf files specify logging rules and which files are to be used to log certain classes of messages. A great deal of important security-related information is sent via syslog, such as successful and failed su attempts, failed login attempts, root login attempts, and more.
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.1.1.4 Ensure logging is configured
+audit:
+  type: manual
+  command: 'Review the contents of /etc/syslog.conf, /etc/syslog.d/*.conf and /usr/local/etc/syslog.d/*.conf files to ensure appropriate logging is set. In addition, run the following command and verify that the log files are logging information as expected: # ls -l /var/log/'
+remediation:
+  type: iac_patch
+  command: 'Edit the following lines in the /etc/syslog.conf and /etc/syslog.d/*.conf files as appropriate for your environment. Note: The below configuration is shown for example purposes only. Due care should be given to how the organization wishes to store log data. *.err;kern.warning;auth.notice;mail.crit /dev/console *.notice;authpriv.none;kern.debug;lpr.info;mail.crit;news.err /var/log/messages security.* /var/log/security auth.info;authpriv.info /var/log/auth.log mail.info /var/log/maillog cron.* /var/log/cron !-devd *.=debug /var/log/debug.log *.emerg * daemon.info /var/log/daemon.log # uncomment this to log all writes to /dev/console to /var/log/console.log # touch /var/log/console.log and chmod it to mode 600 before it will work #console.info /var/log/console.log # uncomment this to enable logging of all log messages to /var/log/all.log # touch /var/log/all.log and chmod it to mode 600 before it will work #*.* /var/log/all.log # uncomment this to enable logging to a remote loghost
+    named loghost #*.* @loghost # uncomment these if you''re running inn # news.crit /var/log/news/news.crit # news.err /var/log/news/news.err # news.notice ... (see CIS section 5.1.1.4)'

@@ -1,0 +1,26 @@
+id: TMA-EKS-3.2.5
+title: Ensure the kubelet iptables utility chains are enabled
+description: 'This control is intended to keep kubelet-managed iptables support enabled on worker nodes so the node maintains the expected networking behavior for Kubernetes traffic handling. The recommended state is makeIPTablesUtilChains: true, and in EKS this should be enforced through the node’s managed bootstrap and launch configuration, because AWS applies deeper node customization through launch templates and merged user data. Reads every node''s effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.'
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- worker-node
+- kubelet
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.2.5 Ensure the kubelet iptables utility chains are enabled
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { ! printf '%s' "$c" | grep -Eq '"makeIPTablesUtilChains":false'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns false, the worker node is not keeping kubelet iptables utility chains enabled and should be treated as noncompliant. If the result is null or the field is missing, first confirm the configz response is complete, because Kubernetes identifies that endpoint as the view of the kubelet’s final actuated configuration, and the kubelet configuration schema defines makeIPTablesUtilChains with a default of true. Once the result is validated, remediation in EKS should be performed through the supported node provisioning or node update workflow, not by directly editing the kubelet config file on the host. AWS documents that managed node customization is applied through launch templates and bootstrap logic, and that managed node group updates to a new launch template version replace the nodes to match that configuration.

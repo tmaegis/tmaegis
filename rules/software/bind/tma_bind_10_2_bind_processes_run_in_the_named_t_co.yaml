@@ -1,0 +1,23 @@
+id: TMA-BIND-10.2
+title: Ensure BIND Processes Run in the named_t Confined Context Type
+description: SELinux includes customizable targeted policies that may be used to confine the BIND named server to enforce least privileges so that the server has only the minimal access to specified directories, files and network ports. Access is controlled by process types (domains) defined for the named process. The audit runs ps -eZ and requires every named process to run in the named_t SELinux type.
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- selinux
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 10.2 Ensure BIND Processes Run in the named_t Confined Context Type
+audit:
+  type: command
+  command: |-
+    out=$(ps -eZ 2>/dev/null) || exit 1
+    p=$(printf '%s\n' "$out" | awk '$NF=="named"{print $1}')
+    [ -n "$p" ] || { echo 'named is not running'; exit 1; }
+    bad=$(printf '%s\n' "$p" | awk -F: '$3 != "named_t"')
+    [ -z "$bad" ] && echo compliant || echo "named context: $bad"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'If the running named process is not confined to the named_t SELinux context. Then check the labeled context for the named binaries and set the binary files to have a context of named_exec_t as shown below. The named-checkconf executable should have named_checkconf_exec_t type. # ls -Z /usr/sbin/named /usr/sbin/named-checkconf /usr/sbin/unbound-anchor system_u:object_r:named_exec_t:s0 /usr/sbin/named system_u:object_r:named_checkconf_exec_t:s0 /usr/sbin/named-checkconf system_u:object_r:named_exec_t:s0 /usr/sbin/unbound-anchor If the executable files are not labeled correctly, they may be relabeled with the chcon command, as shown, however the file system labeling is based on the SELinux ...'

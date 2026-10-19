@@ -1,0 +1,47 @@
+id: TMA-MACOS14-5.5
+title: Ensure a Separate Timestamp Is Enabled for Each User/tty Combo
+description: Using tty tickets ensures that a user must enter the sudo password in each Terminal session. With sudo versions 1.8 and higher, introduced in 10.12, the default value is to have tty tickets for each interface so that root access is limited to a specific terminal. The default configuration can be overwritten or not configured correctly on earlier versions of macOS. In combination with removing the sudo timeout grace period, a further mitigation should be in place to reduce the possibility of a background process using elevated rights when a user elevates to root in an explicit context or tty. Additional mitigation should be in place to reduce the risk of privilege escalation of background processes.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: medium
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 5.5 Ensure a Separate Timestamp Is Enabled for Each User/tty Combo
+audit:
+  type: command
+  command: 'out=$(/usr/bin/sudo -V 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | /usr/bin/grep -c "Type of authentication timestamp record: tty" || true'
+  expected_output: '1'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    /bin/mkdir -p /etc/sudoers.d; /usr/sbin/chown root:wheel /etc/sudoers.d; /bin/chmod 755 /etc/sudoers.d
+    t=$(/usr/bin/mktemp /tmp/tma-sudoers.XXXXXX) || exit 1
+    printf '%s\n' 'Defaults timestamp_type=tty' > "$t"
+    if /usr/sbin/visudo -cf "$t" >/dev/null 2>&1; then
+      tma_bak /etc/sudoers.d/tmaegis_tty
+      /usr/bin/install -m 0440 -o root -g wheel "$t" /etc/sudoers.d/tmaegis_tty
+    else
+      /bin/rm -f "$t"; echo "TMAegis: sudoers snippet failed visudo validation" >&2; exit 1
+    fi
+    /bin/rm -f "$t"
+  guidance: "Terminal Method: Run the following command to edit the sudo settings: % /usr/bin/sudo /usr/sbin/visudo -f /etc/sudoers.d/<configuration file name> example: % /usr/bin/sudo /usr/sbin/visudo -f /etc/sudoers.d/10_cissudoconfiguration Note: Unlike other Unix and/or Linux distros, macOS will ignore configuration files in the sudoers.d folder that contain a . so do not add a file extension to the configuration file. Add the line Defaults timestamp_type=tty to the configuration file. Note: The Defaults timestamp_type=tty line can be added to an existing configuration file or a new one. That will depend on your organization's preference and works either way."

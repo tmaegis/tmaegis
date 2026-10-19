@@ -1,0 +1,18 @@
+id: TMA-CHROME-4.2.1
+title: 'Ensure ''Control use of the Serial API'' is set to ''Enabled: Do not allow any site to request access to serial ports via the Serial API'''
+description: 'This setting controls website access and use of the system serial port. - Do not allow any site to request access to serial ports via the Serial API (2) - Allow sites to ask the user to grant access to a serial port (3) The recommended state for this setting is: Do not allow any site to request access to serial ports via the Serial API (2) NOTE: If more granular control is needed (per website) then this setting can b... Rationale: Preventing access to system serial ports may prevent malicious sites from using these ports and accessing the devices attached. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DefaultSerialGuardSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 4.2.1 Ensure ''Control use of the Serial API'' is set to ''Enabled: Do not allow any site to request access to serial ports via the Serial API'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultSerialGuardSetting'' -ErrorAction SilentlyContinue).''DefaultSerialGuardSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultSerialGuardSetting' -Value 2 -PropertyType DWord -Force | Out-Null

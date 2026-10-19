@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-3.2
+title: Ensure the PostgreSQL Audit Extension (pgAudit) is enabled
+description: The PostgreSQL Audit Extension (pgAudit) provides detailed session and/or object audit logging via the standard PostgreSQL logging facility. The goal of pgAudit is to provide PostgreSQL users with the capability to produce audit logs often required to comply with government, financial, or ISO certifications. Passes when pgaudit is in shared_preload_libraries and pgaudit.log selects at least one class. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- logging
+- audit
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.2 Ensure the PostgreSQL Audit Extension (pgAudit) is enabled
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN 'pgaudit' = ANY (string_to_array(replace(current_setting('shared_preload_libraries'), ' ', ''), ',')) AND coalesce(current_setting('pgaudit.log', true), '') NOT IN ('', 'none') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Install pgAudit (dnf install pgaudit_18 / apt install postgresql-18-pgaudit), add pgaudit to shared_preload_libraries (keep existing entries), set pgaudit.log (e.g. 'ddl,write') in postgresql.conf, restart PostgreSQL and run CREATE EXTENSION pgaudit;

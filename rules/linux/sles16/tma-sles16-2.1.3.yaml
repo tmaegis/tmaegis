@@ -1,0 +1,35 @@
+id: TMA-SLES16-2.1.3
+title: Ensure dhcp server services are not in use
+description: The Dynamic Host Configuration Protocol (DHCP) is a service that allows machines to be dynamically assigned IP addresses. There are two versions of the DHCP protocol DHCPv4 and DHCPv6. At startup the server may be started for one or the other via the -4 or -6 arguments.
+target: linux
+os_family:
+- sles-16
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 16 Benchmark v1.0.0 - 2.1.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v rpm >/dev/null 2>&1 || { echo "step1: rpm not installed"; return 1; }; o=$(bash -c ''rpm -q kea'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''package kea is not installed'' || { echo step1: missing ''package kea is not installed''; return 1; }; }; alt1() { o=$(bash -c ''systemctl show kea-dhcp-ddns.service kea-dhcp4.service kea-dhcp6.service -p UnitFileState,ActiveState | grep -Pi ''"''"''=(enabled|active)''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_svc_off dhcpd.service dhcpd6.service isc-dhcp-server.service isc-dhcp-server6.service
+  guidance: "Run the following commands to stop kea-dhcp-ddns.service, kea-dhcp4.service, and kea-dhcp6.service and remove the kea package: # systemctl stop kea-dhcp-ddns.service kea-dhcp4.service kea-dhcp6.service # zypper remove kea - OR - - IF - the kea package is required as a dependency: Run the following commands to stop and mask kea-dhcp-ddns.service, kea- dhcp4.service, and kea-dhcp6.service: # systemctl stop kea-dhcp-ddns.service kea-dhcp4.service kea-dhcp6.service # systemctl mask kea-dhcp-ddns.service kea-dhcp4.service kea-dhcp6.service"

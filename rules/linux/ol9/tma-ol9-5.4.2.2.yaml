@@ -1,0 +1,20 @@
+id: TMA-OL9-5.4.2.2
+title: Ensure root is the only GID 0 account
+description: An account's primary group is identified by the group ID (GID) in its /etc/passwd entry. GID 0 is the root group, which the root account uses as its primary group by default.
+target: linux
+os_family:
+- ol-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 9 Benchmark v3.0.0 - 5.4.2.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v awk >/dev/null 2>&1 || { echo "step1: awk not installed"; return 1; }; o=$(bash -c ''awk -F: ''"''"''($4 == 0) { print $1 }''"''"'' /etc/passwd'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''root should be returned; the default system accounts sync, shutdown, halt, and'' || { echo step1: missing ''root should be returned; the default system accounts sync, s''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''operator may also be returned.'' || { echo step1: missing ''operator may also be returned.''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to reassign any account other than root that has primary GID 0 to an appropriate group: # usermod -g <NEW_GID> <username> Example: # usermod -g 100 bsmith If the root account''s primary GID is not 0, run the following command to reset it: # usermod -g 0 root'

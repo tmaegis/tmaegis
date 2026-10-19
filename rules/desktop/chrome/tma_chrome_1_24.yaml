@@ -1,0 +1,18 @@
+id: TMA-CHROME-1.24
+title: Ensure 'Import search engines from default browser on first run' is set to 'Disabled'
+description: 'This setting controls whether users are able to import search engine settings from another browser into Google Chrome as well as whether said setting is imported on first use. If you set this setting to Disabled users will be unable to perform an import of their search engine settings from other browsers into Google Chrome. The recommended state for this setting is: Disabled (0) Rationale: Having search engine settings automatically imported or allowing users to import the settings from another browser into Google Chrome could allow for a malicious search engine to be set. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:ImportSearchEngine (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: low
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 1.24 Ensure 'Import search engines from default browser on first run' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''ImportSearchEngine'' -ErrorAction SilentlyContinue).''ImportSearchEngine''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ImportSearchEngine' -Value 0 -PropertyType DWord -Force | Out-Null

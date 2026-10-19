@@ -1,0 +1,18 @@
+id: TMA-AWS-COMPUTE-2.2.2
+title: Ensure Public Access to EBS Snapshots is Disabled
+description: To protect your data disable the public mode of EBS snapshots. This protects your data so that it is not accessible to all AWS accounts preventing accidental access and leaks.
+target: aws
+level: 1
+severity: high
+tags:
+- access-control
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 2.2.2 Ensure Public Access to EBS Snapshots is Disabled
+audit:
+  type: manual
+  command: 'Perform the following to determine if a snapshot is shared publicly: From the Console 1. Login to the EC2 console at https://console.aws.amazon.com/ec2/. 2. In the left pane click Snapshots. 3. Select the snapshot then click Actions, Modify Permissions. 4. Confirm that the snapshot is set to Private 5. Repeat for any additional Snapshots, Regions and AWS accounts. If the snapshot is set to public refer to the remediation below. From the CLI 1. For each snapshot, run aws ec2 describe-snapshot-attribute \ --snapshot-id <snapshot-ID> \ --attribute createVolumePermission 2. Validate Group is not set to all.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to set a snapshot to private: From the Console 1. Login to the EC2 console at https://console.aws.amazon.com/ec2/. 2. In the left pane click Snapshots. 3. Select the snapshot then click ''Actions, Modify Permissions`. 4. Click the radio button for Private 5. Click Save 6. Repeat for any additional Snapshots, Regions and AWS accounts. From the CLI 1. For each snapshot, run aws ec2 modify-snapshot-attribute \ --snapshot-id <snapshot-ID> \ --attribute createVolumePermission \ --operation remove --group-name all'

@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-4.1.2
+title: Disable creating accounts via the GRANT statement
+description: When using the GRANT statement, if the target user does not exist, the system will attempt to create the user. This may lead to unintentional creation of a user with an empty password when the GRANT statement contains errors, introducing account management risks. Enabling the NO_AUTO_CREATE_USER setting in the sql_mode configuration option can prevent the GRANT statement from creating users. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. Passes when the global sql_mode contains NO_AUTO_CREATE_USER (new sessions inherit it).
+target: oceanbase
+level: 1
+severity: medium
+tags:
+- oceanbase
+- authentication
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.1.2 Disable creating accounts via the GRANT statement
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN FIND_IN_SET('NO_AUTO_CREATE_USER', @@global.sql_mode) > 0 THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET @@global.sql_mode = CONCAT(@@global.sql_mode, ',NO_AUTO_CREATE_USER'); (as a user with SUPER).

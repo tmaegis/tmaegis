@@ -1,0 +1,17 @@
+id: TMA-MSSQL-3.15
+title: Ensure access to 'sp_invoke_external_rest_endpoint' is limited to trusted accounts only
+description: Limit the access to the invocation of the sp_invoke_external_rest_endpoint stored procedure.
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- manual
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 3.15 Ensure access to 'sp_invoke_external_rest_endpoint' is limited to trusted accounts only
+audit:
+  type: manual
+  command: 'Run the following T-SQL command on each individual database: SELECT dp.name AS [Principal Name], dp.type_desc AS [Principal Type], perm.permission_name AS [Permission], perm.state_desc AS [Permission State], OBJECT_SCHEMA_NAME(perm.major_id) + ''.'' + OBJECT_NAME(perm.major_id) AS [Object Name] FROM sys.database_permissions perm INNER JOIN sys.database_principals dp ON perm.grantee_principal_id = dp.principal_id WHERE perm.major_id = OBJECT_ID(''sys.sp_invoke_external_rest_endpoint'') AND perm.permission_name = ''EXECUTE'' UNION ALL SELECT dp.name AS [Principal Name], dp.type_desc AS [Principal ...'
+remediation:
+  type: iac_patch
+  command: 'Remove any un-allowed accounts which are granted the privilege to execute the stored procedure by using this query: REVOKE EXECUTE ON OBJECT::sys.sp_invoke_external_rest_endpoint FROM [%accountName%];'

@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.6.3
+title: Ensure 'Do not show AutoRepublish warning alert' is set to 'Disabled'
+description: 'This policy setting controls whether Excel displays an alert before republishing a workbook to the World Wide Web. AutoRepublish is a feature in Excel that allows workbooks to be automatically republished to the World Wide Web each time the workbook is saved. A number of changes might need to be made to allow the workbook to be successfully published, including the following: • External references are converted to values. • Hidden formulas become visible. • The "Set precision as displayed" option, which appears beneath the "When calculating this workbook" heading in the Advanced section of the Excel Options dialog box, is no longer available. ... Audit: reads the registry value(s) disableautorepublishwarning that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.6.3 Ensure 'Do not show AutoRepublish warning alert' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\options'') -Name ''disableautorepublishwarning'' -ErrorAction SilentlyContinue).''disableautorepublishwarning''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':disableautorepublishwarning='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Excel 2016\Excel Options\Save\Do Not Show AutoRepublish Warning Alert'

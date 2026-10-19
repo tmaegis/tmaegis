@@ -1,0 +1,23 @@
+id: TMA-PALOALTO-6.10
+title: Ensure that access to every URL is logged
+description: 'URL filters should not specify any categories as Allow Categories. FAILs if any URL filtering profile has categories in the allow list (allowed categories are not logged); use alert instead. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.10 Ensure that access to every URL is logged
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles url-filtering (?:"[^"\n]*"|\S+) allow \S
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles url-filtering <profile> alert [ <categories previously allowed> ]
+    delete profiles url-filtering <profile> allow
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > URL Filtering. For each permitted category, set the Site Access actioun to alert

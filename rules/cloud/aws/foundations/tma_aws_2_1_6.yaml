@@ -1,0 +1,18 @@
+id: TMA-AWS-2.1.6
+title: Ensure delegated admins manage AWS Organizations- integrated services
+description: Ensure that AWS services (such as AWS CloudTrail) which integrate with AWS Organizations and support delegated administration are managed through delegated administrator member accounts instead of directly from the Organizations management account. For each such service, the management account should enable trusted access and register a purpose-built member account as the delegated administrator, so that this account can perform service-level administration across all organization accounts. The management account has unique and high privileges to manage AWS Organizations (for example, creating/deleting accounts, managing org structures) and is not subject to guardrails like SCPs. Without delegated administrators, organization-wide security, logging, and management services must be operated directly from the management account, concentrating operational activity and credentials in the...
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.1.6 Ensure delegated admins manage AWS Organizations- integrated services
+audit:
+  type: manual
+  command: 'Note: This audit uses AWS CloudTrail as a concrete example. You must perform similar audits for all other AWS services that integrate with AWS Organizations and support delegated administration that are in use in your environment. 1. Sign in to the management account and open the CloudTrail console. 2. In the left navigation pane, choose Trails. - Verify that there is at least one organization trail (trail with Apply trail to all accounts in my organization or equivalent setting enabled) - If CloudTrail is only configured as single-account trails and no organization trail is in use, note that delegated admin for CloudTrail is not in scope and this recommendation is not applicable for CloudTrail in this environment. 3. In the same management account CloudTrail console, choose Settings in the left navigation pane, and scroll to the Organization delegated administrators section. 4. Verify the configuration for Organization delegated administrators: - Verify that at least one member
+    account ID (not the management account) is listed as a delegated administrator for CloudTrail. - Verify that the account(s) are appropriate for security/logging operations (for example, a named Security...'
+remediation:
+  type: iac_patch
+  command: 'Note: This remediation section uses AWS CloudTrail as a concrete example. You must perform similar procedure for all other AWS services that integrate with AWS Organizations and support delegated administration that are in use in your environment. 1. In the management account, verify that trusted access for CloudTrail is enabled in AWS Organizations (AWS Organizations → Services). 2. In the management account CloudTrail console, choose Settings in the left navigation pane. Scroll to Organization delegated administrators. 3. Click on "Register administrator" - Enter the account ID of the designated Logging or Security account. - Click on Register administrator. CloudTrail will automatically create the necessary service-linked roles and register the account. 4. In the delegated administrator account, open the CloudTrail console and confirm that the organization trail is visible and administrative actions are accessible. 5. Update operational runbooks so that routine CloudTrail
+    administration is performed from the delegated admin account, not the management account.'

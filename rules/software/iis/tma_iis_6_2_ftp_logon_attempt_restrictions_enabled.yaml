@@ -1,0 +1,19 @@
+id: TMA-IIS-6.2
+title: Ensure FTP Logon attempt restrictions is enabled
+description: FTP Logon attempt restrictions is a built-in network security feature to automatically block brute force FTP attacks. This can be used to mitigate a malicious client from attempting a brute-force attack on a discovered account, such as the local administrator account. FTP logon attempt restrictions (system.ftpServer/security/authentication/denyByFailure enabled) must be on. Not applicable when the FTP service is not installed. PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- ftp
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 6.2 Ensure FTP Logon attempt restrictions is enabled
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.ftpServer/security/authentication/denyByFailure' -PSPath 'MACHINE/WEBROOT/APPHOST'; if ($c.enabled -eq $true) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\ftpsvc.dll
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.ftpServer/security/authentication/denyByFailure -Name enabled -Value True (set maxFailure and entryExpiration as required)

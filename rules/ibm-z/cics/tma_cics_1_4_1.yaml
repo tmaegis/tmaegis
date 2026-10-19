@@ -1,0 +1,16 @@
+id: TMA-CICS-1.4.1
+title: Ensure that only authorized users can issue SPI commands
+description: SPI commands in CICS can be used to inquire upon or change the state of resources. They are typically used by operators to monitor CICS and system administrators to make changes. Automation tasks will also need access. They are not normally available to general users. The authority to issue SPI commands is determined by a pair of RACF classes specified in the XCMD SIT option.
+target: cics
+level: 1
+severity: low
+tags:
+- cics
+- accounts
+reference: CIS IBM CICS Transaction Server 6.1 Benchmark v1.1.0 - 1.4.1 Ensure that only authorized users can issue SPI commands
+audit:
+  type: manual
+  command: 'Issue the z/OSMF Compliance data collection REST API to drive collection of compliance evidence in the SMF 1154 record. https://{host}:{port}/zosmf/compliance/rest/v1/facts 1. Wait for the data to be collected; this may take up to a minute in some regions. 2. Customize and run the DFH$54P sample JCL to create a spreadsheet containing data for all of the CICS TS regions. 3. Open the spreadsheet and review the settings of the XCMD column. They should all be set to the suffix of the transaction class name. The classes are prefixed by C and V. In the following ... (full steps: CIS section 1.4.1)'
+remediation:
+  type: iac_patch
+  command: 'Categorize the SPI commands on the system according to who should have access to them, and what level of access should be given, for example READ or UPDATE. Define profiles for these commands either generically or in groups in the classes CCICSCMD or VCICSCMD (or the class names used if the default classes aren''t used). Give the required level of access to the appropriate groups for these profiles. An example of this is as follows: RDEFINE VCICSCMD memname OWNER(admin) AUDIT(ALL(READ)) UACC(NONE) RALTER VCICSCMD memname ADDMEM(cmd1 cmd2 cmd3) PERMIT memname CLASS(VCICSCMD) ID(group) ACCESS(READ) SETROPTS RACLIST(CCICSCMD) REFRESH Change any transactions definitions which specify CMDSEC(NO) to CMDSEC(YES) Set XCMD=YES or name Restart CICS'

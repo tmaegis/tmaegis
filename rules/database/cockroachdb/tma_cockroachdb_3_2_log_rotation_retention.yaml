@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-3.2
+title: Ensure Log Rotation and Retention Settings Are Configured
+description: 'CockroachDB log rotation and retention must be configured to prevent uncontrolled growth and to preserve an appropriate history window. CockroachDB supports per-group rotation parameters that control both individual file size and total group retention. Each log file group can define: - max-file-size - maximum size of an individual log file before a new file is created.'
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- logging
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 3.2 Ensure Log Rotation and Retention Settings Are Configured
+audit:
+  type: manual
+  command: 'Run cockroach debug check-log-config (or grep -A10 file-groups: /etc/cockroach/logging.yaml) and confirm each production file group has suitable max-file-size and max-group-size (defaults 10MiB / 100MiB). Check that the on-disk log directory holds enough history to meet the retention policy and that logs are shipped off-node.'
+remediation:
+  type: iac_patch
+  command: '1. Use defaults or define explicit rotation settings: If you do not configure a custom logging YAML, CockroachDB applies defaults of max- file-size: 10MiB and max-group-size: 100MiB to most file groups, which are acceptable for many small-to-medium deployments.'

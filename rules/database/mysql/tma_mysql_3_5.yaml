@@ -1,0 +1,20 @@
+id: TMA-MYSQL-3.5
+title: Ensure 'relay_log_basename' Files Have Appropriate Permissions
+description: 'MySQL can operate using a variety of log files, each used for different purposes. These are the binary log (which can be encrypted), error log, slow query log, relay log (which can be encrypted), general log, and in the enterprise edition, the audit log (which can be encrypted). Fails when any <relay_log_basename>.* file grants other users access, is executable or is not owned by mysql:mysql. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- filesystem
+- permissions
+- replication
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 3.5 Ensure 'relay_log_basename' Files Have Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; b=$(mysql -NBe "SELECT IFNULL(@@global.relay_log_basename, '''')" 2>/dev/null) || exit 1; [ -n "$b" ] || { echo compliant; exit 0; }; case "$b" in /*) ;; *) b="$d/${b#./}" ;; esac; [ -d "$(dirname "$b")" ] || exit 1; n=$(find "$(dirname "$b")" -maxdepth 1 -type f -name "$(basename "$b").*" \( -perm /0117 -o ! -user mysql -o ! -group mysql \) | wc -l); [ "$n" -eq 0 ] && echo compliant || echo "$n noncompliant files"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chmod 660 <relay_log_basename>.* && chown mysql:mysql <relay_log_basename>.*

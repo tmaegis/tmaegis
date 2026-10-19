@@ -1,0 +1,107 @@
+id: TMA-SLES15-1.8.3
+title: Ensure GDM disable-user-list option is enabled
+description: GDM is the GNOME Display Manager which handles graphical login for GNOME based systems. The disable-user-list option controls if a list of users is displayed on the login screen
+target: linux
+os_family:
+- sles-15
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 15 Benchmark v2.0.1 - 1.8.3
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_pkgoutput=\"\"\n   if command -v dpkg-query > /dev/null 2>&1; then\n      l_pq=\"dpkg-query -W\"\n   elif command -v rpm > /dev/null 2>&1; then\n      l_pq=\"rpm -q\"\n   fi\n   l_pcl=\"gdm gdm3\" # Space separated list of packages to check\n   for l_pn in $l_pcl; do\n      $l_pq \"$l_pn\" > /dev/null 2>&1 && l_pkgoutput=\"$l_pkgoutput\\n - Package: \\\"$l_pn\\\" exists on the system\\n - checking configuration\"\n   done\n   if [ -n \"$l_pkgoutput\" ]; then\n      output=\"\" output2=\"\"\n      l_gdmfile=\"$(grep -Pril '\"'\"'^\\h*disable-user-list\\h*=\\h*true\\b'\"'\"' /etc/dconf/db)\"\n      if [ -n \"$l_gdmfile\" ]; then\n         output=\"$output\\n - The \\\"disable-user-list\\\" option is enabled in \\\"$l_gdmfile\\\"\"\n         l_gdmprofile=\"$(awk -F\\/ '\"'\"'{split($(NF-1),a,\".\");print a[1]}'\"'\"' <<< \"$l_gdmfile\")\"\n         if grep -Pq \"^\\h*system-db:$l_gdmprofile\" /etc/dconf/profile/\"$l_gdmprofile\"\
+    ; then\n            output=\"$output\\n - The \\\"$l_gdmprofile\\\" exists\"\n         else\n            output2=\"$output2\\n - The \\\"$l_gdmprofile\\\" doesn'\"'\"'t exist\"\n         fi\n         if [ -f \"/etc/dconf/db/$l_gdmprofile\" ]; then\n            output=\"$output\\n - The \\\"$l_gdmprofile\\\" profile exists in the dconf database\"\n         else\n            output2=\"$output2\\n - The \\\"$l_gdmprofile\\\" profile doesn'\"'\"'t exist in the dconf database\"\n         fi\n      else\n         output2=\"$output2\\n - The \\\"disable-user-list\\\" option is not enabled\"\n      fi\n      if [ -z \"$output2\" ]; then\n         echo -e \"$l_pkgoutput\\n- Audit result:\\n   *** PASS: ***\\n$output\\n\"\n      else\n         echo -e \"$l_pkgoutput\\n- Audit Result:\\n   *** FAIL: ***\\n$output2\\n\"\n         [ -n \"$output\" ] && echo -e \"$output\\n\"\n      fi\n   else\n      echo -e \"\\n\\n - GNOME Desktop Manager isn'\"'\"'t installed\\n - Recommendation is Not Applicable\\\
+    n- Audit result:\\n  *** PASS ***\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+  requires_file:
+  - /usr/sbin/gdm3
+  - /usr/sbin/gdm
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; return 0; }
+    tma_ini_set() { # file section key value
+      local f=$1 s=$2 k=$3 v=$4
+      [ -e "$f" ] || { mkdir -p "$(dirname "$f")"; : > "$f"; }
+      tma_bak "$f"
+      awk -v s="$s" -v k="$k" -v v="$v" '
+        function flush() { if (insec && !done) { print k "=" v; done=1 } }
+        /^[[:space:]]*\[/ { flush(); insec = ($0 ~ "^[[:space:]]*\\[" s "\\][[:space:]]*$"); print; next }
+        insec && $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { if (!done) { print k "=" v; done=1 } ; next }
+        { print }
+        END { flush(); if (!done) { print "[" s "]"; print k "=" v } }' "$f" > "$f.tma" && cat "$f.tma" > "$f"; rm -f "$f.tma"
+    }
+    tma_grub_regen() {
+      if command -v update-grub >/dev/null 2>&1; then update-grub
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        if [ -f /boot/grub2/grub.cfg ]; then grub2-mkconfig -o /boot/grub2/grub.cfg
+        else for c in /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c"; done; fi
+      elif command -v grub-mkconfig >/dev/null 2>&1; then
+        [ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg
+      fi; return 0
+    }
+    tma_cmdline_rm() { # names of kernel args (name or name=value) to drop from the grub defaults
+      local a f c k n
+      for a in "$@"; do
+        for f in /etc/default/grub /etc/default/grub.d/*.cfg; do
+          [ -f "$f" ] || continue
+          grep -Eq "^[[:space:]]*GRUB_CMDLINE_LINUX" "$f" || continue
+          tma_bak "$f"
+          sed -i -E "/^[[:space:]]*GRUB_CMDLINE_LINUX/{ :a; s/([\"' ])${a}(=[^\"' ]*)?([ \"'])/\1\3/; ta; s/  +/ /g; s/ ([\"'])\$/\1/ }" "$f"
+        done
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --remove-args="$a" >/dev/null 2>&1
+      done
+      if command -v grub2-editenv >/dev/null 2>&1; then
+        k=$(grub2-editenv - list 2>/dev/null | sed -n 's/^kernelopts=//p')
+        if [ -n "$k" ]; then n=$k; for a in "$@"; do n=$(printf '%s' "$n" | sed -E "s/(^| )${a}(=[^ ]*)?( |\$)/ /g"); done
+          [ "$n" != "$k" ] && grub2-editenv - set "kernelopts=$n"; fi
+      fi
+      for c in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
+        [ -f "$c" ] || continue
+        for a in "$@"; do sed -i -E "/^[[:space:]]*(linux|kernelopts)/ s/(^|[ =])${a}(=[^ ]*)?( |\$)/\1\3/g" "$c"; done
+      done
+      return 0
+    }
+    tma_cmdline_set() { # name=value pairs forced into GRUB_CMDLINE_LINUX
+      local f=/etc/default/grub kv; [ -f "$f" ] || { echo "no $f"; return 0; }
+      for kv in "$@"; do
+        tma_cmdline_rm "${kv%%=*}" "${kv%%=*}=[^ \"']*" 2>/dev/null
+        tma_bak "$f"
+        if grep -Eq '^[[:space:]]*GRUB_CMDLINE_LINUX=' "$f"; then
+          sed -i -E "s/^([[:space:]]*GRUB_CMDLINE_LINUX=[\"'])(.*)([\"'])\$/\1\2 ${kv}\3/; s/=([\"']) /=\1/" "$f"
+        else printf 'GRUB_CMDLINE_LINUX="%s"\n' "$kv" >> "$f"; fi
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --args="$kv" >/dev/null 2>&1
+      done
+      return 0
+    }
+    prof=gdm
+    mkdir -p /etc/dconf/profile /etc/dconf/db/$prof.d/locks
+    pf() { [ -f "$1" ] || : > "$1"; while IFS= read -r l; do grep -qxF "$l" "$1" || printf '%s\n' "$l" >> "$1"; done; }
+    printf '%s\n' 'user-db:user
+    system-db:gdm
+    file-db:/usr/share/gdm/greeter-dconf-defaults' | pf /etc/dconf/profile/$prof
+    cat > /etc/dconf/db/$prof.d/00-login-screen <<'TMAEOF'
+    [org/gnome/login-screen]
+    disable-user-list=true
+    TMAEOF
+    printf '%s\n' /org/gnome/login-screen/disable-user-list > /etc/dconf/db/$prof.d/locks/00-login-screen
+    command -v dconf >/dev/null 2>&1 && dconf update
+    true
+  guidance: "Run the following script to enable the disable-user-list option: Note: the l_gdm_profile variable in the script can be changed if a different profile name is desired in accordance with local site policy. #!/usr/bin/env bash { l_gdmprofile=\"gdm\" if [ ! -f \"/etc/dconf/profile/$l_gdmprofile\" ]; then echo \"Creating profile \\\"$l_gdmprofile\\\"\" echo -e \"user-db:user\\nsystem-db:$l_gdmprofile\\nfile- db:/usr/share/$l_gdmprofile/greeter-dconf-defaults\" > /etc/dconf/profile/$l_gdmprofile fi if [ ! -d \"/etc/dconf/db/$l_gdmprofile.d/\" ]; then echo \"Creating dconf database directory \\\"/etc/dconf/db/$l_gdmprofile.d/\\\"\" mkdir /etc/dconf/db/$l_gdmprofile.d/ fi if ! grep -Piq '^\\h*disable-user-list\\h*=\\h*true\\…"

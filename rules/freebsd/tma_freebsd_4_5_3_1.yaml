@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.5.3.1
+title: Ensure nologin is not listed in /etc/shells
+description: '/etc/shells is a text file that contains the full pathnames of valid login shells. This file is consulted by chsh and is available to be queried by other programs. Be aware that there are programs that consult this file to find out if a user is a normal user; for example, FTP daemons traditionally disallow access to users with shells not included in this file. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.3.1 Ensure nologin is not listed in /etc/shells
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; out=$( { grep "/nologin" /etc/shells ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Edit /etc/shells and remove any lines that include nologin

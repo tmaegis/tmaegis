@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.5
+title: Ensure that newly assigned UID and GID are unique values
+description: When users and groups share UID and GID respectively, they are essentially the same entity to the UNIX kernel. Sharing IDs can result in unintended file access and a loss of accountability.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.5 Ensure that newly assigned UID and GID are unique values
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that UNIXPRIV appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that UNIXPRIV appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that UNIXPRIV appears. Request reports generated using IRRDBU00 output that will allow you to: Verify that a fully qualified profile named SHARED.IDS is present in the UNIXPRIV class.'
+remediation:
+  type: iac_patch
+  command: 'To activate the UNIXPRIV class use the RACF SETROPTS command: SETROPTS CLASSACT(UNIXPRIV) To enable generic profile checking for the UNIXPRIV class use the RACF SETROPTS command: SETROPTS GENERIC(UNIXPRIV) To RACLIST the UNIXPRIV class use the RACF SETROPTS command: SETROPTS RACLIST(UNIXPRIV) To create a UNIXPRIV profile use the RACF RDEFINE command: RDEFINE UNIXPRIV SHARED.IDS + DATA(''CONTROL THE USE OF SHARED UNIX UID OR GID'')'

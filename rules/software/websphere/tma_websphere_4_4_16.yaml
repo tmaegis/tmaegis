@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-4.4.16
+title: Ensure HTTP session overflow is 'disabled'
+description: Applications that use in-memory HTTP sessions can configure if overflow is allowed and the number of sessions that can be created. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 1
+severity: medium
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 4.4.16 Ensure HTTP session overflow is 'disabled'
+audit:
+  type: manual
+  command: Ensure that the allowOverflow attribute of httpSession element is set to false and the maxInMemorySessionCountvalue of thehttpSession` element is set to an appropriate value in Liberty configuration. grep -w -R -i 'allowOverflow' ${server.config.dir} grep -w -R -i 'maxInMemorySessionCount' ${server.config.dir}
+remediation:
+  type: iac_patch
+  command: Set the allowOverflow attribute on the httpSession element to the value of false in ${server.config.dir}/configDropins/overrides/*.xml. Also set the maxInMemorySessionCount attribute on the httpSession element to a maximum number of sessions the JVM is able to support for each web module. <httpSession allowOverflow="false" maxInMemorySessionCount="1000" />

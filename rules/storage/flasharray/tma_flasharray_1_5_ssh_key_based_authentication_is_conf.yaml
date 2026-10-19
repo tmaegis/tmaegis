@@ -1,0 +1,17 @@
+id: TMA-FLASHARRAY-1.5
+title: Ensure SSH key-based authentication is configured for CLI access, preferably sourced from LDAP
+description: FlashArray allows for SSH public keys to be retrieved from a configurable attribute within a configured LDAP server if delegated account management with LDAP is in use. If this is not viable in your environment, or local administrative accounts are in use, then SSH public key based authentication can be configured locally per-user. Manual review in the Purity//FA GUI or CLI (organization-specific or per-object evidence).
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- access-control
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 1.5 Ensure SSH key-based authentication is configured for CLI access, preferably sourced from LDAP
+audit:
+  type: manual
+  command: 'From the CLI: ; Run the command pureadmin list --publickey to display all users and their public key status. ; Review the output to confirm that all authorized CLI users have a public key configured. ; Test the configuration: Initiate an SSH connection to the array from an administrative workstation using the user''s private key to ensure successful authentication.'
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, configure SSH public keys for your administrative accounts so they can authenticate securely using a private key rather than a password. From the GUI: ; Navigate to Settings > Access > Users and Policies. ; In the Users panel, click the Edit (three vertical dots) icon for the user you want to modify and select Edit User.... ; In the Edit User pop-up window, select Overwrite and paste the user''s SSH public key into the Public Key field. ; Click Save. From the CLI: ; Add a public key: Initiate the configuration for a specific user using the pureadmin setattr command. ; Command Syntax: pureadmin setattr --publickey <USERNAME>'

@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.10.8.1.2.3
+title: Ensure 'Prevent publishing to Office.com' is set to 'Enabled'
+description: 'This policy setting controls whether Outlook users can publish their calendars to the Office.com Calendar Sharing Service. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) disableofficeonline that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.10.8.1.2.3 Ensure 'Prevent publishing to Office.com' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\options\pubcal'') -Name ''disableofficeonline'' -ErrorAction SilentlyContinue).''disableofficeonline''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':disableofficeonline='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Outlook 2016\Outlook Options\Preferences\Calendar Options\Office.com Sharing Service\Prevent publishing to Office.com'

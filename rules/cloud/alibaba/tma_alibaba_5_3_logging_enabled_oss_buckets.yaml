@@ -1,0 +1,25 @@
+id: TMA-ALIBABA-5.3
+title: Ensure that logging is enabled for OSS buckets
+description: OSS Bucket Access Logging generates a log that contains access records for each request made to your OSS bucket. An access log record contains details about the request, such as the request type, the resources specified in the request worked, and the time and date the request was processed. By enabling OSS bucket logging on target OSS buckets, it is possible to capture all events which may affect objects within an target buckets. aliyun oss logging --method get must return a BucketLoggingStatus with a TargetBucket for every bucket. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- oss
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 5.3 Ensure that logging is enabled for OSS buckets
+audit:
+  type: command
+  command: |-
+    out=$(aliyun oss ls -s 2>/dev/null) || exit 1
+    bs=$(printf '%s\n' "$out" | grep -o 'oss://[^[:space:]]*' | sed 's#^oss://##; s#/$##')
+    bad=0
+    for b in $bs; do
+      lg=$(aliyun oss logging --method get "oss://$b" 2>/dev/null) || exit 1
+      printf '%s\n' "$lg" | grep -q '<TargetBucket>' || { echo "access logging off: $b"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun oss logging --method put oss://<bucket> oss://<log-bucket>/<prefix>/ for each listed bucket (or OSS console > bucket > Logging > Enable).

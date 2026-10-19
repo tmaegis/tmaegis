@@ -1,0 +1,18 @@
+id: TMA-FLASHARRAY-2.4
+title: Ensure LDAP directory services use LDAPS with a configured CA root of trust
+description: 'FlashArray supports LDAP directory services for administrative login and authorization, as well as for NFS authorization. Everpure recommends the following: ; Utilize LDAPS in order to establish secure LDAP connections. ; Specify one or more certificate authorities as roots of trust for each LDAP directory service. Fails when any directory service URI uses plaintext ldap://; also confirm a CA certificate is configured (pureds list --ca-certificate). Passes when no directory service is configured (see 1.2). The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "pureds list --nvp; pureds list --ca-certificate" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- encryption
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 2.4 Ensure LDAP directory services use LDAPS with a configured CA root of trust
+audit:
+  type: config_regex
+  pattern: (?i)\bldap://
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, update your directory service configuration to enforce LDAPS and configure the appropriate CA certificate for trust. From the GUI: ; Navigate to Settings > Access > Users and Policies. ; In the Directory Service panel, select either the Array Management or Data button, then click the edit icon. ; Update the URIs field to use the ldaps:// scheme (e.g., ldaps://ldap.company.com:636) and click Save. ; To configure the root of trust, click Edit next to CA Certificate within the Directory Service panel. Paste the PEM-formatted certificate from your Certificate Authority and click Save.'

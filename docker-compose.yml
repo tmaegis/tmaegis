@@ -1,0 +1,19 @@
+# Self-hosted TMAegis dashboard:  TMAEGIS_SERVER_TOKEN=$(openssl rand -hex 24) docker compose up -d
+services:
+  tmaegis-server:
+    build: .
+    entrypoint: ["/usr/local/bin/tmaegis-server"]
+    command: ["-addr", ":8080", "-rules-dir", "/etc/tmaegis/rules", "-data-dir", "/data"]
+    environment:
+      TMAEGIS_SERVER_TOKEN: ${TMAEGIS_SERVER_TOKEN:?set TMAEGIS_SERVER_TOKEN}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - tmaegis-data:/data
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  tmaegis-data:

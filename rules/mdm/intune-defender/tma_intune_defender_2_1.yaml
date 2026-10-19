@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.1
+title: Ensure 'Allow Archive Scanning' is set to 'Allowed'
+description: 'This policy setting configures whether Microsoft Defender Antivirus scans for malicious software and unwanted software in archive files such as .ZIP or .CAB files. The recommended state for this setting is: Allowed. Scans the archive files.. Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.1 Ensure 'Allow Archive Scanning' is set to 'Allowed'
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''DisableArchiveScanning'' -ErrorAction SilentlyContinue).''DisableArchiveScanning''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''DisableArchiveScanning='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Allowed. Scans the archive files.: Defender\Allow Archive Scanning To establish the recommended configuration via Endpoint Security Blade: 1. Navigate to Endpoint Security 2. Click Antivirus 3. Click Create Profile 4. Select Windows for the Platform and Microsoft Defender Antivirus for Profile 5. Name the profile 6. Configure Allow Archive Scanning to Allowed'

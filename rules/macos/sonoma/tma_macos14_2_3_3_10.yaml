@@ -1,0 +1,36 @@
+id: TMA-MACOS14-2.3.3.10
+title: Ensure Bluetooth Sharing Is Disabled
+description: Bluetooth Sharing allows files to be exchanged with Bluetooth-enabled devices. This setting only disables the receiving of files and requires both devices to be paired through Bluetooth as well as accepted by the receiver. This setting does not disable the ability to send files from the device to another paired Bluetooth device. Bluetooth pairing only requires an acceptance dialog on either device attempting to pair. It does require the Bluetooth pane in System Settings to be open for any macOS device to be discoverable. While it does give a verification code, it does not require either device to enter the code, but just accept the dialog box (on either device). At that point, the two devices are paired and files can be shared through Bluetooth. To receive files through Bluetooth File Exchange application, the user does have to accept the file(s) through a dialog box. Users should onl...
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: medium
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.3.3.10 Ensure Bluetooth Sharing Is Disabled
+audit:
+  type: command
+  command: "ul=$(/usr/bin/dscl . -list /Users UniqueID 2>/dev/null) || exit 1\nbad=\"\"\nfor u in $(printf '%s\\n' \"$ul\" | /usr/bin/awk '$2 > 500 {print $1}'); do\n  v=$(/usr/bin/sudo -u \"$u\" /usr/bin/defaults -currentHost read com.apple.Bluetooth PrefKeyServicesEnabled 2>/dev/null)\n  [ -n \"$v\" ] && [ \"$v\" != 0 ] && bad=\"$bad $u\"\ndone\nif [ -z \"$bad\" ]; then echo compliant; else echo \"Bluetooth Sharing enabled for:$bad\"; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    for u in $(/usr/bin/dscl . -list /Users UniqueID 2>/dev/null | /usr/bin/awk '$2 > 500 {print $1}'); do
+      /usr/bin/sudo -u "$u" /usr/bin/defaults -currentHost write com.apple.Bluetooth PrefKeyServicesEnabled -bool false 2>/dev/null
+    done; true
+  guidance: "Graphical Method: Perform the following steps to disable Bluetooth Sharing: 1. Open System Settings 2. Select General 3. Select Sharing 4. Set Bluetooth Sharing to disabled Terminal Method: Run the following command to disable Bluetooth Sharing is disabled: % /usr/bin/sudo -u <username> /usr/bin/defaults -currentHost write com.apple.Bluetooth PrefKeyServicesEnabled -bool false % /usr/bin/sudo -u firstuser /usr/bin/defaults -currentHost write com.apple.Bluetooth PrefKeyServicesEnabled -bool false"

@@ -1,0 +1,19 @@
+id: TMA-JUNIPER-JUNOS-6.1.4
+title: Recommend Accounting of Interactive Commands (where External AAA is used)
+description: Where External AAA is used, Interactive Command Accounting Events should be sent to either TACACS+ or RADIUS. To protect any asset, including a Juniper router, you have to have a record of who logged in or attempted to login as well as who made changes to the configuration and when. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.1.4 Recommend Accounting of Interactive Commands (where External AAA is used)
+audit:
+  type: config_regex
+  pattern: (?m)^set system accounting events (?:\[ [^\n]*)?\binteractive-commands\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure Accounting of Logins and Configuration Changes by entering the following commands under the hierarchy;
+    set system accounting events [change-log interactive-commands login] The interactive-commands should be selected at a minimum, although in many cases you may also wish to add change-log and login accounting.

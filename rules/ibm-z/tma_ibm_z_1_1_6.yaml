@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-1.1.6
+title: Ensure that the SETROPTS PASSWORD(ALGORITHM) value is set to KDFAES
+description: 'The SETROPTS PASSWORD(ALGORITHM) algorithm is used to encrypt passwords and password phrases, but not OIDCARD data. The RACF KDFAES algorithm is designed to be resistant to offline attacks by incorporating the following properties: Each instance of a RACF password injects randomly generated text into the encryption process. This prevents the use of pre-computed password hashes.'
+target: ibm-z
+level: 2
+severity: high
+tags:
+- ibm-z
+- password-policy
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.1.6 Ensure that the SETROPTS PASSWORD(ALGORITHM) value is set to KDFAES
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the PASSWORD PROCESSING OPTIONS: section. Verify the following message is present: THE ACTIVE PASSWORD ENCRYPTION ALGORITHM IS KDFAES'
+remediation:
+  type: iac_patch
+  command: 'To modify the ALGORITHM parameter use the RACF SETROPTS command: SETROPTS PASSWORD(ALGORITHM(KDFAES)) Note: After ALGORITHM(KDFAES) enablement, the existing algorithm continues to be used to evaluate a user''s password or password phrase until the user''s password or password phrase is changed. The first time a user''s password or password phrase is changed, the new algorithm is used from that point forward. After KDFAES is enabled, you might want to strengthen passwords immediately, rather than wait for users to change them on their normal schedule. The PWCONVERT operand of the ALTUSER command can be used. PWCONVERT converts a DES password and DES password history entries to KDFAES format without requiring the password to be changed. ALTUSER <user-id> PWCONVERT Notes: 1. Conversion assumes that the existing password and password history are in DES format. Do not perform the conversion if you have passwords that are masked or installation-encoded. 2. Conversion does not affect
+    password phrases or phrase history. 3. If an older copy of your RACF database containing DES passwords is compromised and an attacker is able to decrypt a password value, a ... (see CIS section 1.1.6)'

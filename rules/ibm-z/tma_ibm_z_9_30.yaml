@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-9.30
+title: Ensure that access to file systems containing critical data is controlled
+description: Critical data can be stored within zFS file systems. Access to files and directories is controlled by z/OS UNIX mechanisms such as UID(0), file ownership, file permission and access control lists. Using profiles in the FSACCESS class, you can restrict the ability to cross a mount point into a zFS file system to only those explicitly permitted in the profile.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.30 Ensure that access to file systems containing critical data is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FSACCES appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FSACCES appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FSACCES appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FSACCES entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering file systems containing critical data Request reports generated using ... (full steps: CIS section 9.30)'
+remediation:
+  type: iac_patch
+  command: 'To activate the FSACCES class use the RACF SETROPTS command: SETROPTS CLASSACT(FSACCES) To enable generic profile checking for the FSACCES class use the RACF SETROPTS command: SETROPTS GENERIC(FSACCES) To RACLIST the FSACCES class use the RACF SETROPTS command: SETROPTS RACLIST(FSACCES) To create an FSACCES profile use the RACF RDEFINE and PERMIT commands: RDEFINE FSACCES <dataset-mask> + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''CROSS A MOUNT POINT INTO ZFS FILE SYSTEM'') PERMIT <dataset-mask> CLASS(FSACCES) + ACCESS(READ) ID(<compliant>) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER FSACCES <profile> + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FSACCES) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(FSACCES) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(FSACCES) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands:
+    RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to ... (see CIS section 9.30)'

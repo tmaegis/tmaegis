@@ -1,0 +1,18 @@
+id: TMA-M365-3.2.3
+title: Ensure DLP policies are published for Copilot users
+description: Microsoft Purview Data Loss Prevention (DLP) policies can be scoped to Microsoft 365 Copilot and Copilot Chat interactions. When active, these policies can restrict Copilot from processing or surfacing content that matches configured sensitive information types. Organizations must define the sensitive data categories relevant to their environment and configure at least one DLP policy that covers Copilot interactions in enforcement mode. The recommended state is to configure at least one DLP policy that includes Microsoft 365 Copilot and Copilot Chat - All accounts as a location with rules specific to the organization's needs. Microsoft 365 Copilot can retrieve, summarize, and generate content based on data the authenticated user has access to across M365 workloads, including SharePoint, OneDrive, Teams, and Exchange. Without a DLP policy scoped to Copilot interactions, no technical co...
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 3.2.3 Ensure DLP policies are published for Copilot users
+audit:
+  type: manual
+  command: 'Note: Some tenants may have a default policy called Default DLP policy - Protect sensitive M365 Copilot interactions that was automatically created. If not present, it can also be created using a guided process in the Policies blade. If this policy exists, it may be used to satisfy the requirements of this control provided it meets the compliance criteria below. To audit using the UI: 1. Navigate to Microsoft Purview compliance portal https://purview.microsoft.com/ 2. Under Solutions select Data loss prevention then Policies. 3. Inspect the list of policies and verify the following criteria: o Locations includes Microsoft 365 Copilot and Copilot Chat - All accounts. o Mode is On. o The policy includes Rules that restrict sensitive data from being shared in Copilot interactions based on the organization''s needs. 4. Compliance is met when there is at least one policy that meets the above criteria. To audit using PowerShell: 1. Connect to the Security & Compliance PowerShell using
+    Connect-IPPSSession. 2. Run the following to return policies that include Teams chat and channel messages: $DlpPolicy = Get-DlpCompliancePolicy $DlpPolicy | Where-Object {$_.EnforcementPlanes -match "Copi...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: Note: Microsoft provides a guided wizard to create the Default DLP policy - Protect sensitive M365 Copilot interactions policy, which can be used when no Copilot DLP policy exists in the tenant. The steps below describe how to create a custom policy from scratch with Copilot included as a location. 1. Navigate to Microsoft Purview compliance portal https://purview.microsoft.com/ 2. Under Solutions select Data loss prevention then Policies. 3. Click Policies tab. 4. Click + Create Policy. 5. Click on Enterprise applications & devices. 6. Under Categories select Custom and then Custom policy for the regulation. 7. Name the policy, and if appropriate, select an Admin Unit. 8. In Locations select Microsoft 365 Copilot and Copilot Chat. 9. Click on Next to proceed to the Advanced DLP rules page. 10. Click on + Create Rule 1. Name the rule and give a brief description of the data that is being targeted. 2. Click on + Add condition and select Content Contains
+    3. Click on Add and select Sensitive info types 4. Select the sensitive information types the organization wants to protect from being processed in Copilot interactions and click Add. 5. Click on + Add a...'

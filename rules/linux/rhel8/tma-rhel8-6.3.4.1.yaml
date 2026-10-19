@@ -1,0 +1,83 @@
+id: TMA-RHEL8-6.3.4.1
+title: Ensure the audit log file directory mode is configured
+description: The audit log directory contains audit log files.
+target: linux
+os_family:
+- rhel-8
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 8 Benchmark v4.0.0 - 6.3.4.1
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_perm_mask=\"0027\"\n   if [ -e \"/etc/audit/auditd.conf\" ]; then\n      l_audit_log_directory=\"$(dirname \"$(awk -F= '\"'\"'/^\\s*log_file\\s*/{print $2}'\"'\"' /etc/audit/auditd.conf | xargs)\")\"\n      if [ -d \"$l_audit_log_directory\" ]; then\n         l_maxperm=\"$(printf '\"'\"'%o'\"'\"' $(( 0777 & ~$l_perm_mask )) )\"\n         l_directory_mode=\"$(stat -Lc '\"'\"'%#a'\"'\"' \"$l_audit_log_directory\")\"\n         if [ $(( $l_directory_mode & $l_perm_mask )) -gt 0 ]; then\n            echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n  - Directory: \\\"$l_audit_log_directory\\\" is mode: \\\"$l_directory_mode\\\"\\n     (should be mode: \\\"$l_maxperm\\\" or more restrictive)\\n\"\n         else\n            echo -e \"\\n- Audit Result:\\n  ** PASS **\\n  - Directory: \\\"$l_audit_log_directory\\\" is mode: \\\"$l_directory_mode\\\"\\n     (should be mode: \\\"$l_maxperm\\\" or more restrictive)\\n\"\n         fi\n  \
+    \    else\n         echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n  - Log file directory not set in \\\"/etc/audit/auditd.conf\\\" please set log file directory\"\n      fi\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n  - File: \\\"/etc/audit/auditd.conf\\\" not found\\n  - ** Verify auditd is installed **\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_AUDITD_CONF=/etc/audit/auditd.conf
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; }
+    tma_audit_pkg() {
+      command -v auditctl >/dev/null 2>&1 && [ -f /etc/audit/auditd.conf ] && return 0
+      if command -v apt-get >/dev/null 2>&1; then tma_pkg_install auditd; else tma_pkg_install audit; fi; }
+    tma_nl() { [ -s "$1" ] && [ -n "$(tail -c1 "$1")" ] && echo >> "$1"; return 0; }
+    tma_kv() { # file key value : 'key = value' style (auditd.conf); replaces every uncommented line
+      f=$1; k=$2; v=$3
+      [ -f "$f" ] || return 0
+      tma_bak "$f"
+      if grep -Eq "^[[:space:]]*$k[[:space:]]*=" "$f"; then
+        sed -i -E "s|^[[:space:]]*$k[[:space:]]*=.*|$k = $v|" "$f"
+      else tma_nl "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; fi; }
+    tma_ini_set() { # file section key value : systemd ini 'Key=value'
+      f=$1; s=$2; k=$3; v=$4
+      mkdir -p "$(dirname "$f")"; [ -f "$f" ] || : > "$f"; tma_nl "$f"
+      sed -i -E "/^[[:space:]]*$k[[:space:]]*=/d" "$f"
+      if grep -q "^\[$s\]" "$f"; then sed -i "/^\[$s\]/a $k=$v" "$f"; else printf '[%s]\n%s=%s\n' "$s" "$k" "$v" >> "$f"; fi; }
+    tma_clear() { # path octal-mask : remove the mask bits from the file mode
+      [ -e "$1" ] || return 0
+      m=$(stat -Lc %a "$1")
+      [ $((8#$m & 8#$2)) -eq 0 ] || chmod "$(printf '%o' $((8#$m & ~8#$2 & 8#7777)))" "$1"; }
+    tma_rule() { # rules.d-filename audit-rule-line : append when missing (whitespace-normalised)
+      f=/etc/audit/rules.d/$1; shift; l=$*
+      mkdir -p /etc/audit/rules.d; [ -f "$f" ] || : > "$f"
+      if ! tr -s ' \t' '  ' < "$f" | sed 's/^ //;s/ $//' | grep -Fxq -- "$l"; then tma_nl "$f"; printf '%s\n' "$l" >> "$f"; fi
+      chown root:root "$f"; chmod 640 "$f"; }
+    tma_rules_load() { command -v augenrules >/dev/null 2>&1 && augenrules --load >/dev/null 2>&1; true; }
+    tma_audit_logdir() {
+      d=$(awk -F= '/^[[:space:]]*log_file[[:space:]]*=/{print $2}' /etc/audit/auditd.conf 2>/dev/null | xargs 2>/dev/null)
+      [ -n "$d" ] && dirname "$d" || echo /var/log/audit; }
+    tma_grub_arg() { # key=value : add/replace in GRUB_CMDLINE_LINUX and regenerate grub.cfg
+      a=$1; k=${a%%=*}; g=/etc/default/grub
+      [ -f "$g" ] || { echo "no $g: bootloader not managed by grub defaults" >&2; return 0; }
+      tma_bak "$g"
+      if ! grep -q '^GRUB_CMDLINE_LINUX=' "$g"; then tma_nl "$g"; printf 'GRUB_CMDLINE_LINUX="%s"\n' "$a" >> "$g"
+      elif grep -E '^GRUB_CMDLINE_LINUX=' "$g" | grep -Eq "[\"' ]$k(=|[\"' ])"; then
+        sed -i -E "/^GRUB_CMDLINE_LINUX=/ s#([\"' ])$k(=[^\"' ]*)?([\"' ])#\1$a\3#" "$g"
+      else
+        sed -i -E "/^GRUB_CMDLINE_LINUX=/ s#([\"'])\$#  $a\1#; /^GRUB_CMDLINE_LINUX=/ s#=([\"'])  #=\1#; /^GRUB_CMDLINE_LINUX=/ s#   *# #g" "$g"
+      fi
+      if command -v update-grub >/dev/null 2>&1; then update-grub >/dev/null 2>&1
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        for c in /boot/grub2/grub.cfg /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c" >/dev/null 2>&1; done
+      elif command -v grub-mkconfig >/dev/null 2>&1; then grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1; fi
+      true; }
+    tma_audit_pkg
+    dir=$(tma_audit_logdir); tma_clear "$dir" 27
+  guidance: "Run the following command to configure the audit log directory to have a mode of \"0750\" or less permissive: # chmod g-w,o-rwx \"$(dirname \"$(awk -F= '/^\\s*log_file\\s*/{print $2}' /etc/audit/auditd.conf | xargs)\")\""

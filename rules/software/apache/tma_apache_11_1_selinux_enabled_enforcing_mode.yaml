@@ -1,0 +1,20 @@
+id: TMA-APACHE-11.1
+title: Ensure SELinux Is Enabled in Enforcing Mode
+description: SELinux (Security-Enhanced Linux) is a Linux kernel security module that provides mandatory access control security policies with type enforcement that are checked after the traditional discretionary access controls. It was created by the US National Security Agency and can enforce rules on files and processes in a Linux system, and restrict actions, based on defined policies. sestatus must report both the current mode and the mode from the config file as enforcing. Not applicable without /etc/selinux/config.
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- selinux
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 11.1 Ensure SELinux Is Enabled in Enforcing Mode
+audit:
+  type: command
+  shell: bash
+  command: 's=$(sestatus 2>/dev/null) || exit 1; printf ''%s\n'' "$s" | awk -F: ''tolower($1)~/current mode/{c=$2} tolower($1)~/mode from config file/{f=$2} END{gsub(/[[:space:]]/,"",c); gsub(/[[:space:]]/,"",f); print (c=="enforcing"&&f=="enforcing")?"compliant":"noncompliant"}'''
+  expected_output: compliant
+  requires_file:
+  - /etc/selinux/config
+remediation:
+  type: iac_patch
+  command: Set SELINUX=enforcing in /etc/selinux/config and run setenforce 1 (reboot if SELinux was disabled).

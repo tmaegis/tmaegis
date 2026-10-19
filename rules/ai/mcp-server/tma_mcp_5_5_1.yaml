@@ -1,0 +1,19 @@
+id: TMA-MCP-5.5.1
+title: Ensure authorization, scope, and expiry controls are enforced on MCP Tasks
+description: MCP Tasks are long-running operations that return a task handle for asynchronous status polling and result retrieval. Because the Tasks extension defines task lifecycle management but leaves access control to implementations, authorization is enforced independently at task creation, status polling, and result retrieval. The server ensures callers can only access tasks they created and re-validates authorization when results are retrieved since credentials may be revoked or expire during execution. Task handles are generated from a cryptographically secure random source, remain non- guessable, and never serve as proof of identity on their own. Although the extension makes ttlMs nullable and expiration optional, Level 2 deployments enforce a finite, non-null retention period through ttlMs as a CIS hardening measure. In the 2026-07- 28 revision, Tasks is an extension (io.modelcontextprot...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.5.1 Ensure authorization, scope, and expiry controls are enforced on MCP Tasks
+audit:
+  type: manual
+  command: 'Confirm that a task retrievable by its owning identity cannot be retrieved by a second identity. Run the following command, substituting the endpoint, a task handle owned by a first identity, that identity''s bearer token, and a second identity''s bearer token. The command sets Mcp-Name to the task id as the extension requires: URL="<MCP_ENDPOINT>" OWNER_TASK=''<TASK_HANDLE_OWNED_BY_FIRST_IDENTITY>'' OWNER_TOKEN=''<FIRST_IDENTITY_BEARER_TOKEN>'' OTHER_TOKEN=''<SECOND_IDENTITY_BEARER_TOKEN>'' gettask(){ curl -sS --connect-timeout 5 -m 10 -X POST "$URL" \ -H ''Content-Type: application/json'' -H ''Accept: application/json, text/event-stream'' \ -H ''MCP-Protocol-Version: 2026-07-28'' -H ''Mcp-Method: tasks/get'' -H "Mcp-Name: $OWNER_TASK" \ -H "Authorization: Bearer $1" \ -d "{\"jsonrpc\":\"2.0\",\"id\":$2,\"method\":\"tasks/get\",\"params\":{\"taskId\":\"$OW NER_TASK\",\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07- 28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"cis-benchmark-
+    audit\",\"version\":\"1.0\"},\"io.modelcontextprotocol/clientCapabilities\":{\"extens ions\":{\"io.modelcontextprotocol/tasks\":{}}}}}}" 2>/dev/null; } pick(){ o=$(printf ''%s'' "$1" | jq -c "selec...'
+remediation:
+  type: iac_patch
+  command: Configure the server to generate task handles from a cryptographically secure random source, for example a version-4 UUID. Enforce per-identity ownership at both tasks/get and result retrieval, and re-validate authorization at retrieval time. Set a finite, non-null ttlMs with scheduled cleanup. The extension makes expiry optional, so a finite retention period is a Level 2 requirement under this Recommendation. Negotiate the Tasks extension through the extension capability, with the client declaring io.modelcontextprotocol/tasks in its per-request capabilities. The extension defines no tasks/list method, so do not rely on task enumeration. This is server middleware, and there is no portable command.

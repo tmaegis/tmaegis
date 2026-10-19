@@ -1,0 +1,29 @@
+id: TMA-ORACLE-DB-3.5
+title: Ensure 'PASSWORD_VERIFY_FUNCTION' Is Set For All Profiles
+description: The PASSWORD_VERIFY_FUNCTION enforces password complexity checks when a database account's password is changed. It should be set for all profiles. Note that this setting does not apply to administrative roles (like SYSDBA, SYSDG or SYSOPER) authenticated by the Oracle password file. From 12.2, Oracle provides password complexity rules for password file users (Doc 2294754.1) Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- password-policy
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 3.5 Ensure 'PASSWORD_VERIFY_FUNCTION' Is Set For All Profiles
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from sys.cdb_profiles p
+    where p.resource_name = 'PASSWORD_VERIFY_FUNCTION'
+    and p.limit = 'NULL';
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Use the password verification function, or create a custom password verification function which fulfills the password requirements of the organization. Oracle supplies two password verification functions with the database ora12c_verify_function and ora12c_strong_verify_function. You may also create your own function if your organization's standards are different from the functions Oracle supplies. For a sample of a password verification function that you can customize to meet your needs, see $ORACLE_HOME/rdbms/admin/catpvf.sql. In most cases, we recommend that ora12c_strong_verify_function be used.

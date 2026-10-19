@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-5.6
+title: Ensure ysql_enable_auth is set to true
+description: The ysql_enable_auth GFlag controls whether password authentication is required for YSQL connections. When set to false (the default), connections are accepted without authentication, which is only appropriate for isolated development environments. In all other environments, this flag must be enabled to enforce password-based access control for the YSQL interface. Reads the YB-TServer GFlags from the web UI at ${YB_TSERVER_WEB:-127.0.0.1:9000}/varz; run it against every TServer. Passes when ysql_enable_auth=true.
+target: yugabytedb
+level: 1
+severity: critical
+tags:
+- yugabytedb
+- authentication
+reference: CIS YugabyteDB Benchmark v2.0.0 - 5.6 Ensure ysql_enable_auth is set to true
+audit:
+  type: command
+  command: out=$(curl -sf "http://${YB_TSERVER_WEB:-127.0.0.1:9000}/varz?raw=1" 2>/dev/null) || exit 1; if printf '%s\n' "$out" | grep -qE -- '--ysql_enable_auth=(true)([^[:alnum:]_]|$)'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add --ysql_enable_auth=true to every YB-TServer startup configuration and restart it; then change the default yugabyte password (5.7).

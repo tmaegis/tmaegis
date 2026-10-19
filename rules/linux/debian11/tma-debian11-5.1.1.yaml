@@ -1,0 +1,40 @@
+id: TMA-DEBIAN11-5.1.1
+title: Ensure permissions on /etc/ssh/sshd_config are configured
+description: The file /etc/ssh/sshd_config, and files ending in .conf in the /etc/ssh/sshd_config.d directory, contain configuration specifications for sshd.
+target: linux
+os_family:
+- debian-11
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 11 Benchmark v2.0.0 - 5.1.1
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   perm_mask='\"'\"'0177'\"'\"' && maxperm=\"$( printf '\"'\"'%o'\"'\"' $(( 0777 & ~$perm_mask)) )\"\n   SSHD_FILES_CHK()\n   {\n      while IFS=: read -r l_mode l_user l_group; do\n         l_out2=\"\"\n         [ $(( $l_mode & $perm_mask )) -gt 0 ] && l_out2=\"$l_out2\\n  - Is mode: \\\"$l_mode\\\" should be: \\\"$maxperm\\\" or more restrictive\"\n         [ \"$l_user\" != \"root\" ] && l_out2=\"$l_out2\\n  - Is owned by \\\"$l_user\\\" should be owned by \\\"root\\\"\"\n         [ \"$l_group\" != \"root\" ] && l_out2=\"$l_out2\\n  - Is group owned by \\\"$l_user\\\" should be group owned by \\\"root\\\"\"\n         if [ -n \"$l_out2\" ]; then\n            l_output2=\"$l_output2\\n - File: \\\"$l_file\\\":$l_out2\"\n         else\n            l_output=\"$l_output\\n - File: \\\"$l_file\\\":\\n  - Correct: mode ($l_mode), owner ($l_user), and group owner ($l_group) configured\"\n         fi\n \
+    \     done < <(stat -Lc '\"'\"'%#a:%U:%G'\"'\"' \"$l_file\")\n   }\n   [ -e \"/etc/ssh/sshd_config\" ] && l_file=\"/etc/ssh/sshd_config\" && SSHD_FILES_CHK\n   while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_file; do\n      [ -e \"$l_file\" ] && SSHD_FILES_CHK\n   done < <(find -L /etc/ssh/sshd_config.d -type f  \\( -perm /077 -o ! -user root -o ! -group root \\) -print0 2>/dev/null)\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  *** PASS ***\\n- * Correctly set * :\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - * Reasons for audit failure * :\\n$l_output2\\n\"\n      [ -n \"$l_output\" ] && echo -e \" - * Correctly set * :\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    for f in /etc/ssh/sshd_config $(find /etc/ssh/sshd_config.d -type f 2>/dev/null); do
+      [ -e "$f" ] || continue
+      chown root:root "$f"; m=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$m & 8#0600)))" "$f"
+    done
+    exit 0
+  guidance: "Run the following script to set ownership and permissions on /etc/ssh/sshd_config and files ending in .conf in the /etc/ssh/sshd_config.d directory: #!/usr/bin/env bash { chmod u-x,og-rwx /etc/ssh/sshd_config chown root:root /etc/ssh/sshd_config while IFS= read -r -d $'\\0' l_file; do if [ -e \"$l_file\" ]; then chmod u-x,og-rwx \"$l_file\" chown root:root \"$l_file\" fi done < <(find /etc/ssh/sshd_config.d -type f -print0 2>/dev/null) } - IF - other locations are listed in an Include statement, *.conf files in these locations access should also be modified."

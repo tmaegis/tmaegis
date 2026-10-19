@@ -1,0 +1,19 @@
+id: TMA-IIS-3.3
+title: Ensure custom error messages are not off
+description: When an ASP.NET application fails and causes an HTTP/1.x 500 Internal Server Error, or a feature configuration (such as Request Filtering) prevents a page from being displayed, an error message will be generated. Administrators can choose whether or not the application should display a friendly message to the client, detailed error message to the client, or detailed error message to localhost only. customErrors mode must be RemoteOnly or On (not Off) in the root web.config and every site. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- information-disclosure
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.3 Ensure custom error messages are not off
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.web/customErrors' -PSPath $_; [string]$c.mode -eq 'Off' }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST/<site>' -Filter system.web/customErrors -Name mode -Value RemoteOnly

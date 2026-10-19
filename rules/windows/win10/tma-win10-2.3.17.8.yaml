@@ -1,0 +1,20 @@
+id: TMA-WIN10-2.3.17.8
+title: 'Ensure ''User Account Control: Virtualize file and registry write failures to per-user locations'' is set to ''Enabled'''
+description: 'This policy setting controls whether application write failures are redirected to defined registry and file system locations. This policy setting mitigates applications that run as administrator and write run-time application data to: • %ProgramFiles% • %windir% • %windir%\System32 • HKLM\SOFTWARE The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 2.3.17.8
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''EnableVirtualization'' -ErrorAction SilentlyContinue).''EnableVirtualization''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableVirtualization='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'EnableVirtualization' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.27.12
+title: 'Ensure ''Encryption mode for Information Rights Management (IRM)'' is set to ''Enabled: Cipher Block Chaining (CBC)'''
+description: 'This setting controls the encryption mode that Office uses to protect content with Information Rights Management. • For Microsoft 365 Apps (Version 2304 or later): Cipher Block Chaining (CBC) mode is used • For earlier Microsoft 365 Apps and Office LTSC 2021, 2019, and 2016: Electronic Codebook (ECB) mode is used The recommended state for this setting is: Enabled: Cipher Block Chaining (CBC). Audit: reads the registry value(s) compatibleencryption that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: high
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.27.12 Ensure ''Encryption mode for Information Rights Management (IRM)'' is set to ''Enabled: Cipher Block Chaining (CBC)'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\drm'') -Name ''compatibleencryption'' -ErrorAction SilentlyContinue).''compatibleencryption''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':compatibleencryption='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Cipher Block Chaining (CBC): Microsoft Office 2016\Security Settings\Encryption mode for Information Rights Management (IRM)'

@@ -1,0 +1,21 @@
+id: TMA-EKS-4.1.7
+title: Standardize EKS cluster access by using access entries, policies, and scoped permissions
+description: EKS provides the Cluster Access Management API, access entries, and associated access policies as the recommended way to manage IAM principal access to the Kubernetes API. This model is preferred over the deprecated aws-auth ConfigMap for cluster access management, supports cluster-wide or namespace-scoped permissions, and can also reference Kubernetes groups when native Role, ClusterRole, RoleBinding, or ClusterRoleBinding objects are needed ... Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE. Checks the authentication mode is API or API_AND_CONFIG_MAP; review access entry scopes separately.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- rbac
+- file-permissions
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.1.7 Standardize EKS cluster access by using access entries, policies, and scoped permissions
+audit:
+  type: command
+  command: |-
+    m=$(aws eks describe-cluster --name "${EKS_CLUSTER:?set EKS_CLUSTER}" --query cluster.accessConfig.authenticationMode --output text) || exit 1
+    case "$m" in API|API_AND_CONFIG_MAP) echo compliant;; *) echo "noncompliant: authenticationMode=$m";; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Log in to the AWS Management Console, navigate Amazon Elastic Kubernetes Service > Clusters and click on your EKS cluster. Go to the Access tab and click on Manage in the Access Configuration section. Under Cluster Authentication Mode for Cluster Access settings choose one of the following. • EKS API The cluster will source authenticated IAM principals only from EKS access entry APIs • EKS API and ConfigMap The cluster will source authenticated IAM principals from both EKS access entry APIs and the aws-auth ConfigMap

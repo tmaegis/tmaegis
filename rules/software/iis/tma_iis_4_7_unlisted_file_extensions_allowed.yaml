@@ -1,0 +1,19 @@
+id: TMA-IIS-4.7
+title: Ensure Unlisted File Extensions are not allowed
+description: The FileExtensions Request Filter allows administrators to define specific extensions their web server(s) will allow and disallow. The property allowUnlisted will cover all other file extensions not explicitly allowed or denied. Often times, extensions such as .config, .bat, .exe, to name a few, should never be served. The AllowExtensions and DenyExtensions options are the UrlScan equivalents. requestFiltering fileExtensions allowUnlisted must be false at server level (then allow only required extensions). PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.7 Ensure Unlisted File Extensions are not allowed
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.webServer/security/requestFiltering/fileExtensions' -PSPath 'MACHINE/WEBROOT/APPHOST'; if ($c.allowUnlisted -eq $false) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/requestFiltering/fileExtensions -Name allowUnlisted -Value False (after adding <add fileExtension='.aspx' allowed='true'/> etc. for required types)

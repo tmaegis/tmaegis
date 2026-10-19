@@ -1,0 +1,18 @@
+id: TMA-MACOS15-5.2.6
+title: Ensure Complex Password Must Contain Uppercase and Lowercase Characters Is Configured
+description: 'Complex passwords contain one character from each of the following classes: English uppercase letters, English lowercase letters, Westernized Arabic numerals, and non- alphanumeric characters. Ensure that both uppercase and lowercase letters are part of the password policy on the computer.'
+target: macos
+level: 2
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 5.2.6 Ensure Complex Password Must Contain Uppercase and Lowercase Characters Is Configured
+os_family:
+- macos-15
+audit:
+  type: manual
+  command: 'Terminal: pref=$(sudo /usr/bin/pwpolicy -getaccountpolicies | /usr/bin/grep -A1 minimumMixedCaseCharacters | /usr/bin/tail -1 | /usr/bin/cut -d''>'' -f2 | /usr/bin/cut -d ''<'' -f1) && if [[ "$pref" != "" && pref -ge 1 ]]; then echo "true"; else echo "false"; fi'
+remediation:
+  type: iac_patch
+  command: 'Terminal: sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy "requiresMixedCase=<value≥1>" ; sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy "requiresMixedCase=1".'

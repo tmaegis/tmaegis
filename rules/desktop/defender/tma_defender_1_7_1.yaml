@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.7.1
+title: Ensure 'Enable file hash computation feature' is set to 'Enabled'
+description: 'This setting determines whether hash values are computed for files scanned by Microsoft Defender. The recommended state for this setting is: Enabled. Rationale: When running an antivirus solution such as Microsoft Defender Antivirus, it is important to ensure that it is configured to monitor for suspicious and known malicious activity. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine:EnableFileHashComputation (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.7.1 Ensure 'Enable file hash computation feature' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine'' -Name ''EnableFileHashComputation'' -ErrorAction SilentlyContinue).''EnableFileHashComputation''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'EnableFileHashComputation' -Value 1 -PropertyType DWord -Force | Out-Null

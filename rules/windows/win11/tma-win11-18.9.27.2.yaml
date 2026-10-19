@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.9.27.2
+title: 'Ensure ''Configures LSASS to run as a protected process'' is set to ''Enabled: Enabled with UEFI Lock'''
+description: 'This policy setting controls whether the Local Security Authority Subservice Service (LSASS) runs in protected mode and also has the option to lock in protected mode with Unified Extensible Firmware Interface (UEFI). The Local Security Authority (LSA), which includes the LSASS process, validates users for local and remote sign-ins and enforces local security policies. The recommended state for this setting is: Enabled: Enabled with UEFI Lock. Note: This additional protection to prevent reading memory and code injection by non- protected processes is supported by Windows 8.1 (or newer).'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.9.27.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System'' -Name ''RunAsPPL'' -ErrorAction SilentlyContinue).''RunAsPPL''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RunAsPPL='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Name 'RunAsPPL' -Value 1 -PropertyType DWord -Force | Out-Null

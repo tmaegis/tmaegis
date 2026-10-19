@@ -1,0 +1,18 @@
+id: TMA-AIX-4.4.2.1
+title: Ensure File System Level encryption is enabled
+description: 'When there is a requirement for file based encryption for unauthorized users for both live systems and encryption at rest the preferred mechanism is EFS - encrypted file systems. A security enhancement introduced with AIX 6.1 is Encrypted Filesystems (EFS). This technology enables an individual user to encrypt their own data within a jfs2 filesystem. Audit: checks the CLiC filesets required for EFS are installed; verify efsenable and encrypted filesystems manually.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.4.2.1 Ensure File System Level encryption is enabled
+audit:
+  type: command
+  command: command -v lslpp >/dev/null 2>&1 || exit 1; r=compliant; for p in clic.rte.includes clic.rte.kernext clic.rte.lib clic.rte.pkcs11; do lslpp -L $p >/dev/null 2>&1 || r="$p not installed"; done; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'There are two pre-requisite requirements for EFS, it requires RBAC and the installation of the CLiC cryptographic fileset. The fileset is located on the expansion pack, shipped with the AIX media. Place the CLiC software into a convenient location, such as /tmp and install via: /usr/lib/instl/sm_inst installp_cmd -a -Q -d /tmp -f clic.rte -c -N -g -X -G -Y NOTE: If the software is not located in /tmp, reflect the actual location in the command above. Load the CLiC kernel extension: /usr/lib/methods/loadkclic As the EFS administrator, create the initial keystore. This is typically the root user: efsenable -a An EFS enabled filesystem can be created with the following command: chfs -v jfs2 -g <vg_name> -m <filesystem> -a size=<size> -a efs=yes To enable EFS for an existing filesystem: chfs -a efs=yes <filesystem> To encrypt a file, load your keystore via: efskeymgr -o ksh Then encrypt via: efsmgr -c AES_192_ECB -e <filename> To decrypt: efsmgr -d <filename> Further details regarding
+    planning and implementation of EFS can be found within the IBM AIX 7.1 Infocentre: https://www.ibm.com/docs/en/aix/7.1?topic=system-efs-encrypted-file NOTE: The ... (see CIS section 4.4.2.1)'

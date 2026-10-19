@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-7.6
+title: Lock Inactive User Accounts
+description: 'Guidelines published by the U.S. Department of Defense specify that user accounts must be locked out after 35 days of inactivity. This number may vary based on the particular site''s policy. Inactive accounts pose a threat to system security since the users are not logging in to notice failed login attempts or other anomalies. Audit: the useradd default inactive value (definact in /usr/sadm/defadduser, shown by useradd -D) must be 1-35 days; check existing accounts with logins -axo.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 7.6 Lock Inactive User Accounts
+audit:
+  type: file_regex
+  file_path: /usr/sadm/defadduser
+  pattern: (?m)^definact=([1-9]|[12][0-9]|3[0-5])\s*$
+remediation:
+  type: iac_patch
+  command: 'useradd -D -f 35   (and for existing accounts: usermod -f 35 <user>)'

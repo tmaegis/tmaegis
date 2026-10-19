@@ -1,0 +1,32 @@
+id: TMA-FORTISWITCH-1.5.1.2
+title: Allow only trusted hosts in SNMPv3
+description: Ensuring that only certain hosts are able to conduct SNMP GET or receive SNMP Trap. FAILs if any SNMPv3 user lists 0.0.0.0 in notify-hosts. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 2
+severity: high
+tags:
+- fortiswitch
+- snmp
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.5.1.2 Allow only trusted hosts in SNMPv3
+audit:
+  type: config_regex
+  pattern: (?m)^config system snmp user\n(?:[ \t]+[^\n]*\n)*?[ \t]+set notify-hosts [^\n]*\b0\.0\.0\.0\b[^\n]*[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system snmp user
+        edit "<user>"
+            set notify-hosts <nms-ip>
+        next
+    end
+    # CIS guidance:
+    To remove 0.0.0.0 from trusted hosts in CLI:
+    config system snmp user
+        edit "snmp_test"
+            unset notify-hosts
+        end
+    From GUI:
+    1. System > Config > SNMP > Users.
+    2. On the Users section click "Edit" on "snmp_test".
+    3. Remove 0.0.0.0 from "Notify Hosts" section.

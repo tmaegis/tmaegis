@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.8.1
+title: Ensure External AAA Server is set
+description: At least one external Authentication server should be configured. RADIUS and TACACS+ are centralized Authentication, Authorization and Accounting (AAA) services. Both protocols provide services to Authenticate users on routers, switches and other systems. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.8.1 Ensure External AAA Server is set
+audit:
+  type: config_regex
+  pattern: (?m)^set system (?:radius-server|tacplus-server) \S+
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure at least one External Authentication Server using the following commands under the hierarchy; For RADIUS
+    set system radius-server <server ip> secret <shared secret> source-address <loopback IP> For TACACS+
+    set system tacplus-server <server ip> secret <shared secret> source-address <loopback IP> NOTE - the source-address is generally set as the Loopback, but for some environments the Fxp0.0/out of band interface may be used, or another interface preferred.

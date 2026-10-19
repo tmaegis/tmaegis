@@ -1,0 +1,18 @@
+id: TMA-TDSQL-3.4
+title: Ensure Correct Permissions on SSL/TLS Certificate Files
+description: 'SSL/TLS certificate and key files must have appropriately restrictive permissions. TDSQL certificate files include: OSS service: ../boot/ca.key, ../boot/ca.crt PEM files: ca-cert.pem, ca-key.pem, server-req.pem SQLEngine instances: <module_dir>/<port>/sqlengine/etc/{ca- cert,server-cert,server-key}.pem Gateway: <module_dir>/<port>/gateway/conf/{ca-cert,server- cert,server-key}.pem Private key files require strict ... The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql) and TDSQL_DATA. Counts private keys (*.key, *key*.pem) with any group/other permission and certificates writable by group/other; expected keys 0400/0600 and certificates 0644 or stricter.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+- tls
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.4 Ensure Correct Permissions on SSL/TLS Certificate Files
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_HOME:-/data/tdsql}/boot" "${TDSQL_DATA:-/data/tdsql/data}"; do [ -d "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_HOME:-/data/tdsql}/boot" "${TDSQL_DATA:-/data/tdsql/data}"; do [ -d "$p" ] || continue; c=$((c + $(find "$p" -type f \( -name '*.key' -o -name '*key*.pem' \) -perm /077 -print 2>/dev/null | wc -l) + $(find "$p" -type f \( -name '*.crt' -o -name '*.pem' \) -perm /022 -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: chmod 600 <tdsql>/boot/ca.key <tdsql>/boot/ca-key.pem and instance *key*.pem files; chmod 644 certificates; chown tdsql:tdsql (or mysql:mysql for instance certificates).

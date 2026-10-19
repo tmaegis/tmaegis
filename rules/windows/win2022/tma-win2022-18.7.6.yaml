@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.7.6
+title: 'Ensure ''Configure RPC listener settings: Authentication protocol to use for incoming RPC connections:'' is set to ''Enabled: Negotiate'' or higher'
+description: 'This policy setting controls which protocols incoming Remote Procedure Call (RPC) connections to the print spooler are allowed to use. The recommended state for this setting is: Enabled: Negotiate or Enabled: Kerberos.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.7.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\RPC'' -Name ''ForceKerberosForRpc'' -ErrorAction SilentlyContinue).''ForceKerberosForRpc''; if (-not ($null -ne $v -and @(0,1) -contains [int64]$v)) { $bad += ''ForceKerberosForRpc='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\RPC')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\RPC' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\RPC' -Name 'ForceKerberosForRpc' -Value 0 -PropertyType DWord -Force | Out-Null

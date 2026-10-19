@@ -1,0 +1,20 @@
+id: TMA-WIN11-19.7.5.2
+title: Ensure 'Notify antivirus programs when opening attachments' is set to 'Enabled'
+description: 'This policy setting manages the behavior for notifying registered antivirus programs. If multiple programs are registered, they will all be notified. The recommended state for this setting is: Enabled. Note: An updated antivirus program must be installed for this policy setting to function properly.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 19.7.5.2
+audit:
+  type: registry
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments'') -Name ''ScanWithAntiVirus'' -ErrorAction SilentlyContinue).''ScanWithAntiVirus''; if (-not ($null -ne $v -and @(3) -contains [int64]$v)) { $_.PSChildName + '':ScanWithAntiVirus='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure through Group Policy (User Configuration): User Configuration\Policies\Administrative Templates\Windows Components\Attachment Manager\Notify antivirus programs when opening attachments'

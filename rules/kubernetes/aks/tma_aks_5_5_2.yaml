@@ -1,0 +1,17 @@
+id: TMA-AKS-5.5.2
+title: Use Azure RBAC for Kubernetes Authorization
+description: Using Azure RBAC for Kubernetes Authorization helps centralize AKS access control in the same Azure IAM model used for other Azure resources, instead of managing human-user permissions only through in-cluster Kubernetes bindings. At a high level, this improves consistency, makes access assignment easier to govern across subscriptions and clusters, and supports least-privilege access by assigning only the Azure roles needed for Kubernetes API use. The benchmark marks this recommendation Manual.
+target: aks
+level: 2
+severity: medium
+tags:
+- aks
+- managed-services
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.5.2 Use Azure RBAC for Kubernetes Authorization
+audit:
+  type: manual
+  command: Review the AKS cluster to confirm AKS-managed Microsoft Entra integration is enabled and Azure RBAC for Kubernetes Authorization is turned on, because Azure RBAC for Kubernetes depends on managed Entra integration first. Then verify that access for human users and groups is being granted through Azure role assignments for Kubernetes authorization rather than primarily through in-cluster RoleBinding and ClusterRoleBinding objects for those Entra identities.
+remediation:
+  type: iac_patch
+  command: If the cluster is not using Azure RBAC for Kubernetes Authorization, enable AKS-managed Microsoft Entra integration first, then enable Azure RBAC on the cluster and move user access management to Azure role assignments using the built-in AKS Kubernetes RBAC roles or approved custom roles. For stronger control, pair this with disabling local accounts so static --admin access does not remain available as an alternate path; if local accounts are disabled on an existing cluster, rotate cluster certificates to revoke previously issued local-account credentials. Also review any custom role design for CRD coverage, because CRD reads require broader managed-cluster read scope than standard Kubernetes objects.

@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.4.4
+title: Ensure 'FTP state' is set to 'FTPS only' or 'Disabled'
+description: By default, App Service supports deployment over FTP. If FTP is essential for a deployment workflow, FTPS should be enforced for all function app deployment slots. If FTPS is not explicitly required, the recommended setting is Disabled. FTP is an unencrypted network protocol that transmits data—including passwords—in clear text. The use of this protocol can lead to both data and credential compromise and can present opportunities for exfiltration, persistence, and lateral movement.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.4.4 Ensure 'FTP state' is set to 'FTPS only' or 'Disabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment Slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings pane, under Platform settings, ensure that FTP state is set to FTPS only or Disabled. 7. Repeat steps 1-6 for each function app and deployment slot. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to list deployment slots: az functionapp deployment slot list --resource-group <resource-group-name> -- name <function-app-name> For each deployment slot, run the following command to get the FTPS state setting: az resource show --name web --resource-group <resource-group-name> -- namespace Microsoft.Web --resource-type config --parent sites/<function-app- name>/slots/<deployment-slot-name> --query properties.ftpsState Ensure that "FtpsOnly" or "Disabled"
+    is returned. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed co...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment Slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings pane, under Platform settings, set FTP state to FTPS only or Disabled. 7. Click Save. 8. Click Continue. 9. Repeat steps 1-8 for each function app and deployment slot requiring remediation. Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to set FTPS state to FtpsOnly or Disabled: az resource update --name web --resource-group <resource-group-name> -- namespace Microsoft.Web --resource-type config --parent sites/<function-app- name>/slots/<deployment-slot-name> --set properties.ftpsState=<FtpsOnly|Disabled>'

@@ -1,0 +1,18 @@
+id: TMA-FLASHARRAY-2.5
+title: Ensure syslog servers use TLS with a configured CA root of trust
+description: 'FlashArray supports configuring remote syslog servers to receive a variety of different messages, including administrative and data audit records, session records, and alerts. Everpure recommends the following: ; Configure all syslog servers to use TLS to protect traffic from inspection and tampering. Fails when any syslog server URI uses udp:// or tcp:// instead of tls://; also confirm a syslog CA certificate is imported. 1.14 covers the case where no syslog server exists. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "purelog syslog list --nvp; purelog syslog global list --ca-certificate" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- encryption
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 2.5 Ensure syslog servers use TLS with a configured CA root of trust
+audit:
+  type: config_regex
+  pattern: (?i)\b(?:udp|tcp)://
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, configure your syslog servers to use TLS encryption and import a CA certificate to authenticate the remote servers. From the GUI: ; Navigate to Settings > System. ; In the Syslog Servers panel, remove any existing plaintext syslog entries. ; Enter the URI of your remote syslog server using the tls:// scheme (e.g., tls://10.10.10.10:6514). ; Click the Add button to add the URI to the list of syslog server output locations. From the CLI: ; Delete the existing plaintext syslog server: ; Command Syntax: purelog syslog delete <SERVER_NAME> ; Add a TLS-encrypted syslog server:'

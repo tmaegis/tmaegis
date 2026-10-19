@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.43.4
+title: Ensure 'Allow files to download and save to the host operating system from Microsoft Defender Application Guard' is set to 'Disabled'
+description: 'This policy setting determines whether to save downloaded files to the host operating system from the Microsoft Defender Application Guard container. The recommended state for this setting is: Disabled. Note: Microsoft Defender Application Guard requires a 64-bit version of Windows and a CPU supporting hardware-assisted CPU virtualization (Intel VT-x or AMD-V). This feature is not officially supported on virtual hardware, although it can work on VMs (especially for testing) provided that the hardware-assisted CPU virtualization feature is exposed by the host to the guest VM. More information o'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.43.4
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI'' -Name ''SaveFilesToHost'' -ErrorAction SilentlyContinue).''SaveFilesToHost''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''SaveFilesToHost='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI' -Name 'SaveFilesToHost' -Value 0 -PropertyType DWord -Force | Out-Null

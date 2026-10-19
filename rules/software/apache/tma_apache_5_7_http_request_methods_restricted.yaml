@@ -1,0 +1,16 @@
+id: TMA-APACHE-5.7
+title: Ensure HTTP Request Methods Are Restricted
+description: 'Use the Apache <LimitExcept> directive to restrict unnecessary HTTP request methods of the web server to only accept and process the GET, HEAD, POST and OPTIONS HTTP request methods. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- features
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 5.7 Ensure HTTP Request Methods Are Restricted
+audit:
+  type: manual
+  command: 'Perform the following to determine if the recommended state is implemented: Locate the Apache configuration files and included configuration files. Search for all <Directory> directives other than the OS root directory. Ensure that either one of the following three methods are configured: Using the deprecated Order/Deny/Allow method: 1. Within each <Directory> section, ensure that there is a single <LimitExcept> directive containing a value of Order deny, allow. 2. Verify the <LimitExcept> directive does not include any HTTP methods other than GET, POST, and OPTIONS.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: 1. Locate the Apache configuration files and included configuration files. 2. Search for the directive on the document root directory such as: <Directory "/usr/local/apache2/htdocs"> . . . </Directory> 3. Add a directive as shown below within the group of document root directives. # Limit HTTP methods to standard methods. Note: Does not limit TRACE <LimitExcept GET POST OPTIONS> Require all denied </LimitExcept> 4. Search for other directives in the Apache configuration files other than the OS root directory and add the same directives to each. It is very important to understand that the directives are based on the OS file system hierarchy as accessed by Apache and not the hierarchy of the locations within web site URLs. <Directory "/usr/local/apache2/cgi-bin"> . . .'

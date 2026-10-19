@@ -1,0 +1,30 @@
+id: TMA-KUBERNETES-1.1.14
+title: Ensure that the default administrative credential file ownership is set to root:root
+description: Ensure that the admin.conf (and super-admin.conf file, where it exists) file ownership is set to root:root.
+target: kubernetes
+level: 1
+severity: critical
+tags:
+- kubernetes
+- control-plane
+- file-permissions
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.1.14 Ensure that the default administrative credential file ownership is set to root:root
+audit:
+  type: command
+  command: |-
+    set -f
+    ok=1; n=0
+    for f in /etc/kubernetes/admin.conf /etc/kubernetes/super-admin.conf; do
+      [ -e "$f" ] || continue; n=$((n+1))
+      o=$(stat -Lc %U:%G "$f") || exit 1
+      if [ "$o" != "root:root" ]; then echo "noncompliant: $f $o"; ok=0; fi
+    done
+    [ "$n" -gt 0 ] || exit 1
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/admin.conf
+  - /etc/kubernetes/super-admin.conf
+remediation:
+  type: command
+  command: if [ -e /etc/kubernetes/admin.conf ]; then chown root:root /etc/kubernetes/admin.conf; fi; if [ -e /etc/kubernetes/super-admin.conf ]; then chown root:root /etc/kubernetes/super-admin.conf; fi

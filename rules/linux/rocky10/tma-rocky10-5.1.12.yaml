@@ -1,0 +1,68 @@
+id: TMA-ROCKY10-5.1.12
+title: Ensure sshd KexAlgorithms is configured
+description: 'Key exchange is any method in cryptography by which cryptographic keys are exchanged between two parties, allowing use of a cryptographic algorithm. If the sender and receiver wish to exchange encrypted messages, each must be equipped to encrypt messages to be sent and decrypt messages received Notes: • Kex algorithms have a higher preference the earlier they appear in the list • Some organizations may have stricter requirements for approved Key exchange algorithms • Ensure that Key exchange algorithms used are in compliance with site policy • The only Key Exchange Algorithms currently FIPS 14'
+target: linux
+os_family:
+- rocky-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 10 Benchmark v1.0.0 - 5.1.12
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''sshd -T | grep -Pi -- ''"''"''kexalgorithms\h+([^#\n\r]+,)?(diffie-hellman-group1- sha1|diffie-hellman-group14-sha1|diffie-hellman-group-exchange-sha1)\b''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # tma_sshd_apply "Name value" ... : replace every existing setting, put ours first, validate, reload.
+    tma_sshd_apply() {
+      c=/etc/ssh/sshd_config
+      [ -f "$c" ] || { echo "sshd_config not present, nothing to do"; return 0; }
+      files="$c $(ls /etc/ssh/sshd_config.d/*.conf 2>/dev/null)"
+      sv=$(mktemp -d)
+      for f in $files; do tma_bak "$f"; cp -a "$f" "$sv/$(echo "$f" | tr / _)"; done
+      for kv in "$@"; do
+        n=${kv%% *}
+        for f in $files; do
+          [ -L "$f" ] && continue
+          sed -i -E "s/^([[:space:]]*$n[[:space:]=].*)$/# tmaegis: \1/I" "$f"
+        done
+      done
+      tmp=$(mktemp); : > "$tmp"
+      for kv in "$@"; do printf '%s\n' "$kv" >> "$tmp"; done
+      cat "$c" >> "$tmp"; cat "$tmp" > "$c"; rm -f "$tmp"
+      if command -v sshd >/dev/null 2>&1 && ! sshd -t 2>/dev/null; then
+        echo "sshd -t failed, restoring" >&2
+        for f in $files; do cat "$sv/$(echo "$f" | tr / _)" > "$f"; done
+        rm -rf "$sv"; return 1
+      fi
+      rm -rf "$sv"
+      for u in sshd ssh; do systemctl reload "$u" 2>/dev/null && break; done
+      return 0
+    }
+    v=$(ssh -Q kex 2>/dev/null | grep -Ev "sha1|group1-|group14-sha1|^rsa|gss" | paste -sd, -)
+    [ -n "$v" ] || v=curve25519-sha256,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512
+
+    tma_sshd_apply "KexAlgorithms $v"
+  guidance: "Note: • First occurrence of an option takes precedence. • Though key_exchange may be configured through the KexAlgorithms option in the /etc/ssh/sshd_config file, it is recommended that the key_exchange available to openSSH server are configured through system-wide-crypto-policy • If the recommendations in the subsection \"Configure system wide crypto policy\" have been followed, this Audit should be in a passing state. Please review that section before following this Remediation Procedure • By default, system-wide-crypto-policy is applied to the openSSH server. If the following defaults don't exist due to modifications or upgrade from a earlier release, the system-wide-crypto-policy may not b…"

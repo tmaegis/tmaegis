@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.27.4
+title: 'Ensure ''ActiveX Control Initialization'' is set to ''Enabled: 6'''
+description: 'This policy setting specifies the Microsoft ActiveX® initialization security level for all Microsoft Office applications. The recommended state for this setting is: Enabled: 6 Audit: reads the registry value(s) uficontrols that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.27.4 Ensure ''ActiveX Control Initialization'' is set to ''Enabled: 6'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\common\security'') -Name ''uficontrols'' -ErrorAction SilentlyContinue).''uficontrols''; if (-not ($null -ne $v -and @(6) -contains [int64]$v)) { $_.PSChildName + '':uficontrols='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: 6 Microsoft Office 2016\Security Settings\ActiveX Control Initialization'

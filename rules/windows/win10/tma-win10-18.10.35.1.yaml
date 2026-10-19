@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.35.1
+title: 'Ensure ''Disable Internet Explorer 11 as a standalone browser'' is set to ''Enabled: Always'''
+description: 'This policy setting restricts the launching of Internet Explorer as a standalone browser. This setting performs the following actions when enabled: • Prevents Internet Explorer 11 from launching as a standalone browser. • Restricts Internet Explorer´s usage to Microsoft Edge´s native Internet Explorer mode. • Redirects all attempts at launching Internet Explorer 11 to Microsoft Edge Stable Channel browser. • Overrides any other policies that redirect to Internet Explorer 11. The recommended state for this setting is: Enabled: Always.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.35.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Main'' -Name ''NotifyDisableIEOptions'' -ErrorAction SilentlyContinue).''NotifyDisableIEOptions''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''NotifyDisableIEOptions='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Main')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Main' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\InternetExplorer\Main' -Name 'NotifyDisableIEOptions' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,18 @@
+id: TMA-M365-5.2.2.11
+title: Ensure sign-in frequency for Intune Enrollment is set to 'Every time'
+description: 'Sign-in frequency defines the time period before a user is asked to sign in again when attempting to access a resource. The Microsoft Entra ID default configuration for user sign-in frequency is a rolling window of 90 days. The recommended state is a Sign-in frequency of Every time for Microsoft Intune Enrollment Note: Microsoft accounts for a five-minute clock skew when ''every time'' is selected in a conditional access policy, ensuring that users are not prompted more frequently than once every five minutes. Intune Enrollment is considered a sensitive action and should be safeguarded. An attack path exists that allows for a bypass of device compliance Conditional Access rule. This could allow compromised credentials to be used through a newly registered device enrolled in Intune, enabling persistence and privilege escalation. Setting sign-in frequency to every time limits the timespan...'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.11 Ensure sign-in frequency for Intune Enrollment is set to 'Every time'
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify All users is included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify Resources (formerly cloud apps) includes Microsoft Intune Enrollment. o Under Grant verify Require multifactor authentication or Require authentication strength is checked. o Under Session verify Sign-in frequency is set to Every time. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: Note: The Authentication Strength requirement is satisfied when any valid GUID is present in the authenticationStrength property of a matching policy. Because Authentication
+    Strength configurations are inherently stronger than the built-in Require multifactor authentication control, the presence of a valid Authentication Strength also fulfills the MFA requirement for a...'
+remediation:
+  type: iac_patch
+  command: 'Note: If the Microsoft Intune Enrollment cloud app isn''t available then it must be created. To add the app for new tenants, a Microsoft Entra administrator must create a service principal object, with app ID d4ebce55-015a-49b5-a083-c84d1797ae8c, in PowerShell or Microsoft Graph. To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users. o Under Target resources select Resources (formerly cloud apps), choose Select resources and add Microsoft Intune Enrollment to the list. ▪ Under Exclude exclude any break-glass accounts. o Under Grant select Grant access. o Check either Require multifactor authentication or Require authentication strength. o Under Session check Sign-in frequency and select Every time. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After
+    allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On.'

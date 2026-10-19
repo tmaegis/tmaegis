@@ -1,0 +1,25 @@
+id: TMA-F5-BIGIP-4.1
+title: Ensure Prelogin 'Login Banner' is set
+description: 'PASS requires sys sshd banner enabled (set banner-text to the approved notice). Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: low
+tags:
+- f5-bigip
+- banner
+reference: CIS F5 Networks Benchmark v1.0.0 - 4.1 Ensure Prelogin 'Login Banner' is set
+audit:
+  type: config_regex
+  pattern: (?m)^sys sshd \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+banner enabled[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys sshd banner enabled banner-text "Authorized use only."
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to the Configuration utility.
+    2-Navigate to System > Configuration > Device
+    3-Click SSHD.
+    4-Enter the desired pre-login message banner in the text box and enable appropriate options.
+    5-To enable this banner message, check the Show The Security Banner On The Login Screen option. To disable this message banner, clear the Show The Security Banner On The Login Screen option.
+    6-Click Update.

@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.1.10
+title: Ensure open Git branches are up to date before they can be merged into code base
+description: Organizations should make sure each suggested code change is in full sync with the existing state of its origin code repository before allowing merging. Git branches can easily become outdated since the origin code repository is constantly being edited. This means engineers working on separate code branches can accidentally include outdated code with potential security issues which might have already been fixed, overriding the potential solutions for those security issues when merging their own changes.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- branch-protection
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.10 Ensure open Git branches are up to date before they can be merged into code base
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each project identified as being non-compliant, performing the following: - Navigate to the main page of the project - In the sidebar, select Settings > Merge requests - Under the ''Merge method'' select either ''Merge commit with semi-linear history'' or ''Fast-forward merge''.'

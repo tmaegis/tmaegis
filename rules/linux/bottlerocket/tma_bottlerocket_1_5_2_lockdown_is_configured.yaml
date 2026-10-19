@@ -1,0 +1,19 @@
+id: TMA-BOTTLEROCKET-1.5.2
+title: Ensure Lockdown is configured
+description: Lockdown must be enabled in integrity mode. Note that this prevents unsigned kernel modules from being loaded. This could interfere with the operation of hardware or third-party software that depends on these modules. The audit reads /sys/kernel/security/lockdown and requires [integrity] to be selected. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 2
+severity: low
+tags:
+- bottlerocket
+- system
+reference: CIS Bottlerocket Benchmark v1.0.0 - 1.5.2 Ensure Lockdown is configured
+audit:
+  type: command
+  command: |-
+    v=$(cat /sys/kernel/security/lockdown 2>/dev/null) || exit 1
+    printf '%s\n' "$v" | grep -Fwq '[integrity]' && echo compliant || echo "lockdown: $v"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to enable Lockdown in integrity mode: # apiclient set kernel.lockdown=integrity'

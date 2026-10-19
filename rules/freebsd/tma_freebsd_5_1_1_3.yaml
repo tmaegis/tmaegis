@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.1.1.3
+title: Ensure syslogd default file permissions are configured
+description: 'syslogd will create log files that do not already exist on the system. This setting controls what permissions will be applied to these newly created files. These settings are handled by a different tool newsyslog which also handles the logfile rotation and retention. It is important to ensure that log files have the correct permissions to ensure that sensitive data is archived and protected. Audit: the mode column of every newsyslog.conf entry must be 644 or more restrictive.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.1.1.3 Ensure syslogd default file permissions are configured
+audit:
+  type: command
+  command: 'command -v awk >/dev/null 2>&1 || exit 1; out=$( { cat /etc/newsyslog.conf /etc/newsyslog.conf.d/* 2>/dev/null | grep -Ev "^[[:space:]]*(#|$|<)" | awk ''{m=($2 ~ /:/) ? $3 : $2; if (m !~ /^[0-7]+$/ || length(m)!=3 || substr(m,1,1)>6 || substr(m,2,1)!~/[04]/ || substr(m,3,1)!~/[04]/) print $1, m}'' ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit either /etc/newsyslog.conf or a dedicated .conf file in /etc/newsyslog.conf.d/ and set the mode of the specific file to 644 or more restrictive. Restart the service: # service syslogd restart'

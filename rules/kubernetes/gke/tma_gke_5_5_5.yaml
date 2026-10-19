@@ -1,0 +1,19 @@
+id: TMA-GKE-5.5.5
+title: Verify Shielded GKE Nodes are enabled for GKE clusters
+description: Verify Shielded GKE Nodes are enabled for GKE clusters to provide stronger node identity and integrity protections for worker nodes. Shielded GKE Nodes help ensure that worker nodes are based on trusted boot components and can be cryptographically verified by the GKE control plane before joining the cluster. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.5.5 Verify Shielded GKE Nodes are enabled for GKE clusters
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(shieldedNodes.enabled)') || exit 1
+    if [ "$v" = True ]; then echo compliant; else echo "noncompliant: shieldedNodes.enabled=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable Shielded GKE Nodes for any GKE cluster where the audit result is not true. This updates the cluster so worker nodes are recreated as Shielded VMs and can be cryptographically verified by the GKE control plane before joining the cluster. gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-shielded-nodes Rerun the audit command and confirm that shieldedNodes.enabled returns true. Enabling Shielded GKE Nodes on an existing cluster immediately recreates the control plane and recreates worker nodes in a rolling manner while respecting maintenance availability, so plan the change during an approved maintenance window.

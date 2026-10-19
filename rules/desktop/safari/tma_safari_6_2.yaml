@@ -1,0 +1,37 @@
+id: TMA-SAFARI-6.2
+title: Ensure 'Enable JavaScript' is 'Disabled'
+description: 'JavaScript enables web site authors to create enhanced user interfaces. In support of this, JavaScript enables web sites to programmatically read and alter the document object model (DOM) for the rendered web site as well as instantiate various objects, such as asynchronous XML HTTP request (XHR) objects. It is recommended that JavaScript be disabled. Rationale: JavaScript continues to be an attack vector for exploiting vulnerabilities in the browser. Additionally, JavaScript is commonly leveraged by exploit authors to create a deterministic memory layout in support of increasing the reliability of exploits. Audit reads WebKitJavaScriptEnabled from the com.apple.Safari preference domain of the account running the scan (the PDF checks the same token in com.apple.Safari.plist; manual check: Follow the below steps and verify that Enable JavaScript is Disabled: 1. Click Safari. 2. Click Preferences. 3. Click Security. 4. Verify Enable JavaScript is unchecked.). Safari is sandboxed,
+  so the reading process needs Full Disk Access on macOS 10.14+. A missing key exits non-zero and is reported as FAIL even where the built-in default is compliant. Values forced by a configuration profile live in /Library/Managed Preferences and are not read here.'
+target: safari
+level: 2
+severity: medium
+tags:
+- safari
+- browser
+- cis-l2
+reference: CIS macOS Safari Benchmark v2.0.0 - 6.2 Ensure 'Enable JavaScript' is 'Disabled'
+audit:
+  type: command
+  command: out=$(defaults read com.apple.Safari WebKitJavaScriptEnabled 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    # Same account that runs the audit (it reads the scanning user's own preference domain).
+    defaults write com.apple.Safari WebKitJavaScriptEnabled -bool false
+    killall cfprefsd 2>/dev/null || true
+    [ "$(defaults read com.apple.Safari WebKitJavaScriptEnabled 2>/dev/null)" = 0 ] || { echo "Safari WebKitJavaScriptEnabled not 0" >&2; exit 1; }
+  guidance: "Follow the below steps to set Enable JavaScript to Disabled: 1. Click Safari. 2. Click Preferences. 3. Click AutoFill. 4. Uncheck the Enable JavaScript checkbox. Or deploy a configuration profile for com.apple.Safari setting WebKitJavaScriptEnabled = false, or as the logged-in user run: defaults write com.apple.Safari WebKitJavaScriptEnabled -bool false and restart Safari."

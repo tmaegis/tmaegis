@@ -1,0 +1,23 @@
+id: TMA-APACHE-6.6
+title: Ensure ModSecurity Is Installed and Enabled
+description: ModSecurity is an open source web application firewall (WAF) for real-time web application monitoring, logging, and access control. It enables but does not include a powerful customizable rule set, which may be used to detect and block common web application attacks. Installation of ModSecurity without a rule set does not provide additional security for the protected web applications. Compliant when security2_module (ModSecurity) is loaded. Uses the module list from apachectl -M (apache2ctl/httpd; needs root).
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- logging
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 6.6 Ensure ModSecurity Is Installed and Enabled
+audit:
+  type: command
+  shell: bash
+  command: b=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 1; m=$("$b" ${APACHE_CONF:+-f "$APACHE_CONF"} -M 2>/dev/null) || exit 1; printf '%s\n' "$m" | grep -Eiq 'security2_module' && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Install ModSecurity (dnf install mod_security / apt install libapache2-mod-security2), enable it and deploy a rule set such as the OWASP CRS. Then run apachectl configtest and reload Apache.

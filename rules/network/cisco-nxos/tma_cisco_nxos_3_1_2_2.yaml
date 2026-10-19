@@ -1,0 +1,31 @@
+id: TMA-CISCO-NXOS-3.1.2.2
+title: If Possible, Limit the BGP Routes Accepted from Peers
+description: 'Once a BGP relationship is established, the BGP process will accept routes from any connected peers and consider those routes to be valid. For this reason, especially in ISP or other carrier situations, it is important that only routes that are valid for any particular peer are accepted for that peer. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: medium
+tags:
+- cisco-nxos
+- network
+- routing
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.2.2 If Possible, Limit the BGP Routes Accepted from Peers
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. "Show run bgp" will show a summary of the BGP configuration. In this case, we are looking for the inbound route-map statement (the last line in this example): switch# sho run bgp !Command: show running-config bgp !Running configuration last done at: Tue May 19 17:08:35 2020 !Time: Tue May 19 17:14:14 2020 version 9.3(3) Bios:version feature bgp router bgp 65520 router-id 10.10.10.10 address-family ipv4 unicast network 10.10.10.0/24 neighbor 10.10.10.11 remote-as 65521 address-family ipv4 unicast route-map route-map RM_BGP_PEERNAME_IN ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! First, define the subnets that will be permitted from the peer PEERNAME (use descriptive, self documenting names in NX-OS constructions where possible). Note that any subnets not listed as permitted are by default denied (there is an implicit "deny all" at the bottom of the list)
+    ip prefix-list PL_PEERNAME_PERMIT_SUBNETS description Permitted Subnets from Peer PEERNAME
+    ip prefix-list PL_PEERNAME_PERMIT_SUBNETS permit 10.11.11.0/24
+    ip prefix-list PL_PEERNAME_PERMIT_SUBNETS permit 10.11.12.0/24 In this example above, only "permits" are defined. Deny lines are also allowed - refusing routes that are not accepted (for instance "bogon" or "martian" subnets), and may be more important in some situations, for example if this switch is accepting routes from the public internet. (note that this is not typical deployment scenario for an NX-OS switch) Next, create the route-map, will will apply that list:
+    route-map RM_BGP_PEERNAME_IN permit 10
+    match ip address prefix-list PL_PEERNAME_PERMIT_SUBNETS Finally, within the BGP configuration, apply that route-map to the BGP peer definition. Note that the "in" keyword denotes inbound (accepted) information.:
+    router bgp 65520
+    router-id 10.10.10.10
+    address-family ipv4 unicast
+    network 10.10.10.0/24
+    neighbor 10.10.10.11
+    remote-as 65521
+    address-family ipv4 unicast
+    route-map RM_BGP_PEERNAME_IN in

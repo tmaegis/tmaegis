@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-3.9
+title: Ensure only one loopback address is set
+description: Configure only one Loopback address per Routing Instance. Multiple Loopback addresses create potential for abuse, mis-configuration and confusion. A maximum of one address per address family should be set on the system's loopback address in each Routing Instance. Fails if more than one IPv4 address line is configured on lo0. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: low
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 3.9 Ensure only one loopback address is set
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^set interfaces lo0 unit \d+ family inet address \S+.*^set interfaces lo0 unit \d+ family inet address \S+)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To remove an additional loopback addresses enter the following command from the hierarchy for each address to be removed:
+    delete interfaces lo0 unit <unit number> family <address family> address <address to be removed>

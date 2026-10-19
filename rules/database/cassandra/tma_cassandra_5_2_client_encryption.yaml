@@ -1,0 +1,20 @@
+id: TMA-CASSANDRA-5.2
+title: Client Encryption
+description: 'Cassandra offers the option to encrypt data in transit between the client and nodes on the cluster. By default client encryption is turned off. Checks /etc/cassandra/cassandra.yaml (package install; SKIP when it does not exist). Passes when client_encryption_options.enabled is true; set optional: false to refuse unencrypted clients.'
+target: cassandra
+level: 1
+severity: high
+tags:
+- cassandra
+- encryption
+- tls
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 5.2 Client Encryption
+audit:
+  type: file_regex
+  file_path: /etc/cassandra/cassandra.yaml
+  pattern: (?m)^client_encryption_options:[ \t]*\n(?:[ \t]*(?:#[^\n]*)?\n|[ \t]+[^\n]*\n)*?[ \t]+enabled:[ \t]*['\x22]?true\b
+  requires_file:
+  - /etc/cassandra/cassandra.yaml
+remediation:
+  type: iac_patch
+  command: 'Create a keystore, set client_encryption_options: {enabled: true, optional: false, keystore: ..., keystore_password: ...} in cassandra.yaml and rolling-restart; update drivers/cqlsh to use TLS.'

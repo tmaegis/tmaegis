@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.4.3
+title: Secure SYSOPR authority access
+description: The SYSOPR authority defines the system operator authority that allows its holder to issue most of the Db2 commands. It is recommended that the SYSOPR authority be granted to an authorization ID or a role. Allowing SYSOPR authority for PUBLIC can jeopardize the Db2 subsystem.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.4.3 Secure SYSOPR authority access
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check SYSOPR authority access: SELECT GRANTEE, GRANTEETYPE FROM SYSIBM.SYSUSERAUTH WHERE SYSOPRAUTH IN (''G'',''Y''); If PUBLIC has SYSOPR access, follow the remediation steps. Review the access list to ensure that the grants are aligned with your organization''s access policies. For external security users: Issue the RACF RLIST command to list the profile that controls access to the SYSOPR authority in the DSNADM class. Examine the universal access (UACC) and user (USER) settings for the ... (full steps: CIS section 2.4.3)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the following SQL statement to revoke SYSOPR access from PUBLIC: REVOKE SYSOPR FROM PUBLIC; For external security users: Issue the RACF RALTER command to update the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

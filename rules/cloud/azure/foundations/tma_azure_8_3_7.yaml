@@ -1,0 +1,19 @@
+id: TMA-AZURE-8.3.7
+title: Ensure Public Network Access is Disabled
+description: Disable public network access to prevent exposure to the internet and reduce the risk of unauthorized access. Use private endpoints to securely manage access within trusted networks. When a private endpoint is configured on a key vault, connections from Azure resources within the same subnet will use its private IP address. However, network traffic from the public internet can still connect to the key vault's public endpoint (mykeyvault.vault.azure.net) using its public IP address unless public network access is disabled. Disabling public network access removes the vault's public endpoint from Azure public DNS, reducing its exposure to the public internet. With a private endpoint configured, network traffic will use the vault's private endpoint IP address for all requests (mykeyvault.vault.privatelink.azure.net). Disabling public network access improves security by ensuring that a ser...
+target: azure
+level: 1
+severity: high
+tags:
+- access-control
+- azure
+- cloud
+- network
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 8.3.7 Ensure Public Network Access is Disabled
+audit:
+  type: manual
+  command: 'Requisite Permissions - read section overview! Data-plane access not required. Can be audited and remediated with Azure Resource Manager permissions. Audit from Azure Portal 1. Go to Key vaults. 2. Click the name of a key vault. 3. Under Settings, click Networking. 4. Under Firewalls and virtual networks, ensure that Allow access from: is set to Disable public access. 5. Repeat steps 1-4 for each key vault. Audit from Azure CLI Run the following command to list key vaults: az keyvault list For each key vault, run the following command to get the public network access setting: az keyvault show --resource-group <resource-group> --name <key-vault> --query properties.publicNetworkAccess Ensure that "Disabled" is returned. Audit from PowerShell Run the following command to list key vaults: Get-AzKeyVault Run the following command to get the key vault in a resource group with a given name: $vault = Get-AzKeyVault -ResourceGroupName <resource-group> -Name <key-vault> Run the following
+    command to get the public network access setting for the key vault: $vault.PublicNetworkAccess Ensure that Disabled is returned. Repeat for each key vault. Audit from Azure Policy If referencing a digital...'
+remediation:
+  type: iac_patch
+  command: 'Requisite Permissions - read section overview! Data-plane access not required. Can be audited and remediated with Azure Resource Manager permissions. Remediate from Azure Portal 1. Go to Key vaults. 2. Click the name of a key vault. 3. Under Settings, click Networking. 4. Under Firewalls and virtual networks, next to Allow access from:, click the radio button next to Disable public access. 5. Click Apply. 6. Repeat steps 1-5 for each key vault requiring remediation. Remediate from Azure CLI For each key vault requiring remediation, run the following command to disable public network access: az keyvault update --resource-group <resource-group> --name <key-vault> -- public-network-access Disabled Remediate from PowerShell For each key vault requiring remediation, run the following command to disable public network access: Update-AzKeyVault -ResourceGroupName <resource-group> -VaultName <vault-name> -PublicNetworkAccess "Disabled"'

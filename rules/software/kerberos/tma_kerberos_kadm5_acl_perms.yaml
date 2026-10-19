@@ -1,0 +1,25 @@
+id: TMA-KERBEROS-KADM5-ACL-PERMS
+title: Ensure kadm5.acl is owned by root and not writable by group or others
+description: 'kadm5.acl decides which principals may administer the Kerberos database; whoever can edit it can grant themselves full kadmin rights. Checks /etc/krb5kdc/kadm5.acl (Debian/Ubuntu) and /var/kerberos/krb5kdc/kadm5.acl (RHEL, default 600 root): owner root, no group or other write.'
+target: kerberos
+level: 1
+severity: high
+tags: [kerberos, kdc, permissions]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - KDC configuration file permissions (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    n=0; bad=0
+    for f in /etc/krb5kdc/kadm5.acl /var/kerberos/krb5kdc/kadm5.acl; do
+      [ -f "$f" ] || continue
+      n=$((n+1))
+      o=$(stat -Lc %U "$f") || exit 1
+      [ "$o" = root ] || { echo "$f owned by $o"; bad=1; }
+      [ -z "$(find -L "$f" -maxdepth 0 -perm /022)" ] || { echo "$f is group/other writable"; bad=1; }
+    done
+    [ "$n" -gt 0 ] && [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file: [/etc/krb5kdc/kadm5.acl, /var/kerberos/krb5kdc/kadm5.acl]
+remediation:
+  type: command
+  command: for f in /etc/krb5kdc/kadm5.acl /var/kerberos/krb5kdc/kadm5.acl; do if [ -f "$f" ]; then chown root:root "$f" && chmod 600 "$f" || exit 1; fi; done

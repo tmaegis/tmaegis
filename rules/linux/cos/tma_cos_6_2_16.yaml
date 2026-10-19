@@ -1,0 +1,18 @@
+id: TMA-COS-6.2.16
+title: Ensure no duplicate UIDs exist
+description: Although the useradd program will not let you create a duplicate User ID (UID), it is possible for an administrator to manually edit the /etc/passwd file and change the UID field. Users must be assigned unique UIDs for accountability and to ensure appropriate access protections.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 6.2.16 Ensure no duplicate UIDs exist
+audit:
+  type: command
+  shell: bash
+  command: 'cut -d: -f3 /etc/passwd | sort | uniq -d | grep -q . && echo noncompliant || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique UIDs and review all files owned by the shared UIDs to determine which UID they are supposed to belong to.

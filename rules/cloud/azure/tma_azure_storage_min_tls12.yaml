@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-MIN-TLS12
+title: Ensure the minimum TLS version for storage accounts is set to 1.2
+description: TLS 1.0/1.1 have known weaknesses. Every storage account in the subscription must have minimumTlsVersion TLS1_2 (or higher). Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- storage
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Storage Accounts - minimum TLS version (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(az storage account list --query ''[?minimumTlsVersion!=`"TLS1_2"` && minimumTlsVersion!=`"TLS1_3"`].name'' -o tsv 2>/dev/null) || exit 1
+
+    [ -z "$out" ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'az storage account update --name <account> --resource-group <rg> --min-tls-version TLS1_2 (Terraform: min_tls_version = "TLS1_2"). Confirm clients support TLS 1.2 first.'

@@ -1,0 +1,28 @@
+id: TMA-FORTISWITCH-1.5.1.4
+title: Enabling SNMP trap for memory usage
+description: Enabling SNMP traps for memory usage monitoring helps detect anomalies and ensure critical security features remain operational. This proactive approach enhances system reliability by alerting administrators to potential resource issues. PASS requires an SNMPv3 user whose trap events include mem-low. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: low
+tags:
+- fortiswitch
+- snmp
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.5.1.4 Enabling SNMP trap for memory usage
+audit:
+  type: config_regex
+  pattern: (?m)^config system snmp user\n(?:[ \t]+[^\n]*\n)*?[ \t]+set events [^\n]*\bmem-low\b[^\n]*[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system snmp user
+        edit "<user>"
+            set events cpu-high mem-low log-full intf-ip ent-conf-change llv
+        next
+    end
+    # CIS guidance:
+    To configure SNMPv3 trap "mem-low" in addition to all trap "Events". From CLI:
+    config system snmp user
+        show
+        config system snmp user
+            set events cpu-high mem-low log-full intf-ip ent-conf-change llv
+        end

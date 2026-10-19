@@ -1,0 +1,17 @@
+id: TMA-VMWARE-6.4.1
+title: Host SNMP services, if enabled, must limit access
+description: 'To manage hosts securely, if SNMP is enabled, access must be restricted. Preferably, SNMPv3 should be employed as it offers superior security through key authentication and encryption compared to SNMPv1 or SNMPv2. Configuring the destination for SNMP traps is essential for ensuring monitoring data is directed to a legitimate and secure host. Manual review: the check needs vCenter/PowerCLI, firmware or guest access, or an organization-specific value.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- services
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 6.4.1 Host SNMP services, if enabled, must limit access
+audit:
+  type: manual
+  command: 'To confirm the proper configuration of SNMP, perform the following from the ESXi Shell or vCLI: 1. Run the following to determine if SNMP is being used: esxcli system snmp get 2. If SNMP is being used, refer to the vSphere Monitoring and Performance guide, chapter 8 for steps to verify the parameters. Additionally, the following PowerCLI command may be used to view the SNMP configuration: # List the SNMP Configuration of a host (single host connection required) Get-VMHostSnmp'
+remediation:
+  type: iac_patch
+  command: 'To correct the SNMP configuration, perform the following from the ESXi Shell or vCLI: 1. If SNMP is not needed, disable it by running: esxcli system snmp set --enable false 2. If SNMP is needed, refer to the vSphere Monitoring and Performance guide, chapter 8 for steps to configure it. Additionally, the following PowerCLI command may be used to implement the configuration: # Update the host SNMP Configuration (single host connection required) Get-VmHostSNMP | Set-VMHostSNMP -Enabled:$true -ReadOnlyCommunity ''<secret>'' Notes: ; SNMP must be configured on each ESXi host ; SNMP settings can be configured using Host Profiles'

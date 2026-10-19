@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.6.20.2
+title: Ensure 'Prohibit access of the Windows Connect Now wizards' is set to 'Enabled'
+description: 'This policy setting prohibits access to Windows Connect Now (WCN) wizards. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.6.20.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WCN\UI'' -Name ''DisableWcnUi'' -ErrorAction SilentlyContinue).''DisableWcnUi''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DisableWcnUi='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WCN\UI')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WCN\UI' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WCN\UI' -Name 'DisableWcnUi' -Value 1 -PropertyType DWord -Force | Out-Null

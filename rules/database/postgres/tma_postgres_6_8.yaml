@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-6.8
+title: Ensure TLS is enabled and configured correctly
+description: TLS on a PostgreSQL server should be enabled and configured to encrypt TCP traffic to and from the server. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- tls
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 6.8 Ensure TLS is enabled and configured correctly
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SHOW ssl" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'on'
+remediation:
+  type: iac_patch
+  command: Install a CA-issued server certificate and key (key mode 0600, owned by postgres), set ssl = on, ssl_cert_file and ssl_key_file in postgresql.conf, then SELECT pg_reload_conf();

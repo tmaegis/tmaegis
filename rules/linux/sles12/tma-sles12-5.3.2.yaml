@@ -1,0 +1,21 @@
+id: TMA-SLES12-5.3.2
+title: Ensure lockout for failed password attempts is configured
+description: 'Lock out users after n unsuccessful consecutive login attempts. These settings are commonly configured with the pam_faillock.so module. Some environments may continue using the pam_tally2.so module, where this older method may simplify automation in mixed environments. Set the lockout number in deny= to the policy in effect at your site. unlock_time=_n_ is the number of seconds the account remains locked after the number of attempts configured in deny=_n_ has been met. Note: • Additional module options may be set, recommendation only covers those listed here. • If you want to require the admin'
+target: linux
+os_family:
+- sles-12
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 12 Benchmark v3.2.0 - 5.3.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''grep -E ''"''"''^\s*auth\s+\S+\s+pam_(tally2|unix)\.so''"''"'' /etc/pam.d/login'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''auth required pam_tally2.so deny=5 onerr=fail unlock_time=900'' || { echo step1: missing ''auth required pam_tally2.so deny=5 onerr=fail unlock_time=90''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''auth required pam_unix.so try_first_pass'' || { echo step1: missing ''auth required pam_unix.so try_first_pass''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''grep -E ''"''"''^\s*account\s+required\s+pam_tally2.so\s*''"''"'' /etc/pam.d/common-account'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''account required pam_tally2.so'' || { echo step2: missing ''account required pam_tally2.so''; return 1; }; }; if alt0; then echo
+    compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Modify the deny= and unlock_time= parameters to conform to local site policy, Not to be greater than deny=5: Edit the file /etc/pam.d/login and add the following line: auth required pam_tally2.so deny=5 onerr=fail unlock_time=900 Note: The ordering on the lines is important. The additional line needs to below the line auth required pam_env.so and above all password validation lines. Example: auth required pam_env.so auth required pam_tally2.so deny=5 onerr=fail unlock_time=900 auth sufficient pam_unix.so nullok try_first_pass auth required pam_deny.so Edit the /etc/pam.d/common-account file and add the following pam_tally2.so line: account required pam_tally2.so'

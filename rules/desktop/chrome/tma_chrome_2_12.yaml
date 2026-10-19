@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.12
+title: Ensure 'Allow proceeding from the SSL warning page' is set to 'Disabled'
+description: 'This setting controls whether a user is able to proceed to a webpage when an invalid SSL certificate warning has occurred. The recommended state for this setting is: Disabled (0) Rationale: Sites protected by SSL should always be recognized as valid in the web browser. Allowing a user to make the decision as to whether there appears to be an invalid certificate could open an organization up to users visiting a site that is otherwise not secure and/or malicious in nature. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:SSLErrorOverrideAllowed (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.12 Ensure 'Allow proceeding from the SSL warning page' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''SSLErrorOverrideAllowed'' -ErrorAction SilentlyContinue).''SSLErrorOverrideAllowed''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SSLErrorOverrideAllowed' -Value 0 -PropertyType DWord -Force | Out-Null

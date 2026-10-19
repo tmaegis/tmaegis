@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.79
+title: Ensure 'Configure the list of types that are excluded from synchronization' is set to 'Enabled'
+description: 'This policy setting allows you to specify data types that will be limited/excluded from uploading data to the Microsoft Edge synchronization service. The recommended state for this setting is: Enabled with the following CASE SENSITIVE datatype passwords. Rationale: Storing and sharing information could potentially expose sensitive information including but not limited to user passwords and login information. Allowing this synchronization could also potentially allow an end user to pull corporate data that was synchronized into the cloud to a personal machine. List policy: numbered REG_SZ values under HKLM\SOFTWARE\Policies\Microsoft\Edge\SyncTypesListDisabled. Compliant when one entry equals ''passwords''; ''unset'' when the list is empty. Remediation appends the entry under the next free number.'
+target: edge
+level: 1
+severity: low
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.79 Ensure 'Configure the list of types that are excluded from synchronization' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$l = @((Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\SyncTypesListDisabled'' -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike ''PS*'' } | ForEach-Object { "$($_.Value)" }); if ($l.Count -eq 0) { ''unset'' } elseif ($l -contains ''passwords'') { ''compliant'' } else { ''non-compliant: '' + ($l -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $k = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge\SyncTypesListDisabled'; if (-not (Test-Path -Path $k)) { New-Item -Path $k -Force | Out-Null }; $props = @((Get-ItemProperty -Path $k).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' }); if (@($props | Where-Object { "$($_.Value)" -eq 'passwords' }).Count -eq 0) { $n = 1; while (@($props | Where-Object { $_.Name -eq "$n" }).Count -gt 0) { $n++ }; New-ItemProperty -Path $k -Name "$n" -Value 'passwords' -PropertyType String -Force | Out-Null }

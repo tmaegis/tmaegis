@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-5.6
+title: Ensure 'WildFire Update Schedule' is set to download and install updates in real-time
+description: 'Set the WildFire update schedule to download and install updates in real-time. PASS requires the WildFire update schedule recurring real-time. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- time
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 5.6 Ensure 'WildFire Update Schedule' is set to download and install updates in real-time
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig system update-schedule wildfire recurring real-time[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system update-schedule wildfire recurring real-time
+    commit
+    # CIS guidance:
+    Navigate to Device > Dynamic Updates > WildFire Update Schedule. Set Recurrence is set to Real-time.

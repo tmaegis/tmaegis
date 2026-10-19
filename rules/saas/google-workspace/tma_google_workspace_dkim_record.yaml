@@ -1,0 +1,17 @@
+id: TMA-GWS-DKIM-RECORD
+title: Ensure DKIM signing is enabled and the public key is published
+description: 'DKIM lets receivers verify Gmail-sent messages were not altered or spoofed. Set DKIM_SELECTOR if a selector other than the default ''google'' was chosen in Apps > Google Workspace > Gmail > Authenticate email. Checked from any POSIX shell with dig: set DOMAIN to the mail domain (e.g. DOMAIN=example.com). Fails if DOMAIN is unset or dig is missing.'
+target: google-workspace
+level: 1
+severity: medium
+tags:
+- google-workspace
+- mail-auth
+reference: CIS Google Workspace Foundations Benchmark v1.4.0 - Gmail / DKIM authentication (verify section number for your release)
+audit:
+  type: command
+  command: command -v dig >/dev/null 2>&1 || exit 1; [ -n "$DOMAIN" ] || exit 1; sel=${DKIM_SELECTOR:-google}; out=$(dig +short TXT "$sel._domainkey.$DOMAIN" 2>/dev/null) || exit 1; if printf '%s\n' "$out" | tr -d '" ' | grep -qiE 'v=DKIM1;.*p=[A-Za-z0-9+/]+'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Admin console > Apps > Google Workspace > Gmail > Authenticate email: generate a 2048-bit key, publish the TXT record at <selector>._domainkey.<domain>, then click Start authentication.'

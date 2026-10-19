@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.43
+title: Ensure 'Schedule Quick Scan Time' is set to '1' or higher
+description: 'This policy setting configures the time of day at which to perform a daily quick scan. The recommended state for this setting is: 1 or higher. Note: The time value is represented as the number of minutes past midnight (00:00). For example, 120 (0x78) is equivalent to 02:00 AM. By default, this setting is set to a time value of 2:00 AM. The schedule is based on local time on the computer where the scan is executing. Audit: ScheduleQuickScanTime under HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Scan must be 1 or higher.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.43 Ensure 'Schedule Quick Scan Time' is set to '1' or higher
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''ScheduleQuickScanTime'' -ErrorAction SilentlyContinue).''ScheduleQuickScanTime''; if (-not ($null -ne $v -and [int64]$v -ge 1)) { $bad += ''ScheduleQuickScanTime='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to 1 or higher: Defender\Schedule Quick Scan Time To establish the recommended configuration via Endpoint Security Blade: 1. Navigate to Endpoint Security 2. Click Antivirus 3. Click Create Profile 4. Select Windows for the Platform and Microsoft Defender Antivirus for Profile 5. Name the profile 6. Configure Schedule Quick Scan Time to 1 or higher'

@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-4.1.3
+title: If proxy kube proxy configuration file exists ensure permissions are set to 644 or more restrictive
+description: If kube-proxy is running, and if it is using a file-based configuration file, ensure that the file has permissions of 644 or more restrictive. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- worker-node
+- file-permissions
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.1.3 If proxy kube proxy configuration file exists ensure permissions are set to 644 or more restrictive
+audit:
+  type: manual
+  command: 'In OpenShift 4, the kube-proxy runs within the sdn pods, which copies the kubeconfig from a configmap to the container at /config/kube-proxy-config.yaml, with 644 permissions. Run the following command: for i in $(oc get pods -n openshift-sdn -l app=sdn -oname) do oc exec -n openshift-sdn $i -- \ stat -Lc %a /config/kube-proxy-config.yaml done Verify that the kube-proxy-config.yaml file has permissions of 644.'
+remediation:
+  type: iac_patch
+  command: Use chmod on kube-proxy config file and set permissions to 644

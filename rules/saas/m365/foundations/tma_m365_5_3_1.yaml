@@ -1,0 +1,19 @@
+id: TMA-M365-5.3.1
+title: Ensure privileged role assignments are activated and not assigned
+description: Microsoft Entra Privileged Identity Management (PIM) provides just-in-time (JIT) activation workflows for privileged Entra ID and Microsoft 365 roles, enabling time- bound access with approval and justification requirements. Rather than holding permanent role assignments, users are made eligible for a role and must explicitly activate it when needed. PIM supports requiring multi-factor authentication at activation, mandatory justification, approval workflows, and configurable activation durations. Permanent active role assignments expose privileged access continuously, regardless of whether a user is actively performing administrative tasks. If a permanently privileged account is compromised, an attacker immediately holds full role permissions with no time boundary. PIM eliminates standing privilege by requiring users to explicitly activate role assignments, scoping elevated access to...
+target: m365
+level: 2
+severity: medium
+tags:
+- iam
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.3.1 Ensure privileged role assignments are activated and not assigned
+audit:
+  type: manual
+  command: 'Note: There is no programmatic way to reliably determine whether a principal is a designated break-glass account. Global Administrator assignments require manual review and judgment to confirm that any permanent assignments belong exclusively to the organization''s two approved break-glass accounts. To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Roles & admins and select All roles. 3. Select Add filters and apply the Privileged filter to scope the review to built- in and custom privileged roles. 4. For each PRIVILEGED role that has one or more assignments, perform the following review of active assignments: 1. Select the role to open it. 2. Open the Active assignments tab. 3. For each assignment where Type is User or Group, verify that State is Activated. ▪ A State of Assigned is permitted only for approved break-glass accounts assigned to the Global Administrator role, and no more than 2 such accounts may
+    hold this permanent assignment. 4. For each assignment where Type is Service principal, verify that State is Assigned and an End time is designated. 5. Compliance is met when all privileged role assignments...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Roles & admins and select All roles. 3. For each user or group role assignment that is out of compliance: o Click on the role to open it in PIM. o Select the Active assignments tab. o Under action click Update or Remove. ▪ If Update is selected, set the Assignment type to Eligible and click Save. ▪ If Remove is selected, the assignment will be removed and the principal will no longer hold the role. 4. For each privileged role with a non-compliant service principal active assignment: 1. Open the Active assignments tab. 2. Click Update to modify the service principal assignment. 3. Uncheck Permanently assigned and set an appropriate end time to create a time-bound assignment based on business needs. 4. Click Save to apply the changes. 5. Repeat for any other privileged role assignments that are out of compliance. Note: CIS Safeguard 6.8, Define and Maintain
+    Role-Based Access Control, recommends reviewing access on a recurring schedule, at least annually and more frequently as needed. This practice is strongly encouraged for service principals when defining time...'

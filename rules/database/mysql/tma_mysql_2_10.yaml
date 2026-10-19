@@ -1,0 +1,19 @@
+id: TMA-MYSQL-2.10
+title: Use Dual Passwords to Enable Higher Frequency Password Rotation
+description: Dual passwords act as a tool to encourage password rotations in cases where a synchronized password change is not viable. By having a time delta to have old and new passwords in place, the process of replacing old passwords with new passwords within applications is simplified.
+target: mysql
+level: 2
+severity: low
+tags:
+- mysql
+- database
+- authentication
+- password
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.10 Use Dual Passwords to Enable Higher Frequency Password Rotation
+audit:
+  type: manual
+  command: Run SELECT user, host FROM mysql.user WHERE LENGTH(user_attributes->>'$.additional_password') > 0; An account that still has a secondary (dual) password after its password rotation has completed is a fail.
+remediation:
+  type: iac_patch
+  command: ALTER USER '<user>'@'<host>' DISCARD OLD PASSWORD; once all clients use the new password.

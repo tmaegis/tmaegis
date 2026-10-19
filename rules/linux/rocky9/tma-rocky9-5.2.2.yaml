@@ -1,0 +1,40 @@
+id: TMA-ROCKY9-5.2.2
+title: Ensure access on sudoers configuration files is configured
+description: The sudo configuration is defined in /etc/sudoers and in any files included from /etc/sudoers.d/. These files determine which users may escalate privileges and under what conditions.
+target: linux
+os_family:
+- rocky-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 9 Benchmark v3.0.0 - 5.2.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v find >/dev/null 2>&1 || { echo "step1: find not installed"; return 1; }; o=$(bash -c ''find /etc/sudoers /etc/sudoers.d/ -type f \( -perm /0337 -o ! -user root -o ! -group root \)'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -e /etc/sudoers ] || exit 0
+    for f in /etc/sudoers $(find /etc/sudoers.d -type f 2>/dev/null); do
+      chown root:root "$f"; mo=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$mo & 8#0440)))" "$f"
+    done
+    [ -d /etc/sudoers.d ] && { chown root:root /etc/sudoers.d; chmod 0750 /etc/sudoers.d 2>/dev/null; chmod g-w,o-w /etc/sudoers.d; }
+    exit 0
+  guidance: "Set the owner, group, and permissions on the sudoers files so that only root can read or modify them: # chown root:root /etc/sudoers # chmod u-wx,g-wx,o-rwx /etc/sudoers # find /etc/sudoers.d/ -type f -exec chown root:root {} + # find /etc/sudoers.d/ -type f -exec chmod u-wx,g-wx,o-rwx {} + Modify sudoers content only with visudo."

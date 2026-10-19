@@ -1,0 +1,20 @@
+id: TMA-WIN2019-2.3.5.5
+title: 'Ensure ''Domain controller: Refuse machine account password changes'' is set to ''Disabled'' (DC only)'
+description: 'This security setting determines whether Domain Controllers will refuse requests from member computers to change computer account passwords. The recommended state for this setting is: Disabled. Note: Some problems can occur as a result of machine account password expiration, particularly if a machine is reverted to a previous point-in-time state, as is common with virtual machines. Depending on how far back the reversion is, the older machine account password stored on the machine may no longer be recognized by the domain controllers, and therefore the computer loses its domain trust. This can'
+target: windows
+os_family:
+- windows-server-2019-dc
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 2.3.5.5
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters'' -Name ''RefusePasswordChange'' -ErrorAction SilentlyContinue).''RefusePasswordChange''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''RefusePasswordChange='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Name 'RefusePasswordChange' -Value 0 -PropertyType DWord -Force | Out-Null

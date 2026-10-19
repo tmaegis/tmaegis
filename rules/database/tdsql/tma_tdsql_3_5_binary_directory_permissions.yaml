@@ -1,0 +1,17 @@
+id: TMA-TDSQL-3.5
+title: Ensure Correct Permissions on the TDSQL Binary Directory
+description: 'The binary directory (bin/) contains the executables for all TDSQL components: oss_server, scheduler, startup/shutdown scripts, and Python integration scripts. These files must be protected against unauthorized modification. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql). Counts files that grant the listed permission to other users; any match fails, and a missing directory fails. (o+w). Expected: directory 0750, binaries owned by root:tdsql.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.5 Ensure Correct Permissions on the TDSQL Binary Directory
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_HOME:-/data/tdsql}/bin"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_HOME:-/data/tdsql}/bin"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" ! -type l -perm /o+w -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: chmod 750 <tdsql>/bin <tdsql>/bin/*; chown root:tdsql <tdsql>/bin <tdsql>/bin/*

@@ -1,0 +1,18 @@
+id: TMA-YUGABYTEDB-3.3
+title: Ensure that auditing is enabled for YCQL
+description: Audit logging can be used to record information about YCQL statements or events (such as login events) and log the records on a per-node basis into the YB-Tserver logs. Audit logging can be enabled on YugabyteDB cluster by setting the ycql_enable_audit_log TServer flag to true. By default, each TServer records all login events and YCQL commands issued to the server. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Reads the YB-TServer GFlags from the web UI at ${YB_TSERVER_WEB:-127.0.0.1:9000}/varz; run it against every TServer. Passes when ycql_enable_audit_log=true.
+target: yugabytedb
+level: 2
+severity: medium
+tags:
+- yugabytedb
+- logging
+- audit
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.3 Ensure that auditing is enabled for YCQL
+audit:
+  type: command
+  command: out=$(curl -sf "http://${YB_TSERVER_WEB:-127.0.0.1:9000}/varz?raw=1" 2>/dev/null) || exit 1; if printf '%s\n' "$out" | grep -qE -- '--ycql_enable_audit_log=(true)([^[:alnum:]_]|$)'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add --ycql_enable_audit_log=true to every YB-TServer and restart it.

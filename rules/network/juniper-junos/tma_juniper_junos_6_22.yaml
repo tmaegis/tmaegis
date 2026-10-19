@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.22
+title: Ensure ICMP Redirects are Disabled for IPv6
+description: The Routing Engine should not send ICMP Redirect Messages. ICMP Redirect Messages provide a method for a router to communicate routing information with a host and is intended for use when a router receives packets to forward to a destination to which the host should have a direct route. Passes when IPv6 is not configured. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.22 Ensure ICMP Redirects are Disabled for IPv6
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^n\n]|n(?:$|[^o\n]|o(?:$|[^\-\n]|-(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^t\n]|t(?:$|[^s\n]|s(?:$|[^\-\n]|-(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^v\n]|v(?:$|[^6\n]))))))))))))))))))))))))))))[^\n]*\n)*[^\n]*\bfamily inet6\b[^\n]*(?:\n(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^n\n]|n(?:$|[^o\n]|o(?:$|[^\-\n]|-(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^t\n]|t(?:$|[^s\n]|s(?:$|[^\-\n]|-(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^v\n]|v(?:$|[^6\n]))))))))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To disable ICMP redirects globally for IPv6, issue the following command from the hierarchy:
+    set system no-redirects-ipv6

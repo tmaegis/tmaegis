@@ -1,0 +1,17 @@
+id: TMA-PRINTER-HTTPS-EWS
+title: Ensure the Embedded Web Server is accessible over HTTPS only with modern TLS
+description: Admin credentials and device configuration are exchanged with the EWS; plain HTTP exposes them on the network. Use a trusted certificate, TLS 1.2+ and redirect or disable HTTP.
+target: printer
+level: 1
+severity: high
+tags:
+- printer
+- tls
+- web-management
+reference: CIS Multi-Function Device Benchmark v1.0.0 - Encrypt management traffic (HTTPS) (verify section number for your release)
+audit:
+  type: manual
+  command: 'In the Embedded Web Server (EWS: browse to https://<printer-ip>/ and sign in as administrator; HP: Security / Networking tabs, Xerox: Properties > Security / Connectivity, Ricoh: Device Management > Configuration, Canon: Settings/Registration > Network Settings / Security Settings) > Security / Networking > Mgmt. Protocols or SSL/TLS settings: ''Encrypt all web communication'' / ''Force HTTPS redirect'' ON (http://<printer-ip>/ must redirect to https or be refused); TLS 1.0/1.1 and SSL 3.0 disabled, only TLS 1.2/1.3 with strong ciphers; the device certificate is issued by the organisation CA (not the factory self-signed one) and not expired. IPP should be IPPS (port 443/631 TLS) where clients support it.'
+remediation:
+  type: iac_patch
+  command: 'EWS: install a CA-signed device certificate (Certificate Management), enable ''Encrypt all web communication'' / HTTPS redirect, set minimum TLS version 1.2 and disable weak ciphers; disable plain HTTP and IPP where possible.'

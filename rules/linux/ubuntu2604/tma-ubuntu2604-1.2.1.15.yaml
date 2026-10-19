@@ -1,0 +1,37 @@
+id: TMA-UBUNTU2604-1.2.1.15
+title: Ensure Acquire::Check-Date is configured
+description: The APT configuration option Acquire::Check-Date controls whether APT verifies that the system clock is plausible relative to the Valid-Until field in a repository's Release file. When enabled (the default), APT will reject Release files dated significantly in the future or past, preventing the use of stale repository metadata. This option should be explicitly set to true to ensure this validation is always active and cannot be silently disabled by other configuration.
+target: linux
+os_family:
+- ubuntu-26.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 26.04 LTS Benchmark v1.0.0 - 1.2.1.15
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v apt-config >/dev/null 2>&1 || { echo "step1: apt-config not installed"; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''apt-config dump | grep -Psi -- ''"''"''Acquire::Check-Date''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Acquire::Check-Date "true";'' || { echo step1: missing ''Acquire::Check-Date "true";''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    f=/etc/apt/apt.conf.d/99-no-insecure-repositories; mkdir -p /etc/apt/apt.conf.d
+    grep -qxF 'Acquire::Check-Date "true";' $f 2>/dev/null || echo 'Acquire::Check-Date "true";' >> $f
+    for g in /etc/apt/apt.conf /etc/apt/apt.conf.d/*; do [ "$g" != "$f" ] && [ -f "$g" ] && sed -i -E 's|^(\s*Acquire::Check-Date\s+)|// \1|' "$g"; done; true
+  guidance: "Create or append to a configuration file to explicitly enable date checking: # printf '%s\\n' \"\" 'Acquire::Check-Date \"true\";' >> /etc/apt/apt.conf.d/99- no-insecure-repositories Verify the setting has taken effect: # apt-config dump | grep -Psi -- 'Acquire::Check-Date' Note: All configuration files under /etc/apt/apt.conf.d/ are processed in lexicographic order. Where conflicting settings exist, the last one takes precedence."

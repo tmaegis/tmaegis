@@ -1,0 +1,21 @@
+id: TMA-MACOS15-6.3.6
+title: Ensure Advertising Privacy Protection in Safari Is Enabled
+description: Apple provides a framework that allows advertisers to target Apple users and end-users with advertisements. While many people prefer that when they see advertising it is relevant to them and their interests, the detailed information that is data mining collected, correlated, and available to advertisers in repositories is often disconcerting.
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- applications
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 6.3.6 Ensure Advertising Privacy Protection in Safari Is Enabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    out=$(/usr/sbin/system_profiler SPConfigurationProfileDataType 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | /usr/bin/grep "WebKitPreferences.privateClickMeasurementEnabled" | /usr/bin/tr -d ' "'
+  expected_output: WebKitPreferences.privateClickMeasurementEnabled=1;
+remediation:
+  type: iac_patch
+  command: 'Profile (preferred): com.apple.Safari WebKitPreferences.privateClickMeasurementEnabled = <true/>.'

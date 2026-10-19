@@ -1,0 +1,25 @@
+id: TMA-CISCO-NXOS-1.10
+title: Use Dedicated "mgmt" Interface and VRF for Administrative Functions
+description: 'Vendors provisioning dedicated management interfaces is a widespread practice, and gives some significant security advantages when implementing: - SSH access - SNMP polling - Syslog logging - SNMP traps - NTP requests This practice facilitates implementation of segmented, access controlled Management VLANs or VRFs, which acts as a significant deterrent to attackers. Administration via the mgmt interface bypasses the default routing and switching processing on the switch. This means that any routing issues or switching problems on the device itself will not affect access to the mgmt0 interface. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: high
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.10 Use Dedicated "mgmt" Interface and VRF for Administrative Functions
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Use the command "show running-config | i source-interface" Ensure that (if configured) the source-interface is configured for snmp traps, snmp informs, ntp and logging. switch# sho run | i source-interface snmp-server source-interface traps mgmt0 snmp-server source-interface informs mgmt0 snmp-server host 1.2.3.4 source-interface mgmt0 ntp source-interface mgmt0 logging source-interface mgmt0'
+remediation:
+  type: iac_patch
+  command: |-
+    ! First configure the mgmt0 interface:
+    interface mgmt0
+    ip address 1.2.3.1/24 If needed, add the various routes needed for connectivity for the mgmt interface. Note that this can also be accomplished with a routing protocol implemented for the vrf "management" ip route 5.6.7.8 255.255.255.0 1.2.3.254 vrf management Then, configure the source-interface commands for each target protocol that is implemented:
+    snmp-server source-interface traps mgmt0
+    snmp-server source-interface informs mgmt0
+    snmp-server host 1.2.3.4 source-interface loopback0
+    ntp source-interface mgmt0
+    logging source-interface mgmt0

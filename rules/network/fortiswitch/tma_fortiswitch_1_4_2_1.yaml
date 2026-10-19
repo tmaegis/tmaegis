@@ -1,0 +1,30 @@
+id: TMA-FORTISWITCH-1.4.2.1
+title: Disable unsecure management services on Management, SVI, or Loopback interfaces
+description: Only secure management related services such as HTTPS, PING, SSH, SNMP, and RADIUS should be used on management interfaces. FAILs if any interface allowaccess list contains http or telnet. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: medium
+tags:
+- fortiswitch
+- management
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.4.2.1 Disable unsecure management services on Management, SVI, or Loopback interfaces
+audit:
+  type: config_regex
+  pattern: (?m)^config system interface\n(?:[ \t]+[^\n]*\n)*?[ \t]+set allowaccess [^\n]*\b(?:telnet|http)\b[^\n]*[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system interface
+        edit "mgmt"
+            set allowaccess https ping ssh snmp
+        next
+    end
+    # CIS guidance:
+    On GUI:
+    Go to "System" > "Network" > "Interface". Review the Physical, VLAN, or Loopback interface and disable HTTP and Telnet services. On CLI:
+    config system interface
+        edit "mgmt"
+            set allowaccess https ping ssh snmp
+    Note:
+    1. Interface name may differ based on deployment. For this example, mgmt is a switch with a dedicated management interface. Switches without a management interface this would be set to "internal".

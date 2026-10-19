@@ -1,0 +1,68 @@
+## Synthetic sample: Palo Alto PAN-OS "show config running | set format" (hardened). Not a secure template.
+set deviceconfig system hostname pa-edge-01
+set deviceconfig system login-banner "Authorized access only. Activity is logged."
+set deviceconfig system permitted-ip 192.0.2.0/24
+set deviceconfig system service disable-telnet yes
+set deviceconfig system service disable-http yes
+set deviceconfig system server-verification yes
+set deviceconfig system ntp-servers primary-ntp-server ntp-server-address 192.0.2.123
+set deviceconfig system ntp-servers secondary-ntp-server ntp-server-address 192.0.2.124
+set deviceconfig system snmp-setting access-setting version v3 views NMS view .1.3.6.1 oid .1.3.6.1
+set deviceconfig system update-schedule anti-virus recurring hourly action download-and-install
+set deviceconfig system update-schedule threats recurring daily action download-and-install
+set deviceconfig system update-schedule wildfire recurring real-time
+set deviceconfig setting management idle-timeout 10
+set deviceconfig setting management enable-log-high-dp-load yes
+set deviceconfig setting ssl-decrypt allow-forward-decrypted-content yes
+set deviceconfig high-availability enabled yes
+set deviceconfig high-availability group 1 mode active-passive passive-link-state auto
+set deviceconfig high-availability group 1 state-synchronization enabled yes
+set deviceconfig high-availability group 1 peer-ip 192.0.2.2
+set deviceconfig high-availability group 1 monitoring link-monitoring enabled yes
+set mgt-config password-complexity enabled yes
+set mgt-config password-complexity minimum-length 14
+set mgt-config password-complexity minimum-uppercase-letters 1
+set mgt-config password-complexity minimum-lowercase-letters 1
+set mgt-config password-complexity minimum-numeric-letters 1
+set mgt-config password-complexity minimum-special-characters 1
+set mgt-config password-complexity password-change expiration-period 90
+set mgt-config password-complexity new-password-differs-by-characters 3
+set mgt-config password-complexity password-history-count 24
+set mgt-config users secadmin phash REDACTEDFAKEHASH
+set mgt-config users secadmin permissions role-based superuser yes
+set network profiles interface-management-profile MGMT-SSH ssh yes
+set network profiles interface-management-profile MGMT-SSH https yes
+set network profiles interface-management-profile MGMT-SSH permitted-ip 192.0.2.0/24
+set network profiles zone-protection-profile ZPP flood tcp-syn enable yes
+set network profiles zone-protection-profile ZPP flood tcp-syn syn-cookies alarm-rate 10000
+set zone untrust network layer3 ethernet1/1
+set zone untrust network zone-protection-profile ZPP
+set shared authentication-profile AUTH-LDAP lockout failed-attempts 5
+set shared authentication-profile AUTH-LDAP lockout lockout-time 30
+set shared log-settings syslog SYSLOG-1 server SRV1 server 192.0.2.50
+set shared log-settings syslog SYSLOG-1 server SRV1 transport TCP
+set shared log-settings syslog SYSLOG-1 server SRV1 port 6514
+set shared log-settings system match-list SYS-ALL send-syslog SYSLOG-1
+set shared log-settings profiles LOGFWD match-list WF-ALERT log-type wildfire
+set shared ssl-tls-service-profile TLS-MGMT protocol-settings min-version tls1-2
+set shared profiles virus AV-STRICT decoder http action reset-both
+set shared profiles virus AV-STRICT decoder smtp action reset-both
+set shared profiles spyware AS-STRICT rules BLOCK-ALL action reset-both
+set shared profiles spyware AS-STRICT botnet-domains lists default-paloalto-dns action sinkhole
+set shared profiles spyware AS-STRICT cloud-inline-analysis yes
+set shared profiles vulnerability VP-STRICT rules BLOCK-CRIT action reset-both
+set shared profiles vulnerability VP-STRICT cloud-inline-analysis yes
+set shared profiles url-filtering URL-STRICT block adult
+set shared profiles url-filtering URL-STRICT log-container-page-only no
+set shared profiles url-filtering URL-STRICT local-inline-cat yes
+set shared profiles url-filtering URL-STRICT cloud-inline-cat yes
+set shared profiles url-filtering URL-STRICT log-http-hdr-user-agent yes
+set shared profiles url-filtering URL-STRICT log-http-hdr-referer yes
+set shared profiles url-filtering URL-STRICT log-http-hdr-xff yes
+set shared profiles data-filtering DLP-CC rules CC-RULE data-object credit-card-numbers alert-threshold 5
+set rulebase default-security-rules rules interzone-default log-end yes
+set rulebase default-security-rules rules intrazone-default log-end yes
+set rulebase decryption rules DECRYPT-OUT type ssl-forward-proxy
+set rulebase security rules BLOCK-KNOWN-BAD destination panw-known-ip-list
+set rulebase security rules BLOCK-KNOWN-BAD source panw-known-ip-list
+set rulebase security rules BLOCK-KNOWN-BAD action deny

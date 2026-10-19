@@ -1,0 +1,18 @@
+id: TMA-MYSQL-5.2
+title: Ensure 'FILE' is Not Granted to Non-Administrative Users
+description: 'The FILE privilege is used to allow or disallow a user from reading and writing files on the server host. Any user with the FILE right granted has the ability to: ; Read files from the local file system that are readable by the MySQL server (this includes world-readable files). ; Write files to the local file system where the MySQL server has write access.'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- authorization
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 5.2 Ensure 'FILE' is Not Granted to Non-Administrative Users
+audit:
+  type: manual
+  command: Run SELECT GRANTEE FROM INFORMATION_SCHEMA.USER_PRIVILEGES WHERE PRIVILEGE_TYPE = 'FILE'; Ensure only administrative users are returned in the result set.
+remediation:
+  type: iac_patch
+  command: REVOKE FILE ON *.* FROM '<user>'@'<host>'; for each non-administrative grantee.

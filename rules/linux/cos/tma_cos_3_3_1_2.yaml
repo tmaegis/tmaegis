@@ -1,0 +1,19 @@
+id: TMA-COS-3.3.1.2
+title: Ensure IPv6 loopback traffic is configured
+description: Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network (::1). Loopback traffic is generated between processes on machine and is typically critical to operation of the system. The loopback interface is the only place that loopback network (::1) traffic should be seen, all other interfaces should ignore traffic on this network as an anti-spoofing measure.
+target: cos
+level: 2
+severity: low
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 3.3.1.2 Ensure IPv6 loopback traffic is configured
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v ip6tables >/dev/null 2>&1 || { echo "step1: ip6tables not installed"; return 1; }; o=$(bash -c ''ip6tables -L INPUT -v -n Chain INPUT (policy DROP 0 packets, 0 bytes)'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''pkts bytes target prot opt in out source'' || { echo step1: missing ''pkts bytes target prot opt in out source''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- destination || { echo step1: missing destination; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''0 0 ACCEPT all lo * ::/0 ::/0'' || { echo step1: missing ''0 0 ACCEPT all lo * ::/0 ::/0''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''0 0 DROP all * * ::1 ::/0'' || { echo step1: missing ''0 0 DROP all * * ::1 ::/0''; return 1; }; command -v ip6tables >/dev/null 2>&1 || { echo "step2: ip6tables
+    not installed"; return 1; }; o=$(bash -c ''ip6tables -L OUTPUT -v -n Chain OUTPUT (policy DROP 0 packets, 0 bytes)'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''pkts bytes target prot opt in out source'' || { echo step2: missing ''pkts bytes target prot opt in out source''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- destination || { echo step2: missing destination; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''0 0 ACCEPT all * lo ::/0 ::/0'' || { echo step2: missing ''0 0 ACCEPT all * lo ::/0 ::/0''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # ip6tables -A INPUT -i lo -j ACCEPT # ip6tables -A OUTPUT -o lo -j ACCEPT # ip6tables -A INPUT -s ::1 -j DROP'

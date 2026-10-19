@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-OWA-HTTPS
+title: Ensure Outlook on the web virtual directories publish only HTTPS URLs
+description: OWA internal/external URLs must use HTTPS so that forms-based logon credentials and session cookies are never sent in clear text. Prints the number of OWA virtual directories with a non-HTTPS URL (expected 0). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- owa
+reference: CIS Microsoft Exchange Server Benchmark - Outlook on the web / Virtual directory URLs and SSL (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-OwaVirtualDirectory -ADPropertiesOnly -ErrorAction Stop | Where-Object { ("$($_.InternalUrl)" -and "$($_.InternalUrl)" -notlike 'https://*') -or ("$($_.ExternalUrl)" -and "$($_.ExternalUrl)" -notlike 'https://*') }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-OwaVirtualDirectory '<server>\owa (Default Web Site)' -InternalUrl https://<fqdn>/owa -ExternalUrl https://<fqdn>/owa and keep 'Require SSL' enabled on the IIS owa application.

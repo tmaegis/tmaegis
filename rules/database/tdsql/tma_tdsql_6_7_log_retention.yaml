@@ -1,0 +1,16 @@
+id: TMA-TDSQL-6.7
+title: Ensure a Reasonable Log Retention Policy
+description: Each TDSQL component has a log cleanup mechanism; ensure log retention meets security audit and compliance requirements.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- logging
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 6.7 Ensure a Reasonable Log Retention Policy
+audit:
+  type: manual
+  command: 'Review retention settings: OSS scheduler.xml log_clean.max_save_days (default 30) and log_clean.max_size (100 GB); Manager scheduler.xml clear_log.resv_capacity (20 GB); Gateway proxy.json gateway.log.clean.time (14 days) and gateway.log.clean.size (10 GB). Values must meet the retention requirement (typically at least 90 days, 180+ in finance); shorter retention is a finding.'
+remediation:
+  type: iac_patch
+  command: 'Adjust the retention parameters according to compliance requirements (typically at least 90 days; the finance industry may require 180 days or more). Recommendations: 1. Increase max_save_days to meet compliance requirements. 2. Forward logs to a centralized log platform (SIEM), keeping only recent logs locally. 3. Ensure sufficient disk space to support the retention requirement.'

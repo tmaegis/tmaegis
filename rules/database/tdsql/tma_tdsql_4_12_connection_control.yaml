@@ -1,0 +1,17 @@
+id: TMA-TDSQL-4.12
+title: Ensure Connection-Control Failed-Login Delay Is Enabled
+description: TDSQL MySQL instances integrate the upstream connection_control plugin (SQLEngine/plugin/connection_control/connection_control.cc), which imposes an increasing delay on a client connection after consecutive failed logins, mitigating brute-force attacks. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Passes when the CONNECTION_CONTROL plugin is ACTIVE and connection_control_failed_connections_threshold is greater than 0; review the min/max connection delays against policy.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- authentication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.12 Ensure Connection-Control Failed-Login Delay Is Enabled
+audit:
+  type: sql_query
+  command: pl=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT COUNT(*) FROM information_schema.plugins WHERE PLUGIN_NAME = 'CONNECTION_CONTROL' AND PLUGIN_STATUS = 'ACTIVE'" 2>/dev/null) || exit 1; th=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT @@global.connection_control_failed_connections_threshold" 2>/dev/null) || exit 1; if [ "$pl" -ge 1 ] && [ "$th" -gt 0 ]; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: INSTALL PLUGIN CONNECTION_CONTROL SONAME 'connection_control.so'; INSTALL PLUGIN CONNECTION_CONTROL_FAILED_LOGIN_ATTEMPTS SONAME 'connection_control.so'; SET GLOBAL connection_control_failed_connections_threshold = 3; and set connection_control_min/max_connection_delay per policy.

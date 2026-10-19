@@ -1,0 +1,21 @@
+id: TMA-WIN2022-17.7.5
+title: Ensure 'Audit Other Policy Change Events' is set to include 'Failure'
+description: 'This subcategory contains events about EFS Data Recovery Agent policy changes, changes in Windows Filtering Platform filter, status on Security policy settings updates for local Group Policy settings, Central Access Policy changes, and detailed troubleshooting events for Cryptographic Next Generation (CNG) operations. • 5063: A cryptographic provider operation was attempted. • 5064: A cryptographic context operation was attempted. • 5065: A cryptographic context modification was attempted. • 5066: A cryptographic function operation was attempted. • 5067: A cryptographic function modification w'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 17.7.5
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9234-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Failure'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9234-69ae-11d9-bed3-505054503030}' /failure:enable

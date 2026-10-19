@@ -1,0 +1,38 @@
+id: TMA-COS-1.1.7
+title: Ensure noexec option set on /var partition
+description: The noexec mount option specifies that the filesystem cannot contain executable binaries. Since the /var filesystem is only intended for services to write data and not execute, set this option to ensure that users cannot run executable binaries from /var.
+target: cos
+level: 2
+severity: low
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 1.1.7 Ensure noexec option set on /var partition
+audit:
+  type: command
+  shell: bash
+  command: if ! findmnt -kn /var >/dev/null 2>&1; then echo compliant; elif findmnt -kn /var | grep -qw -- noexec; then echo compliant; else echo /var' is mounted without noexec'; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=/var; o=noexec
+    findmnt -kn "$p" >/dev/null 2>&1 || exit 0
+    if grep -qE "^[^#][^[:space:]]*[[:space:]]+$p[[:space:]]" /etc/fstab 2>/dev/null; then
+      awk -v p="$p" -v o="$o" '$0 !~ /^#/ && $2==p { n=split($4,a,","); f=0; for(i=1;i<=n;i++) if(a[i]==o) f=1; if(!f) $4=$4","o } {print}' OFS='\t' /etc/fstab > /etc/fstab.tma && cat /etc/fstab.tma > /etc/fstab && rm -f /etc/fstab.tma
+    fi
+    mount -o "remount,$o" "$p" 2>/dev/null || true; true
+  guidance: "Run the following command to remount /var : # mount -o remount,noexec /var /etc is stateless on Container-Optimized OS. Therefore, /etc cannot be used to make these changes persistent across reboots. The steps mentioned above needs to be performed after every boot."

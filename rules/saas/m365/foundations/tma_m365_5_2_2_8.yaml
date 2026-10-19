@@ -1,0 +1,17 @@
+id: TMA-M365-5.2.2.8
+title: Ensure 'sign-in risk' is blocked for medium and high risk
+description: 'Microsoft Entra ID Protection sign-in risk detects risks in real-time and offline. A risky sign-in is an indicator for a sign-in attempt that might not have been performed by the legitimate owner of a user account. Note: While Identity Protection also provides two risk policies with limited conditions, Microsoft highly recommends setting up risk-based policies in Conditional Access as opposed to the "legacy method" for the following benefits: - Enhanced diagnostic data - Report-only mode integration - Graph API support - Use more Conditional Access attributes like sign-in frequency in the policy Sign-in risk is determined at the time of sign-in and includes criteria across both real- time and offline detections for risk. Blocking sign-in to accounts that have risk can prevent undesired access from potentially compromised devices or unauthorized users.'
+target: m365
+level: 2
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.8 Ensure 'sign-in risk' is blocked for medium and high risk
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify All users is included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify All resources (formerly ''All cloud apps'') is selected with no exclusions. o Under Conditions verify Sign-in risk values of High and Medium are selected. o Under Grant verify Block access is selected. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. Filter to policies where Conditions.SignInRiskLevels contains any string. 3. For each policy returned,
+    verify the following criteria: o Conditions.Users.IncludeUsers is All o Conditions.Applications.IncludeApplications is All o Conditions.Applications.ExcludeApplications is null or empty o Conditions.SignI...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users. o Under Target resources include All resources (formerly ''All cloud apps'') and do not set any exclusions. ▪ Under Exclude exclude any break-glass accounts. o Under Conditions choose Sign-in risk values of High and Medium and click Done. o Under Grant choose Block access and click Select. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On.'

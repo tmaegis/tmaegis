@@ -1,0 +1,24 @@
+id: "CIS-UBUNTU-5.2.8"
+title: "Ensure SSH root login is disabled"
+description: "The PermitRootLogin parameter specifies if the root user can log in using ssh."
+target: "linux"
+os_family:
+  - "ubuntu-22.04"
+  - "ubuntu-24.04"
+  - "rocky-9"
+level: 1
+severity: "high"
+tags:
+  - "ssh"
+  - "server"
+reference: "CIS Ubuntu Linux / Rocky Linux Benchmarks - Ensure sshd PermitRootLogin is disabled (verify section number for your release)"
+audit:
+  type: "file_regex"
+  file_path: "/etc/ssh/sshd_config"
+  pattern: '(?m)^\s*PermitRootLogin\s+no\b'
+remediation:
+  type: "command"
+  command: "sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config"
+  verify_cmd: "sshd -t"
+  backup_files:
+    - "/etc/ssh/sshd_config"

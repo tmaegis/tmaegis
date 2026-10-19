@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.19
+title: Ensure Hostname is Not Set to Device Make or Model
+description: The device make and model should not appear in the hostname. The first step in any attack is reconnaissance. An attacker will attempt to learn about the target network, its hosts and network devices. A key piece of information for an attacker is what type of device he/she is attacking. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: low
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.19 Ensure Hostname is Not Set to Device Make or Model
+audit:
+  type: config_regex
+  pattern: (?m)^set system host-name [^\n]*(?:Juniper|JUN|ACX|EX|MX|NFX|PTX|QFX|SRX)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To configure the hostname, issue the following command from the hierarchy;
+    set system host-name <hostname> The hostname should not include any indication of the make or model of the device.

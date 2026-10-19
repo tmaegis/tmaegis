@@ -1,0 +1,20 @@
+id: TMA-SLES11-1.1.2
+title: Ensure separate partition exists for /tmp
+description: The /tmp directory is a world-writable directory used for temporary storage by all users and some applications.
+target: linux
+os_family:
+- sles-11
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 11 Benchmark v2.1.1 - 1.1.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v mount >/dev/null 2>&1 || { echo "step1: mount not installed"; return 1; }; o=$(bash -c ''mount | grep /tmp'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''tmpfs on /tmp type tmpfs (rw,nosuid,nodev,noexec,relatime)'' || { echo step1: missing ''tmpfs on /tmp type tmpfs (rw,nosuid,nodev,noexec,relatime)''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new installations, during installation create a custom partition setup and specify a separate partition for /tmp . For systems that were previously installed, create a new partition and configure /etc/fstab as appropriate.

@@ -1,0 +1,19 @@
+id: TMA-GCP-DNSSEC-ENABLED
+title: Ensure DNSSEC is enabled for Cloud DNS public zones
+description: DNSSEC signs zone data so resolvers can detect spoofed or tampered answers. Every public managed zone must have dnssecConfig.state on. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: medium
+tags:
+- gcp
+- dns
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Networking - DNSSEC enabled for Cloud DNS (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud dns managed-zones list --format=''value(name,visibility,dnssecConfig.state)'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''NF && $2 == "public" && $3 != "on" { n++; print "DNSSEC off: " $1 } END { if (!n) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: gcloud dns managed-zones update <zone> --dnssec-state on (RSASHA256 keys), then publish the DS record at the registrar.

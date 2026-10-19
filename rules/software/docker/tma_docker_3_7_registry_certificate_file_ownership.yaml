@@ -1,0 +1,20 @@
+id: TMA-DOCKER-3.7
+title: Ensure that registry certificate file ownership is set to root:root
+description: Registry certificate files under /etc/docker/certs.d must be owned by root:root so that they cannot be replaced by unprivileged users. The audit lists files under /etc/docker/certs.d not owned by root:root; not applicable when /etc/docker/certs.d does not exist.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+- tls
+reference: CIS Docker Benchmark v1.9.0 - 3.7 Ensure that registry certificate file ownership is set to root:root
+audit:
+  type: command
+  command: out=$(find /etc/docker/certs.d -type f \( ! -user root -o ! -group root \) 2>/dev/null) || exit 1; [ -z "$out" ] && echo compliant || printf '%s\n' "$out"
+  expected_output: compliant
+  requires_file:
+  - /etc/docker/certs.d
+remediation:
+  type: command
+  command: find /etc/docker/certs.d -type f -exec chown root:root {} +

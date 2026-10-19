@@ -1,0 +1,17 @@
+id: TMA-M365-3.3.1
+title: Ensure Information Protection sensitivity label policies are published
+description: 'Sensitivity labels enable organizations to classify and label content across Microsoft 365 based on its sensitivity and business impact. These labels can be applied manually by users or automatically based on the content. When applied, labels can automatically encrypt content, provide "Confidential" watermarks, restrict access, and offer various data protection features. Labels can be scoped to data assets and containers: - Files & other data assets in Microsoft 365, Fabric, Azure, AWS and other platforms - Email messages sent from all versions of Outlook - Meeting calendar events and schedules in Outlook and Teams - Teams, Microsoft 365 Groups and SharePoint sites Consistent usage of sensitivity labels can help reduce the risk of data loss or exposure and enable more effective incident response if a breach does occur. They can also help organizations comply with regulatory requiremen...'
+target: m365
+level: 1
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 3.3.1 Ensure Information Protection sensitivity label policies are published
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Purview compliance portal https://purview.microsoft.com/ 2. Select Information protection > Policies > Label publishing policies. 3. Ensure that a Label policy exists and is published according to the organization''s information protection needs. To audit using PowerShell: 1. Connect to the Security & Compliance PowerShell using Connect-IPPSSession. 2. Run the following script: $Policies = Get-LabelPolicy -WarningAction Ignore | Where-Object { $_.Type -eq "PublishedSensitivityLabel" } if ($Policies) { $Policies | Format-List -Property Name, *Location* Write-Host "$($Policies.Count) Sensitivity Label policies found." } else { Write-Host "No Sensitivity Label policies found" } 3. Ensure there is at least one sensitivity label policy published. 4. Review the locations defined to ensure they''re in scope with the organization''s needs. Note: These policies are specific to the information protection needs of each organization. Whether
+    an organization passes the audit is open to interpretation by the auditor and depends largely on how effectively it implements information protection features to safeguard data.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Purview compliance portal https://purview.microsoft.com/ 2. Select Information protection > Sensitivity labels. 3. Click Create a label to create a label. 4. Click Publish labels and select any newly created labels to publish according to the organization''s information protection needs.'

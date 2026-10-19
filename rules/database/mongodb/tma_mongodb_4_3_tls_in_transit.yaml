@@ -1,0 +1,20 @@
+id: TMA-MONGODB-4.3
+title: Ensure Encryption of Data in Transit TLS or SSL (Transport Encryption)
+description: Use TLS or SSL to protect all incoming and outgoing connections. This should include using TLS or SSL to encrypt communication between the mongod and mongos components of a MongoDB client as well as between all applications and MongoDB. MongoDB supports TLS/SSL (Transport Layer Security/Secure Sockets Layer) to encrypt all of MongoDB's network traffic. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist).
+target: mongodb
+level: 1
+severity: high
+tags:
+- mongodb
+- tls
+- encryption
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 4.3 Ensure Encryption of Data in Transit TLS or SSL (Transport Encryption)
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*mode:[ \t]*['\x22]?require(?:TLS|SSL)\b
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'Set net.tls.mode: requireTLS with net.tls.certificateKeyFile and net.tls.CAFile in /etc/mongod.conf, update clients to use TLS, then restart mongod.'

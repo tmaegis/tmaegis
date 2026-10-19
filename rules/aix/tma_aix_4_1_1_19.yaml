@@ -1,0 +1,16 @@
+id: TMA-AIX-4.1.1.19
+title: Ensure SUID and SGID files are reviewed
+description: The system is audited for both suid and sgid files and programs. An audit should be performed on the system to search for the presence of both suid and sgid files and programs. In order to prevent these files from being potentially exploited the suid and sgid permissions should be removed wherever possible.
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.1.19 Ensure SUID and SGID files are reviewed
+audit:
+  type: manual
+  command: 'Re-execute the appropriate find command and review the output. This should reflect the changes made in the remediation section. If there are non-local filesystems which cannot be un-mounted, use the following to find all suid and sgid files on local JFS/JFS2 filesystems only: find / \( -fstype jfs -o -fstype jfs2 \) \( -perm -04000 -o -perm -02000 \) - type f -ls If all non-local filesystems are un-mounted: find / \( -perm -04000 -o -perm -02000 \) -type f -ls'
+remediation:
+  type: iac_patch
+  command: 'Review the currently mounted filesystems: mount Un-mount all non-local filesystems and cdrom media: unmount <mount point> If there are non-local filesystems which cannot be un-mounted, use the following to find all suid and sgid files on local JFS/JFS2 filesystems only: find / \( -fstype jfs -o -fstype jfs2 \) \( -perm -04000 -o -perm -02000 \) - type f -ls If all non-local filesystems have been un-mounted: find / \( -perm -04000 -o -perm -02000 \) -type f -ls Review the files and where possible, use the chmod command to remove the appropriate suid or sgid bits: chmod u-s <file> chmod g-s <file>'

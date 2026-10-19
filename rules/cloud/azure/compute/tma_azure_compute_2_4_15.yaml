@@ -1,0 +1,19 @@
+id: TMA-AZURE-COMPUTE-2.4.15
+title: Ensure all traffic is routed through the virtual network
+description: Enable vnetRouteAllEnabled to ensure all outbound traffic is routed through the integrated virtual network. This recommendation should be applied after integrating a function app deployment slot with a virtual network. Routing all outbound traffic through the virtual network enhances security.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+- network
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.4.15 Ensure all traffic is routed through the virtual network
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Networking. 6. Under Outbound traffic configuration, next to Virtual network integration, click the virtual network and subnet name. 7. Under Application routing, ensure that the box next to Outbound internet traffic is checked. 8. Repeat steps 1-7 for each function app and deployment slot. Audit form Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to list deployment slots: az functionapp deployment slot list --resource-group <resource-group-name> -- name <function-app-name> For each deployment slot, ensure that vnetRouteAllEnabled is set to true. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition
+    in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 75c42c42-dfb3-453d-8fd5-9f9...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Networking. 6. Under Outbound traffic configuration, next to Virtual network integration, click the virtual network and subnet name. 7. Under Application routing, check the box next to Outbound internet traffic. 8. Click Apply. 9. Repeat steps 1-8 for each function app and deployment slot requiring remediation. Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to route all traffic through the virtual network: az resource update --resource-group <resource-group-name> --name <function- app-name>/slots/<deployment-slot-name> --resource-type "Microsoft.Web/sites" --set properties.vnetRouteAllEnabled=true'

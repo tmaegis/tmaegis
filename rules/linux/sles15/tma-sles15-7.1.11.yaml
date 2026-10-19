@@ -1,0 +1,42 @@
+id: TMA-SLES15-7.1.11
+title: Ensure world writable files and directories are secured
+description: World writable files are the least secure. Data in world-writable files can be modified and compromised by any user on the system. World writable files may also indicate an incorrectly written script or program that could potentially be the cause of a larger compromise to the system's integrity. See the chmod(2) man page for more information. Setting the sticky bit on world writable directories prevents users from deleting or renaming files in that directory that are not owned by them.
+target: linux
+os_family:
+- sles-15
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 15 Benchmark v2.0.1 - 7.1.11
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   l_smask='\"'\"'01000'\"'\"'\n   a_file=(); a_dir=() # Initialize arrays\n   a_path=(! -path \"/run/user/*\" -a ! -path \"/proc/*\" -a ! -path \"*/containerd/*\" -a ! -path \"*/kubelet/pods/*\" -a ! -path \"*/kubelet/plugins/*\" -a ! -path \"/sys/*\" -a ! -path \"/snap/*\")\n   while IFS= read -r l_mount; do\n      while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_file; do\n         if [ -e \"$l_file\" ]; then\n            [ -f \"$l_file\" ] && a_file+=(\"$l_file\") # Add WR files\n            if [ -d \"$l_file\" ]; then # Add directories w/o sticky bit\n               l_mode=\"$(stat -Lc '\"'\"'%#a'\"'\"' \"$l_file\")\"\n               [ ! $(( $l_mode & $l_smask )) -gt 0 ] && a_dir+=(\"$l_file\")\n            fi\n         fi\n      done < <(find \"$l_mount\" -xdev \\( \"${a_path[@]}\" \\) \\( -type f -o -type d \\) -perm -0002 -print0 2> /dev/null)\n   done < <(findmnt -Dkerno fstype,target | awk '\"\
+    '\"'($1 !~ /^\\s*(nfs|proc|smb|vfat|iso9660|efivarfs|selinuxfs)/ && $2 !~ /^(\\/run\\/user\\/|\\/tmp|\\/var\\/tmp)/){print $2}'\"'\"')\n   if ! (( ${#a_file[@]} > 0 )); then\n      l_output=\"$l_output\\n  - No world writable files exist on the local filesystem.\"\n   else\n      l_output2=\"$l_output2\\n - There are \\\"$(printf '\"'\"'%s'\"'\"' \"${#a_file[@]}\")\\\" World writable files on the system.\\n   - The following is a list of World writable files:\\n$(printf '\"'\"'%s\\n'\"'\"' \"${a_file[@]}\")\\n   - end of list\\n\"\n   fi\n   if ! (( ${#a_dir[@]} > 0 )); then\n      l_output=\"$l_output\\n  - Sticky bit is set on world writable directories on the local filesystem.\"\n   else\n      l_output2=\"$l_output2\\n - There are \\\"$(printf '\"'\"'%s'\"'\"' \"${#a_dir[@]}\")\\\" World writable directories without the sticky bit on the system.\\n   - The following is a list of World writable directories without the sticky bit:\\n$(printf '\"'\"'%s\\n'\"'\"' \"${a_dir[@]}\")\\n\
+    \   - end of list\\n\"\n   fi\n   unset a_path; unset a_arr; unset a_file; unset a_dir # Remove arrays\n   # If l_output2 is empty, we pass\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n - * Correctly configured * :\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - * Reasons for audit failure * :\\n$l_output2\"\n      [ -n \"$l_output\" ] && echo -e \"- * Correctly configured * :\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    STICKY_ONLY=0
+    findmnt -Dkerno fstype,target 2>/dev/null | awk '($1 !~ /^[[:space:]]*(nfs|proc|cifs|smb|vfat|iso9660|efivarfs|selinuxfs|ncpfs|sysfs|devtmpfs|tmpfs|devpts|cgroup|overlay)/ && $2 !~ /^(\/run|\/tmp|\/var\/tmp|\/proc|\/sys|\/dev)(\/|$)/){print $2}' | while read -r mnt; do
+      find "$mnt" -mount -xdev \( -path '*/containers/storage/*' -o -path '*/containerd/*' -o -path '*/kubelet/*' -o -path '/sys/*' -o -path '/snap/*' -o -path '/boot/efi/*' \) -prune -o -type d -perm -0002 ! -perm -1000 -exec chmod +t {} + 2>/dev/null
+      [ "$STICKY_ONLY" = 1 ] || find "$mnt" -mount -xdev \( -path '*/containers/storage/*' -o -path '*/containerd/*' -o -path '*/kubelet/*' -o -path '/sys/*' -o -path '/snap/*' -o -path '/boot/efi/*' \) -prune -o -type f -perm -0002 -exec chmod o-w {} + 2>/dev/null
+    done
+    true
+  guidance: "• World Writable Files: o It is recommended that write access is removed from other with the command ( chmod o-w <filename> ), but always consult relevant vendor documentation to avoid breaking any application dependencies on a given file. • World Writable Directories: o Set the sticky bit on all world writable directories with the command ( chmod a+t <directory_name> ) Run the following script to: • Remove other write permission from any world writable files • Add the sticky bit to all world writable directories #!/usr/bin/env bash { l_smask='01000' a_file=(); a_dir=() # Initialize arrays a_path=(! -path \"/run/user/*\" -a ! -path \"/proc/*\" -a ! -path \"*/containerd/*\" -a ! -path \"*/kubelet/po…"

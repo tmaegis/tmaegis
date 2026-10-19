@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.17
+title: Ensure that the host's IPC namespace is not shared
+description: Sharing the host's IPC namespace exposes host shared memory segments and semaphores to the container. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.17 Ensure that the host's IPC namespace is not shared
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{.HostConfig.IpcMode}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '$2=="host"{print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Redeploy without --ipc=host (compose: remove ''ipc: host'').'

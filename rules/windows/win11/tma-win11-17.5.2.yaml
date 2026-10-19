@@ -1,0 +1,20 @@
+id: TMA-WIN11-17.5.2
+title: Ensure 'Audit Group Membership' is set to include 'Success'
+description: 'This policy allows you to audit the group membership information in the user’s logon token. Events in this subcategory are generated on the computer on which a logon session is created. For an interactive logon, the security audit event is generated on the computer that the user logged on to. For a network logon, such as accessing a shared folder on the network, the security audit event is generated on the computer hosting the resource. The recommended state for this setting is to include: Success. Note: A Windows 10, Server 2016 or newer OS is required to access and set this value in Group Po'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 17.5.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9249-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9249-69ae-11d9-bed3-505054503030}' /success:enable

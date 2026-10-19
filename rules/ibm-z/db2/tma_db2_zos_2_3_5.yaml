@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.3.5
+title: Ensure that access to SQL Data Insights tables is restricted
+description: SQL Data Insights (DI) brings deep learning AI capabilities into Db2. PUBLIC access to these tables exposes the AI object definition, object models, and training jobs.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.3.5 Ensure that access to SQL Data Insights tables is restricted
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check if PUBLIC has access: SELECT GRANTEE FROM SYSIBM.SYSTABAUTH WHERE TCREATOR = ''SYSAIDB'' AND TTNAME LIKE ''SYSAI%'' AND GRANTEE = ''PUBLIC''; Output that contains zero rows is considered a successful finding. Otherwise, PUBLIC has access and the remediation steps should be followed. For external security users: Issue the RACF RLIST command to list the profile that controls access to the SQL Data Insights tables in the MDSNTB class. Examine the universal access (UACC) and user (USER) ... (full steps: CIS section 2.3.5)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the SQL REVOKE statement to revoke access from PUBLIC. For external security users: Issue the RACF RALTER command to update the profiles and change the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-7.4
+title: Ensure the SharePoint CallStack and AllowPageLevelTrace "SafeMode" parameters are set to false
+description: The CallStack and PageLevelTrace parameters are used when debugging a problem and displays detailed additional information. Reads every local web application web.config (all zones) and prints the number of files whose SharePoint/SafeMode element does not have CallStack="false" and AllowPageLevelTrace="false" (expected 0). Run on each Web Front End. Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: medium
+tags:
+- sharepoint
+- web-config
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 7.4 Ensure the SharePoint CallStack and AllowPageLevelTrace "SafeMode" parameters are set to false
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $cfgs = @(Get-SPWebApplication -ErrorAction Stop | ForEach-Object { $_.IisSettings.Values } | ForEach-Object { Join-Path $_.Path.FullName 'web.config' } | Sort-Object -Unique); if ($cfgs.Count -eq 0) { throw 'no web application web.config found' }; $bad = @($cfgs | Where-Object { [xml]$x = Get-Content -LiteralPath $_ -Raw -ErrorAction Stop; $sm = $x.SelectSingleNode('/configuration/SharePoint/SafeMode'); $null -eq $sm -or $sm.GetAttribute('CallStack') -ne 'false' -or $sm.GetAttribute('AllowPageLevelTrace') -ne 'false' }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: In each web application web.config set <SafeMode ... CallStack="false" AllowPageLevelTrace="false">, then save (IIS recycles the application).

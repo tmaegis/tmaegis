@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-16.2.1
+title: Ensure Private Endpoints are used to access Storage Accounts
+description: Use private endpoints for your Azure Storage accounts to allow clients and services to securely access data located over a network via an encrypted Private Link. To do this, the private endpoint uses an IP address from the VNet for each service. Network traffic between disparate services securely traverses encrypted over the VNet. This VNet can also link addressing space, extending your network and accessing resources on it. Similarly, it can be a tunnel through public networks to connect remote infrastructures together. This creates further security through segmenting network traffic and preventing outside sources from accessing it. Securing traffic between services through encryption protects the data from easy interception and reading.
+target: azure
+level: 2
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.2.1 Ensure Private Endpoints are used to access Storage Accounts
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Open the Storage Accounts blade. 2. For each listed Storage Account, perform the following check: 3. Under the Security + networking heading, click on Networking. 4. Click on the Private endpoint connections tab at the top of the networking window. 5. Ensure that for each VNet that the Storage Account must be accessed from, a unique Private Endpoint is deployed and the Connection state for each Private Endpoint is Approved. Repeat the procedure for each Storage Account. Audit from Azure CLI az storage account show --name ''<storage account name>'' --query "privateEndpointConnections[0].id" If the above command returns data, the Storage Account complies with this Benchmark, otherwise if the results are empty, the Storage Account generates a finding. Audit from PowerShell $storageAccount = Get-AzStorageAccount -ResourceGroup ''<ResourceGroupName>'' - Name ''<storageaccountname>'' Get-AzPrivateEndpoint -ResourceGroup ''<ResourceGroupName>''|Where-Object
+    {$_.PrivateLinkServiceConnectionsText -match $storageAccount.id} If the results of the second command returns information, the Storage Account is using a Private Endpoint and complies with this Benchmark, otherwis...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Open the Storage Accounts blade. 2. Select the Storage Account to remediate. 3. Under Security + networking, click Networking. 4. Select the Private endpoint connections tab at the top of the networking window. 5. Click + Private endpoint. 6. On the Basics tab, enter a name easily recognizable as associated with the Storage Account, confirm the Region matches the Storage Account, then click Next. (Note: the Network Interface Name is completed automatically and can be customized if needed.) 7. On the Resource tab, select the target sub-resource for the storage service being exposed (for example blob, file, queue, or table), then click Next. 8. On the Virtual Network tab, select the Virtual network and Subnet the Storage Account will be reached through, adjust any other network settings as appropriate, then click Next. 9. On the DNS tab, adjust DNS settings as appropriate for your environment, then click Next. 10. On the Tags tab, set any tags relevant
+    to your organization, then click Next. 11. On the Review + create tab, wait for Validation Passed, then click Create and allow a few minutes for deployment. If validation fails, correct the flagged set...'

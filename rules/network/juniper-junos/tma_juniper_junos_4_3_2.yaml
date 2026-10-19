@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-4.3.2
+title: Ensure OSPF authentication is set to IPSEC SA with SHA
+description: OSPF Neighbors should be strongly authenticated. Where it is deployed, OSPF routing is vital for normal operation of an organization's network infrastructure. Correct route information is required for routers to correctly direct traffic through the network. Passes when OSPF is not configured. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.3.2 Ensure OSPF authentication is set to IPSEC SA with SHA
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^p\n]|p(?:$|[^r\n]|r(?:$|[^o\n]|o(?:$|[^t\n]|t(?:$|[^o\n]|o(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^l\n]|l(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^f\n]|f(?:$|[^ \n])))))))))))))))))))[^\n]*|[ \t]*set protocols ospf (?:(?:[^i \t\n][^ \t\n]*|i(?:|[^p \t\n][^ \t\n]*|p(?:|[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^\- \t\n][^ \t\n]*|-(?:|[^s \t\n][^ \t\n]*|s(?:|[^a \t\n][^ \t\n]*|a(?:[^ \t\n][^ \t\n]*)))))))))[ \t]+)*(?:(?:[^i \t\n][^ \t\n]*|i(?:|[^p \t\n][^ \t\n]*|p(?:|[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^\- \t\n][^ \t\n]*|-(?:|[^s \t\n][^ \t\n]*|s(?:|[^a \t\n][^ \t\n]*|a(?:[^ \t\n][^ \t\n]*))))))))))?)\n)*[ \t]*set protocols ospf (?:(?:[^i \t\n][^ \t\n]*|i(?:|[^p \t\n][^ \t\n]*|p(?:|[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^\- \t\n][^ \t\n]*|-(?:|[^s \t\n][^ \t\n]*|s(?:|[^a \t\n][^
+    \t\n]*|a(?:[^ \t\n][^ \t\n]*)))))))))[ \t]+)*(?:(?:[^i \t\n][^ \t\n]*|i(?:|[^p \t\n][^ \t\n]*|p(?:|[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^\- \t\n][^ \t\n]*|-(?:|[^s \t\n][^ \t\n]*|s(?:|[^a \t\n][^ \t\n]*|a(?:[^ \t\n][^ \t\n]*))))))))))?(?:\n(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^p\n]|p(?:$|[^r\n]|r(?:$|[^o\n]|o(?:$|[^t\n]|t(?:$|[^o\n]|o(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^l\n]|l(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^f\n]|f(?:$|[^ \n])))))))))))))))))))[^\n]*|[ \t]*set protocols ospf (?:(?:[^i \t\n][^ \t\n]*|i(?:|[^p \t\n][^ \t\n]*|p(?:|[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^\- \t\n][^ \t\n]*|-(?:|[^s \t\n][^ \t\n]*|s(?:|[^a \t\n][^ \t\n]*|a(?:[^ \t\n][^ \t\n]*)))))))))[ \t]+)*(?:(?:[^i \t\n][^ \t\n]*|i(?:|[^p \t\n][^ \t\n]*|p(?:|[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^\- \t\n][^ \t\n]*|-(?:|[^s \t\n][^ \t\n]*|s(?:|[^a
+    \t\n][^ \t\n]*|a(?:[^ \t\n][^ \t\n]*))))))))))?)))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To setup IPSEC SA based authentication, first configure a Security Association at the hierarchy; edit security-association <SA name> set description <description> set mode transport set manual direction bidirectional protocol ah set manual direction bidirectional algorithm hmac-sha1-96 set manual direction bidirectional authentication key <key> The SA must be bi-directional and must be configured with the same parameters on all neighbors reachable on the intended interface. Note that only Authenticated Header is configured in this example which provides mutual authentication but does not encrypt OSPF protocol messages in transit. Next configure IPSEC SA based authentication for one or more interfaces which OSPF will be run over from the hierarchy;
+    set protocols ospf area <area number> interface <interface number> ipsec-sa <SA name>

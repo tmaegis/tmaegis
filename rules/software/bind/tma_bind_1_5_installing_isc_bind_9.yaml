@@ -1,0 +1,21 @@
+id: TMA-BIND-1.5
+title: Installing ISC BIND 9
+description: The ISC BIND Benchmark recommends using the binary packages provided by your platform vendor for most situations in order to reduce the effort and increase the effectiveness of maintenance and security patches. Red Hat Enterprise Linux 7 and 8 have been used for testing the benchmark. The audit runs named -v and requires an ISC BIND 9 release; confirm the package came from the vendor (rpm -q bind / dpkg -s bind9).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- architecture
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 1.5 Installing ISC BIND 9
+audit:
+  type: command
+  command: |-
+    command -v named >/dev/null 2>&1 || [ -x /usr/sbin/named ] || exit 1
+    v=$( (named -v || /usr/sbin/named -v) 2>/dev/null | head -n 1)
+    case "$v" in 'BIND 9.'*) echo compliant ;; *) echo "named -v: ${v:-no output}"; exit 1 ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Installation depends on the operating system platform. The following commands were tested on RHEL7 and RHEL8. On RHEL8 the yum command redirects to the newer dfm command. # yum install bind . . . # yum install bind-chroot . . .'

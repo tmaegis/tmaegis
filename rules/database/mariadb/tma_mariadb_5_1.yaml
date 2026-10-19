@@ -1,0 +1,18 @@
+id: TMA-MARIADB-5.1
+title: Ensure Only Administrative Users Have Full Database Access
+description: 'The mysql.user, mysql.db, and other mysql tables ending in _priv list a variety of privileges that can be granted (or denied) to MariaDB users. Some of the privileges of concern include: Select_priv, Insert_priv, Update_priv, Delete_priv, Drop_priv, and so on.'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- authorization
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 5.1 Ensure Only Administrative Users Have Full Database Access
+audit:
+  type: manual
+  command: Run SELECT * FROM information_schema.user_privileges WHERE grantee NOT LIKE ('\'mysql.%localhost\''); and ensure all returned users are administrative users with the minimal privileges required.
+remediation:
+  type: iac_patch
+  command: REVOKE unnecessary privileges (e.g. REVOKE ALL PRIVILEGES ON *.* FROM '<user>'@'<host>';) and GRANT only database-level privileges that are needed.

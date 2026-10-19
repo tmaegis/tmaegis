@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-1.1.2
+title: Ensure 'Login Banner' is set
+description: 'Configure a login banner, ideally approved by the organization''s legal team. This banner should, at minimum, prohibit unauthorized access, provide notice of logging or monitoring, and avoid using the word "welcome" or similar words of invitation. PASS requires a non-empty deviceconfig system login-banner. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: low
+tags:
+- paloalto
+- banner
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.1.2 Ensure 'Login Banner' is set
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig system login-banner \S
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system login-banner "Authorized use only. Activity is monitored and reported."
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Management > General Settings. Set Login Banner as appropriate for your organization.

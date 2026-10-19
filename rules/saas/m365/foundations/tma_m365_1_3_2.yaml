@@ -1,0 +1,18 @@
+id: TMA-M365-1.3.2
+title: Ensure 'Idle session timeout' is set to '3 hours (or less)' for unmanaged devices
+description: Idle session timeout allows the configuration of a setting which will timeout inactive users after a pre-determined amount of time. When a user reaches the set idle timeout session, they'll get a notification that they're about to be signed out. They must choose to stay signed in or they'll be automatically signed out of all Microsoft 365 web apps. Combined with a Conditional Access rule this will only impact unmanaged devices. A managed device is considered a device managed by Intune MDM or joined to a domain (Entra ID or Hybrid joined). The following Microsoft 365 web apps are supported. - Outlook Web App - OneDrive - SharePoint - Microsoft Fabric - Microsoft365.com and other start pages - Microsoft 365 web apps (Word, Excel, PowerPoint) - Microsoft 365 Admin Center - M365 Defender Portal - Microsoft Purview Compliance Portal The recommended setting is 3 hours (or less) for unmanage...
+target: m365
+level: 2
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 1.3.2 Ensure 'Idle session timeout' is set to '3 hours (or less)' for unmanaged devices
+audit:
+  type: manual
+  command: 'Step 1 - Ensure Idle session timeout is configured: To audit using the UI: 1. Navigate to the Microsoft 365 admin center https://admin.microsoft.com/. 2. Expand Settings > Org settings. 3. Click Security & Privacy tab. 4. Select Idle session timeout. 5. Verify that Turn on to set the period of inactivity for users to be signed off of Microsoft 365 web apps is set to 3 hours (or less). To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.Read.All": 2. Run the following script: $TimeoutPolicy = Get-MgPolicyActivityBasedTimeoutPolicy $BenchmarkTimeSpan = [TimeSpan]::Parse(''03:00:00'') # 3 hours if ($TimeoutPolicy) { $PolicyDefinition = $TimeoutPolicy.Definition | ConvertFrom-Json $Timeout = $PolicyDefinition.ActivityBasedTimeoutPolicy.ApplicationPolicies[0].WebSessio nIdleTimeout $TimeSpan = [TimeSpan]::Parse($Timeout) $TimeoutReadable = "{0} days, {1} hours, {2} minutes" ` -f $TimeSpan.Days, $TimeSpan.Hours, $TimeSpan.Minutes if ($TimeSpan
+    -le $BenchmarkTimeSpan) { Write-Host "** PASS ** Timeout is set to $TimeoutReadable." } else { Write-Host "** FAIL ** Timeout is too long. It is set to $TimeoutReadable." } } else { Write-Host "** FAIL **...'
+remediation:
+  type: iac_patch
+  command: 'Step 1 - Configure Idle session timeout: To remediate using the UI: 1. Navigate to the Microsoft 365 admin center https://admin.microsoft.com/. 2. Expand Settings > Org settings. 3. Click Security & Privacy tab. 4. Select Idle session timeout. 5. Check the box Turn on to set the period of inactivity for users to be signed off of Microsoft 365 web apps 6. Set a maximum value of 3 hours. 7. Click save. Step 2 - Ensure the Conditional Access policy is in place: To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/ 2. Expand Protect > Conditional Access. 3. Click New policy and give the policy a name. o Select Users > All users. o Select Cloud apps or actions > Select apps and select Office 365 o Select Conditions > Client apps > Yes check only Browser unchecking all other boxes. o Select Sessions and check Use app enforced restrictions. 4. Set Enable policy to On and click Create. Note: To ensure that idle timeouts affect only unmanaged
+    devices, both steps 1 and 2 must be completed. Otherwise managed devices will also be impacted by the timeout policy.'

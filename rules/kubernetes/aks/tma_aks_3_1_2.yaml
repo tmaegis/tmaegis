@@ -1,0 +1,48 @@
+id: TMA-AKS-3.1.2
+title: Ensure that the kubelet kubeconfig file ownership is set to root:root
+description: If kubelet is running, ensure that the ownership of the kubelet kubeconfig file is set to root:root. Runs on each AKS node (kubeconfig path from the kubelet --kubeconfig argument).
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- worker-node
+- kubelet
+- file-permissions
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.1.2 Ensure that the kubelet kubeconfig file ownership is set to root:root
+audit:
+  type: command
+  command: |-
+    set -f
+    psarg() { ps -eo args 2>/dev/null | grep -E "^([^ ]*/)?$1( |\$)" | head -n 1 | awk -v k="--$2" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    p0=$(psarg kubelet kubeconfig)
+    f=""; for x in ${p0:-} /var/lib/kubelet/kubeconfig; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    o=$(stat -Lc %U:%G "$f") || exit 1
+    if [ "$o" = "root:root" ]; then echo compliant; else echo "noncompliant: $f $o"; fi
+  expected_output: compliant
+  requires_file:
+  - /var/lib/kubelet/kubeconfig
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    set -f
+    psarg() { ps -eo args 2>/dev/null | grep -E "^([^ ]*/)?$1( |\$)" | head -n 1 | awk -v k="--$2" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    p0=$(psarg kubelet kubeconfig)
+    f=""; for x in ${p0:-} /var/lib/kubelet/kubeconfig; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    chown root:root "$f"
+  guidance: "Run the below command (based on the file location on your system) on each worker node. For example, chown root:root <proxy kubeconfig file>"

@@ -1,0 +1,17 @@
+id: TMA-AIX-2.3
+title: Ensure Trusted Execution (TE) policies are locked
+description: 'Set trusted execution policy LOCK_KERN_POLICIES to enabled. All of the other policies will then be locked and cannot be changed without disabling the LOCK_KERN_POLICIES policy and then restarting the system. When policies are locked, unauthorized users cannot make changes to the policies to allow them to execute unapproved tools and then revert the settings afterwards. An unplanned system reboot is likely to be noticed and investigated Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 2.3 Ensure Trusted Execution (TE) policies are locked
+audit:
+  type: command
+  command: 'command -v trustchk >/dev/null 2>&1 || exit 1; out=$(trustchk -p LOCK_KERN_POLICIES 2>/dev/null) || exit 1; r=compliant; for p in ''^LOCK_KERN_POLICIES=ON$''; do printf ''%s\n'' "$out" | grep -Eq -- "$p" || r="missing: $p"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Execute the following command trustchk -p LOCK_KERN_POLICIES=ON

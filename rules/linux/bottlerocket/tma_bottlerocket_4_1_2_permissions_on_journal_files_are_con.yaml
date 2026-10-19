@@ -1,0 +1,20 @@
+id: TMA-BOTTLEROCKET-4.1.2
+title: Ensure permissions on journal files are configured
+description: The journal is stored in /var/log/journal, and contains logged information from all services on the system. The audit lists files under /var/log/journal with group write/execute or any other permission and requires none. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 1
+severity: medium
+tags:
+- bottlerocket
+- logging
+reference: CIS Bottlerocket Benchmark v1.0.0 - 4.1.2 Ensure permissions on journal files are configured
+audit:
+  type: command
+  command: |-
+    [ -d /var/log/journal ] || { echo '/var/log/journal not found'; exit 1; }
+    out=$(find /var/log/journal -type f -perm /g+wx,o+rwx 2>/dev/null) || exit 1
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out" | head -n 20; echo 'journal files with group write/execute or other permissions'; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to set permissions on all existing log files: # find /var/log/journal -type f -perm /g+wx,o+rwx -exec chmod g-wx,o-rwx "{}" +'

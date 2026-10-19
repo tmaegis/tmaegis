@@ -1,0 +1,26 @@
+id: TMA-OKE-3.2.2
+title: Ensure kubelet authorization mode is set to Webhook
+description: In OKE, the available kubelet authorization modes are AlwaysAllow and Webhook. For worker nodes, the recommended setting is Webhook, which uses the Kubernetes authorization flow to evaluate access to the kubelet API. In contrast, AlwaysAllow is not optimal because it bypasses that authorization decision and permits kubelet requests without a webhook-based access check. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- worker-node
+- kubelet
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 3.2.2 Ensure kubelet authorization mode is set to Webhook
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"authorization":\{"mode":"Webhook"'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns AlwaysAllow, the worker node is permitting kubelet requests without webhook-based authorization and should be treated as noncompliant. If the result is null or the field is missing, first confirm the configz response is complete, because Kubernetes identifies that endpoint as the view of the kubelet’s final actuated configuration. Once the result is validated, remediation in OKE should be performed through the supported worker node initialization, node pool update, or node replacement workflow, not by directly editing the kubelet config file on the host. Oracle documents that OKE managed nodes can use custom cloud-init initialization scripts, that the OKE default logic should not be modified, and that worker node property changes apply to new worker nodes.

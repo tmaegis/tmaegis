@@ -1,0 +1,29 @@
+id: TMA-ALIBABA-KMS-ROTATION
+title: Ensure automatic rotation is enabled for customer created symmetric KMS keys
+description: Automatic rotation limits the amount of data protected by one key version. In the profile's region, every Enabled symmetric (Aliyun_AES_256 / Aliyun_SM4) key created by the account must have AutomaticRotation Enabled; service-created default keys are skipped. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with grep/sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 2
+severity: medium
+tags:
+- alibaba
+- kms
+reference: CIS Alibaba Cloud Foundation Benchmark - Logging and Monitoring - KMS key rotation (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    out=$(aliyun kms ListKeys --PageSize 100 2>/dev/null) || exit 1
+    keys=$(printf '%s\n' "$out" | sed -n 's/.*"KeyId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    get() { printf '%s\n' "$m" | sed -n "s/.*\"$1\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" | head -n 1; }
+    bad=0
+    for k in $keys; do
+      m=$(aliyun kms DescribeKey --KeyId "$k" 2>/dev/null) || exit 1
+      case "$(get KeySpec)" in ''|Aliyun_AES_256|Aliyun_SM4) ;; *) continue ;; esac
+      [ "$(get KeyState)" = Enabled ] || continue
+      case "$(get Creator)" in ''|*[!0-9]*) continue ;; esac
+      [ "$(get AutomaticRotation)" = Enabled ] || { echo "rotation off: $k"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun kms UpdateRotationPolicy --KeyId <key-id> --EnableAutomaticRotation true --RotationInterval 31536000s (or a shorter interval) for each listed key.

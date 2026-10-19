@@ -1,0 +1,21 @@
+id: TMA-OKE-4.2.3
+title: Minimize the admission of containers wishing to share the host IPC namespace
+description: 'Minimize the admission of pods that request spec.hostIPC: true in OKE so that host IPC namespace sharing is limited to tightly controlled, explicitly approved platform use cases. In the OKE Pod Security Standards model, this is done through Pod Security Admission or an equivalent policy engine. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.'
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- policies
+- pod-security
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.2.3 Minimize the admission of containers wishing to share the host IPC namespace
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.hostIPC}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($3=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'onfigure Pod Security Admission on workload namespaces so pods that request spec.hostIPC: true are denied at admission time. For this control, the baseline and restricted Pod Security Standards disallow hostIPC, while restricted is typically the stronger choice for user workloads. For remediation, use enforce because only enforce rejects violating pods. warn and audit can help during rollout, but they do not block admission. Label each workload namespace to enforce restricted. kubectl label ns NAMESPACE pod-security.kubernetes.io/enforce=restricted --overwrite Add warn and audit during transition if you want visibility into violations before or alongside enforcement.'

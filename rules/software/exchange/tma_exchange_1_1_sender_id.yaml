@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-1.1
+title: Ensure 'Enable sender ID agent' is configured
+description: The Sender ID agent is an antispam agent enabled on Exchange servers that perform the Edge Transport server role. Sender ID tries to verify that every e-mail message originates from the Internet domain from which it claims to have been sent. Sender ID checks the address of the server that sends the message against a registered list of servers that the domain owner has authorized to send e-mail. Prints compliant when the Sender ID agent is Enabled and SpoofedDomainAction is Reject. Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- antispam
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.1 Ensure 'Enable sender ID agent' is configured
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $c = Get-SenderIdConfig -ErrorAction Stop; if ($c.Enabled -eq $true -and "$($c.SpoofedDomainAction)" -eq 'Reject') { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-SenderIdConfig -Enabled $true -SpoofedDomainAction Reject

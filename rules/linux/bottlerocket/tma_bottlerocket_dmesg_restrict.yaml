@@ -1,0 +1,19 @@
+id: TMA-BOTTLEROCKET-DMESG-RESTRICT
+title: Ensure access to the kernel log is restricted
+description: 'kernel.dmesg_restrict=1 stops unprivileged processes (including containers) from reading kernel addresses and other sensitive data from dmesg. Bottlerocket /etc is ephemeral, so the value must be persisted through the API. The audit runs "apiclient get settings.kernel.sysctl" (from the admin container root shell or control container): if the API sets kernel.dmesg_restrict it must equal 1; if the API does not set it, the running value in /proc/sys must already equal 1.'
+target: bottlerocket
+level: 1
+severity: low
+tags: [bottlerocket, kernel, sysctl]
+reference: CIS Bottlerocket Benchmark - Kernel parameters / restrict dmesg access (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    out=$(apiclient get settings.kernel.sysctl 2>/dev/null) || exit 1
+    v=$(printf '%s' "$out" | tr -d ' \n' | sed -n 's/.*"kernel\.dmesg_restrict":"\([^"]*\)".*/\1/p')
+    if [ -z "$v" ]; then v=$(cat /proc/sys/kernel/dmesg_restrict 2>/dev/null) || exit 1; fi
+    [ "$v" = "1" ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set in user data: [settings.kernel.sysctl] "kernel.dmesg_restrict" = "1", or at runtime: apiclient set --json ''{"kernel":{"sysctl":{"kernel.dmesg_restrict":"1"}}}'''

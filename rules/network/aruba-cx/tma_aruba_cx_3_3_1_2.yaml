@@ -1,0 +1,31 @@
+id: TMA-ARUBA-CX-3.3.1.2
+title: PIM Accept-RP
+description: PIM Accept-RP allows administrators to restrict which multicast groups a rendezvous point (RP) serves in a PIM sparse mode domain. By default, an RP accepts all multicast groups in the 224.0.0.0/4 range. Using an access list (ACL), this feature limits join/prune message processing to specific multicast groups, enhancing control and reducing unnecessary traffic.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- routing
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.3.1.2 PIM Accept-RP
+audit:
+  type: manual
+  command: Where PIM runs, run 'show run pim' / 'show run pim6' and confirm 'accept-rp <rp> access-list <acl>' limits accepted RPs and groups.
+remediation:
+  type: iac_patch
+  command: |-
+    Configuration to enable PIM Accept RP ACL -
+    access-list ip <pim_rp_grp_acl>
+    10 permit any any <225.1.1.2/255.255.255.0>
+    20 permit any any <239.1.1.2/255.255.255.0>
+    switch(config)-acl-ip# exit
+    router pim
+    accept-rp <30.1.1.1> access-list <pim_rp_grp_acl>
+    exit
+    access-list ip <pim_rpv6_grp_acl>
+    10 permit any any <ff2e::2/64>
+    20 permit any any <ff1e::1/64>
+    exit
+    router pim6
+    accept-rp <30::1> access-list <pim_rpv6_grp_acl>
+    exit

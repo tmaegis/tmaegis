@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-1.6.1
+title: Ensure 'Verify Update Server Identity' is enabled
+description: 'This setting determines whether or not the identity of the update server must be verified before performing an update session. Note that if an SSL Forward Proxy is configured to intercept the update session, this option may need to be disabled (because the SSL Certificate will not match). PASS requires deviceconfig system server-verification yes. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- updates
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.6.1 Ensure 'Verify Update Server Identity' is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig system server-verification yes[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system server-verification yes
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Services > Services. Set the Verify Update Server Identity box to checked.

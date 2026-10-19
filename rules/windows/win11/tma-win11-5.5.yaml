@@ -1,0 +1,20 @@
+id: TMA-WIN11-5.5
+title: Ensure 'GameInput Service (GameInputSvc)' is set to 'Disabled'
+description: 'This service enables the use of keyboards, mice, gamepads, and other input devices to be used with the GameInput API. The recommended state for this setting is: Disabled. Note: GameInput service runs as LocalSystem in its own process of GameInputSvc.exe and doesn''t share its process with other services.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 5.5
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\GameInputSvc'' -Name ''Start'' -ErrorAction SilentlyContinue).''Start''; if (-not ($null -ne $v -and @(4) -contains [int64]$v)) { $bad += ''Start='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\GameInputSvc')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\GameInputSvc' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\GameInputSvc' -Name 'Start' -Value 4 -PropertyType DWord -Force | Out-Null

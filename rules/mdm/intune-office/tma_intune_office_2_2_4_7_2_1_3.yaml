@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.2.1.3
+title: Ensure 'Don’t allow Dynamic Data Exchange (DDE) server lookup in Excel' is set to 'Enabled'
+description: 'This policy setting allows controls whether Dynamic Data Exchange (DDE) server lookup is allowed. The DDE protocol is a set of messages and guidelines. It sends messages between applications that share data and uses shared memory to exchange data between applications. Applications can use the DDE protocol for one-time data transfers and for continuous exchanges in which applications send updates to one another as new data becomes available. Dynamic Data Exchange Server Lookup allows Excel to find and use visible DDE servers on the network. Note: This policy setting only applies to subscription versions of Office, such as Microsoft 365 Apps for enterprise. ... Audit: reads the registry value(s) disableddeserverlookup that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.2.1.3 Ensure 'Don’t allow Dynamic Data Exchange (DDE) server lookup in Excel' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\security\external content'') -Name ''disableddeserverlookup'' -ErrorAction SilentlyContinue).''disableddeserverlookup''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':disableddeserverlookup='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content\Don’t allow Dynamic Data Exchange (DDE) server lookup in Excel

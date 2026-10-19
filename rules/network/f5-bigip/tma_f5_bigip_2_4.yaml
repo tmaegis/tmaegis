@@ -1,0 +1,23 @@
+id: TMA-F5-BIGIP-2.4
+title: Ensure External Users' role is set to "No Access"
+description: 'To set a default role for remote users Authentication and authorization for remote users are handled by third party system PASS requires auth remote-user default-role no-access. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 2
+severity: medium
+tags:
+- f5-bigip
+- authentication
+reference: CIS F5 Networks Benchmark v1.0.0 - 2.4 Ensure External Users' role is set to "No Access"
+audit:
+  type: config_regex
+  pattern: (?m)^auth remote-user \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+default-role no-access[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify auth remote-user default-role no-access
+    tmsh save sys config
+    # CIS guidance:
+    1. Log in to the Configuration utility.
+    2. Go to System > Users > Authentication.
+    3. Under External Users , click "Change".
+    4. Set Role to "No Access".

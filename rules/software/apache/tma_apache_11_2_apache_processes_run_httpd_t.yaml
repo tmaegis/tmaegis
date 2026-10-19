@@ -1,0 +1,16 @@
+id: TMA-APACHE-11.2
+title: Ensure Apache Processes Run in the httpd_t Confined Context
+description: 'SELinux includes customizable targeted policies that may be used to confine the Apache httpd server to enforce least privileges so that the httpd server has only the minimal access to specified directories, files and network ports. Access is controlled by process types (domains) defined for the httpd process. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- selinux
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 11.2 Ensure Apache Processes Run in the httpd_t Confined Context
+audit:
+  type: manual
+  command: 'Perform the following steps to determine if the recommended state is implemented: Check that all of the Apache httpd processes are confined to the httpd_t SELinux context. The type (the third colon separated field) for each process should be httpd_t. Note that on some platforms, such as Ubuntu, the Apache executable is named apache2 instead of httpd. $ ps -eZ | grep httpd unconfined_u:system_r:httpd_t:s0 1366 ? 00:00:00 httpd unconfined_u:system_r:httpd_t:s0 1368 ? 00:00:00 httpd . . .'
+remediation:
+  type: iac_patch
+  command: 'If the running httpd processes are not confined to the httpd_t SELinux context. Then check the context for the httpd binary and the apachectl binary and set the httpd binary to have a context of httpd_exec_t and the apachectl executable should have a context of initrc_exec_t as shown below. Also note that on some platforms such as Ubuntu, the Apache executable is named apache2 instead of httpd. # ls -alZ /usr/sbin/httpd /usr/sbin/httpd.* /usr/sbin/apachectl -rwxr-xr-x. root root system_u:object_r:initrc_exec_t:s0 /usr/sbin/apachectl -rwxr-xr-x. root root system_u:object_r:httpd_exec_t:s0 /usr/sbin/httpd -rwxr-xr-x. root root system_u:object_r:httpd_exec_t:s0 /usr/sbin/httpd.worker -rwxr-xr-x.'

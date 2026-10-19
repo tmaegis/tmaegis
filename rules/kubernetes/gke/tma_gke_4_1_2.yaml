@@ -1,0 +1,18 @@
+id: TMA-GKE-4.1.2
+title: Ensure access to Secrets is minimized and granted only where required
+description: Kubernetes Secrets can contain sensitive application credentials, configuration values, certificates, and legacy service account tokens. Access to these secrets should be restricted to the smallest practical set of users, groups, service accounts, and workloads to reduce the risk of credential exposure, privilege escalation, and unauthorized access to cluster or external resources. The benchmark marks this recommendation Manual.
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- policies
+- rbac
+- secrets
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.2 Ensure access to Secrets is minimized and granted only where required
+audit:
+  type: manual
+  command: Review RBAC permissions that grant read access to Secrets in GKE Standard clusters. Audit should identify where get, list, or watch permissions on the core API secrets resource are defined, how those permissions are assigned through bindings, and which users, groups, or service accounts receive the access. The review should also account for broad default roles, wildcard rules, default groups, and shared or default service accounts, because these can unintentionally expose Secrets beyond the intended operational need.
+remediation:
+  type: iac_patch
+  command: Remediate Secret access by replacing broad or unnecessary RBAC permissions with narrowly defined access that supports only the required workload, user, or operational function. The remediation process should focus on reducing get, list, and watch permissions on the core API secrets resource, especially where access is inherited through broad roles, wildcard rules, shared service accounts, or default service accounts. Changes should be validated before removal to avoid disrupting applications, controllers, operators, or required platform services. • Remove unnecessary Secret access by updating or replacing RBAC roles that grant get, list, or watch on secrets, especially where the access is inherited through wildcard resources or wildcard verbs • Replace broad Secret permissions with least privilege Roles or ClusterRoles that grant only the required API group, resource, and verb.

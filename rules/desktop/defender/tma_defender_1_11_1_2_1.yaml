@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.11.1.2.1
+title: 'Ensure ''Configure how aggressively Remote Encryption Protection blocks threats'' is set to ''Enabled: Medium'' or higher'
+description: 'This policy setting configures how aggressively Remote Encryption Prevention Protection blocks malicious IP addresses. The recommended state for this setting is: Enabled: Medium or higher. Configuring this setting to Enabled: High also conforms to the benchmark. Rationale: This feature can help reduce the likelihood of users visiting malicious websites. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Remote Encryption Protection:RemoteEncryptionProtectionAggressiveness (REG_DWORD); compliant when it is 1 or 2. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 2
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l2
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.11.1.2.1 Ensure ''Configure how aggressively Remote Encryption Protection blocks threats'' is set to ''Enabled: Medium'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Remote Encryption Protection'' -Name ''RemoteEncryptionProtectionAggressiveness'' -ErrorAction SilentlyContinue).''RemoteEncryptionProtectionAggressiveness''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1,2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Remote Encryption Protection'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RemoteEncryptionProtectionAggressiveness' -Value 1 -PropertyType DWord -Force | Out-Null

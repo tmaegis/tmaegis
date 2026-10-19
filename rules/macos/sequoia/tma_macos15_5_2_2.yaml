@@ -1,0 +1,90 @@
+id: TMA-MACOS15-5.2.2
+title: Ensure Password Minimum Length Is Configured
+description: 'A minimum password length is the fewest number of characters a password can contain to meet a system''s requirements. Ensure that a minimum of a 15-character password is part of the password policy on the computer. Audit: Reads the length from the policyAttributePassword matches .{N,} policy (or a minimumLength/minChars value); N must be >= 15.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 5.2.2 Ensure Password Minimum Length Is Configured
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    out=$(/usr/bin/pwpolicy -getaccountpolicies 2>/dev/null) || exit 1
+    n=$(printf '%s\n' "$out" | /usr/bin/grep -e "policyAttributePassword matches" | /usr/bin/grep -oE '\{[0-9]+,' | /usr/bin/tr -d '{,' | /usr/bin/sort -n | /usr/bin/tail -1)
+    m=$(printf '%s\n' "$out" | /usr/bin/grep -A1 -E 'minimumLength|minChars' | /usr/bin/grep -oE '<integer>[0-9]+' | /usr/bin/tr -dc '0-9\n' | /usr/bin/sort -n | /usr/bin/tail -1)
+    [ -n "$m" ] && { [ -z "$n" ] || [ "$m" -gt "$n" ]; } && n=$m
+    if [ -n "$n" ] && [ "$n" -ge 15 ]; then echo compliant; else echo "minimum length=${n:-unset}"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    out=$(/usr/bin/pwpolicy -getaccountpolicies 2>/dev/null)
+    if printf '%s\n' "$out" | /usr/bin/grep -q policyCategory; then
+      echo "TMAegis: account policies already present; not overwriting (merge manually)" >&2; exit 1
+    fi
+    t=$(/usr/bin/mktemp /tmp/tma-pwpolicy.XXXXXX) || exit 1
+    /bin/cat > "$t" <<'EOPLIST'
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+    <key>policyCategoryAuthentication</key>
+    <array><dict>
+    <key>policyContent</key>
+    <string>(policyAttributeFailedAuthentications &lt; policyAttributeMaximumFailedAuthentications) OR (policyAttributeCurrentTime &gt; policyAttributeLastFailedAuthenticationTime + autoEnableInSeconds)</string>
+    <key>policyIdentifier</key><string>tmaegis-lockout</string>
+    <key>policyParameters</key>
+    <dict><key>autoEnableInSeconds</key><integer>900</integer>
+    <key>policyAttributeMaximumFailedAuthentications</key><integer>5</integer></dict>
+    </dict></array>
+    <key>policyCategoryPasswordChange</key>
+    <array><dict>
+    <key>policyContent</key>
+    <string>policyAttributeCurrentTime &gt; policyAttributeLastPasswordChangeTime + (policyAttributeExpiresEveryNDays * 24 * 60 * 60)</string>
+    <key>policyIdentifier</key><string>tmaegis-expiry</string>
+    <key>policyParameters</key>
+    <dict><key>policyAttributeExpiresEveryNDays</key><integer>365</integer></dict>
+    </dict></array>
+    <key>policyCategoryPasswordContent</key>
+    <array>
+    <dict>
+    <key>policyContent</key>
+    <string>policyAttributePassword matches '.{15,}'</string>
+    <key>policyIdentifier</key><string>tmaegis-minlength</string>
+    <key>policyParameters</key>
+    <dict><key>minimumLength</key><integer>15</integer></dict>
+    </dict>
+    <dict>
+    <key>policyContent</key>
+    <string>policyAttributePassword in policyAttributePasswordHistory = 0</string>
+    <key>policyIdentifier</key><string>tmaegis-history</string>
+    <key>policyParameters</key>
+    <dict><key>policyAttributePasswordHistoryDepth</key><integer>24</integer></dict>
+    </dict>
+    </array>
+    </dict>
+    </plist>
+    EOPLIST
+    /usr/bin/pwpolicy -getaccountpolicies > "$TMA_BK/pwpolicy.$TMA_TS.bak" 2>/dev/null
+    /usr/bin/pwpolicy -setaccountpolicies "$t"; rc=$?
+    /bin/rm -f "$t"; exit $rc
+  guidance: "Profile (preferred): com.apple.mobiledevice.passwordpolicy minLength = <integer><value≥15></integer>. Terminal: sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy \"minChars=<value≥15>\" ; sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy \"minChars=15\"."

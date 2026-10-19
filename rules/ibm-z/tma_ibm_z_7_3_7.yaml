@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-7.3.7
+title: Ensure access to ICSF administrative services is controlled
+description: CSFBRCK CKDS Key Utility CSFBRPK PKDS Key Utility CSFBRTK TKDS Browser CSFCMK Change Master Key Utility CSFCONF PCF CKDS to ICSF CKDS conversion utility CSFCRC Coordinated KDS Administration CSFDKCS Master Key Entry Utility CSFGKF Generate Fingerprint Utility CSFKGUP Key Generator Utility Program CSFOPKL Operational Key Load CSFPCAD Cryptographic Processor Management ...
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- services
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.3.7 Ensure access to ICSF administrative services is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that CSFSERV appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The CSFSERV entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify that resources in the following table are secured by RACF profiles in the CSFSERV class that: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of SUCCESS(READ) and FAILURES(READ) ID(*) is not used to ... (full steps: CIS section 7.3.7)'
+remediation:
+  type: iac_patch
+  command: 'To activate the CSFSERV class use the RACF SETROPTS command: SETROPTS CLASSACT(CSFSERV) To create general resource profiles use the RACF RDEFINE command: RDEFINE CSFSERV <resource> + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''<description>'') PERMIT <resource> CLASS(CSFSERV) + ACCESS(ALTER) ID(<icsf-admin>) Note: Depending on the RACF class settings you may be required to issue a RACF SETROPTS REFRESH command for updates to be effective. To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER CSFSERV <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING Note: Depending on the RACF class settings you may be required to issue a RACF SETROPTS REFRESH command for updates to be effective. To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(<class>) + DELETE ID(<non-compliant>) Note: Depending on the RACF class settings you may be required to issue a RACF SETROPTS REFRESH command for updates to be
+    effective. To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note ... (see CIS section 7.3.7)'

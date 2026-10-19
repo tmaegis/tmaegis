@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.2.11
+title: Ensure 'Store macro in Personal Macro Workbook by default' is set to 'Enabled'
+description: 'This policy setting controls the default location for storing macros in Excel. The Record Macro dialog box includes a drop-down menu that allows users to choose whether to store the new macro in the current workbook, a new workbook, or their personal macro workbook (Personal.xlsb), a hidden workbook that opens every time Excel starts. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) fglobalsheet_37_1 that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.2.11 Ensure 'Store macro in Personal Macro Workbook by default' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\options\binaryoptions'') -Name ''fglobalsheet_37_1'' -ErrorAction SilentlyContinue).''fglobalsheet_37_1''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':fglobalsheet_37_1='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft Excel 2016\Excel Options\Security\Trust Center\Store Macro In Personal Macro Workbook by Default

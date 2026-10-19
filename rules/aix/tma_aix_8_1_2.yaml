@@ -1,0 +1,17 @@
+id: TMA-AIX-8.1.2
+title: Ensure Audit bin(ary) audit event collection is configured
+description: This recommendation configures AIX auditing in bin mode. The capturing of system events provides system administrators with information to allow them to determine if unauthorized access to their system is occurring.
+target: aix
+level: 2
+severity: medium
+tags:
+- aix
+- audit
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 8.1.2 Ensure Audit bin(ary) audit event collection is configured
+audit:
+  type: manual
+  command: 'Validate the configuration in the /etc/security/audit/config file. This should match the changes made in the remediation section: cat /etc/security/audit/config'
+remediation:
+  type: iac_patch
+  command: 'Configure AIX auditing in-line with the High Level AIX Security Expert policy. Create a /audit filesystem, at least 100 MB in size: mklv -y <LV name> -t jfs2 -u 1 -c 1 rootvg 1 hdisk0 crfs -v jfs2 -d auditlv -m /audit -A yes -t no mount /audit Reflect the following configuration in the /etc/security/audit/config file: vi /etc/security/audit/config Add in: start: binmode = on streammode = off bin: trail = /audit/trail bin1 = /audit/bin1 bin2 = /audit/bin2 binsize = 10240 cmds = /etc/security/audit/bincmds Add the auditing entries for root and all other users below the pre-defined audit classes: users: root = general,SRC,mail,cron,tcpip,ipsec,lvm <user 1> = general,SRC,cron,tcpip <user 2> = general,SRC,cron,tcpip etc. Update the /usr/lib/security/mkuser.default auditclasses entry to ensure that auditing is set up for any newly created users: chsec -f /usr/lib/security/mkuser.default -s user -a auditclasses=general,SRC,cron,tcpip A cron job is implemented to monitor the free space
+    in /audit, running hourly, to ensure that /audit does not fill up. If /audit is greater than 90% used, /audit/trail is moved to /audit/trailOneLevelBack: crontab -e Add in: 0 * * ... (see CIS section 8.1.2)'

@@ -1,0 +1,17 @@
+id: TMA-AIX-4.3.2.9
+title: Ensure portmap is not in use
+description: 'If all RPC services are disabled, disable the portmap daemon itself. The portmap daemon is required for the RPC service. It converts the RPC program numbers into Internet port numbers. The daemon may be disabled if the server is not: 1. An NFS server 2. A NIS (YP) or NIS+ server 3. Running the CDE GUI 4. Running a third-party software application that relies on RPC support Audit: no RPC programs other than portmap/status/nsm/pyramid may be registered (portmap not running is compliant).'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.3.2.9 Ensure portmap is not in use
+audit:
+  type: command
+  command: command -v rpcinfo >/dev/null 2>&1 || exit 1; out=$( { rpcinfo -p localhost | egrep -v "(portmap)|(status)|(nsm)|(pyramid)|(program)" ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Review any active RPC services: rpcinfo -p localhost Run the program above (in Audit) with the argument fix check exit status (should be 0)'

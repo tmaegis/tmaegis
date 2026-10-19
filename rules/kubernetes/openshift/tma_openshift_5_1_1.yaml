@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-5.1.1
+title: Ensure that the cluster-admin role is only used where required
+description: The RBAC role cluster-admin provides wide-ranging powers over the environment and should be used only where and when needed. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: critical
+tags:
+- openshift
+- policies
+- rbac
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 5.1.1 Ensure that the cluster-admin role is only used where required
+audit:
+  type: manual
+  command: OpenShift provides a set of default cluster roles that you can bind to users and groups cluster-wide or locally (per project namespace). Be mindful of the difference between local and cluster bindings. For example, if you bind the cluster-admin role to a user by using a local role binding, it might appear that this user has the privileges of a cluster administrator. This is not the case. Binding the cluster-admin to a user in a project grants super administrator privileges for only that project to the user.
+remediation:
+  type: iac_patch
+  command: 'Identify all clusterrolebindings to the cluster-admin role. Check if they are used and if they need this role or if they could use a role with fewer privileges. Where possible, first bind users to a lower privileged role and then remove the clusterrolebinding to the cluster-admin role : oc delete clusterrolebinding [name]'

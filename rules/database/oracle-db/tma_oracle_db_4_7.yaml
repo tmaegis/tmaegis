@@ -1,0 +1,27 @@
+id: TMA-ORACLE-DB-4.7
+title: Ensure No Public Database Links Exist
+description: Public database links provide a mechanism for establishing connections between databases, enabling data access across multiple environments. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- network
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.7 Ensure No Public Database Links Exist
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from cdb_db_links v where v.owner = 'PUBLIC';
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'To remove a public database link, execute the following SQL command: DROP PUBLIC DATABASE LINK <DB_LINK>;'

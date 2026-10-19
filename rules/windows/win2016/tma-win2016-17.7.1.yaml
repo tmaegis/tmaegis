@@ -1,0 +1,21 @@
+id: TMA-WIN2016-17.7.1
+title: Ensure 'Audit Audit Policy Change' is set to include 'Success'
+description: 'This subcategory reports changes in audit policy including SACL changes. Events for this subcategory include: • 4715: The audit policy (SACL) on an object was changed. • 4719: System audit policy was changed. • 4902: The Per-user audit policy table was created. • 4904: An attempt was made to register a security event source. • 4905: An attempt was made to unregister a security event source. • 4906: The CrashOnAuditFail value has changed. • 4907: Auditing settings on object were changed. • 4908: Special Groups Logon table modified. • 4912: Per User Audit Policy was changed. The recommended stat'
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 17.7.1
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce922f-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce922f-69ae-11d9-bed3-505054503030}' /success:enable

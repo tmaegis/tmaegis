@@ -1,0 +1,19 @@
+id: TMA-AWS-4.5
+title: Ensure CloudTrail logs are encrypted at rest using KMS CMKs
+description: AWS CloudTrail is a web service that records AWS API calls for an account and makes those logs available to users and resources in accordance with IAM policies. AWS Key Management Service (KMS) is a managed service that helps create and control the encryption keys used to encrypt account data, and uses Hardware Security Modules (HSMs) to protect the security of encryption keys. CloudTrail logs can be configured to leverage server side encryption (SSE) and KMS customer-created master keys (CMK) to further protect CloudTrail logs. It is recommended that CloudTrail be configured to use SSE-KMS. Configuring CloudTrail to use SSE-KMS provides additional confidentiality controls on log data, as a given user must have S3 read permission on the corresponding log bucket and must be granted decrypt permission by the CMK policy.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- cloud
+- encryption
+- logging
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 4.5 Ensure CloudTrail logs are encrypted at rest using KMS CMKs
+audit:
+  type: manual
+  command: 'Perform the following to determine if CloudTrail is configured to use SSE-KMS: From Console: 1. Sign in to the AWS Management Console and open the CloudTrail console at https://console.aws.amazon.com/cloudtrail. 2. In the left navigation pane, choose Trails. 3. Select a trail. 4. In the General details section, select Edit to edit the trail configuration. 5. Ensure the box at Log file SSE-KMS encryption is checked and that a valid AWS KMS alias of a KMS key is entered in the respective text box. From Command Line: 1. Run the following command: aws cloudtrail describe-trails 2. For each trail listed, SSE-KMS is enabled if the trail has a KmsKeyId property defined.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to configure CloudTrail to use SSE-KMS: From Console: 1. Sign in to the AWS Management Console and open the CloudTrail console at https://console.aws.amazon.com/cloudtrail. 2. In the left navigation pane, choose Trails. 3. Click on a trail. 4. Under the S3 section, click the edit button (pencil icon). 5. Click Advanced. 6. Select an existing CMK from the KMS key Id drop-down menu. - Note: Ensure the CMK is located in the same region as the S3 bucket. - Note: You will need to apply a KMS key policy on the selected CMK in order for CloudTrail, as a service, to encrypt and decrypt log files using the CMK provided. View the AWS documentation for editing the selected CMK Key policy. 7. Click Save. 8. You will see a notification message stating that you need to have decryption permissions on the specified KMS key to decrypt log files. 9. Click Yes. From Command Line: Run the following command to specify a KMS key ID to use with a trail: aws cloudtrail update-trail
+    --name <trail-name> --kms-key-id <cloudtrail- kms-key> Run the following command to attach a key policy to a specified KMS key: aws kms put-key-policy --key-id <cloudtrail-kms-key> --policy <cloudtrail-...'

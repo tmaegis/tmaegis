@@ -1,0 +1,21 @@
+id: TMA-CISCO-IOS-1.2.6
+title: Set 'exec-timeout' to less than or equal to 10 minutes for 'line aux 0'
+description: If no input is detected during the interval, the EXEC facility resumes the current connection. If no connections exist, the EXEC facility returns the terminal to the idle state and disconnects the incoming session. This prevents unauthorized users from misusing abandoned sessions. For example, if the network administrator leaves for the day and leaves a computer open with an enabled login session accessible. The 10 minute default is not shown in the config; fails only if 'line aux 0' sets a timeout above 10 minutes or disables it (0 0). Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all' or 'show startup-config').
+target: cisco-ios
+level: 1
+severity: medium
+tags:
+- cisco-ios
+- network
+- ntp
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.2.6 Set 'exec-timeout' to less than or equal to 10 minutes for 'line aux 0'
+audit:
+  type: config_regex
+  pattern: '(?m)^line aux 0[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+exec-timeout (?:0(?: 0)?|(?:1[1-9]|[2-9]\d|[1-9]\d{2,})(?: \d+)?|10 0*[1-9]\d*)[ \t\r]*$'
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure device timeout (10 minutes or less) to disconnect sessions after a fixed idle time.
+    line aux 0
+    exec-timeout <timeout_in_minutes> <timeout_in_seconds>

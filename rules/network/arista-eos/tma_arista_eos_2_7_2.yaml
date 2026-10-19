@@ -1,0 +1,18 @@
+id: TMA-ARISTA-EOS-2.7.2
+title: Ensure SNMP Community
+description: Only allow SNMP read access and ensure that the default or well-known SNMP community strings public and private are not used. An ACL should be used to further restrict which remote hosts can query the switch. Enabling write access to the device via SNMP provides a mechanism that can be exploited by an attacker to set configuration variables that can disrupt network operations. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: high
+tags:
+- arista-eos
+- network
+- snmp
+reference: CIS Arista EOS Benchmark v1.0.0 - 2.7.2 Ensure SNMP Community
+audit:
+  type: config_regex
+  pattern: (?m)(?i)^snmp-server community (?:public|private)(?:\s|$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: no snmp-server community public no snmp-server community private snmp-server community {community string} ro {snmp security acl}

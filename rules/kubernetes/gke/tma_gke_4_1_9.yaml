@@ -1,0 +1,21 @@
+id: TMA-GKE-4.1.9
+title: Avoid binding RBAC roles to all authenticated users
+description: Avoid non-default RoleBinding and ClusterRoleBinding objects that grant RBAC permissions to the system:authenticated group. This group represents all authenticated Kubernetes API requests from users signed in with a Google Account, including Gmail accounts, so it should not be used for custom access grants. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. The default system:basic-user, system:discovery and system:public-info-viewer bindings are ignored.
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.9 Avoid binding RBAC roles to all authenticated users
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get clusterrolebindings,rolebindings -A -o go-template='{{range .items}}{{$b:=.metadata.name}}{{range .subjects}}{{if eq .name "system:authenticated"}}{{$b}}{{"\n"}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | grep -v '^$' | grep -Evx 'system:basic-user|system:discovery|system:public-info-viewer' | sort -u)
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove any non-default binding to system:authenticated identified in the audit and replace it with explicit, least privilege access for specific authenticated subjects. Do not remove the expected default ClusterRoleBindings system:basic-user, system:discovery, or system:public-info-viewer. RBAC permissions should be granted through defined users, groups, or service accounts rather than the broad system:authenticated group. • Review each non-default RoleBinding or ClusterRoleBinding returned by the audit and identify the referenced Role or ClusterRole • Determine the specific API groups, resources, verbs, and namespace scope required for the affected users, tools, or automation • Create or update a least privilege Role or ClusterRole that grants only the required access • Bind the replacement role to a specific user, Google Group, IAM service account, or Kubernetes service account • ...

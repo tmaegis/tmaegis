@@ -1,0 +1,18 @@
+id: TMA-TDSQL-5.8
+title: Ensure Authentication Is Enabled on the OSS Management Platform
+description: The TDSQL OSS management platform provides API authentication, supporting username/password- and token-based authentication as well as IP allowlisting. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql); reads <TDSQL_HOME>/conf/scheduler.xml and passes when <oss_auth> has enable="1". Also confirm pwd_strength="2" and expire_hours of 24 or less.
+target: tdsql
+level: 1
+severity: critical
+tags:
+- tdsql
+- authentication
+- oss
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.8 Ensure Authentication Is Enabled on the OSS Management Platform
+audit:
+  type: command
+  command: f="${TDSQL_HOME:-/data/tdsql}/conf/scheduler.xml"; [ -r "$f" ] || exit 1; if grep -Eo '<oss_auth[^>]*' "$f" | grep -Eq '[[:space:]]enable="1"'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set <oss_auth enable="1" ... pwd_strength="2" expire_hours="24" enable_token_renewal="1" /> in scheduler.xml and restart OSS.

@@ -1,0 +1,18 @@
+id: TMA-AIX-5.1.3
+title: Ensure group names and GIDs are unique
+description: 'All groups should have a unique GID on the system. All groups should have an individual and unique GID. If GID numbers are shared this could lead to undesirable file and directory access. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.1.3 Ensure group names and GIDs are unique
+audit:
+  type: command
+  command: 'command -v cut >/dev/null 2>&1 || exit 1; out=$( { cut -d: -f1,3 /etc/group | sort -u | cut -d: -f2 | sort -n | uniq -d; cut -d: -f1,3 /etc/group | sort -u | cut -d: -f1 | sort | uniq -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Examine the group IDs (GID) of all locally configured accounts: cut -d: -f "1 3" /etc/group | sort -u | cut -d: -f 2 | sort -n | uniq -d If the command has output there is at least one duplicate GID number. Determine any duplicates within the /etc/group file: cut -d: -f "1 3" /etc/group | sort -u | cut -d: -f 2 | sort -n | uniq -d | while read GID; do cut -f "1 3 4" -d : /etc/group | /usr/bin/sort -t: -k2n | grep ":${GID}:" done Examine the names of all locally configured groups: cut -d: -f "1 3" /etc/group | sort -u | cut -d: -f 1 | sort | uniq -d If the command has output there is at least one duplicate group name. Determine any duplicates within the /etc/group file: cut -d: -f "1 3" /etc/group | sort -u | cut -d: -f 1 | sort | uniq -d | while read groupname; do cut -f "1 3 4" -d : /etc/group | /usr/bin/sort -t: -k2n | grep "${groupname}:" done NOTE: Any duplicates returned should either be deleted or have the GID changed. Be careful. We recommend you examine any accounts assigned
+    to a duplicate and ensure the account is neither losing nor gaining authorized group access through any remedial action. To remove: rmgroup <groupname> To change the GID: chgroup id=<id> <groupname>'

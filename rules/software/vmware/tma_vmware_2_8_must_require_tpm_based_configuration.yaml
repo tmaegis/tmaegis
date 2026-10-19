@@ -1,0 +1,21 @@
+id: TMA-VMWARE-2.8
+title: Host must require TPM-based configuration encryption
+description: 'The host should enforce TPM-based configuration encryption to secure its configuration files, notably within the /etc/ directory or other namespaces. From vSphere 7.0 Update 2 onwards, configuration files archived are encrypted, leveraging a Trusted Platform Module (TPM) to "seal" the configuration to the host, thereby enhancing security against offline attacks. The audit runs esxcli system settings encryption get and requires "Mode: TPM". Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 2.8 Host must require TPM-based configuration encryption
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings encryption get 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk -F': *' 'tolower($1) ~ /^ *mode$/ {print $2; exit}' | tr 'A-Z' 'a-z' | sed 's/ *$//')
+    if [ "$v" = tpm ]; then echo compliant; else echo "Mode: ${v:-not reported}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 1. Ensure TPM 2.0 and Secure Boot are enabled. 2. Take a backup of the ESXi recovery key 3. Configure the host to use TPM-backed configuration encryption using the supported ESXi secure-configuration procedure. 4. Reboot if required with the reboot command 5. Re-run esxcli system settings encryption get

@@ -1,0 +1,24 @@
+id: TMA-CHECKPOINT-1.13
+title: Ensure Allow access again after time is set to 300 or more seconds
+description: Allow access again after a user has been locked out (due to failed login attempts). The user is allowed access after the configured time if there have been no login attempts during that time). This setting only takes effect if Deny access after failed login attempts is selected. PASS requires deny-on-fail allow-after of 300 seconds or more. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: medium
+tags:
+- checkpoint
+- time
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 1.13 Ensure Allow access again after time is set to 300 or more seconds
+audit:
+  type: config_regex
+  pattern: (?m)^set password-controls deny-on-fail allow-after (?:[3-9]\d\d|\d{4,})[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    set password-controls deny-on-fail allow-after 300
+    save config
+    # CIS guidance:
+    Run the following command to set the deny-on-fail allow-afte setting. CLI:
+    set password-controls deny-on-fail allow-after 300
+    GUI:
+    Navigate to User Management > Password Policy > Deny Access After Failed Login Attempts:
+    Set the 'Allow access again after time' setting to 300 or more seconds.

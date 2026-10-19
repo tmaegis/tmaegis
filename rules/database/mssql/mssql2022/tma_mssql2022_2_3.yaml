@@ -1,0 +1,19 @@
+id: TMA-MSSQL2022-2.3
+title: Ensure 'Cross DB Ownership Chaining' Server Configuration Option is set to '0'
+description: The cross db ownership chaining option controls cross-database ownership chaining across all databases at the instance (or server) level. When enabled, this option allows a member of the db_owner role in a database to gain access to objects owned by a login in any other database, causing an unnecessary information disclosure. When required, cross-database ownership chaining should only be enabled for the specific databases requiring it instead of at the instance level for all databases by using the ALTER DATABASE<database_name>SET DB_CHAINING ON command. This database option may not be changed on the master, model, or tempdb system databases.
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.3 Ensure 'Cross DB Ownership Chaining' Server Configuration Option is set to '0'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN CAST(value AS int) = 0 AND CAST(value_in_use AS int) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM sys.configurations WHERE name = 'cross db ownership chaining';"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'cross db ownership chaining', 0; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"
+  guidance: "For AWS RDS Instances, please refer to the documentation for using Parameter Groups here: Working with parameter groups Run the following T-SQL command: EXECUTE sp_configure 'cross db ownership chaining', 0; RECONFIGURE; GO"

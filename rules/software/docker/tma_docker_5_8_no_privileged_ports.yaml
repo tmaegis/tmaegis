@@ -1,0 +1,23 @@
+id: TMA-DOCKER-5.8
+title: Ensure privileged ports are not mapped within containers
+description: Mapping container ports to host ports below 1024 lets containers occupy ports normally reserved for privileged host services. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+- network
+reference: CIS Docker Benchmark v1.9.0 - 5.8 Ensure privileged ports are not mapped within containers
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}}{{range $p, $c := .NetworkSettings.Ports}}{{range $c}} {{.HostPort}}{{end}}{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '{for(i=2;i<=NF;i++) if($i+0>0 && $i+0<1024) print $1" "$i}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Republish the container on a host port >= 1024 (docker run -p 8080:80 ...) and remove privileged port mappings from compose files.

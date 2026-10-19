@@ -1,0 +1,19 @@
+id: TMA-OCEANBASE-5.4.1
+title: Ensure 'AUDIT_TRAIL' is not set to NONE
+description: The audit_trail setting determines whether or not OceanBase's basic audit features are enabled. It can be set to OS(Operating System); DB; DB_EXTENDED; or DB, EXTENDED. The value should be set according to the needs of the organization. NONE means audit is disabled. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Oracle-mode tenant, using the benchmark query. Passes when audit_trail is OS, DB, DB_EXTENDED or DB,EXTENDED on every server. Runs obclient against an Oracle-mode tenant using the connection options in OB_ORA_CONN (default "-h127.0.0.1 -P2881 -uSYS@oracle"); supply the password via OB_ORA_CONN (-p...) or ~/.my.cnf.
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- logging
+- audit
+- oracle-mode
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 5.4.1 Ensure 'AUDIT_TRAIL' is not set to NONE
+audit:
+  type: sql_query
+  command: 'out=$(obclient ${OB_ORA_CONN:--h127.0.0.1 -P2881 -uSYS@oracle} -N -B -e "SELECT svr_ip, name, value FROM oceanbase.GV\$OB_PARAMETERS WHERE name = ''audit_trail''" 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk -F''\t'' ''NF >= 3 {n++; v = toupper($3); if (v != "OS" && v != "DB" && v != "DB_EXTENDED" && v != "DB,EXTENDED") b++} END {print (n > 0 && b == 0) ? "compliant" : "noncompliant"}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET AUDIT_TRAIL = 'DB_EXTENDED'; (or OS / DB / 'DB,EXTENDED' per policy).

@@ -1,0 +1,26 @@
+id: TMA-ESXI9-7.15
+title: Virtual machines must remove unnecessary CD/DVD devices
+description: 'Removing unnecessary devices from virtual machines minimizes the attack surface and reduces potential pathways for data exfiltration or unauthorized data capture. This practice aligns with the principle of least functionality, ensuring that VMs have only the essential components required to perform their designated functions. Expected: no ideX:Y/sataX:Y CD/DVD device with present = "TRUE". The audit parses every .vmx file under /vmfs/volumes/ on the host and lists the VMs that do not comply; it passes when none are found (or no VMs exist). Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 2
+severity: low
+tags:
+- vmware
+- esxi
+- virtual-machine
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 7.15 Virtual machines must remove unnecessary CD/DVD devices
+audit:
+  type: command
+  command: |-
+    out=$(find /vmfs/volumes/ -maxdepth 3 -type f -name '*.vmx' 2>/dev/null | while IFS= read -r f; do
+      awk '{ line = $0; sub(/^[ \t]+/, "", line); i = index(line, "="); if (i == 0) next
+        k = tolower(substr(line, 1, i - 1)); sub(/[ \t]+$/, "", k); v = substr(line, i + 1); sub(/^[ \t]*"?/, "", v); sub(/"?[ \t\r]*$/, "", v); v = tolower(v)
+        if (k ~ /^(ide|sata)[0-9]+:[0-9]+\.devicetype$/ && v ~ /cdrom/) { p = k; sub(/\.devicetype$/, "", p); cd[p] = 1 }
+        if (k ~ /^(ide|sata)[0-9]+:[0-9]+\.present$/) { p = k; sub(/\.present$/, "", p); pr[p] = v } }
+        END { for (p in cd) if (pr[p] == "true") print FILENAME ": " p " CD/DVD present" }' "$f"
+    done)
+    [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 25
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To disconnect all CD/DVD drives from VMs, run the following PowerCLI command: # Remove all CD/DVD Drives attached to VMs Get-VM | Get-CDDrive | Remove-CDDrive The VM will need to be powered off for this change to take effect.'

@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.20
+title: Ensure 'log_hostname' is set correctly
+description: Enabling the log_hostname setting causes the hostname of the connecting host to be logged in addition to the host's IP address for connection log messages. Disabling the setting causes only the connecting host's IP address to be logged, and not the hostname. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass.
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.20 Ensure 'log_hostname' is set correctly
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SHOW log_hostname" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'off'
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_hostname='off'" on every YB-TServer and restart it.

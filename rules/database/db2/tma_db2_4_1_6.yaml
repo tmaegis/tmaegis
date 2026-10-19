@@ -1,0 +1,19 @@
+id: TMA-DB2-4.1.6
+title: Secure Permissions for the Tertiary Archive Log Location (FAILARCHPATH)
+description: 'The FAILARCHPATH parameter specifies the type of media and the location used as the tertiary destination of archived logs. It is recommended that the directory used for the archived logs be set to full access for Db2 administrator accounts and read and execute only for all other accounts. Automated as: the FAILARCHPATH directory, when set, is not group- or world-writable (755 or stricter). Database-level check: set DB2DBDFT to the database name to audit (the rule connects to it with the instance owner''s credentials and fails when DB2DBDFT is unset). Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- filesystem
+- logging
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 4.1.6 Secure Permissions for the Tertiary Archive Log Location (FAILARCHPATH)
+audit:
+  type: command
+  command: 'db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"; out=$(db2 get db cfg for "$db" 2>/dev/null) || exit 1; p=$(printf ''%s\n'' "$out" | sed -n ''s/.*(FAILARCHPATH) *= *//p'' | sed ''s/[[:space:]]*$//''); [ -n "$p" ] || { echo compliant; exit 0; }; [ -e "$p" ] || { echo "noncompliant: $p does not exist"; exit 0; }; w=$(find "$p" -prune \( -perm -020 -o -perm -002 \) -print); [ -z "$w" ] && echo compliant || echo "noncompliant: $p is group/world writable"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For Windows and Linux: 1. Attach to the Db2 instance. 2. Run the following command to change the tertiary archive log directory, if necessary: db2 => update database configuration using failarchpath Additional steps for Windows (assuming that the failarchpath parameter includes DISK): 1. Connect to the Db2 host 2. Right-click on the tertiary archive log directory 3. Choose Properties 4. Select the Security tab 5. Grant all Db2 administrator accounts the Full Control authority 6. Grant all other accounts read and execute privileges only (revoke all other privileges) For Linux (assuming that the failarchpath parameter includes DISK): 1. Connect to the Db2 host 2. Change to the tertiary archive log directory 3. Change the permissions for the directory $ chmod -R 755'

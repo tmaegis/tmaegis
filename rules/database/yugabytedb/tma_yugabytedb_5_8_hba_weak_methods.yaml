@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-5.8
+title: Ensure HBA configuration prohibits weak authentication methods
+description: The ysql_hba_conf_csv GFlag controls the Host-Based Authentication (HBA) rules for YSQL connections. The authentication methods trust (no password required), md5 (MD5-hashed passwords), and password (cleartext passwords over the wire) are considered weak and should not be used in production environments.
+target: yugabytedb
+level: 1
+severity: high
+tags:
+- yugabytedb
+- authentication
+reference: CIS YugabyteDB Benchmark v2.0.0 - 5.8 Ensure HBA configuration prohibits weak authentication methods
+audit:
+  type: manual
+  command: Run SELECT line_number, type, database, user_name, address, auth_method FROM pg_hba_file_rules ORDER BY line_number; FAIL if any reachable row uses md5 or password, or trust (except type local for user yugabyte). The --ysql_hba_conf_csv list should use scram-sha-256/cert and end with a reject catch-all so auto-generated trailing rules are unreachable.
+remediation:
+  type: iac_patch
+  command: 'Update the --ysql_hba_conf_csv GFlag so that all reachable entries use strong authentication, and terminate the list with a reject catch-all to neutralize any auto- generated rules: ./bin/yb-tserver \ --ysql_hba_conf_csv=''local all yugabyte trust,host all all 0.0.0.0/0 scram- sha-256,host all all ::0/0 scram-sha-256,host all all all reject'' Adjust based on your network topology.'

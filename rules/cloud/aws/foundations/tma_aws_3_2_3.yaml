@@ -1,0 +1,19 @@
+id: TMA-AWS-3.2.3
+title: Ensure that RDS instances are not publicly accessible
+description: Ensure and verify that the RDS database instances provisioned in your AWS account restrict unauthorized access in order to minimize security risks. To restrict access to any RDS database instance, you must disable the Publicly Accessible flag for the database and update the VPC security group associated with the instance. Ensure that no public-facing RDS database instances are provisioned in your AWS account, and restrict unauthorized access in order to minimize security risks. When the RDS instance allows unrestricted access (0.0.0.0/0), anyone and anything on the Internet can establish a connection to your database, which can increase the opportunity for malicious activities such as brute force attacks, PostgreSQL injections, or DoS/DDoS attacks.
+target: aws
+level: 1
+severity: high
+tags:
+- access-control
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 3.2.3 Ensure that RDS instances are not publicly accessible
+audit:
+  type: manual
+  command: 'From Console: 1. Log in to the AWS management console and navigate to the RDS dashboard at https://console.aws.amazon.com/rds/. 2. Under the navigation panel, on the RDS dashboard, click Databases. 3. Select the RDS instance that you want to examine. 4. Click Instance Name from the dashboard, under Connectivity and Security. 5. In the Security section, check if the Publicly Accessible flag status is set to No. 6. Follow the steps below to check database subnet access: - In the networking section, click the subnet link under Subnets. - The link will redirect you to the VPC Subnets page. - Select the subnet listed on the page and click the Route Table tab from the dashboard bottom panel. - If the route table contains any entries with the destination CIDR block set to 0.0.0.0/0 and an Internet Gateway attached, the selected RDS database instance was provisioned inside a public subnet; therefore, it is not running within a logically isolated environment and can be accessed from the
+    Internet. 7. Repeat steps 3-6 to determine the configuration of other RDS database instances provisioned in the current region. 8. Change the AWS region from the navigation bar and repeat the audit proces...'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Log in to the AWS management console and navigate to the RDS dashboard at https://console.aws.amazon.com/rds/. 2. Under the navigation panel, on the RDS dashboard, click Databases. 3. Select the RDS instance that you want to update. 4. Click Modify from the dashboard top menu. 5. On the Modify DB Instance panel, under the Connectivity section, click on Additional connectivity configuration and update the value for Publicly Accessible to Not publicly accessible to restrict public access. 6. Follow the below steps to update subnet configurations: - Select the Connectivity and security tab, and click the VPC attribute value inside the Networking section. - Select the Details tab from the VPC dashboard''s bottom panel and click the Route table configuration attribute value. - On the Route table details page, select the Routes tab from the dashboard''s bottom panel and click Edit routes. - On the Edit routes page, update the Destination of Target which is set to igw-
+    xxxxx and click Save routes. 7. On the Modify DB Instance panel, click Continue, and in the Scheduling of modifications section, perform one of the following actions based on your requirements: - Select Ap...'

@@ -1,0 +1,19 @@
+id: TMA-IIS-4.9
+title: Ensure 'notListedIsapisAllowed' is set to false
+description: The notListedIsapisAllowed attribute is a server-level setting that is located in the ApplicationHost.config file in the <isapiCgiRestriction> element of the <system.webServer> section under <security>. This element ensures that malicious users cannot copy unauthorized ISAPI binaries to the Web server and then run them. It is recommended that notListedIsapisAllowed be set to false. isapiCgiRestriction notListedIsapisAllowed must be false. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: high
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.9 Ensure 'notListedIsapisAllowed' is set to false
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.webServer/security/isapiCgiRestriction' -PSPath 'MACHINE/WEBROOT/APPHOST'; if ($c.notListedIsapisAllowed -eq $false) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/isapiCgiRestriction -Name notListedIsapisAllowed -Value False

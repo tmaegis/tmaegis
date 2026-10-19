@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-3.1.6
+title: Ensure 'Cross Subscription Restore' is set to 'Disabled' or 'Permanently Disabled' on Backup vaults
+description: Disable cross subscription restore for Backup vaults to ensure that backup data can only be restored within the same subscription as the Backup vault, preventing restoration to targets in other subscriptions. Cross subscription restores increases security risks by widening access to sensitive backup data, potentially leading to accidental or intentional exposure, unauthorized access, or data exfiltration across environments.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- backup
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.1.6 Ensure 'Cross Subscription Restore' is set to 'Disabled' or 'Permanently Disabled' on Backup vaults
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Under Vault Settings, ensure that Cross Subscription Restore is set to Disabled or Permanently Disabled. 5. Repeat steps 1-4 for each Backup vault. Audit from Azure CLI Run the following command to list Backup vaults: az dataprotection backup-vault list For each Backup vault, run the following command: az dataprotection backup-vault show --resource-group <resource-group> -- vault-name <backup-vault> Ensure that under properties > featureSettings > crossSubscriptionRestoreSettings, state is set to Disabled or PermanentlyDisabled. Audit from PowerShell Run the following command to list Backup vaults: Get-AzDataProtectionBackupVault Run the following command to get the Backup vault in a resource group with a given name: $vault = Get-AzDataProtectionBackupVault -ResourceGroupName <resource-group> -VaultName <backup-vault> Run the following command to get the
+    cross subscription restore setting for the Backup vault: $vault.CrossSubscriptionRestoreState Ensure that the command returns Disabled or PermanentlyDisabled. Repeat for each Backup vault. Audit from Azure P...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Under Vault Settings, next to Cross Subscription Restore, click Update. 5. Select the radio button next to Disable Cross Subscription Restore or Permanently disable Cross Subscription Restore on this vault. 6. If selecting to permanently disable cross subscription restore, check the box next to Are you sure you want to permanently disable Cross Subscription Restore? Once disabled, it cannot be re-enabled. 7. Click Update. 8. Repeat steps 1-7 for each Backup vault requiring remediation. Remediate from Azure CLI For each Backup vault requiring remediation, run the following command to disable cross subscription restore: az dataprotection backup-vault update --resource-group <resource-group> -- vault-name <backup-vault> --cross-subscription-restore-state Disabled Note: Use --cross-subscription-restore-state PermanentlyDisabled with the above command to permanently
+    disable cross subscription restore. Remediate from PowerShell For each Backup vault requiring remediation, run the following command to disable cross subscription restore: Update-AzDataProtectionB...'

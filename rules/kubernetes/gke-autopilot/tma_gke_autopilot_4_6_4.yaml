@@ -1,0 +1,16 @@
+id: TMA-GKE-AUTOPILOT-4.6.4
+title: Avoid deploying workloads in the default namespace
+description: Avoid deploying GKE Autopilot workloads in the default namespace. Use dedicated namespaces to separate applications, environments, or tenants so namespace level controls can be applied consistently. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 2
+severity: low
+tags:
+- gke-autopilot
+- policies
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 4.6.4 Avoid deploying workloads in the default namespace
+audit:
+  type: manual
+  command: 'Run the following command to identify resources currently deployed in the default namespace: kubectl get all,configmaps,secrets,pvc,ingress,serviceaccounts,networkpolicies -n default Review any returned resources and determine whether they are application, environment, or tenant workloads that should be moved to a dedicated namespace. GKE supports identifying workloads running in the default namespace and migrating them to dedicated namespaces to improve reliability and security.'
+remediation:
+  type: iac_patch
+  command: Create dedicated namespaces for GKE Autopilot workloads based on application, environment, or tenant boundaries, then migrate application resources out of the default namespace. Make updates so all workload resources explicitly specify the new target namespace. After migration, apply appropriate namespace level governance, including RBAC, ResourceQuotas, NetworkPolicies, Pod Security labels, and ownership labels.

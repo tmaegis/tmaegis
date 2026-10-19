@@ -1,0 +1,20 @@
+id: TMA-MSSQL2022-4.2
+title: Ensure 'CHECK_EXPIRATION' Option is set to 'ON' for All SQL Authenticated Logins Within the Sysadmin Role
+description: Applies the same password expiration policy used in Windows to passwords used inside SQL Server. Ensuring SQL logins comply with the secure password policy applied by the Windows Server Benchmark will ensure the passwords for SQL logins with sysadmin privileges are changed on a frequent basis to help prevent compromise via a brute force attack. CONTROL SERVER is an equivalent permission to sysadmin and logins with that permission should also be required to have expiring passwords.
+target: mssql
+level: 1
+severity: medium
+tags:
+- auth
+- iam
+- logging
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 4.2 Ensure 'CHECK_EXPIRATION' Option is set to 'ON' for All SQL Authenticated Logins Within the Sysadmin Role
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM (SELECT l.name FROM sys.sql_logins AS l WHERE IS_SRVROLEMEMBER('sysadmin', l.name) = 1 AND l.is_expiration_checked <> 1 AND l.is_disabled = 0 UNION ALL SELECT l.name FROM sys.sql_logins AS l JOIN sys.server_permissions AS p ON l.principal_id = p.grantee_principal_id WHERE p.type = 'CL' AND p.state IN ('G','W') AND l.is_expiration_checked <> 1 AND l.is_disabled = 0) AS x;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'For each <login_name> found by the Audit Procedure, execute the following T-SQL statement: ALTER LOGIN [<login_name>] WITH CHECK_EXPIRATION = ON;'

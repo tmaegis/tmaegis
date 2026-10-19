@@ -1,0 +1,18 @@
+id: TMA-MARIADB-5.2
+title: Ensure 'FILE' is Not Granted to Non-Administrative Users
+description: 'The FILE privilege is used to allow or disallow a user from reading and writing files on the server host. Any user with the FILE right granted has the ability to: ; Read files from the local file system that are readable by the MariaDB server (this includes world-readable files). ; Write files to the local file system where the MariaDB server has write access.'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- authorization
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 5.2 Ensure 'FILE' is Not Granted to Non-Administrative Users
+audit:
+  type: manual
+  command: Run SELECT GRANTEE FROM INFORMATION_SCHEMA.USER_PRIVILEGES WHERE PRIVILEGE_TYPE = 'FILE'; Ensure only administrative users are returned in the result set.
+remediation:
+  type: iac_patch
+  command: REVOKE FILE ON *.* FROM '<user>'@'<host>'; for each non-administrative grantee.

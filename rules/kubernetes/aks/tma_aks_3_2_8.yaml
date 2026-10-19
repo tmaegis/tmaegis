@@ -1,0 +1,26 @@
+id: TMA-AKS-3.2.8
+title: Ensure that the RotateKubeletServerCertificate argument is set to true
+description: The RotateKubeletServerCertificate argument is a control that corresponds to kubelet serving certificate rotation. In practical terms, it means the kubelet uses server TLS bootstrapping to obtain and rotate a serving certificate signed by the cluster CA for the kubelet’s own HTTPS endpoint, rather than relying on a locally self-signed serving certificate. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access. A false or blank RotateKubeletServerCertificate feature gate fails.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- worker-node
+- kubelet
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.2.8 Ensure that the RotateKubeletServerCertificate argument is set to true
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"RotateKubeletServerCertificate":true'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If an audit shows RotateKubeletServerCertificate set to false or blank, the preferred remediation method is to replace the affected node pool with a new pool and let the kubelet come up through the normal AKS-managed bootstrap path, rather than trying to update the setting manually into existing nodes. This is preferred because the kubelet serving certificate rotation in Kubernetes is tied to serverTLSBootstrap, which moves the kubelet away from a self-signed serving certificate and into the CSR-based certificate workflow, while AKS treats kubelet serving certificate rotation as a managed platform capability on supported node pools. In addition, replacing the node pool gives you a consistent, repeatable way to bring every node up through the same managed certificate path.

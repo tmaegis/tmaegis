@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.5.1.2
+title: Ensure password expiration is 365 days or less
+description: 'The passwordtime parameter in /etc/login.conf allows an administrator to force passwords to expire once they reach a defined age. It is recommended that the passwordtime parameter be set to less than or equal to 365 days. The window of opportunity for an attacker to leverage compromised credentials or successfully compromise credentials via an online brute force attack is limited by the age of the password. Audit: the first :passwordtime= in /etc/login.conf (default class) must be 365d / 52w or less; nothing set means no expiry.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- password-policy
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.1.2 Ensure password expiration is 365 days or less
+audit:
+  type: command
+  command: '[ -r /etc/login.conf ] || exit 1; v=$(grep -E "^[[:space:]]*:passwordtime=" /etc/login.conf | head -n 1 | sed "s/.*passwordtime=\([0-9]*[a-z]*\).*/\1/"); n=${v%%[a-z]*}; u=${v#$n}; case "$u" in d) m=365;; w) m=52;; *) m=-1;; esac; [ -n "$n" ] && [ "$m" -ge 0 ] && [ "$n" -ge 1 ] && [ "$n" -le "$m" ] && echo compliant || echo "passwordtime=$v"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set the passwordtime parameter to conform to site policy in /etc/login.conf and add something similar to the following in the default class : :passwordtime=365d: After editing the file regenerate the login.conf.db with the command: # cap_mkdb /etc/login.conf Modify user parameters for all users with a password set to match: # # for i in $(awk -F: ''($3>=1000)&&($1!="nobody"){print $1}'' /etc/passwd); do pw usermod -n $i -p +365d; done'

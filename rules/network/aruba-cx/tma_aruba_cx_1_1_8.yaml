@@ -1,0 +1,47 @@
+id: TMA-ARUBA-CX-1.1.8
+title: Session Management
+description: This sequence describes enabling CLI session limits PASS requires cli-session max-per-user 1, timeout of 15 minutes or less and tracking-range set (CIS recommended 25 days). Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- management
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.1.8 Session Management
+audit:
+  type: config_regex
+  pattern: (?m)^cli-session[ \t]*\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+max-per-user 1[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+timeout (?:[1-9]|1[0-5])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+tracking-range (?:2[5-9]|30|1\d|[1-9])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+max-per-user 1[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+tracking-range (?:2[5-9]|30|1\d|[1-9])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+timeout (?:[1-9]|1[0-5])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+timeout (?:[1-9]|1[0-5])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+max-per-user 1[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+tracking-range (?:2[5-9]|30|1\d|[1-9])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+timeout (?:[1-9]|1[0-5])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+tracking-range (?:2[5-9]|30|1\d|[1-9])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+max-per-user 1[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+tracking-range (?:2[5-9]|30|1\d|[1-9])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+max-per-user 1[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+timeout (?:[1-9]|1[0-5])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+tracking-range (?:2[5-9]|30|1\d|[1-9])[ \t]*\n(?:[
+    \t]+[^\n]*\n)*?[ \t]+timeout (?:[1-9]|1[0-5])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+max-per-user 1[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    cli-session
+        max-per-user 1
+        timeout 15
+        tracking-range 25
+        exit
+    # CIS guidance:
+    Setting Max sessions per user:
+    config
+    cli-session
+    max-per-user <max-sessions>
+    exit
+    exit
+    Setting session timeout:
+    config
+    cli-session
+    timeout <timeout in minutes>
+    exit
+    exit
+    Setting session tracking records retention:
+    config
+    cli-session
+    tracking-range <tracking days>
+    exit
+    exit
+    Recommended values -
+    cli-session
+    max-per-user 1
+    timeout 15
+    tracking-range 25
+    exit

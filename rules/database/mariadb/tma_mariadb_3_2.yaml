@@ -1,0 +1,20 @@
+id: TMA-MARIADB-3.2
+title: Ensure 'log_bin_basename' Files Have Appropriate Permissions
+description: 'MariaDB can operate using a variety of log files, each used for different purposes. These are the binary log (which can be encrypted), error log, slow query log, relay log, general log, and in the enterprise edition, the audit log (which can be encrypted). Fails when any <log_bin_basename>.* file grants other users access, is executable or is not owned by mysql:mysql (benchmark: -rw-rw---- mysql mysql); passes when binary logging is off. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- filesystem
+- permissions
+- binlog
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 3.2 Ensure 'log_bin_basename' Files Have Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mariadb -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; b=$(mariadb -NBe "SELECT IFNULL(@@global.log_bin_basename, '''')" 2>/dev/null) || exit 1; [ -n "$b" ] || { echo compliant; exit 0; }; case "$b" in /*) ;; *) b="$d/${b#./}" ;; esac; [ -d "$(dirname "$b")" ] || exit 1; n=$(find "$(dirname "$b")" -maxdepth 1 -type f -name "$(basename "$b").*" \( -perm /0117 -o ! -user mysql -o ! -group mysql \) | wc -l); [ "$n" -eq 0 ] && echo compliant || echo "$n noncompliant files"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chmod 660 <log_bin_basename>.* && chown mysql:mysql <log_bin_basename>.*

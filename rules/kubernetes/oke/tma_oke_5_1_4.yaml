@@ -1,0 +1,17 @@
+id: TMA-OKE-5.1.4
+title: Allow only approved container registries for images used by OKE workloads
+description: Allowing only approved container registries for images used by OKE workloads helps reduce supply chain risk by limiting where workloads can source their images. This creates a controlled image origin model in which clusters admit workloads only from trusted registries and can pair that control with OCIR image signature verification before containers are allowed to run. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- managed-services
+- registry
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.1.4 Allow only approved container registries for images used by OKE workloads
+audit:
+  type: manual
+  command: Review the image sources currently used by the cluster and the admission controls that govern new deployments, then verify that workloads are limited to approved registries only. The strongest implementation for this control is an admission policy, because admission controllers can reject Kubernetes API requests before objects are persisted. For OCIR images, also review OKE image verification policy configuration where signed image enforcement is used. Include required Oracle managed image sources for platform components and add ons in the approved list.
+remediation:
+  type: iac_patch
+  command: Restrict OKE workloads to approved container registries by enforcing image source controls at admission time, rather than relying only on CI/CD checks or written standards. Enforcement can be implemented with an admission controller so image references are checked before the deployment is persisted. For OCIR images, use OKE image verification policies when signed image enforcement is required, so only images signed with approved OCI Vault keys are admitted. The approved registry list must also include the Oracle managed image sources required for platform components and add ons. • Include approved OCIR repositories, explicitly approved third party registries, and Oracle managed registries required for OKE platform components and add ons in the approved registry list. • Configure an admission control path so image registry source is checked before the workload is admitted.

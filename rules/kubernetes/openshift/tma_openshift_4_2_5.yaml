@@ -1,0 +1,19 @@
+id: TMA-OPENSHIFT-4.2.5
+title: Verify that the read only port is not used or is set to 0
+description: Disable the read-only port. Requires an oc login with read access to openshift-kube-apiserver; checks apiServerArguments kubelet-read-only-port is ["0"].
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- worker-node
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.2.5 Verify that the read only port is not used or is set to 0
+audit:
+  type: command
+  command: |-
+    v=$(oc -n openshift-kube-apiserver get configmap config -o jsonpath='{.data.config\.yaml}') || exit 1
+    if printf '%s' "$v" | grep -Eq '"kubelet-read-only-port":[[:space:]]*\[[[:space:]]*"0"[[:space:]]*\]'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: In earlier versions of OpenShift 4, the read-only-port argument is not used. Follow the instructions in the documentation to create a kubeletconfig CRD and set the kubelet-read-only-port is set to 0.

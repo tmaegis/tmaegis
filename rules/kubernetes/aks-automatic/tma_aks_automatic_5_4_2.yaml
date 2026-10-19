@@ -1,0 +1,22 @@
+id: TMA-AKS-AUTOMATIC-5.4.2
+title: Use private AKS clusters and disable the public API server FQDN
+description: Provisioning AKS in private cluster mode limits control plane exposure by placing the Kubernetes API server on private addressing and requiring connectivity through approved private network paths rather than broad public network access. AKS Automatic preconfigures API Server VNet Integration, which places the API server behind an internal load balancer address in a delegated subnet. Requires the az CLI (logged in) with read access to the cluster named by AKS_RG and AKS_NAME. Requires enablePrivateCluster true and enablePublicFqdn false.
+target: aks-automatic
+level: 2
+severity: high
+tags:
+- aks-automatic
+- managed-services
+- network
+- api-server
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 5.4.2 Use private AKS clusters and disable the public API server FQDN
+audit:
+  type: command
+  command: |-
+    out=$(az aks show --resource-group "${AKS_RG:?set AKS_RG}" --name "${AKS_NAME:?set AKS_NAME}" --query '[apiServerAccessProfile.enablePrivateCluster, apiServerAccessProfile.enablePublicFqdn]' -o tsv) || exit 1
+    set -- $(printf '%s\n' "$out" | tr 'A-Z' 'a-z')
+    if [ "${1:-}" = true ] && [ "${2:-}" = false ]; then echo compliant; else echo "noncompliant: enablePrivateCluster=${1:-} enablePublicFqdn=${2:-}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Use the apiServerAccessProfile results to determine whether the cluster must be moved to private cluster mode and whether the public FQDN must be disabled. Remediation should bring the cluster to enablePrivateCluster: true and, where required by policy, enablePublicFqdn: false; the detailed action depends on whether the cluster is new or existing. API Server VNet Integration is already preconfigured for AKS Automatic. 1. If enablePrivateCluster is false on a new deployment, create the cluster as private by using az aks create --sku automatic --enable-private-cluster --disable-public-fqdn when the requirement is to prevent publication of a public DNS name for the API server. 2. If enablePrivateCluster is false on an existing AKS Automatic cluster, enable private cluster mode through the supported AKS update path. A separate API Server VNet Integration conversion is not required. 3.'

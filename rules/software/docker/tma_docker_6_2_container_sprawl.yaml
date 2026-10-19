@@ -1,0 +1,16 @@
+id: TMA-DOCKER-6.2
+title: Ensure that container sprawl is avoided
+description: Large numbers of stopped containers waste resources and hide stale, unpatched workloads. Whether the count is excessive is a site decision, so this is a manual review.
+target: docker
+level: 1
+severity: low
+tags:
+- docker
+- operations
+reference: CIS Docker Benchmark v1.9.0 - 6.2 Ensure that container sprawl is avoided
+audit:
+  type: manual
+  command: 'Review container sprawl: compare docker info --format ''{{ .ContainersStopped }}'' with docker info --format ''{{ .ContainersRunning }}'', list stopped containers with docker ps -a --filter status=exited and remove the ones no longer needed.'
+remediation:
+  type: iac_patch
+  command: 'Remove unused containers: docker container prune (or docker rm <id> for specific containers) after confirming they are not needed.'

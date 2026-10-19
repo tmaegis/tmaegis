@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.9
+title: Ensure root is the only UID 0 account
+description: 'Any account with UID 0 has superuser privileges on the system. This access must be limited to only the default root account and only from the system console. Administrative access must be through an unprivileged account using an approved mechanism, as noted in Item 4.3.7 Ensure access to the su command is restricted. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: critical
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.9 Ensure root is the only UID 0 account
+audit:
+  type: command
+  command: 'command -v awk >/dev/null 2>&1 || exit 1; out=$( { awk -F: ''($3 == 0 && $1 != "root") { print $1 }'' /etc/passwd ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove any users other than root with UID 0 or assign them a new UID if appropriate.

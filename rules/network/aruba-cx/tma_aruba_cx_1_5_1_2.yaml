@@ -1,0 +1,26 @@
+id: TMA-ARUBA-CX-1.5.1.2
+title: TACACS Server Configuration
+description: TACACS+ is a centralized authentication, authorization, and accounting protocol that provides granular control over user access and command-level authorization for AOS- CX switches. It separates authentication, authorization, and accounting processes for enhanced flexibility. PASS requires a TACACS+ server host and an aaa tacacs server group. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 2
+severity: high
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.5.1.2 TACACS Server Configuration
+audit:
+  type: config_regex
+  pattern: (?m)(?:^tacacs-server host \S+(?s:.*?)^aaa group server tacacs \S+|^aaa group server tacacs \S+(?s:.*?)^tacacs-server host \S+)
+remediation:
+  type: iac_patch
+  command: |-
+    tacacs-server host 10.0.0.31 key plaintext <key> vrf mgmt
+    aaa group server tacacs tacacs1
+        server 10.0.0.31 vrf mgmt
+    # CIS guidance:
+    To Configure TACACS+ Server -
+    tacacs-server host {<FQDN> | <IPV4> | <IPV6>} [key [plaintext
+    <PASSKEY> | ciphertext <PASSKEY>]] [vrf <VRF-NAME>] To Associate TACACS+ Server to the group -
+    aaa group server tacacs <group-name>
+    server <FQDN | IPv4 | IPv6> vrf <vrf>
+    exit

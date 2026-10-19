@@ -1,0 +1,20 @@
+id: TMA-IBMCLOUD-4.2
+title: Ensure network access to IBM Cloud Databases service is set to be exposed on “Private end points only”
+description: All Cloud Databases deployments offer integration with IBM Cloud Service Endpoints. It gives you the ability to enable connections to your deployments from the public internet and over the IBM Cloud Private network. Service Endpoints are available in all IBM Cloud Multi-Zone Regions and Single-Zone Regions. In other words, Deployments in all regions can utilize the available service endpoint options. Public endpoints provide a connection to your deployment on the public network. However, at provision time, a private endpoint is the default option for all deployments. Your environment needs to have internet access to connect to a deployment. A deployment with a service endpoint on the private network gets an endpoint that is not accessible from the public internet. All traffic is routed to hardware dedicated to Cloud Databases deployments and remains on the IBM Cloud Private network. A...
+target: ibmcloud
+level: 1
+severity: medium
+tags:
+- access-control
+- cloud
+- ibmcloud
+- network
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 4.2 Ensure network access to IBM Cloud Databases service is set to be exposed on “Private end points only”
+audit:
+  type: manual
+  command: 'Using Console: 1. Log on to your IBM Cloud account 2. Go to the Menu icon, Resource List to access your list of account resources 3. Click the Database service you are interested in to open the service dashboard. 4. Ensure you are on the Manage page in the left pane. 5. Click the Settings tab in the middle of the page and scroll down to Service endpoints 6. Review the toggle that displays the status of Private endpoint and Public endpoint enablement. Ensure, Public is toggled off and Private is toggled on. (Private is the default setting) Using API: 1. Access to the API uses token authentication, by using the header Authorization: Bearer . The token must be IAM-issued. You can send in an IAM API key directly as the token or use the API key to generate an IAM Bearer Token. 2. Insert the region your deployment is in and the CRN of your deployment as indicated by {} curl -X GET https://api.{region}.databases.cloud.ibm.com/v4/ibm/deployments/{id} -H ''Authorization: Bearer <>'' \
+    This will return something like: { "deployment": { "id": "crn", "name": "crn", "type": "database", "platform_options": { "key_protect_key_id": "" }, "version": "x.y", "admin_username": "admin", "enable_privat...'
+remediation:
+  type: iac_patch
+  command: 'Using Console: 1. Log on to your IBM Cloud account 2. Go to the Menu icon, Resource List to access your list of account resources 3. Click the Database service you are interested in to open the service dashboard. 4. Ensure you are on the Manage page in the left pane. 5. Click the Settings tab in the middle of the page and scroll down to Service endpoints 6. Select Private endpoint toggle to be turned on and Public endpoint to be turned off. 7. Click Update Endpoints Using CLI: You can use the ibmcloud resource service-instance-update command in the CLI, specifying the endpoint with the --service-endpoints flag. This can be done online with no downtime ibmcloud resource service-instance-update <service-name> --service-endpoints <endpoint-type> Changing the type of endpoints available on your deployment does not cause any downtime from a database perspective. However, if you disable an endpoint that is being used by you or your applications, those connections are dropped. From
+    the API: You can use the Resource Controller API, with a PATCH request to the /resource_instances/{id} endpoint. Figure out more detail here, should be copy and paste for every service'

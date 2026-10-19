@@ -1,0 +1,25 @@
+id: TMA-F5-BIGIP-4.4
+title: Ensure 'Idle timeout' is less than or equal to 10 minutes for serial console sessions
+description: 'To set an idle timeout for serial console sessions. PASS requires sys global-settings console-inactivity-timeout between 1 and 600 seconds. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- management
+reference: CIS F5 Networks Benchmark v1.0.0 - 4.4 Ensure 'Idle timeout' is less than or equal to 10 minutes for serial console sessions
+audit:
+  type: config_regex
+  pattern: (?m)^sys global-settings \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+console-inactivity-timeout (?:[1-9]\d?|[1-5]\d\d|600)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys global-settings console-inactivity-timeout 600
+    tmsh save sys config
+    # CIS guidance:
+    - Log in to tmsh by typing the following command:
+     tmsh
+    - To configure an automatic logout idle time for serial console sessions, use the following command :
+     modify /sys global-settings console-inactivity-timeout 600
+    - Save the change by typing the following command:
+     save /sys config

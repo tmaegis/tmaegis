@@ -1,0 +1,17 @@
+id: TMA-TDSQL-3.8
+title: Ensure Correct Permissions on MySQL Tablespace Files
+description: MySQL InnoDB tablespace files (.ibd), the system tablespace (ibdata*), redo log files (ib_logfile*), and undo tablespace files should have restrictive permissions. Uses TDSQL_DATA (default /data/tdsql/data) for the instance data directory. Counts *.ibd, ibdata* and ib_logfile* files readable by other users; expected 0640, owner mysql:mysql.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.8 Ensure Correct Permissions on MySQL Tablespace Files
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_DATA:-/data/tdsql/data}"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_DATA:-/data/tdsql/data}"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" -type f \( -name '*.ibd' -o -name 'ibdata*' -o -name 'ib_logfile*' \) -perm /o+r -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: find <data dir> \( -name '*.ibd' -o -name 'ibdata*' -o -name 'ib_logfile*' \) -exec chmod 640 {} + and chown mysql:mysql them.

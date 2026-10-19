@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-5.2.1
+title: Minimize the admission of privileged containers
+description: Do not generally permit containers to be run with the securityContext.privileged flag set to true. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: critical
+tags:
+- openshift
+- policies
+- pod-security
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 5.2.1 Minimize the admission of privileged containers
+audit:
+  type: manual
+  command: 'The set of SCCs that admission uses to authorize a pod are determined by the user identity and groups that the user belongs to. Additionally, if the pod specifies a service account, the set of allowable SCCs includes any constraints accessible to the service account. Admission uses the following approach to create the final security context for the pod: • Retrieve all SCCs available for use. • Generate field values for security context settings that were not specified on the request. • Validate the final settings against the available constraints.'
+remediation:
+  type: iac_patch
+  command: Create an SCC that sets allowPrivilegedContainer to false and take it into use by assigning it to applicable users and groups.

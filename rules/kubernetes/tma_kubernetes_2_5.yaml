@@ -1,0 +1,28 @@
+id: TMA-KUBERNETES-2.5
+title: Ensure that the --peer-client-cert-auth argument is set to true
+description: etcd should be configured for peer authentication. Audited on control-plane nodes from the running process arguments (falls back to the kubeadm static pod manifest); SKIPs on nodes without that manifest.
+target: kubernetes
+level: 1
+severity: high
+tags:
+- kubernetes
+- etcd
+reference: CIS Kubernetes Benchmark v2.1.0 - 2.5 Ensure that the --peer-client-cert-auth argument is set to true
+audit:
+  type: command
+  command: |-
+    set -f
+    a=$(ps -eo args 2>/dev/null | grep -E '^([^ ]*/)?etcd( |$)' | head -n 1)
+    [ -n "$a" ] || a=$(sed -n 's/^[[:space:]]*-[[:space:]]*"\{0,1\}\(--[^"]*\)"\{0,1\}[[:space:]]*$/\1/p' /etc/kubernetes/manifests/etcd.yaml | tr '\n' ' ')
+    [ -n "$a" ] || exit 1
+    g() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    has() { printf '%s\n' "$a" | awk -v k="--$1" '{for(i=1;i<=NF;i++) if($i==k||index($i,k"=")==1) f=1} END{exit !f}'; }
+    ok=1
+    v=$(g peer-client-cert-auth); v=${v:-false}; [ "$v" = "true" ] || { echo "noncompliant: --peer-client-cert-auth=$v"; ok=0; }
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/manifests/etcd.yaml
+remediation:
+  type: iac_patch
+  command: Edit the etcd pod specification file /etc/kubernetes/manifests/etcd.yaml on the master node and set the below parameter. --peer-client-cert-auth=true

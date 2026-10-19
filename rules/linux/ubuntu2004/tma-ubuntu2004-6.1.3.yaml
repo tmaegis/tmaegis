@@ -1,0 +1,96 @@
+id: TMA-UBUNTU2004-6.1.3
+title: Ensure cryptographic mechanisms are used to protect the integrity of audit tools
+description: Audit tools include, but are not limited to, vendor-provided and open source audit tools needed to successfully view and manipulate audit information system activity and records. Audit tools include custom queries and report generators.
+target: linux
+os_family:
+- ubuntu-20.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 6.1.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''grep -Ps -- ''"''"''(\/sbin\/(audit|au)\H*\b)''"''"'' /etc/aide.conf /etc/aide/aide.conf /etc/aide.conf.d/*.conf /etc/aide/aide.conf.d/*'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''/sbin/auditctl p+i+n+u+g+s+b+acl+xattrs+sha512'' || { echo step1: missing ''/sbin/auditctl p+i+n+u+g+s+b+acl+xattrs+sha512''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''/sbin/auditd p+i+n+u+g+s+b+acl+xattrs+sha512'' || { echo step1: missing ''/sbin/auditd p+i+n+u+g+s+b+acl+xattrs+sha512''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''/sbin/ausearch p+i+n+u+g+s+b+acl+xattrs+sha512'' || { echo step1: missing ''/sbin/ausearch p+i+n+u+g+s+b+acl+xattrs+sha512''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''/sbin/aureport p+i+n+u+g+s+b+acl+xattrs+sha512'' || { echo step1: missing
+    ''/sbin/aureport p+i+n+u+g+s+b+acl+xattrs+sha512''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''/sbin/autrace p+i+n+u+g+s+b+acl+xattrs+sha512'' || { echo step1: missing ''/sbin/autrace p+i+n+u+g+s+b+acl+xattrs+sha512''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''/sbin/augenrules p+i+n+u+g+s+b+acl+xattrs+sha512'' || { echo step1: missing ''/sbin/augenrules p+i+n+u+g+s+b+acl+xattrs+sha512''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_AUDITD_CONF=/etc/audit/auditd.conf
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; }
+    tma_audit_pkg() {
+      command -v auditctl >/dev/null 2>&1 && [ -f /etc/audit/auditd.conf ] && return 0
+      if command -v apt-get >/dev/null 2>&1; then tma_pkg_install auditd; else tma_pkg_install audit; fi; }
+    tma_nl() { [ -s "$1" ] && [ -n "$(tail -c1 "$1")" ] && echo >> "$1"; return 0; }
+    tma_kv() { # file key value : 'key = value' style (auditd.conf); replaces every uncommented line
+      f=$1; k=$2; v=$3
+      [ -f "$f" ] || return 0
+      tma_bak "$f"
+      if grep -Eq "^[[:space:]]*$k[[:space:]]*=" "$f"; then
+        sed -i -E "s|^[[:space:]]*$k[[:space:]]*=.*|$k = $v|" "$f"
+      else tma_nl "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; fi; }
+    tma_ini_set() { # file section key value : systemd ini 'Key=value'
+      f=$1; s=$2; k=$3; v=$4
+      mkdir -p "$(dirname "$f")"; [ -f "$f" ] || : > "$f"; tma_nl "$f"
+      sed -i -E "/^[[:space:]]*$k[[:space:]]*=/d" "$f"
+      if grep -q "^\[$s\]" "$f"; then sed -i "/^\[$s\]/a $k=$v" "$f"; else printf '[%s]\n%s=%s\n' "$s" "$k" "$v" >> "$f"; fi; }
+    tma_clear() { # path octal-mask : remove the mask bits from the file mode
+      [ -e "$1" ] || return 0
+      m=$(stat -Lc %a "$1")
+      [ $((8#$m & 8#$2)) -eq 0 ] || chmod "$(printf '%o' $((8#$m & ~8#$2 & 8#7777)))" "$1"; }
+    tma_rule() { # rules.d-filename audit-rule-line : append when missing (whitespace-normalised)
+      f=/etc/audit/rules.d/$1; shift; l=$*
+      mkdir -p /etc/audit/rules.d; [ -f "$f" ] || : > "$f"
+      if ! tr -s ' \t' '  ' < "$f" | sed 's/^ //;s/ $//' | grep -Fxq -- "$l"; then tma_nl "$f"; printf '%s\n' "$l" >> "$f"; fi
+      chown root:root "$f"; chmod 640 "$f"; }
+    tma_rules_load() { command -v augenrules >/dev/null 2>&1 && augenrules --load >/dev/null 2>&1; true; }
+    tma_audit_logdir() {
+      d=$(awk -F= '/^[[:space:]]*log_file[[:space:]]*=/{print $2}' /etc/audit/auditd.conf 2>/dev/null | xargs 2>/dev/null)
+      [ -n "$d" ] && dirname "$d" || echo /var/log/audit; }
+    tma_grub_arg() { # key=value : add/replace in GRUB_CMDLINE_LINUX and regenerate grub.cfg
+      a=$1; k=${a%%=*}; g=/etc/default/grub
+      [ -f "$g" ] || { echo "no $g: bootloader not managed by grub defaults" >&2; return 0; }
+      tma_bak "$g"
+      if ! grep -q '^GRUB_CMDLINE_LINUX=' "$g"; then tma_nl "$g"; printf 'GRUB_CMDLINE_LINUX="%s"\n' "$a" >> "$g"
+      elif grep -E '^GRUB_CMDLINE_LINUX=' "$g" | grep -Eq "[\"' ]$k(=|[\"' ])"; then
+        sed -i -E "/^GRUB_CMDLINE_LINUX=/ s#([\"' ])$k(=[^\"' ]*)?([\"' ])#\1$a\3#" "$g"
+      else
+        sed -i -E "/^GRUB_CMDLINE_LINUX=/ s#([\"'])\$#  $a\1#; /^GRUB_CMDLINE_LINUX=/ s#=([\"'])  #=\1#; /^GRUB_CMDLINE_LINUX=/ s#   *# #g" "$g"
+      fi
+      if command -v update-grub >/dev/null 2>&1; then update-grub >/dev/null 2>&1
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        for c in /boot/grub2/grub.cfg /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c" >/dev/null 2>&1; done
+      elif command -v grub-mkconfig >/dev/null 2>&1; then grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1; fi
+      true; }
+    command -v aide >/dev/null 2>&1 || tma_pkg_install aide
+    sbin=$(readlink -f /sbin)
+    if [ -f /etc/aide.conf ]; then cf=/etc/aide.conf
+    elif [ -f /etc/aide/aide.conf ]; then cf=/etc/aide/aide.conf
+    else echo "AIDE configuration file not found" >&2; exit 0; fi
+    tma_bak "$cf"
+    tmp=$cf.tmaegis.new
+    grep -Ev '^[[:space:]]*(/usr)?/sbin/(auditctl|auditd|ausearch|aureport|autrace|augenrules)[[:space:]]|^# Audit Tools$' "$cf" > "$tmp"
+    tma_nl "$tmp"
+    { echo '# Audit Tools'
+      for t in auditctl auditd ausearch aureport autrace augenrules; do
+        echo "$sbin/$t p+i+n+u+g+s+b+acl+xattrs+sha512"
+        [ "$sbin" != /sbin ] && echo "/sbin/$t p+i+n+u+g+s+b+acl+xattrs+sha512"
+      done; } >> "$tmp"
+    cat "$tmp" > "$cf"; rm -f "$tmp"; true
+  guidance: "Add or update the following selection lines for to a file ending in .conf in the /etc/aide/aide.conf.d/ or to /etc/aide/aide.conf to protect the integrity of the audit tools: # Audit Tools /sbin/auditctl p+i+n+u+g+s+b+acl+xattrs+sha512 /sbin/auditd p+i+n+u+g+s+b+acl+xattrs+sha512 /sbin/ausearch p+i+n+u+g+s+b+acl+xattrs+sha512 /sbin/aureport p+i+n+u+g+s+b+acl+xattrs+sha512 /sbin/autrace p+i+n+u+g+s+b+acl+xattrs+sha512 /sbin/augenrules p+i+n+u+g+s+b+acl+xattrs+sha512"

@@ -1,0 +1,82 @@
+id: TMA-AZURE-CONTAINER-LINUX-7.2.8
+title: Ensure local interactive user home directories are configured
+description: The user home directory is space defined for the particular user to set local environment variables and to store personal files. While the system administrator can establish secure permissions for users' home directories, the users can easily override these. Users can be defined in /etc/passwd without a home directory or with a home directory that does not actually exist.
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- cis-converted
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 7.2.8 Ensure local interactive user home directories are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    alt0() { o=$(bash -c '#!/usr/bin/env bash
+
+    {
+       a_output=() a_output2=() a_exists2=() a_mode2=() a_owner2=()
+       l_valid_shells="^($( awk -F\/ '"'"'$NF != "nologin" {print}'"'"' /etc/shells | sed -rn '"'"'/^\//{s,/,\\\\/,g;p}'"'"' | paste -s -d '"'"'|'"'"' - ))$"
+       l_mask='"'"'0027'"'"'; l_max="$( printf '"'"'%o'"'"' $(( 0777 & ~$l_mask)) )"
+       l_users="$(awk -v pat="$l_valid_shells" -F: '"'"'$(NF) ~ pat { print $1 " " $(NF- 1) }'"'"' /etc/passwd | wc -l)"
+       [ "$l_users" -gt 10000 ] && printf '"'"'%s\n'"'"' "" "  ** INFO **" \
+       "  $l_users Local interactive users found on the system" "  This may be a long running check" "  **********"
+       while IFS=" " read -r l_user l_home; do
+          if [ -d "$l_home" ]; then
+             while IFS=: read -r l_own l_mode; do
+                [ "$l_user" != "$l_own" ] && a_owner2+=("  - User: \"$l_user\" Home \"$l_home\" is owned by: \"$l_own\"")
+                [ $(( $l_mode & $l_mask )) -gt 0 ] && a_mode2+=("  - User: \"$l_user\" Home \"$l_home\" is mode: \"$l_mode\"" \
+                "    should be mode: \"$l_max\" or more restrictive")
+             done <<< "$(stat -Lc '"'"'%U:%#a'"'"' "$l_home")"
+          else
+             a_exists2+=("  - User: \"$l_user\" Home Directory: \"$l_home\" Doesn'"'"'t exist")
+          fi
+       done <<< "$(awk -v pat="$l_valid_shells" -F: '"'"'$(NF) ~ pat { print $1 " " $(NF- 1) }'"'"' /etc/passwd)"
+       [ "${#a_exists2[@]}" -gt 0 ] && a_output2+=("${a_exists2[@]}") || \
+       a_output+=("  - All interactive users home directories exist")
+       [ "${#a_mode2[@]}" -gt 0 ] && a_output2+=("${a_mode2[@]}") || \
+       a_output+=("  - All interactive users home directories are mode \"$l_max\" or more restrictive")
+       [ "${#a_owner2[@]}" -gt 0 ] && a_output2+=("${a_owner2[@]}") || \
+       a_output+=("  - All interactive users own their home directory")
+       if [ "${#a_output2[@]}" -le 0 ]; then
+          printf '"'"'%s\n'"'"' "" "- Audit Result:" "  ** PASS **" "${a_output[@]}"
+       else
+          printf '"'"'%s\n'"'"' "" "- Audit Result:" "  ** FAIL **" " - Reason(s) for audit failure:" "${a_output2[@]}"
+          [ "${#a_output[@]}" -gt 0 ] && printf '"'"'%s\n'"'"' "- Correctly set:" "${a_output[@]}"
+       fi
+    }' 2>&1); printf '%s\n' "$o" | grep -q '\*\* PASS \*\*' || { echo "step1: script did not report PASS"; return 1; }; }; if alt0; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    vs=$(awk -F/ '/^\// && $NF != "nologin"' /etc/shells)
+    # "user home" for interactive users whose home is a plain user directory
+    tma_homes() { while IFS=: read -r u p uid gid c h sh; do
+      case "$u" in +*|-*) continue;; esac
+      printf '%s\n' "$vs" | grep -qxF -- "$sh" || continue
+      case "$h" in /|""|/bin*|/sbin*|/usr*|/etc*|/proc*|/sys*|/dev*|/boot*|/run*|/var/run*) continue;; esac
+      echo "$u $h"; done < /etc/passwd; }
+    tma_homes | while read -r u h; do
+      if [ ! -d "$h" ]; then
+        case "$h" in /home/*|/root) ;; *) continue;; esac
+        mkdir -p "$h" && chown "$u:$(id -gn "$u")" "$h" && chmod 0750 "$h"
+        continue
+      fi
+      [ "$(stat -Lc %U "$h")" = "$u" ] || chown "$u" "$h"
+      mo=$(stat -Lc %a "$h"); chmod "$(printf '%o' $((8#$mo & ~8#027 & 8#7777)))" "$h"
+    done
+    true
+  guidance: "If a local interactive users' home directory is undefined and/or doesn't exist, follow local site policy and perform one of the following: • Lock the user account • Remove the user from the system • Create a directory for the user. If undefined, edit /etc/passwd and add the absolute path to the directory to the last field of the user. Run the following script to: • Remove excessive permissions from local interactive users home directories • Update the home directory's owner #!/usr/bin/env bash #!/usr/bin/env bash { a_output=() a_output2=() a_exists2=() a_mode2=() a_owner2=() l_valid_shells=\"^($( awk -F\\/ '$NF != \"nologin\" {print}' /etc/shells | sed -rn '/^\\//{s,/,\\\\\\\\/,g;p}' | paste -s -d '|…"

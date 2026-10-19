@@ -1,0 +1,20 @@
+id: TMA-CISCO-ASA-1.11.5
+title: Ensure 'SNMP community string' is not the default string
+description: 'Sets a SNMP community string different from the default one. The SNMP community string is a key used both by the security appliance and the NMS server. The security appliance accepts or rejects the requests from the NMS is a valid key is submitted. Note: ''show running-config'' masks community strings as *****; export with ''more system:running-config'' for this check to be meaningful. Audited against the output of ''show running-config'' (run ''terminal pager 0'' first; ''more system:running-config'' also works and shows unmasked secrets).'
+target: cisco-asa
+level: 1
+severity: high
+tags:
+- cisco-asa
+- network
+- snmp
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.11.5 Ensure 'SNMP community string' is not the default string
+audit:
+  type: config_regex
+  pattern: (?m)(?i)^snmp-server community \"?(?:public|private)\"?(?:\s|$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Run the following command to configure the SNMP community string
+    snmp-server community <snmp_community_string> In a multi-context environment, run the same command in the context.

@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-4.8
+title: Ensure the set_user extension is installed
+description: 'PostgreSQL access to the superuser database role must be controlled and audited to prevent unauthorized access. Note: Prior to performing this audit you must create a roletree view. Passes when set_user is available and no login role is a superuser directly or through role membership (the benchmark sets postgres NOLOGIN; then run the scan with PGUSER set to a DBA role). Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.'
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authorization
+- superuser
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.8 Ensure the set_user extension is installed
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN EXISTS (SELECT 1 FROM pg_available_extensions WHERE name = 'set_user') AND NOT EXISTS (WITH RECURSIVE m(member, roleid) AS (SELECT member, roleid FROM pg_auth_members UNION SELECT m.member, a.roleid FROM m JOIN pg_auth_members a ON a.member = m.roleid) SELECT 1 FROM pg_roles r WHERE r.rolcanlogin AND (r.rolsuper OR EXISTS (SELECT 1 FROM m JOIN pg_roles s ON s.oid = m.roleid WHERE m.member = r.oid AND s.rolsuper))) THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Install set_user (dnf install set_user_18), add set_user to shared_preload_libraries, restart, CREATE EXTENSION set_user; GRANT EXECUTE ON FUNCTION set_user(text) to DBA login roles, then ALTER ROLE postgres NOLOGIN; and remove SUPERUSER/LOGIN or superuser role memberships from other login roles.

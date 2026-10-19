@@ -1,0 +1,18 @@
+id: TMA-EXCHANGE-2.2.9
+title: 'Ensure ''External send connector authentication: IgnoreStartTLS'' is set to ''False'''
+description: This policy setting specifies whether to ignore the StartTLS option offered by a remote sending server. StartTLS is a protocol command used to inform the email server that the email client wants to upgrade from an insecure connection to a secure one using TLS or SSL. Prints the number of Send connectors where IgnoreSTARTTLS is True (expected 0). Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- transport
+- tls
+reference: 'CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.2.9 Ensure ''External send connector authentication: IgnoreStartTLS'' is set to ''False'''
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-SendConnector -ErrorAction Stop | Where-Object { $_.IgnoreSTARTTLS -eq $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-SendConnector '<connector>' -IgnoreSTARTTLS $false

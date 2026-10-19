@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.7
+title: Ensure no duplicate group names exist
+description: 'Although the groupadd program will not let you create a duplicate group name, it is possible for an administrator to manually edit the /etc/group file and change the group name. If a group is assigned a duplicate group name, it will create and have access to files with the first GID for that group in /etc/group . Effectively, the GID is shared, which is a security problem. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.7 Ensure no duplicate group names exist
+audit:
+  type: command
+  command: 'command -v cut >/dev/null 2>&1 || exit 1; out=$( { cut -d: -f1 /etc/group | sort | uniq -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique names for the user groups. File group ownerships will automatically reflect the change as long as the groups have unique GIDs.

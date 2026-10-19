@@ -1,0 +1,24 @@
+id: TMA-ROS1-3.4.3.2
+title: Ensure a table exists
+description: 'Tables hold chains. Each table only has one address family and only applies to packets of this family. Tables can have one of five families. Applies when nftables is installed: the audit requires at least one nftables table. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.3.2 Ensure a table exists
+audit:
+  type: command
+  shell: bash
+  command: |-
+    t=$(nft list tables 2>/dev/null) || exit 1
+    [ -n "$t" ] && echo compliant || echo 'no nftables table'
+  expected_output: compliant
+  requires_file:
+  - /etc/nftables.conf
+remediation:
+  type: iac_patch
+  command: 'Run the following command to create a table in nftables # nft create table inet <table name> Example: # nft create table inet filter'

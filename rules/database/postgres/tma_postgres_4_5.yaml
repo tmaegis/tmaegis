@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-4.5
+title: Ensure excessive function privileges are revoked
+description: In certain situations, to provide the required functionality, PostgreSQL needs to execute internal logic (stored procedures, functions, triggers, etc.) and/or external code modules with elevated privileges. Counts SECURITY DEFINER functions outside pg_catalog/information_schema that are not owned by an extension, in the database it connects to (set PGDATABASE to check each database); accept justified functions as exceptions. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authorization
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.5 Ensure excessive function privileges are revoked
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE p.prosecdef AND n.nspname NOT IN ('pg_catalog','information_schema') AND p.proname NOT LIKE 'pgaudit%' AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.classid = 'pg_proc'::regclass AND d.objid = p.oid AND d.deptype = 'e')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Review each SECURITY DEFINER function; switch it with ALTER FUNCTION <name>(<args>) SECURITY INVOKER; or, if elevation is required, REVOKE EXECUTE ON FUNCTION <name>(<args>) FROM PUBLIC/<roles> so only the accounts that need it can run it.

@@ -1,0 +1,19 @@
+id: TMA-MYSQL-1.2
+title: Use Dedicated Least Privileged Account for MySQL Daemon/Service
+description: As with any service installed on a host, it can be provided with its own user context. Providing a dedicated user to the service provides the ability to precisely constrain the service within the larger host context. Passes when the running mysqld process does not run as root (the benchmark expects the mysql account).
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- service
+- os
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 1.2 Use Dedicated Least Privileged Account for MySQL Daemon/Service
+audit:
+  type: command
+  command: out=$(ps -eo user:32=,comm= 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '$2=="mysqld"||$2=="mariadbd"{n++; if($1=="root")r++} END{if(!n)print "not-running"; else if(r)print "runs-as-root"; else print "compliant"}'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run MySQL under a dedicated unprivileged account (normally mysql, no sudo rights, shell /bin/false): groupadd -r mysql; useradd -r -M -g mysql -d /var/lib/mysql -s /bin/false mysql; set user=mysql under [mysqld] or User=mysql in the systemd unit, then restart.'

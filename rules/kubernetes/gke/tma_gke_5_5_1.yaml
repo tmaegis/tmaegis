@@ -1,0 +1,21 @@
+id: TMA-GKE-5.5.1
+title: Use COS_CONTAINERD node images for GKE node pools
+description: Use COS_CONTAINERD node images for GKE node pools unless there is a specific workload requirement for Ubuntu or Windows. COS_CONTAINERD provides Container-Optimized OS with containerd, giving GKE nodes a Google maintained operating system image that is built, optimized, and hardened for running containers. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Every node pool is checked.
+target: gke
+level: 1
+severity: low
+tags:
+- gke
+- managed-services
+- registry
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.5.1 Use COS_CONTAINERD node images for GKE node pools
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container node-pools list --cluster "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(name,config.imageType)') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F '\t' 'NF && !(toupper($2)=="COS_CONTAINERD") {print $1 ": " $2}')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Update noncompliant GKE node pools to use COS_CONTAINERD unless there is a documented requirement for Ubuntu or Windows node images. This remediation changes the node image for the selected node pool and should be planned as a node pool upgrade activity. gcloud container clusters upgrade $CLUSTER_NAME \ --location=$LOCATION \ --project=$PROJECT_ID \ --node-pool=$NODE_POOL \ --image-type=COS_CONTAINERD After the upgrade completes, rerun the audit command and verify that the node pool reports COS_CONTAINERD. Validate workloads before and after the change, especially anything that depends on host level packages, Ubuntu specific behavior, Windows nodes, or Docker Engine access.

@@ -1,0 +1,30 @@
+id: TMA-BIND-5.2
+title: Securely Authenticate Dynamic Updates
+description: Dynamic updates are used to automate the updating of zones. Dynamic updates are typically used with DHCP; however, updates may include other records. The allow-update option allows deleting or adding any resource records of a zone except the SOA and NS records, and should not be used. The audit requires every allow-update list to contain only none or localhost and no update-policy to reference IP addresses. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- zone-transfer
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 5.2 Securely Authenticate Dynamic Updates
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    bad=$(printf '%s\n' "$flat" | grep -Eo '(^|[ ;{])allow-update \{[^}]*\}' | sed 's/.*allow-update {//; s/}$//' | tr ';' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$' | grep -Eiv '^("?none"?|"?localhost"?)$')
+    ip=$(printf '%s\n' "$flat" | grep -Eo 'update-policy \{[^}]*\}' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(/[0-9]+)?')
+    [ -n "$ip" ] && bad="$bad update-policy uses addresses: $ip"
+    [ -z "$bad" ] && echo compliant || { echo 'allow-update entries not allowed:'; printf '%s\n' "$bad" | sort -u; }
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: 'Perform the following steps for remediation: ; Remove any allow-update options from the global options configuration. ; Replace or add allow-update options to the zone files to specify a securely generated TSIG or SIG(0) key identifier, along with the appropriate domain or sub- domain, and the appropriate resource record type.'

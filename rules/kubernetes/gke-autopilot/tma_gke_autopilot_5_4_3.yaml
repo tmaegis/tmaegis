@@ -1,0 +1,23 @@
+id: TMA-GKE-AUTOPILOT-5.4.3
+title: Use DNS based access or private GKE control plane endpoints
+description: Use DNS based access or private GKE control plane endpoints to reduce Kubernetes API server exposure. Prefer DNS based control plane access where possible, and if IP based access is required, disable the external IP based endpoint or restrict it to trusted networks only. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke-autopilot
+level: 2
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+- network
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.4.3 Use DNS based access or private GKE control plane endpoints
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(controlPlaneEndpointsConfig.ipEndpointsConfig.enabled,controlPlaneEndpointsConfig.ipEndpointsConfig.enablePublicEndpoint,controlPlaneEndpointsConfig.dnsEndpointConfig.endpoint,controlPlaneEndpointsConfig.dnsEndpointConfig.allowExternalTraffic)') || exit 1
+    set -- $(printf '%s' "$out" | tr '\t' '|' | awk -F '|' '{for(i=1;i<=4;i++) printf "%s ", ($i=="" ? "-" : $i)}')
+    if [ "$2" = False ]; then echo compliant
+    elif [ "$1" = False ] && [ "$3" != - ] && [ "$4" = True ]; then echo compliant
+    else echo "noncompliant: ipEndpoints=$1 publicEndpoint=$2 dnsEndpoint=$3 allowExternalTraffic=$4"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediate existing GKE clusters by updating the control plane access configuration. Recreating the cluster is not required for this control. Choose the access model that matches the organization’s approved management path. Method 1: Use DNS based control plane access and disable IP based endpoint access where appropriate: gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-dns-access \ --no-enable-ip-access Method 2: Use IP based access with the external endpoint disabled and the private endpoint enabled: gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-ip-access \ --enable-private-endpoint If the public IP based endpoint must remain enabled, restrict it with authorized networks and use only approved CIDR ranges.'

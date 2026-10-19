@@ -1,0 +1,77 @@
+id: TMA-FREEBSD-4.2.8
+title: Ensure sshd DisableForwarding is enabled
+description: 'The DisableForwarding parameter disables all forwarding features, including X11, ssh-agent(1), TCP, and StreamLocal. This option overrides all other forwarding-related options and may simplify restricted configurations. X11Forwarding allows tunneling X11 traffic through the connection to enable remote graphic connections. Audit: evaluates the effective configuration from `sshd -T` (Match blocks must be reviewed separately).'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- ssh
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.2.8 Ensure sshd DisableForwarding is enabled
+audit:
+  type: command
+  command: 'command -v sshd >/dev/null 2>&1 || exit 1; out=$(sshd -T 2>/dev/null) || exit 1; r=compliant; for p in ''^disableforwarding[[:blank:]]+yes$''; do printf ''%s\n'' "$out" | grep -Eiq -- "$p" || r="not matched: $p"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+
+    tma_sshd=$(command -v sshd 2>/dev/null || echo /usr/sbin/sshd)
+    tma_sshd_reload() {
+      if [ -s /var/run/sshd.pid ]; then kill -HUP "$(cat /var/run/sshd.pid)" 2>/dev/null
+      elif command -v svcadm >/dev/null 2>&1; then svcadm refresh svc:/network/ssh:default 2>/dev/null; fi
+      return 0
+    }
+    # tma_sshd_set KEYWORD VALUE: make KEYWORD the first (effective) global setting, comment older ones,
+    # validate with sshd -t before replacing sshd_config.
+    tma_sshd_set() {
+      kw=$1; val=$2; cfg=/etc/ssh/sshd_config
+      [ -f "$cfg" ] || { echo "no $cfg"; return 0; }
+      cur=$(awk -v kw="$kw" 'BEGIN{n=split(kw,a," ")} tolower($1)=="match"{exit} {ok=1; for(i=1;i<=n;i++) if(tolower($i)!=tolower(a[i])) ok=0; if(ok) print}' "$cfg" | awk '{$1=$1; print}')
+      want=$(printf '%s %s' "$kw" "$val" | tr 'A-Z' 'a-z'); have=$(printf '%s' "$cur" | tr 'A-Z' 'a-z')
+      [ "$have" = "$want" ] && return 0
+      tma_bk "$cfg"; t="$cfg.tma.$$"
+      { printf '%s %s\n' "$kw" "$val"
+        awk -v kw="$kw" 'BEGIN{n=split(kw,a," "); m=0} { if (tolower($1)=="match") m=1; ok=!m; for(i=1;i<=n&&ok;i++) if(tolower($i)!=tolower(a[i])) ok=0; if (ok) print "#TMAegis# " $0; else print }' "$cfg"; } > "$t"
+      if "$tma_sshd" -t -f "$t" >/dev/null 2>&1; then cat "$t" > "$cfg"; rm -f "$t"; tma_sshd_reload
+      else rm -f "$t"; echo "sshd_config would be invalid after setting $kw; left unchanged" >&2; return 1; fi
+    }
+    # tma_other_admin MINUID: a non-root account with a login shell exists (do not lock the operator out)
+    tma_other_admin() { awk -F: -v m="$1" '$1!="root" && $3>=m && $7!~/(nologin|false)$/ {f=1} END{exit !f}' /etc/passwd; }
+    # tma_ssh_minver MAJOR MINOR: installed OpenSSH >= MAJOR.MINOR (needed for the "-algorithm" removal syntax)
+    tma_ssh_minver() {
+      v=$(ssh -V 2>&1 | sed -n 's/^OpenSSH_\([0-9]*\)\.\([0-9]*\).*/\1 \2/p'); [ -n "$v" ] || return 1
+      set -- $v "$1" "$2"; [ "$1" -gt "$3" ] || { [ "$1" -eq "$3" ] && [ "$2" -ge "$4" ]; }
+    }
+    tma_sshd_set DisableForwarding 'yes'
+  guidance: "Edit the /etc/ssh/sshd_config file to set the parameter above any Include entries as follows: DisableForwarding yes"

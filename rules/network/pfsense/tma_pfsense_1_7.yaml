@@ -1,0 +1,23 @@
+id: TMA-PFSENSE-1.7
+title: Ensure 'DNS Rebind Check' is unchecked
+description: Ensure that the 'DNS Rebind Check' feature is unchecked to protect against DNS rebinding attacks. FAILs when 'Disable DNS Rebinding Checks' is ticked (<nodnsrebindcheck> present); the CIS title means this box must stay unchecked. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- hardening
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 1.7 Ensure 'DNS Rebind Check' is unchecked
+audit:
+  type: config_regex
+  pattern: <nodnsrebindcheck(?:\s*/>|>[^<]*</nodnsrebindcheck>)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: System > Advanced > Admin Access: clear Disable DNS Rebinding Checks, Save.
+    # CIS guidance:
+    In the GUI
+    -
+    Navigate to System > Advance
+    - Uncheck on 'DNS Rebind Check' Field

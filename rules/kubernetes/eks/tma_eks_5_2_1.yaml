@@ -1,0 +1,21 @@
+id: TMA-EKS-5.2.1
+title: Prefer using dedicated EKS Service Accounts
+description: Using dedicated Kubernetes service accounts for EKS workloads helps isolate AWS permissions by application, job, or trust boundary instead of sharing a single identity across multiple workloads. This supports more controlled access to AWS services and reduces the blast radius if one workload is compromised or misconfigured. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Reports pods running as the namespace default service account.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- managed-services
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.2.1 Prefer using dedicated EKS Service Accounts
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.serviceAccountName}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($3=="default" || $3=="<no")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Use dedicated Kubernetes service accounts for EKS workloads and associate AWS permissions to those service accounts instead of relying on the namespace default service account or broad worker node IAM permissions. Prefer EKS Pod Identity where supported, and use IRSA where Pod Identity is not supported or where IRSA is specifically required. Create one dedicated service account and one least-privilege IAM role for each application or distinct permission boundary, and update workload manifests to reference the intended service account explicitly. Disable automatic service account token mounting for workloads that do not need Kubernetes API access. After migrating workloads to dedicated service accounts, restrict access to the worker node instance profile so pods cannot inherit broader node credentials.

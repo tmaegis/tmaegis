@@ -1,0 +1,17 @@
+id: TMA-M365-REMOTE-DOMAIN-FORWARD
+title: Ensure automatic forwarding is disabled on the default remote domain
+description: 'The Default remote domain AutoForwardEnabled setting is a second layer that stops auto-forwarded and auto-replied mail leaving the organization. Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 2
+severity: medium
+tags:
+- m365
+- mail-flow
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange Online / Remote domains - automatic forwarding (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $d = Get-RemoteDomain -Identity Default -ErrorAction Stop; if ($d.AutoForwardEnabled -eq $false) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-RemoteDomain -Identity Default -AutoForwardEnabled $false

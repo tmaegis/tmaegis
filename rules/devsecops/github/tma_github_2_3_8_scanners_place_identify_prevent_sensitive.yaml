@@ -1,0 +1,24 @@
+id: TMA-GITHUB-2.3.8
+title: Ensure scanners are in place to identify and prevent sensitive data in pipeline files
+description: 'Detect and prevent sensitive data, such as confidential ID numbers, passwords, etc., in pipelines. Sensitive data in pipeline configuration, such as cloud provider credentials or repository credentials, create vulnerabilities with which malicious actors could steal such information if they gain access to a pipeline. security_and_analysis.secret_scanning_push_protection.status must be enabled, so secrets in pipeline files are detected and blocked on push. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: medium
+tags:
+- github
+- build-pipelines
+reference: CIS GitHub Benchmark v1.2.0 - 2.3.8 Ensure scanners are in place to identify and prevent sensitive data in pipeline files
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    v=$(gh api "repos/$R" --jq '.security_and_analysis.secret_scanning_push_protection.status' 2>/dev/null) || exit 1
+    [ "$v" = enabled ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Settings > Code security > Secret scanning > Push protection > Enable, so secrets in workflow and pipeline files are blocked before they land.

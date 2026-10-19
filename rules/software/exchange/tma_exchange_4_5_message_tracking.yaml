@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-4.5
+title: Ensure 'Message tracking logging' is set to 'True'
+description: '10/09/2026 1.0.1 UPDATE - All Recommendations: Updated CIS Controls mappings and added NIST 800-53r5 and CSF 2.0 06/30/2023 1.0.0 Initial Public Release Prints the number of transport services where MessageTrackingLogEnabled is not True (expected 0). Run on each Edge Transport and Mailbox server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.'
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- logging
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 4.5 Ensure 'Message tracking logging' is set to 'True'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-TransportService -ErrorAction Stop | Where-Object { $_.MessageTrackingLogEnabled -ne $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-TransportService '<server>' -MessageTrackingLogEnabled $true

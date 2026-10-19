@@ -1,0 +1,22 @@
+id: TMA-CISCO-ASA-2.4
+title: Ensure DHCP services are disabled for untrusted interfaces
+description: Disables the DHCP service. The ASA can act as a DHCP or DHCP Relay server. However, on untrusted interface, attacker can get the opportunity of the availability of the service to perform DoS attacks such as DHCP starvation that will exhaust not only the IP addresses' space but also the ... Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- management-plane
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 2.4 Ensure DHCP services are disabled for untrusted interfaces
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. - Step 1: Acquire the name of the untrusted interface <untrusted_interface_name> - Step 2: Run the following command to check if the DHCP service is enabled on the untrusted interface hostname# sh run | in dhcpd.enable.<untrusted_interface_name> Example: Extrnl-FW# sh run | in dhcpd.enable.outside dhcpd enable outside Here outside is the name of the untrusted interface. - Step 3: If there is no output displayed, go to the step 4. If not, it is a finding and the remediation procedure should be applied.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the name of the untrusted interface <untrusted_interface_name>
+    - Step 2: Run the following command to disable DHCP service on the untrusted interface
+    no dhcpd enable <untrusted_interface_name>
+    - Step 3: Run the following command to disable DHCP Relay service on the untrusted interface
+    no dhcprelay enable <untrusted_interface_name>

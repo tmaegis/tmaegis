@@ -1,0 +1,18 @@
+id: TMA-AZURE-7.5
+title: Ensure that Network Security Group Flow Log Retention Days is Set to Greater than or equal to 90
+description: Network security group flow logs should be enabled and the retention period set to greater than or equal to 90 days. Retirement Notice On September 30, 2027, network security group (NSG) flow logs will be retired. As of June 30, 2025, creating new NSG flow logs is no longer possible. Azure recommends migrating to virtual network flow logs. Review https://azure.microsoft.com/en- us/updates?id=Azure-NSG-flow-logs-Retirement for more information. For virtual network flow logs, consider applying the recommendation Ensure that virtual network flow log retention days is set to greater than or equal to 90 in this section. Flow logs enable capturing information about IP traffic flowing in and out of network security groups. Logs can be used to check for anomalies and give insight into suspected breaches.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- logging
+- network
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 7.5 Ensure that Network Security Group Flow Log Retention Days is Set to Greater than or equal to 90
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Network Watcher. 2. Under Logs, select Flow logs. 3. Click the name of a network security group flow log. 4. Ensure that Status is set to On. 5. Ensure that Retention days is set to 0, 90, or a number greater than 90. If Retention days is set to 0, the logs are retained indefinitely with no retention policy. 6. Repeat steps 1-5 for each network security group flow log. Audit from Azure CLI Run the following command to list network watchers: az network watcher list Run the following command to list the name and retention policy of flow logs in a network watcher: az network watcher flow-log list --location <location> --query [*].[name,retentionPolicy] For each network security group flow log, ensure that enabled is set to true, and days is set to 0, 90, or a number greater than 90. If days is set to 0, the logs are retained indefinitely with no retention policy.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Network Watcher. 2. Under Logs, select Flow logs. 3. Click the name of a network security group flow log. 4. Set Status to On. 5. Set Retention days to 0, 90, or a number greater than 90. If Retention days is set to 0, the logs are retained indefinitely with no retention policy. 6. Click Save. 7. Repeat steps 1-6 for each network security flow log requiring remediation. Remediate from Azure CLI For each network security group flow log requiring remediation, run the following command to enable the flow log and set retention to 0, 90, or a number greater than 90: az network watcher flow-log configure --nsg <network-security-group> -- enabled true --resource-group <resource-group> --retention <number-of-days> - -storage-account <storage-account>'

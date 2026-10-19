@@ -1,0 +1,23 @@
+id: TMA-GKE-4.3.2
+title: Define default deny NetworkPolicies for each workload namespace
+description: Use NetworkPolicy objects to define default deny traffic controls for each GKE workload namespace, then add explicit allow rules for approved pod, service, namespace, ingress, and egress communication paths. GKE uses NetworkPolicy enforcement to create pod level firewall rules that control which Pods and Services can communicate inside the cluster. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Checks NetworkPolicy enforcement (Dataplane V2, or Calico with the add-on enabled), as in the benchmark audit; default-deny policies per namespace still need review.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- policies
+- network
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.3.2 Define default deny NetworkPolicies for each workload namespace
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(networkConfig.datapathProvider,networkPolicy.enabled,networkPolicy.provider,addonsConfig.networkPolicyConfig.disabled)') || exit 1
+    set -- $(printf '%s' "$out" | tr '\t' ' ')
+    if [ "${1:-}" = ADVANCED_DATAPATH ]; then echo compliant
+    elif [ "${2:-}" = True ] && [ "${3:-}" = CALICO ] && [ "${4:-False}" != True ]; then echo compliant
+    else echo "noncompliant: $out"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For noncompliant GKE Standard clusters, update the cluster build standard so a supported NetworkPolicy enforcement option is selected during cluster creation. Use GKE Dataplane V2 where possible, or Calico based NetworkPolicy enforcement where Dataplane V2 is not used. GKE Dataplane V2 is selected only during cluster creation, and existing clusters cannot be upgraded to use it. • Select GKE Dataplane V2 when creating new or replacement GKE Standard clusters, because NetworkPolicy enforcement is built into Dataplane V2. • For legacy datapath clusters, enable Calico based NetworkPolicy enforcement by enabling both the NetworkPolicy add-on and node enforcement. • Plan remediation during an approved maintenance window because enabling Calico based enforcement on existing legacy datapath clusters recreates nodes and can disrupt running workloads.

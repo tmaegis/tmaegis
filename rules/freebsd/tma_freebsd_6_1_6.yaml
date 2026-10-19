@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.1.6
+title: Ensure no unowned or ungrouped files or directories exist
+description: 'Administrators may delete users or groups from the system and neglect to remove all files and/or directories owned by those users or groups. A new user or group who is assigned a deleted user''s user ID or group ID may then end up "owning" a deleted user or group''s files, and thus have more access on the system than was intended. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.1.6 Ensure no unowned or ungrouped files or directories exist
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / -xdev \( -nouser -o -nogroup \) -print ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove or set ownership and group ownership of these files and/or directories to an active user on the system as appropriate.

@@ -1,0 +1,17 @@
+id: TMA-FLASHARRAY-2.8
+title: Ensure at least 3 NTP servers and an NTP symmetric key are configured
+description: 'The network time protocol (NTP) allows time to be synchronized between devices on a network. Everpure recommends the following: ; Configure at least 3 NTP servers. ; Configure an NTP symmetric key. Note: The NTP symmetric key cannot be configured through the GUI. This can only be done through the CLI. Passes when at least three comma-separated NTP servers and an NTP symmetric key are configured. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "purearray list --ntp --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 2
+severity: low
+tags:
+- flasharray
+- storage
+- encryption
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 2.8 Ensure at least 3 NTP servers and an NTP symmetric key are configured
+audit:
+  type: config_regex
+  pattern: (?is)(?:ntp[ _-]?servers?[ \t]*[=:]?[ \t]*[^\s,]+[ \t]*,[ \t]*[^\s,]+[ \t]*,[ \t]*[^\s,]+.*ntp[ _-]?symmetric[ _-]?key[ \t]*[=:]?[ \t]*[^\s-]|ntp[ _-]?symmetric[ _-]?key[ \t]*[=:]?[ \t]*[^\s-].*ntp[ _-]?servers?[ \t]*[=:]?[ \t]*[^\s,]+[ \t]*,[ \t]*[^\s,]+[ \t]*,[ \t]*[^\s,]+)
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, configure at least three NTP servers and secure the communication using an NTP symmetric key. From the GUI: ; Navigate to Settings > System. ; In the Time panel, locate the NTP Servers section. ; In the New NTP Server(s) text box, type the hostname or IP address of your NTP servers (you can enter multiple servers as comma-separated values). ; Click the Add button. Ensure you have added at least three servers. From the CLI: ; Configure at least three NTP servers: Specify the servers using the purearray setattr command. ; Command Syntax: purearray setattr --ntpserver <SERVER1>,<SERVER2>,<SERVER3>'

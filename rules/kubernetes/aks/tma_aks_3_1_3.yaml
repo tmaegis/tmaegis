@@ -1,0 +1,25 @@
+id: TMA-AKS-3.1.3
+title: Ensure that the azure.json file has permissions set to 644 or more restrictive
+description: The azure.json file in an AKS worker node contains Azure cloud provider configuration used by Kubernetes and related components to interact with Azure resources such as networking, load balancing, and storage. Because this file may contain sensitive cloud configuration details, ensure that its permissions are set to 644 or more restrictive. Runs on each AKS node; SKIPs where /etc/kubernetes/azure.json is absent.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- worker-node
+- file-permissions
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.1.3 Ensure that the azure.json file has permissions set to 644 or more restrictive
+audit:
+  type: command
+  command: |-
+    set -f
+    f=""; for x in /etc/kubernetes/azure.json; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    p=$(stat -Lc %a "$f") || exit 1
+    if [ $((0$p & 0133)) -eq 0 ]; then echo compliant; else echo "noncompliant: $f mode $p"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/azure.json
+remediation:
+  type: command
+  command: chmod u-x,go-wx /etc/kubernetes/azure.json

@@ -1,0 +1,36 @@
+id: TMA-MACOS-5.1.1
+title: Ensure Home Folders Are Secure
+description: 'By default, macOS allows all valid users into the top level of every other user''s home folder and restricts access to the Apple default folders within. Another user on the same system can see you have a "Documents" folder but cannot see inside it. This configuration does work for personal file sharing but can expose user files to standard accounts on the system. Audit: Counts home folders under /System/Volumes/Data/Users not set to 700 (710/711 are accepted, per the benchmark alternative).'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 5.1.1 Ensure Home Folders Are Secure
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    out=$(/usr/bin/find /System/Volumes/Data/Users -mindepth 1 -maxdepth 1 -type d -not -perm 700 -not -perm 710 -not -perm 711 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | /usr/bin/grep -v "Shared" | /usr/bin/grep -v "Guest" | /usr/bin/grep -c . || true
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/find /System/Volumes/Data/Users -mindepth 1 -maxdepth 1 -type d -not -perm 700 -not -perm 710 -not -perm 711 2>/dev/null | /usr/bin/grep -v Shared | /usr/bin/grep -v Guest | while IFS= read -r p; do /bin/chmod 700 "$p"; done; true
+  guidance: "Terminal: sudo /bin/chmod -R og-rwx /Users/<username> Alternately, run the following command if there needs to be executable access for a home folder: ; sudo /bin/chmod -R og-rw /Users/<username> ; sudo /bin/chmod -R og-rw /Users/firstuser/."

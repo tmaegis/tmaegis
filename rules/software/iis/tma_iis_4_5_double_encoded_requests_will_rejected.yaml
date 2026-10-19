@@ -1,0 +1,19 @@
+id: TMA-IIS-4.5
+title: Ensure Double-Encoded requests will be rejected
+description: This Request Filter feature prevents attacks that rely on double-encoded requests and applies if an attacker submits a double-encoded request to IIS. When the double- encoded requests filter is enabled, IIS will go through a two iteration process of normalizing the request. If the first normalization differs from the second, the request is rejected and the error code is logged as a 404.11. requestFiltering allowDoubleEscaping must be false at server level and for every site. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.5 Ensure Double-Encoded requests will be rejected
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT/APPHOST') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.webServer/security/requestFiltering' -PSPath $_; $c.allowDoubleEscaping -ne $false }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/requestFiltering -Name allowDoubleEscaping -Value False

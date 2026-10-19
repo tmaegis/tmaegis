@@ -1,0 +1,21 @@
+id: TMA-GKE-5.9.2
+title: Use CMEK protected boot disks for GKE node pools
+description: Use CMEK protected boot disks for GKE node pools so node boot disks are encrypted with approved Cloud KMS keys managed by the organization. This applies when creating a new cluster or creating a new node pool with the --boot-disk-kms-key setting. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Every node pool is checked.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+- secrets
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.9.2 Use CMEK protected boot disks for GKE node pools
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container node-pools list --cluster "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(name,config.bootDiskKmsKey)') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F '\t' 'NF && !($2!="") {print $1 ": " $2}')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: CMEK for node boot disks cannot be enabled, changed, or disabled in place for an existing node pool. To remediate a noncompliant node pool, create a replacement node pool with the approved Cloud KMS key, migrate workloads to the new node pool, validate workload health, and delete the old node pool after migration. Before creating the replacement node pool, grant the required Cloud KMS key access to the Compute Engine service agent for the cluster project. Create the replacement node pool with the approved boot disk type and Cloud KMS key. Current GKE CMEK boot disk guidance uses pd-standard or pd-ssd for this configuration.

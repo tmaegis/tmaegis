@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.31
+title: Ensure 'Enable strict MIME type checking for worker scripts' Is Enabled
+description: 'This setting controls the ability for Google Chrome to upgrade to HTTPS from HTTP while navigating to certain sites. It can be configured to either: - Disabled (0): Scripts for workers (Web Workers, Service Workers, etc.) use lax MIME type checking. Worker scripts with legacy MIME types, like text/ascii, will work. Rationale: Setting this policy will require worker scripts to use more secure and strict JavaScript MIME types and ones with legacy MIME Types will be rejected. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:StrictMimetypeCheckForWorkerScriptsEnabled (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.31 Ensure 'Enable strict MIME type checking for worker scripts' Is Enabled
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''StrictMimetypeCheckForWorkerScriptsEnabled'' -ErrorAction SilentlyContinue).''StrictMimetypeCheckForWorkerScriptsEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'StrictMimetypeCheckForWorkerScriptsEnabled' -Value 1 -PropertyType DWord -Force | Out-Null

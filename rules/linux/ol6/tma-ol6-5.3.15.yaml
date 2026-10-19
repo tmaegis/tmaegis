@@ -1,0 +1,21 @@
+id: TMA-OL6-5.3.15
+title: Ensure only strong MAC algorithms are used
+description: 'This variable Specifies the available MAC (message authentication code) algorithms. The MAC algorithm is used in protocol version 2 for data integrity protection. Multiple algorithms must be comma-separated. Notes: • Some organizations may have stricter requirements for approved MACs. Ensure that MACs used are in compliance with site policy. • The only "strong" MACs currently FIPS 140-2 approved are hmac-sha2-256 and hmac- sha2-512'
+target: linux
+os_family:
+- ol-6
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 6 Benchmark v2.0.0 - 5.3.15
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''sshd -T -C user=root -C host="$(hostname)" -C addr="$(grep $(hostname) /etc/hosts | awk ''"''"''{print $1}''"''"'')" | grep -Ei ''"''"''^\s*macs\s+([^#]+,)?(hmac- md5|hmac-md5-96|hmac-ripemd160|hmac-sha1|hmac-sha1-96|umac- 64@openssh\.com|hmac-md5-etm@openssh\.com|hmac-md5-96-etm@openssh\.com|hmac- ripemd160-etm@openssh\.com|hmac-sha1-etm@openssh\.com|hmac-sha1-96- etm@openssh\.com|umac-64-etm@openssh\.com|umac-128-etm@openssh\.com)\b''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; o=$(bash -c ''grep -Ei ''"''"''^\s*macs\s+([^#]+,)?(hmac-md5|hmac-md5-96|hmac-ripemd160|hmac- sha1|hmac-sha1-96|umac-64@openssh\.com|hmac-md5-etm@openssh\.com|hmac-md5-96- etm@openssh\.com|hmac-ripemd160-etm@openssh\.com|hmac-sha1- etm@openssh\.com|hmac-sha1-96-etm@openssh\.com|umac-64-etm@openssh\.com|umac- 128-etm@openssh\.com)\b''"''"'' /etc/ssh/sshd_config'' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; };
+    if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/ssh/sshd_config file and add/modify the MACs line to contain a comma separated list of the site approved MACs Example: MACs hmac-sha2-512,hmac-sha2-256'

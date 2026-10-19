@@ -1,0 +1,19 @@
+id: TMA-MYSQL-2.6
+title: Ensure Non-Default, Unique Cryptographic Material is in Use
+description: The cryptographic material used by MySQL, such as digital certificates and encryption keys, should be used only for MySQL and only for one instance. Default cryptographic material should not be used since it is not unique to the instance.
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- tls
+- crypto
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.6 Ensure Non-Default, Unique Cryptographic Material is in Use
+audit:
+  type: manual
+  command: 'Review all cryptographic material: openssl x509 -in <datadir or ssl_cert>/server-cert.pem -subject -noout | grep Auto_Generated_Server_Certificate. Any output (auto-generated cert) or material shared with other instances/purposes is a finding.'
+remediation:
+  type: iac_patch
+  command: Issue a unique certificate and key from your CA for this instance, set ssl_cert/ssl_key/ssl_ca under [mysqld], and restart or run ALTER INSTANCE RELOAD TLS.

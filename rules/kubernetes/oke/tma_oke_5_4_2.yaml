@@ -1,0 +1,21 @@
+id: TMA-OKE-5.4.2
+title: Enable private OKE control plane access and disable public IP access
+description: This recommendation is the strict private access version of API endpoint hardening. The intended end state is that the Kubernetes API server is reachable only from inside the cluster VCN or from a connected private network, and there is no internet-reachable public API endpoint at all. This is a pure control plane exposure decision. Requires the oci CLI with read access to the cluster in OKE_CLUSTER_ID.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- managed-services
+- network
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.4.2 Enable private OKE control plane access and disable public IP access
+audit:
+  type: command
+  command: |-
+    pub=$(oci ce cluster get --cluster-id "${OKE_CLUSTER_ID:?set OKE_CLUSTER_ID}" --query 'data."endpoint-config"."is-public-ip-enabled"' --raw-output) || exit 1
+    ep=$(oci ce cluster get --cluster-id "${OKE_CLUSTER_ID:?set OKE_CLUSTER_ID}" --query 'data.endpoints."public-endpoint"' --raw-output) || exit 1
+    if [ "$pub" = false ] && { [ -z "$ep" ] || [ "$ep" = null ]; }; then echo compliant; else echo "noncompliant: is-public-ip-enabled=$pub public-endpoint=$ep"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Use private OKE control plane access by placing the Kubernetes API endpoint in a private subnet and disabling public IP assignment. This keeps Kubernetes API access on the VCN or an approved private network path. For a new cluster, create the Kubernetes API endpoint in a private subnet and do not assign a public IP address. oci ce cluster create \ --name $CLUSTER_NAME \ --compartment-id $COMPARTMENT_ID \ --vcn-id $VCN_OCID \ --kubernetes-version $KUBERNETES_VERSION \ --endpoint-subnet-id $PRIVATE_ENDPOINT_SUBNET_OCID \ --endpoint-public-ip-enabled false For an existing cluster, update the endpoint configuration so the Kubernetes API endpoint is not assigned a public IP address.

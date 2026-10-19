@@ -1,0 +1,16 @@
+id: TMA-NGINX-2.1.1
+title: Ensure only required dynamic modules are loaded
+description: 'NGINX functionality is provided by modules. These modules are either compiled statically into the NGINX binary or loaded dynamically at runtime via the load_module directive. Static Modules: These are fixed at compile time. When using official pre-built packages (e.g., from nginx.org or OS vendors), a standard set of modules is included and cannot be removed without recompiling NGINX. Dynamic Modules ... Manual review: the benchmark gives no reliable automated check for this control.'
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- configuration
+reference: CIS NGINX Benchmark v3.0.0 - 2.1.1 Ensure only required dynamic modules are loaded
+audit:
+  type: manual
+  command: '1. Audit Dynamic Modules (Actionable): Run the following command to check for actively loaded dynamic modules: nginx -T 2>/dev/null | grep "load_module" Evaluation: If the output is empty, no dynamic modules are loaded (PASS). If output exists (e.g., load_module modules/ngx_http_geoip_module.so;), verify that each listed module is required for the application''s business logic. 2. Audit Static Modules (Informational): Run the following command to list all modules compiled into the binary: nginx -V 2>&1 | grep -oEi ''\-\-(with|without)-[^ ]*'' Evaluation: Review the --with-...'
+remediation:
+  type: iac_patch
+  command: 'For Dynamic Modules: Open the main configuration file (/etc/nginx/nginx.conf) or the relevant include file (e.g., in /etc/nginx/modules-enabled/). Comment out or remove the load_module directive for any module that is not strictly necessary. For Static Modules: Since static modules cannot be removed from pre-built packages, ensure their directives are not used in your configuration. If a specific static module poses a critical risk to your environment, you must switch to a custom build or a different package flavor that excludes it.'

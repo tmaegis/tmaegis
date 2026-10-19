@@ -1,0 +1,18 @@
+id: TMA-TDSQL-6.10
+title: Ensure Sensitive OSS Query Interfaces Are Audited
+description: OSS audits write-type operations by default, but query interfaces can disclose account, topology, KMS, or other sensitive management information. Organizations must either audit all query interfaces or maintain an approved set of sensitive query interfaces that are explicitly audited.
+target: tdsql
+level: 2
+severity: low
+tags:
+- tdsql
+- logging
+- audit
+- oss
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 6.10 Ensure Sensitive OSS Query Interfaces Are Audited
+audit:
+  type: manual
+  command: 'Confirm one of the following through the supported OSS configuration: 1. query_interfaces_logged_in_audit = 1; or 2. query_interfaces_logged_in_audit = 0 and query_interfaces_audit_set contains the complete approved sensitive- interface list. At minimum, evaluate interfaces exposing users, cluster topology, KMS configuration, OSS users, and security settings. Invoke a non-destructive approved interface and confirm its record reaches both the OSS audit store and centralized destination.'
+remediation:
+  type: iac_patch
+  command: Enable full query auditing or configure the reviewed sensitive-interface set through the supported OSS configuration mechanism. Representative interfaces include TDSQL.ListUser, TDSQL.GetSetInfo, TDSQL.GetKmsConfig, TDSQL.GetClusterName, and TDSQL.GetOssUsers; derive the authoritative list from the deployed version and data-classification requirements.

@@ -1,0 +1,24 @@
+id: TMA-APACHE-5.14
+title: Ensure IP Address Based Requests Are Disallowed
+description: The Apache module mod_rewrite can be used to disallow access for requests that use an IP address instead of a host name for the URL. Most normal access to the website from browsers and automated software will use a host name which will therefore include the host name in the HTTP HOST header. Requires a RewriteCond %{HTTP_HOST} !<expected host> condition together with a RewriteRule using the [F] flag. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file.
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- features
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 5.14 Ensure IP Address Based Requests Are Disallowed
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk '{l=tolower($0)} l~/^rewritecond[[:space:]]+%\{http_host\}[[:space:]]+!/{c=1} l~/^rewriterule[[:space:]]/ && l~/\[([a-z,=]*,)?f(,[a-z,=]*)?\]/{r=1}
+    END{print (c&&r)?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: 'Add: RewriteCond %{HTTP_HOST} !^www\.example\.com [NC] / RewriteCond %{REQUEST_URI} !^/error [NC] / RewriteRule ^.(.*) - [L,F] Then run apachectl configtest and reload Apache.'

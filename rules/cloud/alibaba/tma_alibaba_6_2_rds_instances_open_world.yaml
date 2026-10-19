@@ -1,0 +1,37 @@
+id: TMA-ALIBABA-6.2
+title: Ensure that RDS Instances are not open to the world
+description: Database Server should accept connections only from trusted Network(s)/IP(s) and restrict access from the world. To minimize attack surface on a Database server Instance, only trusted/known and required IP(s) should be white-listed to connect to it. No IP whitelist group (DescribeDBInstanceIPArrayList SecurityIPList) may contain 0.0.0.0 or 0.0.0.0/0. Iterates every RDS region and instance (DescribeDBInstances). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- rds
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 6.2 Ensure that RDS Instances are not open to the world
+audit:
+  type: command
+  command: |-
+    regs=$(aliyun rds DescribeRegions 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$regs" | sed -n 's/.*"RegionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    [ -n "$regions" ] || exit 1
+    bad=0
+    for r in $regions; do
+      page=1
+      while :; do
+        out=$(aliyun rds DescribeDBInstances --RegionId "$r" --PageSize 100 --PageNumber "$page" 2>/dev/null) || exit 1
+        ids=$(printf '%s\n' "$out" | sed -n 's/.*"DBInstanceId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+        [ -n "$ids" ] || break
+        for i in $ids; do
+          w=$(aliyun rds DescribeDBInstanceIPArrayList --DBInstanceId "$i" 2>/dev/null) || exit 1
+          printf '%s\n' "$w" | sed -n 's/.*"SecurityIPList"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | tr ',' '\n' | grep -Eq '^[[:space:]]*0\.0\.0\.0(/0)?[[:space:]]*$' && { echo "whitelist open to the world: $r $i"; bad=1; }
+        done
+        set -- $ids
+        [ "$#" -lt 100 ] && break
+        page=$((page + 1))
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun rds ModifySecurityIps --DBInstanceId <id> --SecurityIps <trusted CIDRs> --DBInstanceIPArrayName <group> to replace 0.0.0.0/0 entries.

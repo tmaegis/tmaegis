@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-1.2.1
+title: Ensure that the SETROPTS INACTIVE value is set to a maximum of 45
+description: PASSWORD(INACTIVE(<nnn>)) command specifies the number of days (1 - 255) that a user ID can remain unused and still be considered valid. RACF user verification checks the number of days since the last successful time the user accessed the system against the INACTIVE value and, if the former is larger, revokes the user's right to use the system.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.2.1 Ensure that the SETROPTS INACTIVE value is set to a maximum of 45
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ATTRIBUTES = section. Verify that INITSTATS appears. Look for the following message: INACTIVE USERIDS ARE BEING AUTOMATICALLY REVOKED AFTER <nnn> DAYS. Verify the value is equal to or less than 45 days.'
+remediation:
+  type: iac_patch
+  command: 'To modify the INACTIVE parameter use the RACF SETROPTS command: SETROPTS INACTIVE(45) Notes: 1. INACTIVE does not apply to Protected user IDs. Protected user IDs are protected from being revoked through inactivity. 2. If the backup database is needed but does not contain current information, some user IDs can be revoked because they appear to have been unused beyond the number of days specified on the INACTIVE operand. For more information, see z/OS Security Server RACF System Programmer''s Guide. If you specify INACTIVE, INITSTATS must be in effect. To enable INITSTATS use the RACF SETROPTS command: SETROPTS INITSTATS'

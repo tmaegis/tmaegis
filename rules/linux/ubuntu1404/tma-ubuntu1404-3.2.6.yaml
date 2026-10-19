@@ -1,0 +1,44 @@
+id: TMA-UBUNTU1404-3.2.6
+title: Ensure bogus ICMP responses are ignored
+description: Setting icmp_ignore_bogus_error_responses to 1 prevents the kernel from logging bogus responses (RFC-1122 non-compliant) from broadcast reframes, keeping file systems from filling up with useless log messages.
+target: linux
+os_family:
+- ubuntu-14.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- kernel
+- linux
+- sysctl
+reference: CIS Ubuntu Linux 14.04 LTS Benchmark v2.1.0 ARCHIVE - 3.2.6
+audit:
+  type: command
+  shell: bash
+  command: 'chk() { p=$1; allowed=" $2 "; case $p in net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || return 0;; esac; v=$(sysctl -n "$p" 2>/dev/null) || { echo "$p: not available"; return 1; }; case "$allowed" in *" $v "*) ;; *) echo "$p is $v (running)"; return 1;; esac; sd=$(readlink -e /lib/systemd/systemd-sysctl || readlink -e /usr/lib/systemd/systemd-sysctl); f=$("$sd" --cat-config 2>/dev/null | grep -Po "^\h*${p//./\.}\h*=\h*\K\H+" | tail -n1); [ -n "$f" ] || { echo "$p is not set in any sysctl configuration file"; return 1; }; case "$allowed" in *" $f "*) ;; *) echo "$p is $f in configuration"; return 1;; esac; }; if chk net.ipv4.icmp_ignore_bogus_error_responses 1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=net.ipv4.icmp_ignore_bogus_error_responses; v=1
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+  guidance: "Set the following parameter in /etc/sysctl.conf or a /etc/sysctl.d/* file: net.ipv4.icmp_ignore_bogus_error_responses = 1 Run the following commands to set the active kernel parameters: # sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1 # sysctl -w net.ipv4.route.flush=1"

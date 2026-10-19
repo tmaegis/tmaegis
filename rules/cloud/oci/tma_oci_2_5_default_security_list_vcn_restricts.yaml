@@ -1,0 +1,36 @@
+id: TMA-OCI-2.5
+title: Ensure the default security list of every VCN restricts all traffic except ICMP within VCN
+description: A default security list is created when a Virtual Cloud Network (VCN) is created and attached to the public subnets in the VCN. Security lists provide stateful or stateless filtering of ingress and egress network traffic to OCI resources in the VCN. Removing unfettered connectivity to OCI resource, reduces a server's exposure to unauthorized access or data exfiltration. Each VCN's default security list may have no ingress rule from 0.0.0.0/0 and no all-protocol egress rule to 0.0.0.0/0. Covers every subscribed region and every accessible compartment. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: medium
+tags:
+- oci
+- network
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 2.5 Ensure the default security list of every VCN restricts all traffic except ICMP within VCN
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    cs=$(oci iam compartment list --compartment-id "$t" --compartment-id-in-subtree true --access-level ACCESSIBLE --all --query 'data[?"lifecycle-state"==`"ACTIVE"`].id' --raw-output 2>/dev/null) || exit 1
+    comps="$t $(printf '%s\n' "$cs" | grep -o 'ocid1\.compartment\.[^"]*')"
+    rs=$(oci iam region-subscription list --tenancy-id "$t" --query 'data[?status==`"READY"`]."region-name"' --raw-output 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$rs" | grep -o '"[a-z0-9-]*"' | tr -d '"')
+    [ -n "$regions" ] || exit 1
+    for r in $regions; do
+      for c in $comps; do
+        vs=$(oci network vcn list --compartment-id "$c" --region "$r" --all --query 'data[?"lifecycle-state"==`"AVAILABLE"`]."default-security-list-id"' --raw-output 2>/dev/null) || exit 1
+        for s in $(printf '%s\n' "$vs" | grep -o 'ocid1\.securitylist\.[^"]*'); do
+          n=$(oci network security-list get --security-list-id "$s" --region "$r" --query 'length(data."ingress-security-rules"[?source==`"0.0.0.0/0"`])' --raw-output 2>/dev/null) || exit 1
+          e=$(oci network security-list get --security-list-id "$s" --region "$r" --query 'length(data."egress-security-rules"[?destination==`"0.0.0.0/0"` && protocol==`"all"`])' --raw-output 2>/dev/null) || exit 1
+          [ "${n:-0}" -eq 0 ] && [ "${e:-0}" -eq 0 ] || { echo "default security list too open: $r $s"; bad=1; }
+        done
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit each VCN''s default security list: remove ingress rules from 0.0.0.0/0 and the all-protocol egress rule to 0.0.0.0/0, keeping only ICMP within the VCN; attach purpose-built security lists or NSGs instead.'

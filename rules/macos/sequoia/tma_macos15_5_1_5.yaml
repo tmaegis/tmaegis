@@ -1,0 +1,36 @@
+id: TMA-MACOS15-5.1.5
+title: Ensure Appropriate Permissions Are Enabled for System Wide Applications
+description: Applications in the System Applications Directory (/Applications) should be world- executable since that is their reason to be on the system. They should not be world- writable and allow any process or user to alter them for other processes or users to then execute modified versions. Some application vendors use a world-writable folder for their applications. This is against the standard practice on POSIX systems.
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 5.1.5 Ensure Appropriate Permissions Are Enabled for System Wide Applications
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    [ -d /System/Volumes/Data/Applications ] || exit 1
+    /usr/bin/find /System/Volumes/Data/Applications -iname "*.app" -type d -perm -2 -ls 2>/dev/null | /usr/bin/grep -v Xcode.app | /usr/bin/wc -l | /usr/bin/xargs
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/find /System/Volumes/Data/Applications -iname '*.app' -type d -perm -2 ! -path '*Xcode.app*' -exec /bin/chmod -R o-w {} + 2>/dev/null; true
+  guidance: "Terminal: IFS=$'\\n' for apps in $( sudo /usr/bin/find /System/Volumes/Data/Applications -iname \"*\\.app\" -type d -perm -2 | grep -v Xcode.app ); do sudo /bin/chmod -R o-w \"$apps\" done."

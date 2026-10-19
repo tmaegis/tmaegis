@@ -1,0 +1,29 @@
+id: TMA-ROS1-4.1.14
+title: Ensure kernel module loading and unloading is collected
+description: Monitor the loading and unloading of kernel modules. The programs insmod (install a kernel module), rmmod (remove a kernel module), and modprobe (a more sophisticated program to load and unload modules, as well as some other features) control loading and unloading of modules. The audit inspects the loaded rules (auditctl -l, 64-bit syscalls). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.14 Ensure kernel module loading and unloading is collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)modules( |$)' | grep -Fq -- '-w /sbin/insmod ' || { echo 'missing watch: -w /sbin/insmod -k modules'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)modules( |$)' | grep -Fq -- '-w /sbin/rmmod ' || { echo 'missing watch: -w /sbin/rmmod -k modules'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)modules( |$)' | grep -Fq -- '-w /sbin/modprobe ' || { echo 'missing watch: -w /sbin/modprobe -k modules'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)modules( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?init_module(,| |$)' || { echo 'missing b64 syscall rule: init_module -k modules'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)modules( |$)' | grep -F 'arch=b64' | grep -Eq -- '-S ([^ ]*,)?delete_module(,| |$)' || { echo 'missing b64 syscall rule: delete_module -k modules'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For 32 bit systems Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/modules.rules and add the following lines: -w /sbin/insmod -p x -k modules -w /sbin/rmmod -p x -k modules -w /sbin/modprobe -p x -k modules -a always,exit -F arch=b32 -S init_module -S delete_module -k modules For 64 bit systems Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/modules.rules and add the following lines: -w /sbin/insmod -p x -k modules -w /sbin/rmmod -p x -k modules -w /sbin/modprobe -p x -k modules -a always,exit -F arch=b64 -S init_module -S delete_module -k modules'

@@ -1,0 +1,26 @@
+id: TMA-F5-BIGIP-6.2
+title: Ensure minimum SNMP version is set to V3 for agent access
+description: 'To disable the usage of weak SNMP protocols FAILs if any SNMP v1/v2c community (community-name) is configured under sys snmp; define SNMPv3 users instead. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- snmp
+reference: CIS F5 Networks Benchmark v1.0.0 - 6.2 Ensure minimum SNMP version is set to V3 for agent access
+audit:
+  type: config_regex
+  pattern: (?m)^sys snmp \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+community-name \S+
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys snmp communities delete { <community> }
+    tmsh modify sys snmp users add { v3user { username v3user auth-protocol sha auth-password <pw> privacy-protocol aes privacy-password <pw> security-level auth-privacy } }
+    tmsh save sys config
+    # CIS guidance:
+    1-Login to Configuration utility
+    2- Go to System > SNMP > Agent > SNMP Access (v1, v2c) :
+    Select all listed entries and click "Delete"
+    3-Go to System > SNMP > Agent > SNMP Access (v3) :
+    Make sure there is one entry at least , otherwise create one.

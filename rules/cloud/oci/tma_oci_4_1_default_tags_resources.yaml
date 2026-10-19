@@ -1,0 +1,22 @@
+id: TMA-OCI-4.1
+title: Ensure default tags are used on resources
+description: Using default tags is a way to ensure all resources that support tags are tagged during creation. Tags can be based on static or computed values. It is recommended to set up default tags early after root compartment creation to ensure all created resources will get tagged. In the case of an incident having default tags like "CreatedBy" applied will provide info on who created the resource without having to search the Audit logs. The root compartment must have at least one ACTIVE tag default whose value is ${iam.principal.name}. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: low
+tags:
+- oci
+- logging
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 4.1 Ensure default tags are used on resources
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    n=$(oci iam tag-default list --compartment-id "$t" --all --query 'length(data[?"lifecycle-state"==`"ACTIVE"` && value==`"${iam.principal.name}"`])' --raw-output 2>/dev/null) || exit 1
+    [ "${n:-0}" -ge 1 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a tag namespace and key (e.g. CreatedBy), then a tag default on the root compartment with value ${iam.principal.name} (oci iam tag-default create --compartment-id <tenancy> --tag-definition-id <ocid> --value '${iam.principal.name}').

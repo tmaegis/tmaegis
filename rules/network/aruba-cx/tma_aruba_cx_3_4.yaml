@@ -1,0 +1,23 @@
+id: TMA-ARUBA-CX-3.4
+title: IP Source Lockdown
+description: IP source lockdown provides added security by preventing IP source address spoofing on a per-port basis. Every packet is inspected for this purpose in hardware. When IP source lockdown is enabled, IP traffic received on an interface (port) is forwarded only if the VLAN, IP address, MAC address, and interface (port) match the IP binding database entry. To use IP source lockdown, the IP binding database must be populated. The binding database is dynamically populated by DHCP snooping that learns and saves the binding information. Alternatively, the IP binding database can be statically populated with the iP source-binding command.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- layer2
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.4 IP Source Lockdown
+audit:
+  type: manual
+  command: Run 'show ipv4 source-lockdown' / 'show ipv6 source-lockdown' (and 'show ipv4 source-binding') and confirm source lockdown is enabled on untrusted access ports, with static bindings for statically addressed hosts.
+remediation:
+  type: iac_patch
+  command: |-
+    To enable IP source lockdown resource extended on the device (supports dynamically sharing hardware resources of IP source lockdown with other features) -
+    ip source-lockdown resource-extended
+    To enable IPv4/IPv6 source lockdown for all VLANs on the selected interface (port) -
+    interface <interface-id>
+    ipv4 source-lockdown
+    ipv6 source-lockdown
+    To add static IPv4/IPv6 client source binding information to the switch IPv4/IPv6 binding database - Ipv4 source-binding <VLAN-ID> <IPV4-ADDR> <MAC-ADDR> <IFNAME> ipv6 source-binding <VLAN-ID> <IPV6-ADDR> <MAC-ADDR> <IFNAME>

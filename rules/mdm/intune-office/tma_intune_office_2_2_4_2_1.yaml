@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.2.1
+title: Ensure 'Internet and network paths as hyperlinks' is set to 'Disabled'
+description: 'This policy setting determines whether Excel automatically creates hyperlinks when users enter URL or UNC path information. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) autohyperlink that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.2.1 Ensure 'Internet and network paths as hyperlinks' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\options'') -Name ''autohyperlink'' -ErrorAction SilentlyContinue).''autohyperlink''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':autohyperlink='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Excel 2016\Excel Options\Autocorrect Options\Internet and Network Paths as Hyperlinks'

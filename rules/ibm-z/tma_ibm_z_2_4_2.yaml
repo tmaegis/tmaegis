@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.4.2
+title: Ensure that access to TSOAUTH resources is controlled
+description: The TSOAUTH resource class controls sensitive privileges. Several of these privileges offer the ability, or provide a facility, to modify sensitive operating system resources. Failure to control and restrict access to these privileges may result in the compromise of the operating system environment, RACF, and customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.4.2 Ensure that access to TSOAUTH resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that TSOAUTH appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that TSOAUTH appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that TSOAUTH appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the TSOAUTH entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries for the following resources: o ACCT o CONSOLE o MOUNT o OPER o PARMLIB o ... (full steps: CIS section 2.4.2)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(TSOAUTH) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(TSOAUTH) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(TSOAUTH) To create a TSOAUTH profile use the RACF RDEFINE and PERMIT commands: RDEFINE TSOAUTH ACCT + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''ACCOUNT, SYNC, AND RACONVRT COMMANDS'') RDEFINE TSOAUTH CONSOLE + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''CONSOLE AND CONSPROF COMMANDS'') RDEFINE TSOAUTH MOUNT + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''ACCESS TO ISSUE DYNAMIC ALLOCATION REQUESTS THAT RESULT - IN THE NEED FOR VOLUME MOUNTING'') RDEFINE TSOAUTH OPER + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''OPERATOR COMMAND'') RDEFINE TSOAUTH PARMLIB + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''PARMLIB COMMAND'') RDEFINE TSOAUTH TESTAUTH + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''TESTAUTH COMMAND'') PERMIT <profile>
+    CLASS(TSOAUTH) + ACCESS(<level>) ID(compliant-entry) SETROPTS REFRESH RACLIST(TSOAUTH) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER ... (see CIS section 2.4.2)'

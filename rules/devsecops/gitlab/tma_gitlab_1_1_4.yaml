@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.1.4
+title: Ensure previous approvals are dismissed when updates are introduced to a code change proposal
+description: Ensure that when a proposed code change is updated, previous approvals are declined, and new approvals are required. An approval process is necessary when code changes are suggested. Through this approval process, however, changes can still be made to the original proposal even after some approvals have already been given. This means malicious code can find its way into the code base even if the organization has enforced a review policy. To ensure this is not possible, outdated approvals must be declined when changes to the suggestion are introduced.
+target: gitlab
+level: 1
+severity: high
+tags:
+- devsecops
+- gitlab
+- patching
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.4 Ensure previous approvals are dismissed when updates are introduced to a code change proposal
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each code repository in use, perform the next steps to enforce dismissal of given approvals to code change suggestions if those suggestions were updated: - On GitLab, navigate to the main page of a repository. - Navigate to Settings > Merge Requests. - Click Expand next to the Merge Request Approvals section. - Configure approval rules and a list of eligible approvers for all protected branches (or all branches). - Select Remove all approvals under "When a commit is added". - Click Save changes'

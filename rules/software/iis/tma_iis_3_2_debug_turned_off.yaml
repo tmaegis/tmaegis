@@ -1,0 +1,19 @@
+id: TMA-IIS-3.2
+title: Ensure 'debug' is turned off
+description: Developers often enable the debug mode during active ASP.NET development so that they do not have to continually clear their browsers cache every time they make a change to a resource handler. The problem would arise from this being left "on" or set to "true". Compilation debug output is displayed to the end user, allowing malicious persons to obtain detailed information about applications. compilation debug must be false in the root web.config and every site. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- aspnet
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.2 Ensure 'debug' is turned off
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.web/compilation' -PSPath $_; $c.debug -ne $false }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST/<site>' -Filter system.web/compilation -Name debug -Value False

@@ -1,0 +1,51 @@
+id: TMA-MACOS15-3.5
+title: Ensure Access to Audit Records Is Controlled
+description: 'The audit system on macOS writes important operational and security information that can be both useful for an attacker and a place for an attacker to attempt to obfuscate unwanted changes that were recorded. As part of defense-in-depth, the /etc/security/audit_control configuration and the files in /var/audit should be owned only by root with group wheel with read-only rights and no other access allowed. Audit: audit_control and the audit log directory must be owned by root:wheel (uid/gid 0) and mode -r--r-----.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- logging-auditing
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 3.5 Ensure Access to Audit Records Is Controlled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    f=/etc/security/audit_control
+    [ -e "$f" ] || exit 1
+    d=$(/usr/bin/grep '^dir' "$f" | /usr/bin/awk -F: '{print $2}')
+    [ -n "$d" ] && [ -d "$d" ] || exit 1
+    r1=$(/bin/ls -n "$f" | /usr/bin/awk '{s+=$3} END {print s+0}')
+    r2=$(/bin/ls -n "$f" | /usr/bin/awk '{s+=$4} END {print s+0}')
+    r3=$(/bin/ls -n "$f" | /usr/bin/awk '!/-r--r-----|current|total/{print $1}' | /usr/bin/wc -l | /usr/bin/tr -d ' ')
+    r4=$(/bin/ls -n "$d" | /usr/bin/awk '{s+=$3} END {print s+0}')
+    r5=$(/bin/ls -n "$d" | /usr/bin/awk '{s+=$4} END {print s+0}')
+    r6=$(/bin/ls -n "$d" | /usr/bin/awk '!/-r--r-----|current|total/{print $1}' | /usr/bin/wc -l | /usr/bin/tr -d ' ')
+    if [ "$r1$r2$r3$r4$r5$r6" = 000000 ]; then echo compliant; else echo "owner/group/mode checks: $r1 $r2 $r3 $r4 $r5 $r6"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    f=/etc/security/audit_control
+    [ -e "$f" ] || exit 1
+    d=$(/usr/bin/grep '^dir' "$f" | /usr/bin/awk -F: '{print $2}')
+    [ -n "$d" ] && [ -d "$d" ] || exit 1
+    /usr/sbin/chown root:wheel "$f"; /bin/chmod 440 "$f"
+    for x in "$d"/* "$d"/.[!.]*; do [ -f "$x" ] && [ ! -L "$x" ] && { /usr/sbin/chown root:wheel "$x"; /bin/chmod 440 "$x"; }; done
+    /usr/sbin/chown root:wheel "$d"; true
+  guidance: "Terminal: sudo /usr/sbin/chown -R root:wheel /etc/security/audit_control ; sudo /bin/chmod -R 700 /etc/security/audit_control ; sudo /usr/sbin/chown -R root:wheel $(sudo /usr/bin/grep '^dir' /etc/security/audit_control | /usr/bin/awk -F: '{print $2}')."

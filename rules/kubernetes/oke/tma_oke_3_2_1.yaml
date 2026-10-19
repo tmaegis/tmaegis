@@ -1,0 +1,26 @@
+id: TMA-OKE-3.2.1
+title: Ensure kubelet anonymous authentication is disabled
+description: In Oracle OKE, this control means the kubelet on managed or self managed worker nodes must not accept unauthenticated requests. OKE worker nodes run kubelet to communicate with the cluster control plane, and kubelet behavior can be configured through supported worker node startup or provisioning configuration. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.
+target: oke
+level: 1
+severity: critical
+tags:
+- oke
+- worker-node
+- kubelet
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 3.2.1 Ensure kubelet anonymous authentication is disabled
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"anonymous":\{"enabled":false\}'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns true, the worker node is allowing anonymous requests to the kubelet and should be treated as noncompliant. If the result is null or the field is missing, first confirm the configz response is complete, because Kubernetes identifies that endpoint as the view of the kubelet’s final effective configuration. Once the result is validated, remediation in OKE should be performed through the supported worker node provisioning or node update workflow, not by directly editing the kubelet config file on the host. OKE supports custom cloud-init scripts for managed nodes, and the corrected setting should be applied by creating, cycling, or replacing worker nodes. Remediation of new cluster When creating a new OKE cluster or node pool, the goal is to ensure worker nodes join the cluster with kubelet anonymous authentication already disabled.

@@ -1,0 +1,18 @@
+id: TMA-AZURE-5.3.5
+title: Ensure Disabled User Accounts do not Have Read, Write, or Owner Permissions
+description: Ensure that any roles granting read, write, or owner permissions are removed from disabled Azure user accounts. While an automated assessment procedure exists for this recommendation, the assessment status remains manual. Removing role assignments from disabled user accounts depends on the context and requirements of each organization and environment. Disabled accounts should not retain access to resources, as this poses a security risk. Removing role assignments mitigates potential unauthorized access and enforces the principle of least privilege.
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 5.3.5 Ensure Disabled User Accounts do not Have Read, Write, or Owner Permissions
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Microsoft Entra ID. 2. Under Manage, click Users. 3. Click Add filter. 4. Click Account enabled. 5. Click the toggle switch to set the value to No. 6. Click Apply. 7. Click the Display name of a disabled user account. 8. Click Azure role assignments. 9. Ensure that no read, write, or owner roles are assigned to the user account. 10. Repeat steps 7-9 for each disabled user account. Audit from PowerShell Run the following command to connect to Microsoft Entra ID: Connect-AzureAD Run the following command to list users: Get-AzureADUser Run the following command to get a user: $user = Get-AzureADUser -ObjectId <object-id> Run the following command to get the AccountEnabled setting for the user: $user.AccountEnabled If AccountEnabled is False, run the following command to get the role assignments for the user: Get-AzRoleAssignment -ObjectId $user.ObjectId Ensure that no read, write, or owner roles are assigned to the user. Repeat for each user. Audit
+    from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Microsoft Entra ID. 2. Under Manage, click Users. 3. Click Add filter. 4. Click Account enabled. 5. Click the toggle switch to set the value to No. 6. Click Apply. 7. Click the Display name of a disabled user account with read, write, or owner roles assigned. 8. Click Azure role assignments. 9. Click the name of a read, write, or owner role. 10. Click Assignments. 11. Click Remove in the row for the disabled user account. 12. Click Yes. 13. Repeat steps 7-12 for disabled user accounts requiring remediation. Remediate from PowerShell For each account requiring remediation, run the following command to remove an assigned role: Remove-AzRoleAssignment -ObjectId $user.ObjectId -RoleDefinitionName <role- definition-name>'

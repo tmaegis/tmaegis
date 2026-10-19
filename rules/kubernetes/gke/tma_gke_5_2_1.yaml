@@ -1,0 +1,21 @@
+id: TMA-GKE-5.2.1
+title: Use custom least privilege service accounts for GKE node pools
+description: Use a custom, least privilege IAM service account for GKE Standard node pools instead of the Compute Engine default service account. The node service account provides the default Google Cloud identity for nodes and should be limited to the permissions required for node level system tasks such as logging, monitoring, autoscaling metrics, and approved image pulls. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Every node pool is checked.
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- managed-services
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.2.1 Use custom least privilege service accounts for GKE node pools
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container node-pools list --cluster "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(name,config.serviceAccount)') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F '\t' 'NF && !($2!="" && $2!="default" && $2 !~ /-compute@developer\.gserviceaccount\.com$/) {print $1 ": " $2}')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a dedicated custom IAM service account for GKE Standard node pools that are using the Compute Engine default service account or a service account with excessive permissions. The custom node service account should be used for node level system tasks and should be granted only the permissions required for GKE node operation. gcloud iam service-accounts create $NODE_SA_ACCOUNT \ --project=$PROJECT_ID \ --display-name="GKE Node Service Account" Grant the custom node service account the current baseline GKE node role, roles/container.defaultNodeServiceAccount. This role is intended to provide the required permissions for GKE node operation, replacing the older approach of separately assigning logging and monitoring roles.

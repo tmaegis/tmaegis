@@ -1,0 +1,18 @@
+id: TMA-FIREFOX-1.1.38
+title: 'Ensure ''Minimum SSL version enabled'' is set to ''Enabled: TLS 1.2'''
+description: 'This setting sets the minimum protocol version that may be used when negotiating TLS/SSL sessions. The recommended state for this setting is: Enabled:TLS 1.2. Rationale: Setting TLS 1.2 as the minimum protocol version mitigates the risk of negotiating an insecure protocol, such as TSL 1.0 or SSL 2.0. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Mozilla\Firefox:SSLVersionMin (REG_SZ); compliant when it is ''tls1.2'' (whitespace-insensitive). Remediation writes tls1.2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: firefox
+level: 1
+severity: high
+tags:
+- firefox
+- browser
+- cis-l1
+reference: 'CIS Mozilla Firefox ESR GPO Benchmark v1.0.0 - 1.1.38 Ensure ''Minimum SSL version enabled'' is set to ''Enabled: TLS 1.2'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Mozilla\Firefox'' -Name ''SSLVersionMin'' -ErrorAction SilentlyContinue).''SSLVersionMin''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and ("$v" -replace ''\s'','''') -eq ''tls1.2'')) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Mozilla\Firefox'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SSLVersionMin' -Value 'tls1.2' -PropertyType String -Force | Out-Null

@@ -1,0 +1,42 @@
+id: TMA-ALIBABA-6.7
+title: Ensure parameter 'log_connections' is set to 'ON' for PostgreSQL Database
+description: Enable log_connections on PostgreSQL Servers. Enabling log_connections helps PostgreSQL Database to log attempted connection to the server, as well as successful completion of client authentication. For every PostgreSQL instance the running parameter log_connections must be on. Iterates every RDS region and instance (DescribeDBInstances). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- rds
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 6.7 Ensure parameter 'log_connections' is set to 'ON' for PostgreSQL Database
+audit:
+  type: command
+  command: |-
+    regs=$(aliyun rds DescribeRegions 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$regs" | sed -n 's/.*"RegionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    [ -n "$regions" ] || exit 1
+    bad=0
+    for r in $regions; do
+      page=1
+      while :; do
+        out=$(aliyun rds DescribeDBInstances --RegionId "$r" --Engine PostgreSQL --PageSize 100 --PageNumber "$page" 2>/dev/null) || exit 1
+        ids=$(printf '%s\n' "$out" | sed -n 's/.*"DBInstanceId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+        [ -n "$ids" ] || break
+        for i in $ids; do
+          p=$(aliyun rds DescribeParameters --DBInstanceId "$i" 2>/dev/null) || exit 1
+          v=$(printf '%s\n' "$p" | awk '
+    /\{/ { nm = ""; vl = "" }
+    /"ParameterName"/ { nm = $0; sub(/^[^:]*:[[:space:]]*"/, "", nm); sub(/".*/, "", nm) }
+    /"ParameterValue"/ { vl = $0; sub(/^[^:]*:[[:space:]]*"/, "", vl); sub(/".*/, "", vl) }
+    /\}/ { if (nm == "log_connections") { print tolower(vl); exit } }')
+          [ "$v" = on ] || { echo "log_connections=${v:-unset}: $r $i"; bad=1; }
+        done
+        set -- $ids
+        [ "$#" -lt 100 ] && break
+        page=$((page + 1))
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun rds ModifyParameter --DBInstanceId <id> --Parameters '{"log_connections":"on"}' (RDS console > Parameters), then confirm the running value.

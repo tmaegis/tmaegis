@@ -1,0 +1,17 @@
+id: TMA-BIND-7.4
+title: Ensure Either SPF or DKIM DNS Records are Configured
+description: 'For each authoritative domain that receives SMTP email, add either an SPF (Sender Policy Framework) TXT record and/or add a DKIM (DomainKeys Identified Mail) TXT record. Manual review: the check needs remote queries, architecture knowledge or site policy.'
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 7.4 Ensure Either SPF or DKIM DNS Records are Configured
+audit:
+  type: manual
+  command: 'For each authoritative domain, perform the following: ; Check the domain for an MX record to verify that the domain receives SMTP email. If there no MX record, then the domain is considered compliant. The following host command will query the localhost DNS server for any MX records for the given domain. The output below shows a domain that does not have an MX record. $ host -t mx example1.com 127.0.0.1 . . . example1.com has no MX record For domains which have an MX record, perform the following two tests to audit compliance. If either test passes, the domain is considered compliant.'
+remediation:
+  type: iac_patch
+  command: Add either an SPF TXT record and/or a default DKIM TXT record to the domains with the appropriate values. The SPF record should have a soft fail policy of ~all or a strict policy of -all There are on-line resources and tools such as MX toolbox that will help in generating and testing SPF, DKIM and DMARC records as shown in the references.

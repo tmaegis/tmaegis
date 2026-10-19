@@ -1,0 +1,17 @@
+id: TMA-DB2-6.4.2
+title: Do Not Allow Trusted Context to Switch Users Without Authentication
+description: A Trusted Context can provide a middle tier with the option of performing end user authentication, and then switching to that user within the database without further authentication. The middle tier is asserting the identity of the end user they have already authenticated. The organizations Standard Operating Procedures (SOP) will determine whether such trust has been placed with the middle ...
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 6.4.2 Do Not Allow Trusted Context to Switch Users Without Authentication
+audit:
+  type: manual
+  command: 1. Connect to the Db2 database. db2 => connect to <dbname> 2. Issue Issue the following command to verify that no trusted context db2 => select * from syscat.surrogateauthids where trustedidtype='C' and authenticate='N' and trustedID!='SYSATSCONTEXT' 3. Review any rows returned to ensure they are allowed by the SOP for performing a switch user without authentication.
+remediation:
+  type: iac_patch
+  command: 1. Connect to the Db2 database. db2 => connect to <dbname> 2. Disable any trusted context identified above until it can be determined why such trusted context where created with the following command db2 => alter trusted context <contextname> alter disable

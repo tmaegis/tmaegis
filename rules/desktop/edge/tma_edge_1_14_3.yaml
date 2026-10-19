@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.14.3
+title: 'Ensure ''Supported authentication schemes'' is set to ''Enabled: negotiate'''
+description: 'This setting specifies what HTTP authentication methods are supported by Microsoft Edge. The recommended setting is: Enabled: negotiate. Rationale: Basic and Digest authentication do not provide sufficient security and can lead to submission of user''s password in plaintext or minimal protection (Integrated Authentication is supported for negotiate and ntlm challenges only). Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:AuthSchemes (REG_SZ); compliant when it is ''negotiate'' (whitespace-insensitive). Remediation writes negotiate locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.14.3 Ensure ''Supported authentication schemes'' is set to ''Enabled: negotiate'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''AuthSchemes'' -ErrorAction SilentlyContinue).''AuthSchemes''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and ("$v" -replace ''\s'','''') -eq ''negotiate'')) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'AuthSchemes' -Value 'negotiate' -PropertyType String -Force | Out-Null

@@ -1,0 +1,31 @@
+id: TMA-ARUBA-CX-3.3.1.3
+title: PIM SSM
+description: Protocol Independent Multicast - Source-Specific Multicast (PIM-SSM) is a specialized subset of PIM sparse mode that enables efficient delivery of multicast traffic from specific sources to receivers. It relies on IGMP version 3 (IGMPv3) for IPv4 and MLD version 2 (MLDv2) for IPv6 to allow receivers to explicitly specify the source from which they wish to receive multicast traffic. By default, PIM-SSM operates within the group range 232.0.0.0/8 for IPv4 and FF3x::/32 for IPv6. The feature also allows administrators to customize this range using an access list (ACL) to define valid multicast group addresses.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- routing
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.3.1.3 PIM SSM
+audit:
+  type: manual
+  command: Where PIM-SSM is used, run 'show run pim' / 'show run pim6' and confirm 'pim-ssm range-access-list <acl>' restricts the SSM group range.
+remediation:
+  type: iac_patch
+  command: |-
+    Configuration to enable PIM-SSM Range ACL -
+    access-list ip <pim_ssm_grp_range_acl>
+    10 permit any any <225.1.1.2/255.255.255.0>
+    20 permit any any <239.1.1.2/255.255.255.0>
+    exit
+    router pim
+    pim-ssm range-access-list <pim_ssm_grp_range_acl>
+    exit
+    access-list ipv6 <pim_ssm_v6grp_range_acl>
+    10 permit any any <ff2e::2/64>
+    20 permit any any <ff1e::1/64>
+    exit
+    router pim6
+    pim-ssm range-access-list <pim_ssm_v6grp_range_acl>
+    exit

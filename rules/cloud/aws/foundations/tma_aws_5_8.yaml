@@ -1,0 +1,19 @@
+id: TMA-AWS-5.8
+title: Ensure S3 bucket policy changes are monitored
+description: Real-time monitoring of API calls can be achieved by directing CloudTrail Logs to CloudWatch Logs or an external Security Information and Event Management (SIEM) environment, and establishing corresponding metric filters and alarms. It is recommended that a metric filter and alarm be established for changes to S3 bucket policies. CloudWatch is an AWS native service that allows you to observe and monitor resources and applications. CloudTrail logs can also be sent to an external Security Information and Event Management (SIEM) environment for monitoring and alerting. Monitoring changes to S3 bucket policies may reduce the time it takes to detect and correct permissive policies on sensitive S3 buckets.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- monitoring
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 5.8 Ensure S3 bucket policy changes are monitored
+audit:
+  type: manual
+  command: 'If you are using CloudTrail trails and CloudWatch, perform the following to ensure that there is at least one active multi-region CloudTrail trail with the prescribed metric filters and alarms configured: 1. Identify the log group name that is configured for use with the active multi-region CloudTrail trail: - List all CloudTrail trails: aws cloudtrail describe-trails - Identify multi-region CloudTrail trails: Trails with "IsMultiRegionTrail" set to true - Note the value associated with "Name":<trail-name> - Note the <trail-log-group-name> within the value associated with "CloudWatchLogsLogGroupArn" o Example: arn:aws:logs:<region>:<account-id>:log- group:<trail-log-group-name>:* - Ensure the identified multi-region CloudTrail trail is active: o aws cloudtrail get-trail-status --name <trail-name> § Ensure IsLogging is set to TRUE - Ensure the identified multi-region CloudTrail trail captures all management events: o aws cloudtrail get-event-selectors --trail-name <trail-name>
+    § Ensure there is at least one event selector for a trail with IncludeManagementEvents set to true and ReadWriteType set to All 2. Get a list of all associated metric filters for the <trail-log-group-name>...'
+remediation:
+  type: iac_patch
+  command: 'If you are using CloudTrail trails and CloudWatch, perform the following steps to set up the metric filter, alarm, SNS topic, and subscription: 1. Create a metric filter based on the provided filter pattern that checks for changes to S3 bucket policies and uses the <trail-log-group-name> taken from audit step 1: aws logs put-metric-filter --log-group-name <trail-log-group-name> -- filter-name <s3-bucket-policy-changes-metric> --metric-transformations metricName=<s3-bucket-policy-changes- metric>,metricNamespace=''CISBenchmark'',metricValue=1 --filter-pattern ''{ ($.eventSource = s3.amazonaws.com) && (($.eventName = PutBucketAcl) || ($.eventName = PutBucketPolicy) || ($.eventName = PutBucketCors) || ($.eventName = PutBucketLifecycle) || ($.eventName = PutBucketReplication) || ($.eventName = DeleteBucketPolicy) || ($.eventName = DeleteBucketCors) || ($.eventName = DeleteBucketLifecycle) || ($.eventName = DeleteBucketReplication)) }'' Note: You can choose your own metricName and
+    metricNamespace strings. Using the same metricNamespace for all Foundations Benchmark metrics will group them together. 2. Create an SNS topic that the alarm will notify: aws sns create-topic --name <sns-topic-...'

@@ -1,0 +1,23 @@
+id: TMA-ARUBA-CX-3.1.1.3
+title: OSPFv3 Area Authentication and Encryption with IPsec
+description: 'OSPFv3 neighbors may use interface-level authentication. An alternative method might be used to provide encryption, or authentication, or both for an entire OSPFv3 area using the IPsec protocol, which automatically applies the configured methods to all member interfaces. There are two IPsec encapsulation types supported on AOS-CX to secure OSPFv3 areas: IPv6 authentication header (AH), which adds an IPv6 authentication header to OSPFv3 packets. Encrypted Security Payload (ESP), which provides both authentication and encryption for OSPFv3 packets.'
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.1.1.3 OSPFv3 Area Authentication and Encryption with IPsec
+audit:
+  type: manual
+  command: Where OSPFv3 runs, run 'show run ospfv3' and confirm each area uses IPsec authentication ('area <id> authentication ipsec spi ...') and, where required, encryption ('area <id> encryption ipsec ...').
+remediation:
+  type: iac_patch
+  command: |-
+    IPsec authentication and encryption are configured from the OSPFv3 router process context. Both authentication and encryption require a specified Security Policy Index (SPI), which is an integer value between 256 and 4,294,967,295; this value is used on each OSPFv3 router in the secured area to match a configured IPsec authentication and/or encryption policy. Each OSPFv3 IPsec policy on a switch must use a different SPI value, and the SPI value (as well as authentication, or encryption keys, or both) must match across all OSPFv3 neighbor interfaces using that policy within the secured area. To configure AH authentication for OSPFv3 area 1, specify the SPI, authentication method (md5 or sha1), key type (plaintext, hex-string, or ciphertext) and the key string itself. If a key type and string are not specified, the user is prompted to enter a plaintext key interactively:
+    switch(config)router ospfv3 <process-ID>
+    area 1 authentication ipsec spi 1024 sha1
+    Enter the IPsec authentication key: ******* Re-Enter the IPsec authentication key: ******** To configure ESP encryption for area 1, specify the SPI, authentication method, authentication key type and string, encryption type (3des, aes, des, or null), key type, and encryption key string. If the encryption type and key string are not specified, you are prompted to enter a plaintext key interactively. If the authentication key type and string are not specified, you are prompted to enter both a plaintext authentication key as well as the desired encryption type and plaintext key.
+    switch(config)router ospfv3 <process-ID>
+    area 1 encryption ipsec spi 1024 sha1
+    (see the CIS PDF for the remaining steps)

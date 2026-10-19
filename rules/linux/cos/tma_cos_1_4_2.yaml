@@ -1,0 +1,16 @@
+id: TMA-COS-1.4.2
+title: Ensure XD/NX support is enabled
+description: The NX bit (no-execute) is a technology used in CPUs to segregate areas of memory for use by either storage of processor instructions or for storage of data. An operating system with support for the NX bit may mark certain areas of memory as non- executable. The processor will then refuse to execute any code residing in these areas of memory. This ability can help prevent exploitation of buffer overflow vulnerabilities and should be activated whenever possible. Recent processors in the x86 family support the ability to prevent code execution on a per memory page basis. On AMD processors, this ability is called No Execute (NX), on Intel processors it is called Execute Disable (XD) and on ARM processors it is called Execute Never (XN). Extra steps must be taken to ensure that this protection is enabled, particularly on 32-bit x86 systems. Other processors, such as Itanium and POWER, hav...
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 1.4.2 Ensure XD/NX support is enabled
+audit:
+  type: manual
+  command: 'Run the following command and verify your kernel has identified and activated NX/XD protection. # journalctl | grep ''protection: active'' kernel: NX (Execute Disable) protection: active OR on systems without journalctl [[ -n $(grep noexec[0-9]*=off /proc/cmdline) || -z $(grep -E -i '' (pae|nx) '' /proc/cpuinfo) || -n $(grep ''\sNX\s.*\sprotection:\s'' /var/log/dmesg | grep - v active) ]] && echo "NX Protection is not active" Nothing should be returned'
+remediation:
+  type: iac_patch
+  command: 'On 32 bit systems install a kernel with PAE support, no installation is required on 64 bit systems: If necessary configure your bootloader to load the new kernel and reboot the system. You may need to enable NX or XD support in your bios.'

@@ -1,0 +1,19 @@
+id: TMA-MARIADB-2.11
+title: Require Client-Side Certificates (X.509)
+description: 'Client-side certificates may be used as proof of identity. Counts accounts other than mysql, root and mariadb.sys that do not require a client certificate (ssl_type X509 or SPECIFIED). Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 2
+severity: medium
+tags:
+- mariadb
+- database
+- tls
+- authentication
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 2.11 Require Client-Side Certificates (X.509)
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT COUNT(*) FROM mysql.user WHERE user NOT IN ('mysql', 'root', 'mariadb.sys') AND ssl_type NOT IN ('X509', 'SPECIFIED')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: ALTER USER '<user>'@'<host>' REQUIRE X509; for each account; clients then connect with --ssl-cert, --ssl-key and --ssl-ca.

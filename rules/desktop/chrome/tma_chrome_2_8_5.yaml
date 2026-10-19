@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.8.5
+title: Ensure 'Enable firewall traversal from remote access host' is set to 'Disabled'
+description: 'Chrome enables the usage of STUN servers which allows remote clients to discover and connect to a machine even if they are separated by a firewall. By disabling this feature, in conjunction with filtering outgoing UDP connections, the machine will only allow connections from machines within the local network. The recommended state for this setting is: Disabled (0) Rationale: If this setting is enabled, remote clients can discover and connect to these machines even if they are separated by a firewall. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:RemoteAccessHostFirewallTraversal (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.8.5 Ensure 'Enable firewall traversal from remote access host' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''RemoteAccessHostFirewallTraversal'' -ErrorAction SilentlyContinue).''RemoteAccessHostFirewallTraversal''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RemoteAccessHostFirewallTraversal' -Value 0 -PropertyType DWord -Force | Out-Null

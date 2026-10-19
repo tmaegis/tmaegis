@@ -1,0 +1,20 @@
+id: TMA-PFSENSE-4.1.2
+title: Ensure no Allow Rule with Any in Source field present in the Firewall Rules
+description: The Firewall Rules with Any in the Destination field allows accessing all the IP Addresses of Network from specified Sources configured in the Firewall rules for specific services FAILs if any pass rule in config.xml has source any (disabled rules are also flagged). Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: high
+tags:
+- pfsense
+- firewall-policy
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 4.1.2 Ensure no Allow Rule with Any in Source field present in the Firewall Rules
+audit:
+  type: config_regex
+  pattern: <rule>(?:[^<]|<[^/<]|</[^r<]|</r[^u<]|</ru[^l<]|</rul[^e<]|</rule[^><])*?<type>pass</type>(?:[^<]|<[^/<]|</[^r<]|</r[^u<]|</ru[^l<]|</rul[^e<]|</rule[^><])*?<source>\s*(?:<any\s*/>|<any>\s*</any>)\s*</source>
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: Firewall > Rules > <interface>: edit each pass rule with Source any and set a specific host/network alias, or disable/delete it, Apply Changes.
+    # CIS guidance:
+    Delete the rule from the firewall which has Any used in the Source field.

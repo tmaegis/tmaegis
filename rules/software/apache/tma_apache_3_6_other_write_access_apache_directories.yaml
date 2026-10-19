@@ -1,0 +1,45 @@
+id: TMA-APACHE-3.6
+title: Ensure Other Write Access on Apache Directories and Files Is Restricted
+description: Permissions on Apache directories should generally be rwxr-xr-x (755) and file permissions should be similar except not executable unless appropriate. This applies to all of the Apache software directories and files installed with the possible exception of the web document root $APACHE_PREFIX/htdocs. Counts files and directories under the ServerRoot writable by others; expects 0. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: apache
+level: 1
+severity: high
+tags:
+- apache
+- accounts
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 3.6 Ensure Other Write Access on Apache Directories and Files Is Restricted
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; [ -d "$R" ] || exit 1; find -L "$R" ! -type l -perm /o=w -print 2>/dev/null | wc -l
+  expected_output: '0'
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi
+    [ -r "$c" ] || exit 0
+    R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c")
+    ctl=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 0
+    tma_mod() { command -v a2enmod >/dev/null 2>&1 && a2enmod "$1" >/dev/null 2>&1; true; }
+    tma_test() { "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -t >/dev/null 2>&1; }
+    tma_reload() { systemctl reload apache2 2>/dev/null || systemctl reload httpd 2>/dev/null || "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -k graceful >/dev/null 2>&1; true; }
+    find -L "$R" ! -type l -perm /o=w -exec chmod o-w {} + 2>/dev/null; true
+  guidance: "chmod -R o-w \"$APACHE_PREFIX\""

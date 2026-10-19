@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.2
+title: Ensure /etc/master.passwd password fields are not empty
+description: 'An account with an empty password field means that anybody may log in as that user without providing a password. All accounts must have passwords or be locked to prevent the account from being used by an unauthorized user. Audit: no account in /etc/master.passwd may have an empty password field.'
+target: freebsd
+level: 1
+severity: critical
+tags:
+- freebsd
+- password-policy
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.2 Ensure /etc/master.passwd password fields are not empty
+audit:
+  type: command
+  command: 'command -v awk >/dev/null 2>&1 || exit 1; [ -r /etc/master.passwd ] || exit 1; out=$( { awk -F: ''($2 == "") { print $1 " does not have a password" }'' /etc/master.passwd ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'If any accounts in the /etc/master.passwd file do not have a password, run the following command to lock the account until it can be determined why it does not have a password: # pw lock <username> Also, check to see if the account is logged in and investigate what it is being used for to determine if it needs to be forced off.'

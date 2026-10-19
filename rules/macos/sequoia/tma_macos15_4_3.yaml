@@ -1,0 +1,39 @@
+id: TMA-MACOS15-4.3
+title: Ensure NFS Server Is Disabled
+description: macOS can act as an NFS fileserver. NFS sharing could be enabled to allow someone on another computer to mount shares and gain access to information from the user's computer. File sharing from a user endpoint has long been considered questionable, and Apple has removed that capability from the GUI.
+target: macos
+level: 1
+severity: medium
+tags:
+- macos
+- network
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 4.3 Ensure NFS Server Is Disabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    s=$(/sbin/nfsd status 2>/dev/null | /usr/bin/awk '/nfsd service/ { print $NF }') || exit 1
+    if [ "$s" = disabled ] && [ ! -e /etc/exports ]; then echo compliant; else echo "nfsd=${s:-unknown}; /etc/exports present or service enabled"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    /sbin/nfsd disable 2>/dev/null
+    if [ -e /etc/exports ]; then tma_bak /etc/exports; /bin/rm -f /etc/exports; fi
+  guidance: "Terminal: sudo /bin/launchctl disable system/com.apple.nfsd ; sudo /bin/rm -rf /etc/exports."

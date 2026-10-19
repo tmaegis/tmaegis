@@ -1,0 +1,44 @@
+id: TMA-CISCO-NXOS-1.5.3
+title: Configure Netflow on Strategic Ports
+description: 'Netflow allows for detailed logging of transit traffic. For a Layer 3 Netflow configuration, this outlines several values identified as "keys": source and destination ports and protocols, source and destination IP addresses as well as traffic volumes in any combination. Sometimes QOS values (TOS bits only) is also used as a key. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: medium
+tags:
+- cisco-nxos
+- network
+- logging
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.5.3 Configure Netflow on Strategic Ports
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. To display the complete netflow configuration, use "show running-configuration netflow". Ensure that valid values in the flow exporter, flow record, sampler and flow monitor sections. Ensure that the flow monitor is applied to the correct interface (Layer 2 or Layer 3). A Layer 3 example is shown: switch# show run netflow !Command: show running-config netflow !Time: Mon Jan 4 13:48:45 2021 version 7.3(1)N1(1) feature netflow flow exporter FLOW-EXPORT destination 10.10.10.10 transport udp 9996 source mgmt0 version 9 option ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! If needed, either Layer 3 or Layer 2 netflow can be configured. Layer 3 IP and IPv6 flow monitors can be applied to VLANs, SVIs, Layer 3 routed interfaces or subinterfaces. Layer 2 flow monitors can be applied to a physical interface or trunks L3 netflow - typical application to a VLAN is shown First, enable the netflow feature:
+    feature netflow The flow record defines what data to record and export. Typical settings are shown, the important thing is that a valid flow record setting exists:
+    flow-record FLOW-RECORD
+    match ipv4 protocol
+    match ipv4 source address
+    match ipv4 destination address
+    match transport source-port
+    match transport destination-port
+    collect routing source as
+    collect routing destination as
+    collect transport tcp flags
+    collect counter bytes
+    collect counter packets The flow exporter defines the destination and options around sent data. Again, the specific values are not important. The VRF can be specified in the "destination" line if needed.:
+    flow exporter FLOW-EXPORT
+    transport udp 9996
+    destination 10.10.10.10
+    source mgmt 0
+    version 9
+    option exporter-stats timeout 120
+    option interface-table timeout 120 The flow monitor "ties" the exporter and record together:
+    flow monitor FLOW-MONITOR
+    exporter FLOW-EXPORT
+    record FLOW-RECORD The sampling rate, "x packets out of y" can also be defined. Both should be a power of 2 (for instance, 8 out-of 64 is a valid combination)
+    sampler FLOWSAMPLER01
+    mode 8 out-of 64 Finally, apply the monitor and optionally the sampler to a layer 3 interface:
+    int vlan <interface number> 10GCORE01
+    ! ... see the benchmark for the full procedure

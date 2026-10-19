@@ -1,0 +1,17 @@
+id: TMA-GKE-4.6.3
+title: Require hardened security contexts for all workload Pods and containers
+description: Require hardened security contexts for GKE workload Pods and containers. Security contexts should define workload level and container level controls that reduce privilege, limit host exposure, and enforce safer runtime behavior. The benchmark marks this recommendation Manual.
+target: gke
+level: 2
+severity: low
+tags:
+- gke
+- policies
+- pod-security
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.6.3 Require hardened security contexts for all workload Pods and containers
+audit:
+  type: manual
+  command: Review workload Pods and controller templates to confirm hardened security contexts are explicitly defined at the Pod and container level. Focus the audit on workload namespaces and verify settings such as runAsNonRoot=true, allowPrivilegeEscalation=false, privileged=false, dropped Linux capabilities where practical, and seccompProfile.type=RuntimeDefault or an approved custom profile. GKE Standard supports using Pod Security Admission, Policy Controller, and security posture scanning to identify and enforce workload configuration risks.
+remediation:
+  type: iac_patch
+  command: 'Update workload manifests, Helm charts, overlays, or GitOps sources so hardened security contexts are defined before deployment. Apply settings at the Pod level when they apply to all containers, and use container level settings where a specific container requires a different configuration. • Set workloads to run as non root where compatible. • Set allowPrivilegeEscalation=false for workload containers. • Set privileged=false and remove host level access unless explicitly required. • Drop unnecessary Linux capabilities, and use drop: ["ALL"] where the application supports it. • Set seccompProfile.type=RuntimeDefault or use an approved custom Localhost profile. Redeploy the workload and validate application behavior in a lower environment before broad rollout.'

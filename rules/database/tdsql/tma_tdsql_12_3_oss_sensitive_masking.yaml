@@ -1,0 +1,18 @@
+id: TMA-TDSQL-12.3
+title: Ensure OSS Sensitive Information Masking Is Enabled
+description: TDSQL OSS provides sensitive information masking that automatically hides sensitive fields such as passwords and keys in API responses and logs. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql); reads <TDSQL_HOME>/conf/oss.json and passes when property_mask contains pwd, password, secretid, secretkey, token, secret_id, secret_key and keyring_kms_config. Also confirm the certificate fields and that interface_mask and znode_prefix_mask are present.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- oss
+- data-protection
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 12.3 Ensure OSS Sensitive Information Masking Is Enabled
+audit:
+  type: command
+  command: f="${TDSQL_HOME:-/data/tdsql}/conf/oss.json"; [ -r "$f" ] || exit 1; v=$(grep -A3 '"property_mask"' "$f" | tr -d '\n'); [ -n "$v" ] || { echo missing; exit 0; }; for k in pwd password secretid secretkey token secret_id secret_key keyring_kms_config; do printf '%s' "$v" | grep -q "$k" || { echo "missing $k"; exit 0; }; done; echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Extend the property_mask value in oss.json, e.g. { "name": "property_mask", "value": "pwd,password,secretid,secretkey,token,secret_id,secret_key,<certificate fields>,keyring_kms_config" }, and restart OSS.'

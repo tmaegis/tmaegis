@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-3.1
+title: Ensure 'Server Authentication' Property is set to 'Windows Authentication Mode'
+description: Use Windows Authentication to validate attempted connections. Windows provides a more robust authentication mechanism than SQL Server authentication.
+target: mssql
+level: 1
+severity: medium
+tags:
+- auth
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 3.1 Ensure 'Server Authentication' Property is set to 'Windows Authentication Mode'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('IsIntegratedSecurityOnly') AS int);"
+  expected_output: '1'
+remediation:
+  type: iac_patch
+  command: 'Perform either the GUI or T-SQL method shown: GUI Method 1. Open SQL Server Management Studio. 2. Open the Object Explorer tab and connect to the target SQL Server instance. 3. Right click the instance name and select Properties. 4. Select the Security page from the left menu. 5. Set the Server authentication setting to Windows Authentication Mode. T-SQL Method Run the following T-SQL in a Query Window: USE [master] GO EXEC xp_instance_regwrite N''HKEY_LOCAL_MACHINE'', N''Software\Microsoft\MSSQLServer\MSSQLServer'', N''LoginMode'', REG_DWORD, 1 GO Restart the SQL Server service for the change to take effect.'

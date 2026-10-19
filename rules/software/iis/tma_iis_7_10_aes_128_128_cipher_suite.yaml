@@ -1,0 +1,19 @@
+id: TMA-IIS-7.10
+title: Ensure AES 128/128 Cipher Suite is Disabled
+description: The AES 128/128 Cipher Suite is not considered secure and therefore should be disabled, if possible. SCHANNEL\Ciphers\AES 128/128 must exist with Enabled=0 (read via the .NET registry API because the key names contain "/"). PowerShell 5.1; reads the registry (run elevated).
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- tls
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 7.10 Ensure AES 128/128 Cipher Suite is Disabled
+audit:
+  type: registry
+  command: $c = 'SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers'; function Get-Cipher($n) { $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("$c\$n"); $v = $null; if ($k) { $v = $k.GetValue('Enabled'); $k.Close() }; $v }; $bad = @('AES 128/128' | Where-Object { $v = Get-Cipher $_; $null -eq $v -or [long]$v -ne 0 }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: ([Microsoft.Win32.Registry]::LocalMachine.CreateSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\AES 128/128')).SetValue('Enabled', 0, 'DWord') for each listed cipher (PowerShell drive paths cannot contain '/'), then reboot.

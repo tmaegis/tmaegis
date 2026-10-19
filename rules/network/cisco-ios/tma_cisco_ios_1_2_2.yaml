@@ -1,0 +1,21 @@
+id: TMA-CISCO-IOS-1.2.2
+title: Set 'transport input ssh' for 'line vty' connections
+description: Selects the Secure Shell (SSH) protocol. Configuring VTY access control restricts remote access to only those authorized to manage the device and prevents unauthorized users from accessing the system. Fails if any 'line vty' block lacks 'transport input ssh' or still allows telnet/all. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all' or 'show startup-config').
+target: cisco-ios
+level: 1
+severity: high
+tags:
+- cisco-ios
+- network
+- management-plane
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.2.2 Set 'transport input ssh' for 'line vty' connections
+audit:
+  type: config_regex
+  pattern: (?m)(?:^line vty[^\n]*\n(?:[ \t]+(?:$|[^t \t\n]|t(?:$|[^r\n]|r(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^o\n]|o(?:$|[^r\n]|r(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^p\n]|p(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^h\n])))))))))))))))))))[^\n]*\n)*(?:[^ \t]|\z))|(?:^line vty[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+transport input [^\n]*\b(?:telnet|all)\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Apply SSH to transport input on all VTY management lines
+    line vty <line-number> <ending-line-number>
+    transport input ssh

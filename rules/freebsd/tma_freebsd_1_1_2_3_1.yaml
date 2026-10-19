@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-1.1.2.3.1
+title: Ensure separate partition exists for /var
+description: 'The /var directory is used by daemons and other system services to temporarily store dynamic data. Some directories created by these processes may be world-writable. The reasoning for mounting /var on a separate partition is as follows. Protection from resource exhaustion The default installation only creates a single / partition. Audit: `mount -p` must list /var as its own mount point.'
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- hardening
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.1.2.3.1 Ensure separate partition exists for /var
+audit:
+  type: command
+  command: command -v mount >/dev/null 2>&1 || exit 1; l=$(mount -p | awk '$2=="/var"'); [ -n "$l" ] && echo compliant || echo "/var is not a separate mount"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new installations, during installation create a custom partition setup and specify a separate partition for /var. For systems that were previously installed, create a new partition and configure /etc/fstab as appropriate.

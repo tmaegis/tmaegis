@@ -1,0 +1,35 @@
+id: TMA-RHEL8-2.1.19
+title: Ensure web server services are not in use
+description: Web servers provide the ability to host web site content.
+target: linux
+os_family:
+- rhel-8
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 8 Benchmark v4.0.0 - 2.1.19
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v rpm >/dev/null 2>&1 || { echo "step1: rpm not installed"; return 1; }; o=$(bash -c ''rpm -q httpd nginx'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''package httpd is not installed'' || { echo step1: missing ''package httpd is not installed''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''package nginx is not installed'' || { echo step1: missing ''package nginx is not installed''; return 1; }; }; alt1() { o=$(bash -c ''systemctl show httpd.socket httpd.service -p UnitFileState,ActiveState | grep -Pi ''"''"''=(enabled|active)''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_svc_off httpd.socket httpd.service nginx.service apache2.service
+  guidance: "Run the following commands to stop httpd.socket and httpd.service and remove the httpd package: # systemctl stop httpd.socket httpd.service # dnf remove httpd Run the following commands to stop nginx.service and remove the nginx package: # systemctl stop nginx.service # dnf remove httpd nginx - OR - - IF - a package is installed and is required for dependencies: - IF - the httpd package is required for dependencies: Run the following commands to stop and mask httpd.socket and httpd.service: # systemctl stop httpd.socket httpd.service # systemctl mask httpd.socket httpd.service - IF - the nginx package is required for dependencies: Run the following commands to stop and mask nginx.service: # …"

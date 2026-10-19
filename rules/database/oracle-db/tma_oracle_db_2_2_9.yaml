@@ -1,0 +1,38 @@
+id: TMA-ORACLE-DB-2.2.9
+title: Ensure 'SQLNET.ENCRYPTION_TYPES_SERVER' Is Set To AES256
+description: 'The SQLNET.ENCRYPTION_TYPES_SERVER parameter specifies the encryption algorithms that the server enforces for database connections. This setting allows you to ensure that all data transmitted between the client and the database is encrypted using strong, secure algorithms. Manual in the benchmark: SQLNET.ENCRYPTION_TYPES_SERVER in sqlnet.ora should be exactly (AES256). Default: All available algorithms'
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.2.9 Ensure 'SQLNET.ENCRYPTION_TYPES_SERVER' Is Set To AES256
+audit:
+  type: manual
+  command: 'On the Linux platform, execute the following shell command to audit this recommendation. filePath="$ORACLE_HOME/network/admin/sqlnet.ora" if grep -qi "^\s*SQLNET\.ENCRYPTION_TYPES_SERVER\s*=\s*(AES256)" "$filePath"; then # This is compliant. : elif grep -qi "^#.*SQLNET\.ENCRYPTION_TYPES_SERVER" "$filePath"; then echo "The parameter is commented out." elif grep -qi "^#.*SQLNET\.ENCRYPTION_TYPES_SERVER\s*=\s*,.*" "$filePath"; then echo "Multiple encryption types are specified." elif grep -qi "SQLNET\.ENCRYPTION_TYPES_SERVER" "$filePath"; then grep -i "SQLNET\.ENCRYPTION_TYPES_SERVER" ...'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    d="${TNS_ADMIN:-${ORACLE_HOME:?ORACLE_HOME not set}/network/admin}"
+    [ -d "$d" ] || exit 1
+    for n in sqlnet.ora; do f="$d/$n"; [ -f "$f" ] || { [ "$n" = sqlnet.ora ] && : > "$f" || continue; }
+      cp -p "$f" "$f.tmaegis.bak"
+      { grep -viE '^[[:space:]]*SQLNET.ENCRYPTION_TYPES_SERVER[[:space:]]*=' "$f.tmaegis.bak"; echo 'SQLNET.ENCRYPTION_TYPES_SERVER=(AES256)'; } > "$f.tma.new" && cat "$f.tma.new" > "$f"; rm -f "$f.tma.new"
+    done; true
+  guidance: "To remediate this recommendation, set SQLNET.ENCRYPTION_TYPES_SERVER to AES256. SQLNET.ENCRYPTION_TYPES_SERVER=(AES256)"

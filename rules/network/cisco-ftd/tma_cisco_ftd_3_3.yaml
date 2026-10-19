@@ -1,0 +1,17 @@
+id: TMA-CISCO-FTD-3.3
+title: Configure default action to Block
+description: The default action handles traffic that does not match any of the rulesets created by network administrators. A Block default configuration ensures only permitted and desired traffic passes through the network, minimizing unauthorized access and preventing potentially malicious traffic from accessing and compromising the network. Block for all actions that aren't defined by rulesets is similar to the Deny Any/Any in an ASA. It is important to prevent traffic not defined by rulesets from gaining access to the network. Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: cisco-ftd
+level: 1
+severity: medium
+tags:
+- cisco-ftd
+- network
+- hardening
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 3.3 Configure default action to Block
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. In the GUI Policies > Access Control > in the Default Action dropdown at the bottom, ensure Block is selected> Verify At Beginning and End of Connection radio button is selected In the API HTTP GET /policy/accesspolicies Look for: "defaultAction": { "action": "DENY", "eventLogAction": "LOG_BOTH"'
+remediation:
+  type: iac_patch
+  command: 'In the GUI Policies > Access Control > in the Default Action dropdown at the bottom, select Block > select the At Beginning and End of Connection radio button > OK In the API HTTP PUT /policy/accesspolicies/{objId} { "name": "NGFW-Access-Policy", "version": "<version>", "defaultAction": { "action": "DENY", "eventLogAction": "LOG_BOTH", "type": "accessdefaultaction" }, "type": "accesspolicy" }'

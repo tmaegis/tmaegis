@@ -1,0 +1,20 @@
+id: TMA-EKS-AUTO-4.2.2
+title: Prevent pods from sharing the host process ID namespace
+description: 'Prevent pods from sharing the host process ID namespace by restricting spec.hostPID: true in EKS Auto Mode workload namespaces. In the EKS Pod Security Standards model, this is enforced through Pod Security Admission or an equivalent policy engine, and baseline or restricted enforcement should be used for workload namespaces where host process namespace sharing is not approved. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.'
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.2.2 Prevent pods from sharing the host process ID namespace
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.hostPID}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($3=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure Pod Security Admission on workload namespaces so pods that request spec.hostPID: true are denied at admission time. Use enforce for remediation because it rejects violating pods. Use warn and audit as rollout and visibility controls, but do not treat them as enforcement. For this control, baseline is sufficient because it prohibits hostPID, while restricted provides stronger hardening for workload namespaces that can meet the additional requirements. Update each workload namespace with the restricted enforcement label. kubectl label ns $NAMESPACE pod-security.kubernetes.io/enforce=restricted --overwrite If restricted is too disruptive for a valid workload namespace, enforce baseline as the minimum profile for this specific control.'

@@ -1,0 +1,24 @@
+id: TMA-CISCO-IOSXR-1.9
+title: Management plane protection
+description: The Management Plane Protection (MPP) feature provides the capability to restrict the interfaces on which network management packets are allowed to enter a device. The MPP feature allows a network operator to designate one or more router interfaces as management interfaces. The MPP protection feature, as well as all the management protocols under MPP, are disabled by default. This is part of the MPP setup. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 2
+severity: medium
+tags:
+- cisco-iosxr
+- network
+- management-plane
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.9 Management plane protection
+audit:
+  type: config_regex
+  pattern: (?m)^control-plane[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+management-plane\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure the management plane so that only certain protocols connectced to certain interfaces can access this IOS-XR device.
+    control-plane
+    management-plane
+    inband
+    interface {interface} allow {protocol} peer address ipv4 {IP_address}
+    out-of-band
+    interface {interface} allow {protocol} peer address ipv4 {IP_address}

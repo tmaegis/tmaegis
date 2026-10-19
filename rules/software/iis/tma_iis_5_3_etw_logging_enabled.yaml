@@ -1,0 +1,19 @@
+id: TMA-IIS-5.3
+title: Ensure 'ETW Logging' is enabled
+description: Event Tracing for Windows (ETW) is a Windows feature that allows Administrators to send logging information to another location. This information is then compiled on the server and can be queried. siteDefaults logFile logTargetW3C must include ETW (File,ETW = both log file and ETW event). PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- logging
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 5.3 Ensure 'ETW Logging' is enabled
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.applicationHost/sites/siteDefaults/logFile' -PSPath 'MACHINE/WEBROOT/APPHOST'; if ([string]$c.logTargetW3C -match 'ETW') { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.applicationHost/sites/siteDefaults/logFile -Name logTargetW3C -Value 'File,ETW'

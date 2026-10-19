@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.2.5
+title: 'Ensure ''S/MIME interoperability with external clients:'' is set to ''Enabled: Handle internally'''
+description: 'This policy setting controls whether Outlook decodes encrypted messages itself or passes them to an external program for processing. If the option Handle internally is selected, Outlook decrypts all S/MIME messages itself. The recommended state for this setting is: Enabled: Handle internally Audit: reads the registry value(s) externalsmime that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.2.5 Ensure ''S/MIME interoperability with external clients:'' is set to ''Enabled: Handle internally'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''externalsmime'' -ErrorAction SilentlyContinue).''externalsmime''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':externalsmime='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Handle internally: Microsoft Outlook 2016\Security\Cryptography\S/MIME interoperability with external clients'

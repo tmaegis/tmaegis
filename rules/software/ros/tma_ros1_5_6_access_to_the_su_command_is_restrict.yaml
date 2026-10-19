@@ -1,0 +1,24 @@
+id: TMA-ROS1-5.6
+title: Ensure access to the su command is restricted
+description: The su command allows a user to run a command or shell as another user. The program has been superseded by sudo , which allows for more granular control over privileged access. Normally, the su command can be executed by any user. By uncommenting the pam_wheel.so statement in /etc/pam.d/su , the su command will only allow users in a specific groups to execute su. The audit requires "auth required pam_wheel.so use_uid group=<group>" in /etc/pam.d/su and that group to have no members. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.6 Ensure access to the su command is restricted
+audit:
+  type: command
+  shell: bash
+  command: |-
+    l=$(grep -E '^\s*auth\s+required\s+pam_wheel\.so(\s.*)?\suse_uid(\s.*)?\sgroup=\S+' /etc/pam.d/su) || { echo 'pam_wheel.so use_uid group=<group> not set in /etc/pam.d/su'; exit 1; }
+    g=$(printf '%s\n' "$l" | grep -Eo 'group=\S+' | head -n 1 | cut -d= -f2)
+    m=$(awk -F: -v g="$g" '$1 == g {print $4}' /etc/group)
+    [ -z "$m" ] && echo compliant || echo "group $g has members: $m"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create an empty group that will be specified for use of the su command. The group should be named according to site policy. groupadd sugroup Add the following line to the /etc/pam.d/su file, specifying the empty group: auth required pam_wheel.so use_uid group=sugroup'

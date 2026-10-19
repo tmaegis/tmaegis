@@ -1,0 +1,21 @@
+id: TMA-CASSANDRA-CONFIG-PERMISSIONS
+title: Ensure cassandra.yaml is not writable by group or readable by others
+description: cassandra.yaml can contain keystore and truststore passwords; restrict it to mode 640 or stricter. Checks /etc/cassandra/cassandra.yaml (SKIP when it does not exist; tarball installs keep it under $CASSANDRA_HOME/conf).
+target: cassandra
+level: 1
+severity: medium
+tags:
+- cassandra
+- database
+- permissions
+- filesystem
+reference: CIS Apache Cassandra Benchmark - File Permissions / Configuration Files (verify section number for your release)
+audit:
+  type: command
+  command: p=$(stat -c %a /etc/cassandra/cassandra.yaml 2>/dev/null) || exit 1; if [ $((0$p & 037)) -eq 0 ]; then echo compliant; else echo "mode $p"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/cassandra/cassandra.yaml
+remediation:
+  type: command
+  command: chmod 640 /etc/cassandra/cassandra.yaml

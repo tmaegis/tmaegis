@@ -1,0 +1,35 @@
+id: TMA-DEBIAN10-1.1.9
+title: Disable Automounting
+description: autofs allows automatic mounting of devices, typically including CD/DVDs and USB drives.
+target: linux
+os_family:
+- debian-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 10 Benchmark v2.0.0 ARCHIVE - 1.1.9
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -W -f=''"''"''${binary:Package}\t${Status}\t${db:Status-Status}\n''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- autofs || { echo step1: missing autofs; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled autofs 2>/dev/null | grep ''"''"''enabled''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    systemctl disable --now autofs 2>/dev/null; chkconfig autofs off 2>/dev/null; systemctl stop autofs 2>/dev/null; true
+  guidance: "If there are no other packages that depends on autofs, remove the package with: # apt purge autofs -OR- if there are dependencies on the autofs package: Run the following commands to mask autofs: # systemctl stop autofs # systemctl mask autofs"

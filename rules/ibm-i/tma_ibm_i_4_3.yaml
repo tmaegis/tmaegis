@@ -1,0 +1,16 @@
+id: TMA-IBM-I-4.3
+title: User Profile (*USRPRF) Object Ownership
+description: Resource security is an important aspect of your system security and defines which users are allowed to use objects on the system and what operations they are allowed to perform on those objects. Granting group or private ownership to any *USRPRF object allows an attacker to swap with these profiles and use their privileges and authorizations without their passwords or credentials outside of designed application access requirements from a system ...
+target: ibm-i
+level: 1
+severity: medium
+tags:
+- ibm-i
+- accounts
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 4.3 User Profile (*USRPRF) Object Ownership
+audit:
+  type: manual
+  command: On a command line, type STRSQL and press Enter Copy or type the following SQL statement to the terminal and press Enter. SELECT ALL SYS_ONAME, OBJTYPE, OWNER FROM QSYS2/OBJ_PRIV WHERE OBJTYPE = '*USRPRF' AND USER_NAME = '*PUBLIC' AND OWNER NOT IN ('QSECOFR', 'QSYS') Verify that the display returns no ownership anomalies with the following valid exceptions. QFAXMSF shall be owned by QAUTPROF QRDARS400<x> shall be owned by QRDARS400 QTIVOLI, QTIVROOT and QTIVUSER shall be owned by QTIVOLI
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration, change the owner of all non-IBM supplied *USRPRF objects to QSECOFR: CHGOBJOWN OBJ(<xxxxxx>) OBJTYPE(*USRPRF) NEWOWN(QSECOFR) CUROWNAUT(*REVOKE)'

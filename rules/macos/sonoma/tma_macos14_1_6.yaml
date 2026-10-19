@@ -1,0 +1,35 @@
+id: TMA-MACOS14-1.6
+title: Ensure Install Security Responses and System Files Is Enabled
+description: Ensure that system and security updates are installed after they are available from Apple. This setting enables definition updates for XProtect and Gatekeeper. With this setting in place, new malware and adware that Apple has added to the list of malware or untrusted software will not execute. These updates do not require reboots or end user admin rights. Apple has introduced a security feature that allows for smaller downloads and the installation of security updates when a reboot is not required. This feature is only available when the last regular update has already been applied. This feature emphasizes that a Mac must be up-to-date on patches so that Apple's security tools can be used to quickly patch when a rapid response is necessary. Patches need to be applied in a timely manner to reduce the risk of vulnerabilities being exploited.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 1.6 Ensure Install Security Responses and System Files Is Enabled
+audit:
+  type: command
+  command: "/usr/bin/osascript -l JavaScript <<'EOS'\nfunction run() {\n  let delay = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.applicationaccess').objectForKey('enforcedSoftwareUpdateDelay'))\n  if ( delay == null || delay <= 30 ) {\n    return(\"true\")\n  } else {\n    return(\"false\")\n  }\n}\nEOS"
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults delete /Library/Preferences/com.apple.applicationaccess enforcedSoftwareUpdateDelay 2>/dev/null
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to enable system data files and security updates to install automatically: 1. Open System Settings 2. Select General 3. Select Software Update 4. Select the i 5. Set Install Security Responses and System files to enabled 6. Select Done Terminal Method: Run the following commands to enable automatic checking of system data files and security updates: % /usr/bin/sudo /usr/bin/defaults write /Library/Preferences/com.apple.SoftwareUpdate ConfigDataInstall -bool true % /usr/bin/sudo /usr/bin/defaults write /Library/Preferences/com.apple.SoftwareUpdate CriticalUpdateInstall -bool true Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.SoftwareUpdate 2. The key to include is ConfigDataInstall 3. The key must be set to <true/> 4. The key to also include is CriticalUpdateInstall 5. The key must be set to <true/>"

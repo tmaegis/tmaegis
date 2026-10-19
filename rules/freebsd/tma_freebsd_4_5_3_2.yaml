@@ -1,0 +1,16 @@
+id: TMA-FREEBSD-4.5.3.2
+title: Ensure default user umask is configured
+description: The user file-creation mode mask (umask) determines the file permission for newly created directories and files. In FreeBSD, the default permission for any newly created directory is 0755 (rwxr-xr-x), and for any newly created file, it is 0644 (rw-r--r--). The umask modifies the default FreeBSD permissions by restricting (masking) these permissions.
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.3.2 Ensure default user umask is configured
+audit:
+  type: manual
+  command: 'Run the following to verify the default user umask is set to enforce a newly created directories'' permissions to be 755 (drwxr-xr-x), and a newly created file''s permissions be 644 (rw-r--r--), or more restrictive: #!/bin/sh # Files to check files="/etc/login.conf /etc/profile.d/* /etc/csh.cshrc" # Pattern to search for (umask 022 or 22) pattern="umask.*0?22" # Iterate over each file for file in $files; do if [ -f "$file" ]; then # Check if the umask is set to 022 or 22 in the file if grep -qE "$pattern" "$file"; then echo "Correct umask (022 or 22) found ... (full steps: CIS section 4.5.3.2)'
+remediation:
+  type: iac_patch
+  command: 'In case proper umask is not configured system-wide necessary measurements should be taken to define them in /etc/login.conf or system-wide shell configurations like a file in /etc/profile.d/*.sh or /etc/csh.cshrc. Note: This method only applies to Bourne Again shell and C Shell. If other shells are supported on the system, it is recommended that their configuration files also be checked'

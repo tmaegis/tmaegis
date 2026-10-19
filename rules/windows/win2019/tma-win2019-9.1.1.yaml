@@ -1,0 +1,21 @@
+id: TMA-WIN2019-9.1.1
+title: 'Ensure ''Windows Firewall: Domain: Firewall state'' is set to ''On (recommended)'''
+description: 'This policy setting controls whether the built-in Domain Firewall state is enabled or disabled. The recommended state for this setting is: On (recommended).'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 9.1.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile'' -Name ''EnableFirewall'' -ErrorAction SilentlyContinue).''EnableFirewall''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableFirewall='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile' -Name 'EnableFirewall' -Value 1 -PropertyType DWord -Force | Out-Null

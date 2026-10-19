@@ -1,0 +1,19 @@
+id: TMA-CHROME-2.30
+title: Ensure 'Enable Renderer App Container' Is Enabled
+description: 'This setting controls the ability for Google Chrome to allow the Render App Container sandbox to be used while navigating to certain sites. It can be configured to either: - Disabled (0): Disable the Renderer App Container sandbox - Enabled (1): Enable the Renderer App Container sandbox If the value for RendererAppContainerEnabled is not changed from the default, it will behave as if it is enabled. Rationale: Disabling this policy would weaken the sandbox that Google Chrome uses for the renderer process, and will have a detrimental effect on the security and stability of the browser. This policy needs to be enabled to maintain security and stability. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:RendererAppContainerEnabled (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the
+  ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.30 Ensure 'Enable Renderer App Container' Is Enabled
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''RendererAppContainerEnabled'' -ErrorAction SilentlyContinue).''RendererAppContainerEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RendererAppContainerEnabled' -Value 1 -PropertyType DWord -Force | Out-Null

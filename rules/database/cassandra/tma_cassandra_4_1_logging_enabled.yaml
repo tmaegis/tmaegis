@@ -1,0 +1,17 @@
+id: TMA-CASSANDRA-4.1
+title: Ensure that logging is enabled
+description: 'Apache Cassandra uses Logback for logging functionality. While this can be set using nodetool setlogginglevel changes made using this method will be reverted to the level specified in the logback.xml file the next time the process restarts. The configurable logging levels are: - OFF - TRACE - DEBUG - INFO (Default) - WARN - ERROR Runs nodetool getlogginglevels (JMX on localhost:7199); passes when the ROOT logger is not OFF.'
+target: cassandra
+level: 1
+severity: medium
+tags:
+- cassandra
+- logging
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 4.1 Ensure that logging is enabled
+audit:
+  type: command
+  command: out=$(nodetool getlogginglevels 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '$1 == "ROOT" {r = $2} END {if (r == "") print "no ROOT logger"; else if (toupper(r) == "OFF") print "OFF"; else print "compliant"}'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set <root level="INFO"> in logback.xml (or logback-test.xml if present) and restart Cassandra, or run nodetool setlogginglevel ROOT INFO.

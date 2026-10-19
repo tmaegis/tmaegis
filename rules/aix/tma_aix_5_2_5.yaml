@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.5
+title: Ensure maxexpired is configured
+description: 'Defines the number of weeks after maxage, that a password can be reset by the user. The maxexpired attribute limits the number of weeks after password expiry that a password may be changed by the user. Audit: reads `lssec -f /etc/security/user -s default -a maxexpired`.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.5 Ensure maxexpired is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a maxexpired 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*maxexpired=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 0 ] && [ "$v" -le 4 ]; then echo compliant; else echo "maxexpired=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a maxexpired=4

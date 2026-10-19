@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.1.6
+title: Ensure code owners are set for extra sensitive code or configuration
+description: Code owners are trusted users that are responsible for reviewing and managing an important piece of code or configuration. An organization is advised to set code owners for every extremely sensitive code or configuration. Configuring code owners protects data by verifying that trusted users will notice and review every edit, thus preventing unwanted or malicious changes from potentially compromising sensitive code or configurations.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.6 Ensure code owners are set for extra sensitive code or configuration
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Prerequisite: You must be able to either push to the default branch or create a merge request. 1. Create a CODEOWNERS file in your preferred location. 2. Define some rules in the file following the Code Owners syntax reference. Some suggestions: o Configure All eligible approvers approval rule. o Require Code Owner approval on a protected branch. 3. Commit your changes, and push them up to GitLab.'

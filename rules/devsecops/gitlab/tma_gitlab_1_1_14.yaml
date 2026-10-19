@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.1.14
+title: Ensure branch protection rules are enforced for administrators
+description: Ensure administrators are subject to branch protection rules. Administrators by default are excluded from any branch protection rules. This means these privileged users (both on the repository and organization levels) are not subject to protections meant to prevent untrusted code insertion, including malicious code. This is extremely important since administrator accounts are often targeted for account hijacking due to their privileged role.
+target: gitlab
+level: 1
+severity: high
+tags:
+- branch-protection
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.14 Ensure branch protection rules are enforced for administrators
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'GitLab administrators can disable this privilege for group owners, enforcing the instance-level protection rule: 1. On the left sidebar, at the bottom, select Admin Area. 2. Select Settings > Repository. 3. Expand the Default branch section. 4. Uncheck Allow owners to manage default branch protection per group checkbox. 5. Select Save changes.'

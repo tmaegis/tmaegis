@@ -1,0 +1,119 @@
+#config-version=FGT60F-7.4.3-FW-build2573-240101:opmode=0:vdom=0
+# Synthetic sample: FortiGate "show full-configuration" (hardened). Not a secure template.
+config system global
+    set hostname "fw-branch-01"
+    set admin-port 8080
+    set admin-sport 8443
+    set admin-telnet disable
+    set admintimeout 5
+    set admin-lockout-threshold 3
+    set admin-lockout-duration 300
+    set admin-https-ssl-versions tlsv1-3
+    set ssl-min-proto-version TLSv1-2
+    set pre-login-banner enable
+    set post-login-banner enable
+    set log-single-cpu-high enable
+end
+config system dns
+    set primary 192.0.2.53
+end
+config system ntp
+    set ntpsync enable
+end
+config system password-policy
+    set status enable
+    set apply-to admin-password ipsec-preshared-key
+    set minimum-length 14
+end
+config system interface
+    edit "lan"
+        set ip 192.0.2.1 255.255.255.0
+        set allowaccess ping https ssh
+    next
+end
+config system admin
+    edit "secadmin"
+        set accprofile "super_admin"
+        set trusthost1 192.0.2.0 255.255.255.0
+        set password ENC REDACTED
+    next
+end
+config system snmp sysinfo
+    set status enable
+    set trap-free-memory-threshold 20
+    set trap-freeable-memory-threshold 50
+end
+config system snmp community
+end
+config system snmp user
+    edit "nmsuser"
+        set auth-pwd ENC REDACTED
+    next
+end
+config system ha
+    set monitor "wan1" "lan"
+    set ha-mgmt-status enable
+    config ha-mgmt-interfaces
+        edit 1
+            set interface "mgmt"
+            next
+    end
+end
+config system fortiguard
+    set sandbox-inline-scan enable
+end
+config firewall local-in-policy
+    edit 1
+        set intf "wan1"
+        set action deny
+        set service "ALL"
+        set schedule "always"
+        set virtual-patch enable
+    next
+end
+config dnsfilter profile
+    edit "default"
+        set log-all-domain enable
+    next
+end
+config firewall policy
+    edit 1
+        set srcintf "wan1"
+        set dstintf "lan"
+        set internet-service enable
+        set internet-service-src-name "Tor-Exit.Node"
+        set action deny
+    next
+    edit 2
+        set srcintf "lan"
+        set dstintf "wan1"
+        set internet-service-name "Tor-Relay.Node"
+        set action deny
+    next
+    edit 3
+        set srcintf "lan"
+        set dstintf "wan1"
+        set action accept
+        set srcaddr "all"
+        set dstaddr "all"
+        set dnsfilter-profile "default"
+        set logtraffic all
+    next
+end
+config log syslogd setting
+    set status enable
+    set server "192.0.2.50"
+    set mode reliable
+    set enc-algorithm high
+end
+config log fortianalyzer setting
+    set status enable
+    set server "192.0.2.51"
+    set reliable enable
+    set enc-algorithm high
+end
+config system automation-stitch
+    edit "Compromised Host Quarantine"
+        set status enable
+    next
+end

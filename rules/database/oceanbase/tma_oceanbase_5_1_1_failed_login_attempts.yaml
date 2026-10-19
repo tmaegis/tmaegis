@@ -1,0 +1,18 @@
+id: TMA-OCEANBASE-5.1.1
+title: Ensure 'FAILED_LOGIN_ATTEMPTS' Is Less than or Equal to '5'
+description: The FAILED_LOGIN_ATTEMPTS setting determines how many failed login attempts are permitted before the system locks the user's account. While different profiles can have different and more restrictive settings, such as USERS, the minimum(s) recommended here should be set on the DEFAULT profile. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Oracle-mode tenant. Passes when the DEFAULT profile FAILED_LOGIN_ATTEMPTS is 5 or less (UNLIMITED fails). Runs obclient against an Oracle-mode tenant using the connection options in OB_ORA_CONN (default "-h127.0.0.1 -P2881 -uSYS@oracle"); supply the password via OB_ORA_CONN (-p...) or ~/.my.cnf.
+target: oceanbase
+level: 1
+severity: medium
+tags:
+- oceanbase
+- authentication
+- oracle-mode
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 5.1.1 Ensure 'FAILED_LOGIN_ATTEMPTS' Is Less than or Equal to '5'
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_ORA_CONN:--h127.0.0.1 -P2881 -uSYS@oracle} -N -B -e "SELECT CASE WHEN LIMIT NOT IN ('UNLIMITED', 'DEFAULT') AND TO_NUMBER(LIMIT) <= 5 THEN 'compliant' ELSE 'noncompliant' END FROM SYS.DBA_PROFILES WHERE PROFILE = 'DEFAULT' AND RESOURCE_NAME = 'FAILED_LOGIN_ATTEMPTS'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ALTER PROFILE DEFAULT LIMIT FAILED_LOGIN_ATTEMPTS 5; (and for every other profile in use).

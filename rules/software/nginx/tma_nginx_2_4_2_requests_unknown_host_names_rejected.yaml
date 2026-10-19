@@ -1,0 +1,17 @@
+id: TMA-NGINX-2.4.2
+title: Ensure requests for unknown host names are rejected
+description: NGINX routes incoming requests to the appropriate virtual host by matching the Host header (HTTP/1.1) or :authority pseudo-header (HTTP/2, HTTP/3) against the server_name directives in your configuration. If no explicit match is found, NGINX falls back to the first defined server block or the one marked as default_server. Compliant when at least one server block has a listen ... default_server and every such block returns a 4xx/444 code or sets ssl_reject_handshake on. Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- network
+reference: CIS NGINX Benchmark v3.0.0 - 2.4.2 Ensure requests for unknown host names are rejected
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '{l=$0; o=""; q=""; for(i=1;i<=length(l);i++){c=substr(l,i,1); if(q!=""){o=o c; if(c==q) q=""; continue} if(c=="\""||c=="\047"){q=c; o=o c; continue} if(c=="#") break; if(c==";"||c=="{"){print o c; o=""; continue} if(c=="}"){if(o~/[^[:space:]]/) print o; print "}"; o=""; continue} o=o c} if(o~/[^[:space:]]/) print o}' | awk 'function a(i,  x){x=$i; sub(/;$/,"",x); gsub(/["\047]/,"",x); return x} function inb(n,  i){for(i=1;i<=sp;i++) if(st[i]==n) return 1; return 0} $1=="server" && /\{/ && !ins {ins=1; sd=sp+1; ds=0; rj=0} ins && $1=="listen" && /default_server/ {ds=1} ins && (($1=="return" && a(2)~/^(4[0-9][0-9])$/) || ($1=="ssl_reject_handshake" && a(2)=="on")) {rj=1}  {o=gsub(/\{/,"{"); c=gsub(/\}/,"}"); while(o-->0){sp++; b=$1; sub(/\{.*/,"",b); st[sp]=b} while(c-->0 && sp>0) sp--} ins && sp<sd {ins=0; if(ds){n++; if(rj) ok++; else bad=1}} END{print (n>0&&ok==n)?"compliant":"noncompliant"}'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add a catch-all server block, e.g. server { listen 80 default_server; listen 443 ssl default_server; ssl_reject_handshake on; return 444; } Then run nginx -t and reload nginx.

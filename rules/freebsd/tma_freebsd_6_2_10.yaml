@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.10
+title: Ensure local interactive user home directories are configured
+description: 'The user home directory is space defined for the particular user to set local environment variables and to store personal files. While the system administrator can establish secure permissions for users'' home directories, the users can easily override these. Users can be defined in /etc/passwd without a home directory or with a home directory that does not actually exist. Audit: interactive users (uid >= 1000 with a login shell) must have an existing home they own that is mode 755 or stricter.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.10 Ensure local interactive user home directories are configured
+audit:
+  type: command
+  command: 'command -v awk >/dev/null 2>&1 || exit 1; out=$( { awk -F: ''$3>=1000 && $1!="nobody" && $7!~/(nologin|false)$/ {print $1, $6}'' /etc/passwd | while read u h; do if [ ! -d "$h" ]; then echo "$u: home $h does not exist"; continue; fi; ls -ld "$h/" | awk -v u="$u" ''$3!=u {print u ": home not owned by user"} substr($1,6,1)=="w" || substr($1,9,1)=="w" {print u ": home is group/other writable"}''; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'If a local interactive users'' home directory is undefined and/or doesn''t exist, follow local site policy and perform one of the following: Lock the user account Remove the user from the system Create a directory for the user. If undefined, edit /etc/passwd and add the absolute path to the directory to the last field of the user.'

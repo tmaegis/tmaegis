@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.44.6
+title: '(NG) Ensure ''Turn on Microsoft Defender Application Guard in Managed Mode'' is set to ''Enabled: 1'''
+description: 'This policy setting enables application isolation through Microsoft Defender Application Guard (Application Guard). There are 4 options available: 0. Disable Microsoft Defender Application Guard 1. Enable Microsoft Defender Application Guard for Microsoft Edge ONLY 2. Enable Microsoft Defender Application Guard for Microsoft Office ONLY 3. Enable Microsoft Defender Application Guard for Microsoft Edge AND Microsoft Office The recommended state for this setting is: Enabled: 1 (Enable Microsoft Defender Application Guard for Microsoft Edge ONLY). Note: Microsoft Defender Application Guard requir'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.44.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI'' -Name ''AllowAppHVSI_ProviderSet'' -ErrorAction SilentlyContinue).''AllowAppHVSI_ProviderSet''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''AllowAppHVSI_ProviderSet='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI' -Name 'AllowAppHVSI_ProviderSet' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,24 @@
+id: TMA-LNX-NET-SEND-REDIRECTS
+title: Ensure packet redirect sending is disabled
+description: Kernel parameter net.ipv4.conf.all.send_redirects should be 0.
+target: linux
+os_family:
+- ubuntu-22.04
+- ubuntu-24.04
+- rocky-9
+level: 1
+severity: medium
+tags:
+- kernel
+- sysctl
+- network
+reference: CIS Linux Benchmark - Network Configuration / Kernel Parameters (verify section number for your distro release)
+audit:
+  type: command
+  command: sysctl -n net.ipv4.conf.all.send_redirects
+  expected_output: '0'
+remediation:
+  type: command
+  command: sysctl -w net.ipv4.conf.all.send_redirects=0 && printf 'net.ipv4.conf.all.send_redirects = 0\n' > /etc/sysctl.d/60-tmaegis-net_ipv4_conf_all_send_redirects.conf
+  backup_files:
+  - /etc/sysctl.d/60-tmaegis-net_ipv4_conf_all_send_redirects.conf

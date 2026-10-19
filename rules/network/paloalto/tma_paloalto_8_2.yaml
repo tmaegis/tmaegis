@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-8.2
+title: Ensure 'SSL Inbound Inspection' is required for all untrusted traffic destined for servers using SSL or TLS
+description: Configure SSL Inbound Inspection for all untrusted traffic destined for servers using SSL or TLS.
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- crypto
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 8.2 Ensure 'SSL Inbound Inspection' is required for all untrusted traffic destined for servers using SSL or TLS
+audit:
+  type: manual
+  command: 'Navigate to Policies > Decryption. Verify SSL Inbound Inspection is set appropriately for all untrusted traffic destined for servers using SSL or TLS. Navigate to Policies > Decryption. For each service published to the internet (or other untrusted zones), verify the following settings: General tab: Name set to a descriptive name Source: Source Zone set to the target zone (Internet in many cases). Source Address set to the target address space (Any for internet traffic) Destination tab: Destination Zone should be set to the appropriate zone, or Any. (Full steps: CIS 8.2.)'
+remediation:
+  type: iac_patch
+  command: |-
+    Navigate to Policies > Decryption. Set SSL Inbound Inspection appropriately for all untrusted traffic destined for servers using SSL or TLS.
+    Navigate to Policies > Decryption. For each service published to the internet (or other untrusted zones), create a Policy and set the following options:
+    General tab: Name set to a descriptive name Source: Source Zone set to the target zone (Internet in many cases). Source Address set to the target address space (Any for internet traffic) Destination tab: Destination Zone should be set to the appropriate zone, or Any. Destination Address set to the target host address Options tab: Type set to SSL Inbound Inspection Note:
+    1. Private key of the either the Root CA cert or Intermediate Root CA should be imported into the firewall in order for it to perform SSL decryption.
+    2. This private key is the same one used by the internal application (behind the firewall).

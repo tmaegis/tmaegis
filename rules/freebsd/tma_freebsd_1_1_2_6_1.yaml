@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-1.1.2.6.1
+title: Ensure separate partition exists for /var/audit
+description: 'The auditing daemon, auditd, stores log data in the /var/audit directory. The reasoning for mounting /var/audit on a separate partition is as follows. Protection from resource exhaustion The default installation only creates a single / partition. Audit: `mount -p` must list /var/audit as its own mount point.'
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.1.2.6.1 Ensure separate partition exists for /var/audit
+audit:
+  type: command
+  command: command -v mount >/dev/null 2>&1 || exit 1; l=$(mount -p | awk '$2=="/var/audit"'); [ -n "$l" ] && echo compliant || echo "/var/audit is not a separate mount"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new installations, during installation create a custom partition setup and specify a separate partition for /var/audit. For systems that were previously installed, create a new partition and configure /etc/fstab as appropriate.

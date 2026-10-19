@@ -1,0 +1,18 @@
+id: TMA-MCP-4.3.1
+title: Ensure MCP Apps content is rendered in sandboxed isolation with Content Security Policy enforced from declared metadata
+description: Where the MCP Apps extension (io.modelcontextprotocol/ui) is in use, the host renders all UI resource content inside a sandboxed execution context with a Content Security Policy constructed from, and never looser than, the domains declared in the resource's metadata. The extension delivers HTML documents (MIME type text/html;profile=mcp-app, URI scheme ui://) that the host renders in a sandboxed iframe. The extension specification requires sandboxed rendering for all view content and requires the host to build the CSP from the declared csp metadata (connectDomains, resourceDomains, frameDomains, baseUriDomains). When that metadata is absent, a restrictive default applies (default-src 'none', with frame-src 'none' and base-uri 'self' where those are not declared). The host may restrict further but must not allow any undeclared external domain. Web-based hosts additionally interpose the...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.3.1 Ensure MCP Apps content is rendered in sandboxed isolation with Content Security Policy enforced from declared metadata
+audit:
+  type: manual
+  command: 'Confirm by host configuration review and rendering inspection that UI resources render inside a sandboxed iframe, and for web-based hosts that the sandbox proxy runs on an origin distinct from the host''s. Render a test UI resource with declared csp metadata and inspect the effective Content-Security-Policy on the frame, confirming it permits no undeclared external domain. The host may be stricter, and the mandatory restrictive defaults may include local, ''self'', or data: sources defined by the extension, which are not server-declared domains and are expected. Render a resource with no csp metadata and confirm the restrictive default applies (default-src ''none'', with no external connect, resource, or frame origins). Attempt a fetch from the rendered view to an undeclared origin and confirm it is blocked. As defense-in-depth, confirm the servers permitted to deliver ui:// resources are limited to the approved allowlist and that UI resource content participates in content-hash
+    pinning. The command below checks logging completeness only: it confirms each rendered view is logged as sandboxed with an effective CSP and an attributed server, but a non-empty yet permissive CSP still pass...'
+remediation:
+  type: iac_patch
+  command: These are host configuration and host implementation settings, with no portable command. Configure the host to render all MCP Apps content in sandboxed iframes, building the Content Security Policy from the resource's declared csp metadata and applying the extension's restrictive default when the declaration is absent. Do not add external domains beyond the declaration, though the host may apply a stricter policy than it. For web-based hosts, deploy the extension's sandbox proxy on a separate origin and route all view communication through it. Enable logging of the effective CSP per rendered resource. Restrict UI-delivering servers to the approved allowlist and include UI resource content in content-hash verification.

@@ -1,0 +1,20 @@
+id: TMA-WIN10-2.3.7.3
+title: '(BL) Ensure ''Interactive logon: Machine account lockout threshold'' is set to ''10 or fewer invalid logon attempts, but not 0'''
+description: 'This security setting determines the number of failed logon attempts that causes the machine to be locked out. Failed password attempts against workstations or member servers that have been locked using either CTRL+ALT+DELETE or password protected screen savers counts as failed logon attempts. The machine lockout policy is enforced only on those machines that have BitLocker enabled for protecting OS volumes. Please ensure that appropriate recovery password backup policies are enabled. The recommended state for this setting is: 10 or fewer invalid logon attempts, but not 0. Note: A value of 0 d'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 2.3.7.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''MaxDevicePasswordFailedAttempts'' -ErrorAction SilentlyContinue).''MaxDevicePasswordFailedAttempts''; if (-not ($null -ne $v -and [int64]$v -le 10 -and [int64]$v -ne 0)) { $bad += ''MaxDevicePasswordFailedAttempts='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'MaxDevicePasswordFailedAttempts' -Value 10 -PropertyType DWord -Force | Out-Null

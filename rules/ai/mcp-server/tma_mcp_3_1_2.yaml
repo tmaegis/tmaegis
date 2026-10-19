@@ -1,0 +1,19 @@
+id: TMA-MCP-3.1.2
+title: Ensure OIDC/OAuth 2.1 or short-lived API tokens are used for remote servers
+description: Remote (HTTP) MCP servers use transport-level authentication, OAuth 2.1/OIDC for user access or the OAuth client_credentials flow for service-to-service access. Tokens are scoped and audience-bound narrowly (see the Resource Indicators Recommendation), token lifetimes are kept short, and rotation is automated. Where a deployment uses short-lived API tokens instead of interactive OAuth, those tokens are audience-bound to this server, validated server-side, issued by an enterprise-controlled issuer, and never long-lived static keys. Under the 2026-07-28 revision, clients validate the iss parameter on authorization responses. Client registration uses Client ID Metadata Documents as the standard mechanism, where the client identifies itself with a portable HTTPS URL rather than a per-server registration, with pre-registration and Dynamic Client Registration retained for backwards compatib...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.1.2 Ensure OIDC/OAuth 2.1 or short-lived API tokens are used for remote servers
+audit:
+  type: manual
+  command: 'Review the server authentication middleware, token lifetimes, and audiences. Confirm unauthenticated requests are rejected and issued tokens are short-lived. Audience binding is assessed under Recommendation 3.3.1. Run the following command to confirm an unauthenticated request returns 401, ideally with a WWW-Authenticate header pointing at resource metadata: URL="https://<SERVER_URL>/mcp" PROTO="2026-07-28" code=$(curl -sS -o /dev/null -w ''%{http_code}'' -X POST "$URL" -H ''Content-Type: application/json'' -H ''Accept: application/json, text/event-stream'' -H "MCP-Protocol- Version: $PROTO" -H ''Mcp-Method: tools/list'' -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{\"_meta\":{\"io. modelcontextprotocol/protocolVersion\":\"$PROTO\",\"io.modelcontextprotocol/clientInf o\":{\"name\":\"cis-benchmark-audit\",\"version\":\"1.0\"}}}}") case "$code" in 401) echo "PASS: unauthenticated request rejected with 401" ;; 403) echo "REVIEW: unauthenticated request
+    returned 403, expected 401 for missing credentials, confirm this is a deliberate gateway policy" ;; 000) echo "ERROR: server unreachable (not a PASS)" ;; 2*) echo "FAIL: unauthenticated request accepted ($code)" ;;...'
+remediation:
+  type: iac_patch
+  command: Configure remote MCP servers to require OAuth 2.1/OIDC, or client_credentials for machine-to-machine access. They issue short-lived audience-bound tokens and validate iss on authorization responses. This spans the client, server, and authorization- server layers with no single runnable command. Set a short access-token TTL (a common baseline is <= 1 hour) with refresh-token rotation, require PKCE for public clients, and enforce audience and iss validation on the MCP server. Register clients through Client ID Metadata Documents where supported. A client using Dynamic Client Registration or pre-registration declares its OpenID Connect application_type and binds registered credentials to the issuer, re-registering on resource migration. Record these as authorization-server and server configuration in the enterprise registry. Verify with the Audit.

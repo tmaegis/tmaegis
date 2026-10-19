@@ -1,0 +1,16 @@
+id: TMA-TOMCAT-7.4
+title: Ensure directory in context.xml is a secure location
+description: 'The directory attribute tells Tomcat where to store logs. It is recommended that the location referenced by the directory attribute be secured. Manual review: the benchmark gives no reliable automated check for this control.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- logging
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 7.4 Ensure directory in context.xml is a secure location
+audit:
+  type: manual
+  command: 'Review the permissions of the directory specified by the directory attribute to ensure the permissions are o-rwx and owned by tomcat_admin:tomcat: # grep directory context.xml # ls -ld <log_location>'
+remediation:
+  type: iac_patch
+  command: 'Perform the following: 1. Add the following statement into the $CATALINA_BASE/webapps/<app_name>/META-INF/context.xml file if it does not already exist. <Valve className="org.apache.catalina.valves.AccessLogValve" directory="$CATALINA_HOME/logs/" prefix="access_log" fileDateFormat="yyyy-MM-dd.HH" suffix=".log" pattern="%h %t %H cookie:%{SESSIONID}c request:%{SESSIONID}r %m %U %s %q %r" /> 2. Set the location pointed to by the directory attribute to be owned by tomcat_admin:tomcat with permissions of o-rwx. # chown tomcat_admin:tomcat $CATALINA_HOME/logs # chmod o-rwx $CATALINA_HOME/logs'

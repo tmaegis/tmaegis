@@ -1,0 +1,18 @@
+id: TMA-M365-5.3.4
+title: Ensure approval is required for Global Administrator role activation
+description: 'Microsoft Entra Privileged Identity Management can be used to audit roles, allow just in time activation of roles and allow for periodic role attestation. Requiring approval before activation allows one of the selected approvers to first review and then approve the activation prior to PIM granted the role. The approver doesn''t have to be a group member or owner. The recommended state is Require approval to activate for the Global Administrator role. Requiring approval for Global Administrator role activation enhances visibility and accountability every time this highly privileged role is used. This process reduces the risk of an attacker elevating a compromised account to the highest privilege level, as any activation must first be reviewed and approved by a trusted party. Note: This only acts as protection for eligible users that are activating a role. Directly assigning a role does...'
+target: m365
+level: 1
+severity: medium
+tags:
+- iam
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.3.4 Ensure approval is required for Global Administrator role activation
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand ID Governance > Privileged Identity Management. 3. Under Manage select Microsoft Entra Roles. 4. Under Manage select Roles. 5. Select Global Administrator in the list. 6. Select Role settings. 7. Verify that Require approval to activate is set to Yes. 8. Verify there is at least 1 approvers in the list. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI to retrieve the policyID for the Global Administrator-role: v1.0/policies/roleManagementPolicyAssignments?$filter=scopeId eq ''/'' and scopeType eq ''DirectoryRole'' and roleDefinitionId eq ''62e90394-69f5-4237- 9190-012177145e10''&$select=policyId 2. Execute a GET request to the following relative URI to retrieve the policy''s Approval setting using the policyId from the previous call: v1.0/policies/roleManagementPolicies/{policyID}/rules/Approval_EndUser_Assign ment # Example
+    https://graph.microsoft.com/v1.0/policies/roleManagementPolicies/DirectoryRol e_9c4d49a8-1f7a-4256-b1a2-b7cb0e7180f4_86522f3f-cfd0-4634-95a0- 38083127ca00/rules/Approval_EndUser_Assignment 3. Verify that isApproval...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand ID Governance > Privileged Identity Management. 3. Under Manage select Microsoft Entra Roles. 4. Under Manage select Roles. 5. Select Global Administrator in the list. 6. Select Role settings and click Edit. 7. Check the Require approval to activate box. 8. Add at least one approver. 9. Click Update.'

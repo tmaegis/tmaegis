@@ -1,0 +1,24 @@
+id: TMA-OPENSHIFT-VIRT-4.2
+title: Enable MAC spoof filtering
+description: 'Mac spoof filtering is a feature that helps prevent man - in - the - middle attacks by verifying the authenticity of MAC addresses in network packets. By checking the MAC address of incoming packets, mac - spoof filtering can help ensure that only authorized devices are able to communicate with a particular device or network. Audit: Passes when every SR-IOV network has spoofChk "on" and every bridge-type NetworkAttachmentDefinition sets macspoofchk to true (needs jq). OVN Kubernetes localnet filters MAC spoofing by default. Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- network
+- mac-spoofing
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 4.2 Enable MAC spoof filtering
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; command -v jq >/dev/null 2>&1 || exit 1; s=$(oc get sriovnetwork -A -o json 2>/dev/null || echo '{"items":[]}'); n=$(oc get network-attachment-definitions -A -o json) || exit 1; b1=$(printf '%s' "$s" | jq '[.items[]|select(.spec.spoofChk != "on")]|length'); b2=$(printf '%s' "$n" | jq '[.items[]|(.spec.config|fromjson? // {})|select(.type == "bridge")|select(.macspoofchk != true)]|length'); [ "$b1" = 0 ] && [ "$b2" = 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: Enable MAC-spoof filtering per the deployed networking provider instructions. Instructions for Bridge CNI and SR-IOV CNI.

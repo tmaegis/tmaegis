@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-7.3.1
+title: Ensure that the CSFSERV class is active
+description: The CSFSERV SAF class is used to protect access to ICSF callable services and utilities. Users can be permitted or restricted from using ICSF callable services and utilities by enabling profiles within the CSFSERV class.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.3.1 Ensure that the CSFSERV class is active
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that CSFSERV appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The CSFSERV entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify that all profiles in the CSFSERV class: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of FAILURES(READ)'
+remediation:
+  type: iac_patch
+  command: 'To activate the CSFSERV class use the RACF SETROPTS command: SETROPTS CLASSACT(CSFSERV) To modify the UACC setting for a profile use the RACF RALTER command: RALTER CSFSERV <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING'

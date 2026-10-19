@@ -1,0 +1,21 @@
+id: TMA-EKS-AUTO-5.4.2
+title: Enable private only EKS API access and disable public endpoint access
+description: This recommendation is the strict private only version of API endpoint hardening. The intended end state is that the EKS Kubernetes API server endpoint is reachable only from inside the cluster VPC or from a connected private network, and there is no internet reachable public API endpoint. This is a Kubernetes API exposure decision, not an EKS Auto Mode workload networking setting. Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- managed-services
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.4.2 Enable private only EKS API access and disable public endpoint access
+audit:
+  type: command
+  command: |-
+    out=$(aws eks describe-cluster --name "${EKS_CLUSTER:?set EKS_CLUSTER}" --query 'cluster.resourcesVpcConfig.[endpointPrivateAccess,endpointPublicAccess]' --output text) || exit 1
+    set -- $out
+    if [ "$1" = True ] && [ "$2" = False ]; then echo compliant; else echo "noncompliant: private=$1 public=$2"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable private endpoint access and disable public endpoint access for the EKS Kubernetes API server. This removes direct internet reachability to the public API endpoint and requires cluster administration through the cluster VPC or a connected private network such as VPN, Transit Gateway, Direct Connect, or an approved management host inside the VPC. EKS allows public and private endpoint access to be configured separately, and the default for new clusters is public access enabled with private access disabled. Before applying this change, confirm that administrators, CI/CD runners, and operational tooling can reach the Kubernetes API through the private access path.

@@ -1,0 +1,20 @@
+id: TMA-AWS-2.16
+title: Ensure IAM instance roles are used for AWS resource access from instances
+description: AWS access from within EC2 instances can be achieved either by embedding AWS access keys into applications or by assigning an IAM role to the instance with the appropriate permissions. "AWS access" refers to making API calls to AWS services to access or manage resources. IAM roles reduce the risks associated with storing, sharing, and rotating long-term credentials. Compromised credentials can be used outside of AWS, whereas IAM role credentials are temporary and tied to the instance. Additionally, credentials embedded in applications or configuration files are more difficult to rotate and are more likely to be exposed over time, increasing the risk of unauthorized access.
+target: aws
+level: 2
+severity: medium
+tags:
+- access-control
+- aws
+- cloud
+- iam
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.16 Ensure IAM instance roles are used for AWS resource access from instances
+audit:
+  type: manual
+  command: 'Perform the following to determine if IAM roles are used: From Console: 1. Sign in to the AWS Management Console and navigate to the EC2 dashboard at https://console.aws.amazon.com/ec2/ 2. In the left navigation panel, choose Instances 3. Select the EC2 instance you want to examine 4. Select Actions 5. Select View details 6. Review the following: - If IAM Role contains a role, it is compliant - If IAM Role is blank, it is non-compliant - If an Instance profile ARN exists but no role is attached, it is non-compliant 7. Repeat for all EC2 instances From Command Line: 1. List all EC2 instances: aws ec2 describe-instances --region <region-name> --query ''Reservations[*].Instances[*].InstanceId'' 2. Check for IAM instance profiles: aws ec2 describe-instances --region <region-name> --instance-id <Instance-ID> --query ''Reservations[*].Instances[*].IamInstanceProfile'' 3. If no IAM instance profile is returned, the instance does not have a role attached 4. Repeat for all instances and
+    regions'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Sign in to the AWS Management Console and navigate to the EC2 dashboard at https://console.aws.amazon.com/ec2/ 2. In the left navigation panel, choose Instances 3. Select the EC2 instance you want to modify 4. Click Actions 5. Click Security 6. Click Modify IAM role 7. Select an existing IAM role or create a new one 8. Click Update IAM role 9. Repeat for all applicable instances From Command Line: 1. Identify instances without roles (all regions): for r in $(aws ec2 describe-regions --query "Regions[].RegionName" --output text); do aws ec2 describe-instances --region "$r" --query "Reservations[].Instances[?IamInstanceProfile==null].[InstanceId, ''$r'']" -- output text done 2. Attach an instance profile: aws ec2 associate-iam-instance-profile --region <region-name> --instance-id <Instance-ID> --iam-instance-profile Name="Instance-Profile-Name" 3. Verify the role is attached: aws ec2 describe-instances --region <region-name> --instance-id <Instance-ID> --query
+    ''Reservations[*].Instances[*].IamInstanceProfile'' 4. Repeat steps 2 and 3 for each EC2 instance in your AWS account that requires an IAM role to be attached.'

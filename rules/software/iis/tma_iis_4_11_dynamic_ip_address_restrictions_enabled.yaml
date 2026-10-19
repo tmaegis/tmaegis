@@ -1,0 +1,19 @@
+id: TMA-IIS-4.11
+title: Ensure 'Dynamic IP Address Restrictions' is enabled
+description: 'Dynamic IP address filtering allows administrators to configure the server to block access for IPs that exceed the specified number of requests or request frequency. Note: Ensure that you receive the Forbidden page once the block has been enforced. Dynamic IP Address Restrictions denyByConcurrentRequests must be enabled at server level (fails when the IP and Domain Restrictions feature is not installed). Tune maxConcurrentRequests to your traffic. PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- dos
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.11 Ensure 'Dynamic IP Address Restrictions' is enabled
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.webServer/security/dynamicIpSecurity/denyByConcurrentRequests' -PSPath 'MACHINE/WEBROOT/APPHOST' -ErrorAction Stop; if ($c.enabled -eq $true) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/dynamicIpSecurity/denyByConcurrentRequests -Name enabled -Value True; set maxConcurrentRequests as appropriate

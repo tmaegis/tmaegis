@@ -1,0 +1,20 @@
+id: TMA-ROS1-1.1.7
+title: Ensure separate partition exists for /var/tmp
+description: The /var/tmp directory is a world-writable directory used for temporary storage by all users and some applications. The audit requires /var/tmp to be a separate mount (findmnt). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: low
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.1.7 Ensure separate partition exists for /var/tmp
+audit:
+  type: command
+  shell: bash
+  command: findmnt -kn /var/tmp >/dev/null 2>&1 && echo compliant || echo '/var/tmp is not a separate partition'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new installations, during installation create a custom partition setup and specify a separate partition for /var/tmp . For systems that were previously installed, create a new partition and configure /etc/fstab as appropriate.

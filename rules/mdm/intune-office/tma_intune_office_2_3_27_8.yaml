@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.27.8
+title: 'Ensure ''Control how Office handles form-based sign-in prompts'' is set to ''Enabled: Block all prompts'''
+description: 'This policy setting controls how Office applications handle form-based sign-in prompts. Office Forms Based Authentication [MS-OFBA] is a protocol used in Office suite applications since Microsoft Office 2007. It provides a method to authenticate to other services via HTTP over a network connection. Note: This policy setting only applies to subscription versions of Office, such as Microsoft 365 Apps for enterprise, and to subscription versions of Project and Visio. The recommended state for this setting is: Enabled: Block all prompts Audit: reads the registry value(s) fbabehavior that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.27.8 Ensure ''Control how Office handles form-based sign-in prompts'' is set to ''Enabled: Block all prompts'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common'') -Name ''fbabehavior'' -ErrorAction SilentlyContinue).''fbabehavior''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':fbabehavior='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Block all prompts: Microsoft Office 2016\Security Settings\Control how Office handles form-based sign-in prompts'

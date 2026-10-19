@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-15.7
+title: Ensure Diagnostics settings logs for Batch accounts are enabled
+description: 'Azure Batch resource logs give important operational data such as job scheduling, pool management, and node communication. Having these logs enabled is necessary for monitoring, troubleshooting, and compliance auditing. Enable resource logging for: - Operational Visibility — Keep track of any job failures, node allocation issues, or API activities. - Security Compliance — Needed for audits (ISO 27001, SOC 2, GDPR). - Forensic Investigations — Acts as evidence in case of security incidents or performance bottlenecks.'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+- logging
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 15.7 Ensure Diagnostics settings logs for Batch accounts are enabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Login to Azure portal https://portal.azure.com 2. Go to Batch Accounts For each Batch account perform the following: 1. Expand the Monitoring section and click on Diagnostic settings If no named Diagnostic setting exists in the table, the configuration fails this audit procedure. Review the named Diagnostics settings in the table to ensure that the following categories are enabled: - ServiceLog (Tracks Batch service operations) - AuditLog (Records management-plane activities) Ensure that each is configured to send to a valid destination: - Log Analytics workspace (Recommended for querying) - Storage account (For long-term retention) - Event Hub (For real-time streaming) Audit from Azure CLI az batch account list --query "[].id" | xargs -I {} az monitor diagnostic- settings list --resource {} --query "value[].{account:{split(''/'')[8]}, name:name, enabled:logs[?enabled]}" -o tsv Audit from PowerShell Get-AzBatchAccount | ForEach-Object { $settings =
+    Get-AzDiagnosticSetting -ResourceId $_.Id [PSCustomObject]@{ AccountName = $_.AccountName HasDiagnostics = ($settings -ne $null) LogsEnabled = ($settings.Logs | Where-Object Enabled).Count -gt 0 } } Audit from...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Login to Azure portal https://portal.azure.com 2. Go to Batch Accounts For each Batch account perform the following: 1. Expand the Monitoring section and click on Diagnostic settings 2. Click +Add diagnostic setting 3. Enter an appropriate name, then ensure that the following categories are checked: o ServiceLog (Tracks Batch service operations) o AuditLog (Records management-plane activities) 4. Configure to send to a valid destination based on what is used within your tenant: o Log Analytics workspace (Recommended for querying) o Storage account (For long-term retention) o Event Hub (For real-time streaming) 5. Click Save Remediate from Azure CLI az monitor diagnostic-settings create \ --name "<batch_logs_name>" \ --resource $(az batch account show --name <batch_account_name> --resource- group <resource_group_name> --query id -o tsv) \ --logs ''[{"category": "AuditLog", "enabled": true}, {"category": "ServiceLog", "enabled": true}]'' \ --workspace
+    $(az monitor log-analytics workspace show --resource-group <resource_group_name> --name <workspace_name> --query id -o tsv) \ Remediate from PowerShell $batchAccountId = (Get-AzBatchAccount -AccountName "...'

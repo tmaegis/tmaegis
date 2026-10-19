@@ -1,0 +1,17 @@
+id: TMA-AZURE-STORAGE-7.1.1
+title: Ensure root squash for NFS file shares is configured (Microsoft.FileShares)
+description: 'Note: This recommendation applies to NFS file shares created with the Microsoft.FileShares provider. For NFS file shares hosted in a storage account (the Microsoft.Storage provider), see the corresponding Classic File Shares recommendation. Permissions for NFS file shares are enforced by the client OS rather than by the Azure Files service. Root squash is an administrative security feature in NFS that prevents unauthorized root-level access to the NFS server by client machines. This functionality is an important part of protecting user data and system settings from manipulation by untrusted or compromised clients. Administrators should enable root squash in environments where multiple users or systems access the NFS share, especially in scenarios where client machines are not fully trusted. By converting root users to anonymous users, root squash ensures that even if a client machine...'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 7.1.1 Ensure root squash for NFS file shares is configured (Microsoft.FileShares)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to audit. 3. Under Settings, select Configuration. 4. Ensure that Root squash is set to Root squash. 5. Repeat for each Microsoft.FileShares NFS file share. Audit from Azure CLI If the file shares extension is not installed, add it: az extension add --name fileshares For each file share, run the following command and ensure rootSquash returns RootSquash: az fileshare show --resource-group <resource-group> --name <file-share-name> --query rootSquash Audit from Azure PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share, run the following command and ensure NfProtocolPropertyRootSquash returns RootSquash: Get-AzFileShare -ResourceGroupName <resource-group> -ResourceName <file- share-name> | Select-Object -ExpandProperty NfProtocolPropertyRootSquash'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to remediate. 3. Under Settings, select Configuration. 4. Set Root squash to Root squash. 5. Select Save. 6. Repeat for each file share requiring remediation. Remediate from Azure CLI If the file shares extension is not installed, add it: az extension add --name fileshares For each file share requiring remediation, run: az fileshare update --resource-group <resource-group> --name <file-share- name> --root-squash RootSquash Remediate from Azure PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share requiring remediation, run: Update-AzFileShare -ResourceName <file-share-name> -ResourceGroupName <resource-group> -NfProtocolPropertyRootSquash RootSquash'

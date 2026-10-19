@@ -1,0 +1,17 @@
+id: TMA-AIX-5.1.1
+title: Ensure all local user accounts have a hashed password
+description: 'All (unlocked) accounts on the server must have a password. For this recommendation we look at the so-called files registery - as we cannot reliably review the entries kept in a centralized authentication system such as LDAP or Kerberos. An account password is a secret code word that must be entered to gain access to the account. If an account exists that has a blank password, multiple users may access the account without authentication and leave a weak audit trail. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.1.1 Ensure all local user accounts have a hashed password
+audit:
+  type: command
+  command: command -v awk >/dev/null 2>&1 || exit 1; [ -r /etc/security/passwd ] || exit 1; out=$( { awk '/^[^ \t*].*:[ \t]*$/ {u=$1} /^[ \t]*password[ \t]*=[ \t]*$/ {print "Account " u " has a blank password"}' /etc/security/passwd ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Check for accounts with an empty password field. If any, lock the account and assign an impossible password hash, as well as flag admin change (ADMCHG) to the password record. for user in $(/usr/bin/egrep -p "password = +$" /etc/security/passwd | awk '/:/ {print $1;}') do print "Locking account ${user} due to missing password" chuser account_locked='true' expires=0101000070 ${user} echo "$user:*" | chpasswd -e -f ADMCHG done

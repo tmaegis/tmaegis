@@ -1,0 +1,21 @@
+id: TMA-BIND-10.3
+title: Ensure the named_t Process Type is Not in Permissive Mode
+description: In addition to setting the entire SELinux configuration in permissive mode, it is possible to set individual process types (domains) such as named_t into a permissive mode as well. The permissive mode will not prevent any access or actions, instead, any actions that would have been denied are simply logged. The audit runs semodule -l and fails when the permissive_named_t module is loaded.
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- selinux
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 10.3 Ensure the named_t Process Type is Not in Permissive Mode
+audit:
+  type: command
+  command: |-
+    command -v semodule >/dev/null 2>&1 || exit 1
+    out=$(semodule -l 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | grep -q permissive_named_t && echo 'named_t is permissive' || echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: If the named_t type is in permissive mode; the customized permissive mode should be deleted with the following semanage command. # semanage permissive -d named_t'

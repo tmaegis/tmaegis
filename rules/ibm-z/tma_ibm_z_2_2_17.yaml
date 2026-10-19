@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.2.17
+title: Ensure that access to VTAMAPPL resources is controlled
+description: 'You can use resources in the VTAMAPPL class to control which users can open the application control block (ACB) indicated by a VTAM application program when the user is not running an APF-authorized program or command processor. Note: APF-authorized applications, such as APPC and TSO/E, do not need authorization in the VTAMAPPL class to open an ACB.'
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.2.17 Ensure that access to VTAMAPPL resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that VTAMAPPL appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that VTAMAPPL appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that VTAMAPPL appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The VTAMAPPL entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify that all ... (full steps: CIS section 2.2.17)'
+remediation:
+  type: iac_patch
+  command: 'To activate the VTAMAPPL class use the RACF SETROPTS command: SETROPTS CLASSACT(VTAMAPPL) To enable generic profile checking for the VTAMAPPL class use the RACF SETROPTS command: SETROPTS GENERIC(VTAMAPPL) To RACLIST the VTAMAPPL class use the RACF SETROPTS command: SETROPTS RACLIST(VTAMAPPL) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER <class> <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(<class>) + DELETE ID(<non-compliant>) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF
+    SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

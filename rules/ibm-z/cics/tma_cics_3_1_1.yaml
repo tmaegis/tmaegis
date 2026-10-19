@@ -1,0 +1,16 @@
+id: TMA-CICS-3.1.1
+title: Ensure that no unencrypted IP connections use BASICAUTH
+description: '11/10/2025 1.1.0 UPDATED RECOMMENDATION: 1.4.1 - Ensure that only authorized users can issue SPI commands - Sections Modified: Remediation Procedure 11/10/2025 1.1.0 UPDATED RECOMMENDATION: 1.4.2 - Ensure that a user requires authorization to start work under a different userid - Sections Modified: Remediation Procedure; Audit Procedure'
+target: cics
+level: 1
+severity: high
+tags:
+- cics
+- network
+reference: CIS IBM CICS Transaction Server 6.1 Benchmark v1.1.0 - 3.1.1 Ensure that no unencrypted IP connections use BASICAUTH
+audit:
+  type: manual
+  command: 'Issue the z/OSMF Compliance data collection REST API to drive collection of compliance evidence in the SMF 1154 record. https://{host}:{port}/zosmf/compliance/rest/v1/facts 1. Wait for the data to be collected; this may take up to a minute in some regions. 2. Customize and run the DFH$54P sample JCL to create a summary of all of the CICS TS regions. 3. Look at the ABBREV section of the output. Search for all entries with SMF1154_80_S4_NAME. 4. SMF1154_80_S4_NAME is the name of a TCPIPSERVICE definition. To find the region page back to look at the 1154 ... (full steps: CIS section 3.1.1)'
+remediation:
+  type: iac_patch
+  command: Either Configure all TCPIPSERVICE definitions with AUTHENTICATE(BASIC) to have SSL(YES) Or Create policy definitions in AT-TLS so that all TCPIPSERVICE definitions with AUTHENTICATE(BASIC) use TLS Restart CICS

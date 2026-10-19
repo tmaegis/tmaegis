@@ -1,0 +1,24 @@
+id: TMA-PFSENSE-5.1.1
+title: Ensure SNMP traps receivers is set
+description: Enables SNMP traps receivers where traps are sent. PASS requires a non-empty SNMP trap server in <snmpd>. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- snmp
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 5.1.1 Ensure SNMP traps receivers is set
+audit:
+  type: config_regex
+  pattern: <snmpd>(?:[^<]|<[^/<]|</[^s<]|</s[^n<]|</sn[^m<]|</snm[^p<]|</snmp[^d<]|</snmpd[^><])*?<trapserver>[^<\s][^<]*</trapserver>
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: Services > SNMP > SNMP Traps: tick Enable the SNMP Trap, set Trap server, port and string, Save.
+    # CIS guidance:
+    In GUI:
+    -
+    Navigate to Services > SNMP.
+    - Check "SNMP Traps Enable" is enable.
+    - Configured the "SNMP Trap Settings" value.
+    - CLIck Save

@@ -1,0 +1,20 @@
+id: TMA-MONGODB-2.3
+title: Ensure authentication is enabled in the sharded cluster
+description: Authentication is enabled in a sharded cluster when the certificate or key files are created and configured for all components. This ensures that every client that accesses the cluster must provide credentials, to include MongoDB instances that access each other within the cluster. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). The benchmark requires x.509 membership authentication (keyFile is accepted only for development); applies to sharded clusters and replica sets.
+target: mongodb
+level: 2
+severity: high
+tags:
+- mongodb
+- authentication
+- cluster
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 2.3 Ensure authentication is enabled in the sharded cluster
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*clusterAuthMode:[ \t]*['\x22]?x509\b
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'On every member configure net.tls (mode: requireTLS, certificateKeyFile, CAFile, clusterFile) and security.clusterAuthMode: x509, then perform a rolling restart.'

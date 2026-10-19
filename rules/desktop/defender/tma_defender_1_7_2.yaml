@@ -1,0 +1,19 @@
+id: TMA-DEFENDER-1.7.2
+title: 'Ensure ''Select cloud protection level'' is set to Enabled: Moderate blocking level'' or higher'
+description: 'This policy setting determines how aggressive Microsoft Defender Antivirus will be in blocking and scanning suspicious files. Threat data from this feature is analyzed in real time using, machine learning models, and behavioral analysis. Options for blocking levels are: - Default blocking level provides strong detection without increasing the risk of detecting legitimate files. Rationale: Attackers routinely deploy new malware variants that can change faster than signature updates. Enabling cloud protection can close this gap with its ability to detect and block new, unknown, and fast-moving threats. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine:MpCloudBlockLevel (REG_DWORD); compliant when it is 1 or 2 or 4 or 6. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does
+  not revert it.'
+target: defender
+level: 1
+severity: high
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.7.2 Ensure ''Select cloud protection level'' is set to Enabled: Moderate blocking level'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine'' -Name ''MpCloudBlockLevel'' -ErrorAction SilentlyContinue).''MpCloudBlockLevel''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1,2,4,6) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'MpCloudBlockLevel' -Value 1 -PropertyType DWord -Force | Out-Null

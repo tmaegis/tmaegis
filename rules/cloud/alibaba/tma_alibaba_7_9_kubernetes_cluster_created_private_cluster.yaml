@@ -1,0 +1,23 @@
+id: TMA-ALIBABA-7.9
+title: Ensure Kubernetes Cluster is created with Private cluster enabled
+description: 'A private cluster is a cluster that makes your master inaccessible from the public internet. In a private cluster, nodes do not have public IP addresses, so your workloads run in an environment that is isolated from the internet. Nodes have addresses only in the private address space. With a Private cluster enabled, VPC network peering gives you several advantages over using external IP addresses or VPNs to connect networks, including: Network Latency: Public IP networking suffers higher latency than ... Lists ACK clusters (aliyun cs GET /clusters) and fails any whose master_url has a public api_server_endpoint; a clusterless account is compliant. Read-only aliyun CLI calls; credentials and default region come from the CLI''s normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.'
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- ack
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 7.9 Ensure Kubernetes Cluster is created with Private cluster enabled
+audit:
+  type: command
+  command: |-
+    out=$(aliyun cs GET /clusters 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | grep -q '"cluster_id"' || { echo compliant; exit 0; }
+    printf '%s\n' "$out" | awk '
+    /"cluster_id"/ { id = $0; sub(/^[^:]*:[[:space:]]*"/, "", id); sub(/".*/, "", id) }
+    /"master_url"/ { if ($0 ~ /[{,]\\"api_server_endpoint\\":\\"https?:/) { print "public API endpoint on cluster listed near " id; n++ } }
+    END { if (!n) print "compliant" }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove the API server's public endpoint (ACK console > cluster > Basic Information > API Server Public Endpoint > Unbind EIP) and access the cluster through the internal endpoint, a VPN or a bastion.

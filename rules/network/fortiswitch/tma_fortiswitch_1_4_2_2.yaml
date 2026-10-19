@@ -1,0 +1,31 @@
+id: TMA-FORTISWITCH-1.4.2.2
+title: Ensure only encrypted access channels are enabled
+description: Allow only HTTPS access to the GUI and SSH access to the CLI. FAILs if any interface allowaccess list contains http or telnet. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: high
+tags:
+- fortiswitch
+- crypto
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.4.2.2 Ensure only encrypted access channels are enabled
+audit:
+  type: config_regex
+  pattern: (?m)^config system interface\n(?:[ \t]+[^\n]*\n)*?[ \t]+set allowaccess [^\n]*\b(?:telnet|http)\b[^\n]*[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system interface
+        edit "mgmt"
+            set allowaccess https ping ssh snmp
+        next
+    end
+    # CIS guidance:
+    If HTTP or Telnet is in the allowaccess list, you will have to set that list again with the same elements except for http or telnet. On CLI:
+    config system interface
+        edit port1
+            set allowaccess ssh https ping snmp
+        end
+    In the web GUI, click on:
+    1. Network > Interfaces, select the interface and click "Edit".
+    2. In the interface setting page, uncheck HTTP and Telnet in the section "Administrative Access".

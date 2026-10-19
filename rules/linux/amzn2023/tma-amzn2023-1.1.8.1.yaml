@@ -1,0 +1,21 @@
+id: TMA-AMZN2023-1.1.8.1
+title: Ensure /dev/shm is a separate partition
+description: The /dev/shm directory is a world-writable directory that can function as shared memory that facilitates inter process communication (IPC).
+target: linux
+os_family:
+- amzn-2023
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS Amazon Linux 2023 Benchmark v1.0.0 - 1.1.8.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /dev/shm >/dev/null 2>&1; then echo compliant; else echo /dev/shm' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For specific configuration requirements of the /dev/shm mount for your environment, modify /etc/fstab. Example of using tmpfs with specific mount options: tmpfs /dev/shm tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0'

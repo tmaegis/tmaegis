@@ -1,0 +1,16 @@
+id: TMA-APACHE-2.1
+title: Ensure Only Necessary Authentication and Authorization Modules Are Enabled
+description: 'The Apache 2.4 modules for authentication and authorization are grouped and named to provide both granularity and a consistent naming convention to simplify configuration. The authn_* modules provide authentication, while the authz_* modules provide authorization. Apache provides two types of authentication - basic and digest. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- modules
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 2.1 Ensure Only Necessary Authentication and Authorization Modules Are Enabled
+audit:
+  type: manual
+  command: '1. Use the httpd -M option as root to check which auth*modules are loaded. # httpd -M | egrep ''auth._'' 2. Also use the httpd -M option as root to check for any LDAP modules which don''t follow the same naming convention. # httpd -M | egrep ''ldap'' The above commands should generate a Syntax OK message to stderr, in addition to a list of modules installed to stdout. If the Syntax OK message is missing, then there was most likely an error in parsing the configuration files.'
+remediation:
+  type: iac_patch
+  command: Consult Apache module documentation for descriptions of each module in order to determine the necessary modules for the specific installation. https://httpd.apache.org/docs/2.4/mod/ The unnecessary static compiled modules are disabled through compile time configuration options as documented in https://httpd.apache.org/docs/2.4/programs/configure.html. The dynamically loaded modules are disabled by commenting out or removing the LoadModule directive from the Apache configuration files (typically httpd.conf). Some modules may be separate packages, and may be removed.

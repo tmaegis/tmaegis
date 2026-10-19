@@ -1,0 +1,22 @@
+id: TMA-CISCO-NXOS-3.1.2.3
+title: Configure BGP Authentication
+description: 'BGP is a usually configured as a point-to-point / unicast protocol. Configuring authentication as part of the neighbor configuration adds an additional layer of security to the conversation. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: high
+tags:
+- cisco-nxos
+- network
+- aaa
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.2.3 Configure BGP Authentication
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The "show running-confguration bgp" command will list the entire BGP configuration. Ensure that the "password" command is present in each neighbor stanza. switch# sho run bgp !Command: show running-config bgp !Running configuration last done at: Wed May 20 13:52:03 2020 !Time: Wed May 20 13:54:17 2020 version 9.3(3) Bios:version feature bgp router bgp 65520 router-id 10.10.10.10 neighbor 10.10.10.11 remote-as 65521 log-neighbor-changes password 3 34a1d2277d4f4cc9e9fa97b9d4434019f46f16ae96bb54a3 address-family ipv4 unicast'
+remediation:
+  type: iac_patch
+  command: |-
+    ! For each BGP neighbor, add the "password" command to the matching stanza, with a long and complex string. Note that the same password must be used on the matching peer. Different passwords should be used for each peer.
+    router bgp 65520
+    neigh 10.10.10.11
+    password ? 0 Specifies an UNENCRYPTED neighbor password will follow 3 Specifies an 3DES ENCRYPTED neighbor password will follow 7 Specifies a Cisco type 7 ENCRYPTED neighbor password will follow LINE The UNENCRYPTED (cleartext) neighbor password
+    password somelongcomplexstring

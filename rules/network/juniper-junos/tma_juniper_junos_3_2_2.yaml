@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-3.2.2
+title: Ensure authentication-type is set to MD5 (VRRP)
+description: Any VRRP authentication should use MD5 HMAC. VRRP provides resilience for a routers interfaces, allowing another router to act as backup in the event of a partial or complete failure of the primary router and increasing the availability network resources as well as resilience to DoS attack. Passes when VRRP is not configured; otherwise requires 'authentication-type md5'. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 3.2.2 Ensure authentication-type is set to MD5
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:(?:(?:(?:[^v \t\n][^ \t\n]*|v(?:|[^r \t\n][^ \t\n]*|r(?:|[^r \t\n][^ \t\n]*|r(?:|[^p \t\n][^ \t\n]*|p(?:|[^\- \t\n][^ \t\n]*|-(?:|[^g \t\n][^ \t\n]*|g(?:|[^r \t\n][^ \t\n]*|r(?:|[^o \t\n][^ \t\n]*|o(?:|[^u \t\n][^ \t\n]*|u(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^ \t\n]*)))))))))))[ \t]+)*(?:(?:[^v \t\n][^ \t\n]*|v(?:|[^r \t\n][^ \t\n]*|r(?:|[^r \t\n][^ \t\n]*|r(?:|[^p \t\n][^ \t\n]*|p(?:|[^\- \t\n][^ \t\n]*|-(?:|[^g \t\n][^ \t\n]*|g(?:|[^r \t\n][^ \t\n]*|r(?:|[^o \t\n][^ \t\n]*|o(?:|[^u \t\n][^ \t\n]*|u(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^ \t\n]*))))))))))))?|(?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*)))))?)\n)*[^\n]*\bvrrp-group \d+ virtual-address\b[^\n]*(?:\n(?:(?:(?:(?:[^v \t\n][^ \t\n]*|v(?:|[^r \t\n][^ \t\n]*|r(?:|[^r \t\n][^ \t\n]*|r(?:|[^p \t\n][^ \t\n]*|p(?:|[^\- \t\n][^ \t\n]*|-(?:|[^g \t\n][^ \t\n]*|g(?:|[^r
+    \t\n][^ \t\n]*|r(?:|[^o \t\n][^ \t\n]*|o(?:|[^u \t\n][^ \t\n]*|u(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^ \t\n]*)))))))))))[ \t]+)*(?:(?:[^v \t\n][^ \t\n]*|v(?:|[^r \t\n][^ \t\n]*|r(?:|[^r \t\n][^ \t\n]*|r(?:|[^p \t\n][^ \t\n]*|p(?:|[^\- \t\n][^ \t\n]*|-(?:|[^g \t\n][^ \t\n]*|g(?:|[^r \t\n][^ \t\n]*|r(?:|[^o \t\n][^ \t\n]*|o(?:|[^u \t\n][^ \t\n]*|u(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^ \t\n]*))))))))))))?|(?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*)))))?)))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have configured VRRP on one or more interfaces you can configure authentication using MD5-HMAC with the following commands from the hierarchy;
+    set interfaces <interface name> unit <unit number> family inet address <ip address> vrrp-group <group number> authentication-type md5

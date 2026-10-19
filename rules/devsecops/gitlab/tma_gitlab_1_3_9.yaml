@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.3.9
+title: Ensure an organization’s identity is confirmed with a “Verified” badge
+description: Confirm the domains an organization owns with a "Verified" badge. Verifying the organization's domain gives developers assurance that a given domain is truly the official home for a public organization. Attackers can pretend to be an organization and steal information via a faked/spoof domain, therefore the use of a "Verified" badge instills more confidence and trust between developers and the open- source community.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.3.9 Ensure an organization’s identity is confirmed with a “Verified” badge
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Step 1: - On the left sidebar, select Search or go to and find your top-level group. - Select Settings > Domain Verification. - In the upper-right corner, select Add Domain. - In Domain, enter the domain name. - In Project, link to a project. - In Certificate: o If you do not have or do not want to use an SSL certificate, leave Automatic certificate management using Let’s Encrypt selected. o Optional. Turn on the Manually enter certificate information toggle to add an SSL/TLS certificate. You can also add the certificate and key later. - Select Add Domain. Step 2: After you create a new domain, the verification code prompts you. Copy the values from GitLab and paste them in your domain’s control panel as a TXT record. Step 3: After you have added all the DNS records: - On the left sidebar, select Search or go to and find your group. - Select Settings > Domain Verification. - On the domain table row, Select Retry verification ().'

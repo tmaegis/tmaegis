@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.5
+title: Ensure Azure Key Vaults are Used to Store Secrets
+description: Azure Key Vault will store multiple types of sensitive information such as encryption keys, certificate thumbprints, and Managed Identity Credentials. Access to these 'Secrets' can be controlled through granular permissions. The credentials given to an application have permissions to create, delete, or modify data stored within the systems they access. If these credentials are stored within the application itself, anyone with access to the application or a copy of the code has access to them. Storing within Azure Key Vault as secrets increases security by controlling access. This also allows for updates of the credentials without redeploying the entire application.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+- crypto
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.5 Ensure Azure Key Vaults are Used to Store Secrets
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Login to Azure Portal. 2. In the expandable menu on the left go to Key Vaults. 3. View the Key Vaults listed. Audit from Azure CLI To list key vaults and/or HSMs within a subscription run the following command: az keyvault list [--resource-type] --subscription <id_or_name_of_target_subscription> --resource-type could be either __vault__ or __hsm__ . When parameter is missing all types of vaults will be listed. To list the secrets within a target key vaults run the following command: az keyvault secret list [--vault-name / --id] To list the certificates within a target key vault run the following command: az keyvault certificate list [--vault-name / --id] To list the keys within a target key vault run the following command: az keyvault secret list [--vault-name / --id] --id represents the full URI of the vault --vault-name represents the name and must be present if --id is missing Audit from PowerShell To list key vaults within a subscription run the
+    following command: Get-AzKeyVault To list all secrets in a key vault run the following command: Get-AzKeyVaultSecret -VaultName ''<vaultName>'''
+remediation:
+  type: iac_patch
+  command: 'Remediation has 2 steps 1. Setup the Key Vault 2. Setup the App Service to use the Key Vault Step 1: Set up the Key Vault Remediate from Azure CLI az keyvault create --name "<name>" --resource-group "<myResourceGroup>" -- location myLocation Remediate from PowerShell New-AzKeyvault -name <name> -ResourceGroupName <myResourceGroup> -Location <myLocation> Step 2: Set up the App Service to use the Key Vault Sample JSON Template for App Service Configuration: [continues on next 3 pages] { //... "resources": [ { "type": "Microsoft.Storage/storageAccounts", "name": "[variables(''storageAccountName'')]", //... }, { "type": "Microsoft.Insights/components", "name": "[variables(''appInsightsName'')]", //... }, { "type": "Microsoft.Web/sites", "name": "[variables(''functionAppName'')]", "identity": { "type": "SystemAssigned" }, //... "resources": [ { "type": "config", "name": "appsettings", //... "dependsOn": [ "[resourceId(''Microsoft.Web/sites'', variables(''functionAppName''))]", "[resourceId(''Microsoft.KeyVault/vaults/'',
+    variables(''keyVaultName''))]", "[resourceId(''Microsoft.KeyVault/vaults/secrets'', variables(''keyVaultName''), variables(''storageConnectionStringName''))]", "[resourceId(''Microsoft.K...'

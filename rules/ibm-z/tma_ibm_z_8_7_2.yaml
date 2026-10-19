@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-8.7.2
+title: Ensure that RJE workstations have paired user IDs
+description: JES2 RJE workstations and NJE nodes provide a method of sending and receiving data (e.g. jobs, job output, and commands) from remote locations. Failure to properly identify and control these remote facilities could result in unauthorized sources transmitting data to and from the operating system. This exposure may threaten the integrity and availability of the operating system environment and compromise the confidentiality of customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.7.2 Ensure that RJE workstations have paired user IDs
+audit:
+  type: manual
+  command: 'This guidance addresses RJE Workstations that are "Dedicated". If an RJE workstation is dedicated, the assumption is that the RJE to host connection is hard-wired between the RJE and host. In this case the RMT definition statement will contain the keyword LINE= which specifies that this RJE is only connected via that one LINE statement. Request a list of RMT<nnnn> entries that are "dedicated". Request reports generated using IRRDBU00 output that will allow you to: Verify that any "dedicated" RMT<nnnn> entry has matching RACF USER ID that: Has the RESTRICTED ... (full steps: CIS section 8.7.2)'
+remediation:
+  type: iac_patch
+  command: 'To create user IDs for "dedicated" RMT<nnnn> entries use the RACF ADDGROUP, ADDUSER, and CONNECT commands: ADDGROUP RMTGRP + OWNER(<group>) + SUPGROUP(<group>) + DATA(''DEFAULT DEDICATED RJE WORKSTATION ID OWNING GROUP'') ADDUSER RMT<nnnn> + OWNER(RMTGRP) + DFLTGRP(RMTGRP) + RESTRICTED + UAUDIT + DATA(''DEDICATED RJE WORKSTATION ID'') CONNECT RMT<nnnn> + GROUP(RMTGRP) + OWNER(RMTGRP) To create a paired profiles in the JESINPUT class use the RACF RDEFINE and PERMIT commands: RDEFINE JESINPUT RMT<nnnn> + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''DEDICATED RJE WORKSTATION'') PERMIT JESINPUT RMT<nnnn> + ACCESS(READ) ID(RMT<nnnn>)'

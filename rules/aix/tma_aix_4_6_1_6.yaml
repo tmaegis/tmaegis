@@ -1,0 +1,19 @@
+id: TMA-AIX-4.6.1.6
+title: Ensure CDE remote GUI login is disabled
+description: 'The XDMCP service allows remote systems to start local X login sessions. The XDMCP service should be disabled unless there is a requirement to allow remote X servers to start login sessions. If the ability to host remote X servers is not required, disable the service. Audit: SKIP when CDE has no /etc/dt/config/Xconfig.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.6.1.6 Ensure CDE remote GUI login is disabled
+audit:
+  type: file_regex
+  file_path: /etc/dt/config/Xconfig
+  pattern: (?m)^Dtlogin\.requestPort:\s+0\s*$
+  requires_file:
+  - /etc/dt/config/Xconfig
+remediation:
+  type: iac_patch
+  command: 'Copy /usr/dt/config/Xconfig to /etc/dt/config if it does not already exist: ls -l /etc/dt/config/Xconfig If the file does not exist, create it: mkdir -p /etc/dt/config cp /usr/dt/config/Xconfig /etc/dt/config Disable remote X sessions from being started: vi /etc/dt/config/Xconfig Replace: # Dtlogin.requestPort: 0 With: Dtlogin.requestPort: 0'

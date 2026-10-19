@@ -1,0 +1,16 @@
+id: TMA-IBM-I-5.3.4
+title: IBM i SMBv2 Server
+description: This setting configures the server-side processing of the Server Message Block version 2 (SMBv2) protocol. Since September 2016, vendors have strongly encouraged that SMBv1 be disabled and no longer used on modern networks, as it is a 30 year old design that is much more vulnerable to attacks than much newer designs such as SMBv2 and SMBv3.
+target: ibm-i
+level: 1
+severity: medium
+tags:
+- ibm-i
+- services
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 5.3.4 IBM i SMBv2 Server
+audit:
+  type: manual
+  command: 'You can control which version(s) of SMB the NetServer will support by calling the NetServer maintenance utility to set the SMB flags and then restarting the NetServer. A good starting point is to see what those flags are presently set to. In order to view the SMB flags do the following: CALL QZLSMAINT PARM(''40'' ''0'') Type WRKSPLF and locate your spool file with the name QPCSMPRT. Verify that the data in the flags is as follows which indicates that the server supports only SMBv2 and SMBv3: OLD FLAGS 0000000000000100 NEW FLAGS 0000000000000100 To recap, the ... (full steps: CIS section 5.3.4)'
+remediation:
+  type: iac_patch
+  command: To allow SMB2 and SMB3 only, set the flags to a value of 100. CALL QZLSMAINT PARM('40' '3') CALL QZLSMAINT PARM('40' '1' '0X100')

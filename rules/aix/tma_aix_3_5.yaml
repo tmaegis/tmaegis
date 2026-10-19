@@ -1,0 +1,17 @@
+id: TMA-AIX-3.5
+title: Ensure there are no group staff writable files
+description: 'The system is audited for group staff writable files. An audit should be performed on the system to search for files that can be modified by members of the group staff. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 3.5 Ensure there are no group staff writable files
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / \( -fstype jfs -o -fstype jfs2 \) -type f -perm -g+w -group staff -ls ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to remove the write bit for the group staff: find / \( -fstype jfs -o -fstype jfs2 \) -type f -perm -g+w -group staff - exec chmod g-w {} +'

@@ -1,0 +1,53 @@
+id: TMA-ROCKY9-5.3.3.4.3
+title: Ensure pam_unix includes a strong password hashing algorithm
+description: A cryptographic hash function converts an arbitrary-length input into a fixed length output. Password hashing performs a one-way transformation of a password, turning the password into another string, called the hashed password.
+target: linux
+os_family:
+- rocky-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 9 Benchmark v3.0.0 - 5.3.3.4.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''grep -Pi -- ''"''"''^\h*password\h+(requisite|required|sufficient)\h+pam_unix\.so(\h+[^#\n\r]+)? \h+(sha512|yescrypt)\b''"''"'' /etc/pam.d/system-auth /etc/pam.d/password-auth'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''A line should be returned for both files, each including either sha512 or yescrypt.'' || { echo step1: missing ''A line should be returned for both files, each including eit''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    PAMF="/etc/pam.d/system-auth /etc/pam.d/password-auth /etc/pam.d/system-password /etc/pam.d/common-auth /etc/pam.d/common-password /etc/pam.d/common-account /etc/pam.d/common-session /etc/pam.d/common-session-noninteractive /etc/pam.d/postlogin"
+    # tma_pam_sed EXPR : sed -E on every existing PAM stack file (follows symlinks, backs up once)
+    tma_pam_sed() { for f in $PAMF /usr/share/pam-configs/unix; do
+      [ -e "$f" ] || continue; tma_bak "$f"; sed -i --follow-symlinks -E "$1" "$f"; done; }
+    # tma_conf_set FILE KEY VALUE : "key = value", replacing active or commented key lines
+    tma_conf_set() { f=$1; k=$2; v=$3; mkdir -p "$(dirname "$f")"; [ -e "$f" ] || : > "$f"; tma_bak "$f"
+      sed -i -E "/^[[:space:]]*#?[[:space:]]*$k[[:space:]]*=/d" "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; }
+    tma_conf_del() { for f in $2; do [ -e "$f" ] || continue; tma_bak "$f"; sed -i -E "/^[[:space:]]*$1[[:space:]]*=/d" "$f"; done; }
+    # keep yescrypt where present, otherwise force sha512 on password lines
+    tma_pam_sed '/^[[:space:]]*password[[:space:]].*pam_unix\.so/ { /(sha512|yescrypt)/! { s/[[:space:]]+(md5|bigcrypt|blowfish|sha256|des)\b//g; s/$/ sha512/ } }'
+    if [ -f /etc/login.defs ]; then tma_bak /etc/login.defs
+      grep -Eqi '^[[:space:]]*ENCRYPT_METHOD[[:space:]]+(SHA512|YESCRYPT)\b' /etc/login.defs || {
+        sed -i -E '/^[[:space:]]*ENCRYPT_METHOD[[:space:]]/d' /etc/login.defs; echo 'ENCRYPT_METHOD SHA512' >> /etc/login.defs; }
+    fi
+    if [ -f /etc/libuser.conf ]; then tma_bak /etc/libuser.conf; sed -i -E 's/^[[:space:]]*crypt_style[[:space:]]*=.*/crypt_style = sha512/' /etc/libuser.conf; fi
+    true
+  guidance: "The pam_unix arguments are configured through the active authselect profile so that the change is durable; editing /etc/pam.d/system-auth or /etc/pam.d/password-auth directly is not durable, because authselect regenerates those files (see the section overview for the authselect profile model). Set yescrypt, the default and recommended algorithm on this platform: 1. Ensure the system is using a custom authselect profile. If it is still on a stock profile, create and select one first, as described in the section overview. 2. On the pam_unix.so line in the password stack of the active custom profile templates (/etc/authselect/custom/<profile>/system-auth and /etc/authselect/custom/<profile>/pas…"

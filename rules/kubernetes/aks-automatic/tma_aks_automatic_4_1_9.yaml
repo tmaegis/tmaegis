@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.1.9
+title: Minimize access to the nodes/proxy subresource
+description: Review AKS authorization to ensure access to the nodes/proxy subresource is granted only to identities with a documented operational need. Review Kubernetes ClusterRole and ClusterRoleBinding objects, service accounts that receive this access, and applicable Azure role assignments because Azure RBAC for Kubernetes authorization is preconfigured in AKS Automatic. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: medium
+tags:
+- aks-automatic
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.9 Minimize access to the nodes/proxy subresource
+audit:
+  type: manual
+  command: Review custom Kubernetes ClusterRole and ClusterRoleBinding objects that grant access to the nodes/proxysubresource. Include rules that grant nodes/proxy directly or through resource wildcards such asnodes/or`. Confirm that each assignment is required for an approved troubleshooting, maintenance, or platform administration function. Also review direct and inherited Azure role assignments and custom roles that permit this resource or all Kubernetes resources because Azure RBAC for Kubernetes authorization is preconfigured in AKS Automatic.
+remediation:
+  type: iac_patch
+  command: Reduce custom RBAC access to the nodes/proxy API path so it is limited to approved administrative identities that require kubelet access. • Remove nodes/proxy, nodes/*, or applicable wildcard rules from any custom ClusterRole that does not require kubelet proxy access. • Where node data is still required, use the narrower node subresource and verbs supported by the current AKS release instead of nodes/proxy. • Remove any ClusterRoleBinding that grants this access to a workload service account, CI/CD identity, or operator group without an approved requirement. • Remove equivalent Azure role assignments or custom role permissions that are not required. Azure RBAC for Kubernetes authorization is preconfigured in AKS Automatic.

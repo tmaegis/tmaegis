@@ -1,0 +1,17 @@
+id: TMA-EKS-5.4.3
+title: Ensure clusters are created with Private Nodes
+description: This recommendation is about the data plane, not the control plane. It means worker nodes are placed in private subnets and are not intended to have direct public internet exposure. In the common pattern, nodes run in private subnets while internet-facing ingress resources are placed in public subnets. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- managed-services
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.4.3 Ensure clusters are created with Private Nodes
+audit:
+  type: manual
+  command: Review the subnets used by each EKS node group and verify that worker nodes are deployed in private subnets, not public subnets. For this control, the deciding evidence is node subnet placement, public IP behavior, and subnet routing, not the control plane endpoint settings. A compliant private-node design places nodes in subnets that do not auto-assign public IP addresses and do not have a default route to an Internet Gateway. If outbound access is required, the design should use a NAT gateway or the necessary VPC endpoints instead.
+remediation:
+  type: iac_patch
+  command: For existing worker nodes that run in public subnets, remediate the nodes by replacing them with a new node group that uses only private subnets, then migrating workloads and retiring the original node group. Managed node group subnet placement is defined when the node group is created, so moving existing nodes to private subnets is handled as a replacement and migration activity rather than an in-place subnet change. The target private subnets should not auto-assign public IPv4 addresses and should not have a default route to an Internet Gateway. If outbound access is required for image pulls or AWS API calls, provide it through a NAT gateway or the required VPC endpoints instead. • Create a new node group that uses only private subnet IDs. Do not reuse public subnets for the replacement worker nodes.

@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.2.9
+title: Ensure end-to-end TLS encryption is enabled
+description: 'End-to-end (E2E) TLS encryption ensures that front-end to worker communication within App Service deployment slots is encrypted using TLS. Without this feature, while incoming HTTPS requests are encrypted to the front ends, the traffic from front ends to workers running the application workloads would travel unencrypted inside Azure’s infrastructure. E2E TLS helps ensure full encryption of traffic between: - Clients and front ends - Front ends and worker processes hosting the application'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+- encryption
+- tls
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.2.9 Ensure end-to-end TLS encryption is enabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings pane, under Platform settings, ensure that Enable end-to-end TLS encryption is set to On. 7. Repeat steps 1-6 for each app and deployment slot. Audit from Azure CLI Run the following command to list apps: az webapp list For each app, run the following command to list deployment slots: az webapp deployment slot list --resource-group <resource-group-name> --name <app-name> For each deployment slot, ensure that endToEndEncryptionEnabled is set to true. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: 123aed70-491a-4f07-a569-e1f3a8dd651e - Name: ''App Service app slots should enable end to end encryption'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings pane, under Platform settings, next to Enable end-to-end TLS encryption, click the radio button next to On. 7. Click Save. 8. Click Continue. 9. Repeat steps 1-8 for each app and deployment slot requiring remediation. Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to enable end-to-end TLS encryption: az resource update --resource-group <resource-group-name> --name <app- name>/slots/<deployment-slot-name> --resource-type "Microsoft.Web/sites" -- set properties.endToEndEncryptionEnabled=true'

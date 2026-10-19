@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.24
+title: Ensure 'Keep browsing data when creating enterprise profile by default' Is Enabled
+description: 'This setting controls keeping existing browser data when an enterprise profile is created. It can be configured to either: - Disabled (0): Do not check the option to keep existing browsing data by default - Enabled (1): Check the option to keep existing browsing data by default If the value for EnterpriseProfileCreationKeepBrowsingData is not changed from the default, it will behave as if it is enabled. Rationale: Setting this policy gives the user the option to keep any previous browsing data after setting up an enterprise profile. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:EnterpriseProfileCreationKeepBrowsingData (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.24 Ensure 'Keep browsing data when creating enterprise profile by default' Is Enabled
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''EnterpriseProfileCreationKeepBrowsingData'' -ErrorAction SilentlyContinue).''EnterpriseProfileCreationKeepBrowsingData''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'EnterpriseProfileCreationKeepBrowsingData' -Value 1 -PropertyType DWord -Force | Out-Null

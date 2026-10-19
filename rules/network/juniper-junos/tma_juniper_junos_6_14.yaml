@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.14
+title: Ensure Configuration File Encryption is Set
+description: Configuration files should be encrypted. On many JUNOS platforms the configuration files are stored on a removal flash file system. A malicious user with even momentary physical access to the router could readily remove the flash card, gaining access to the device's configuration which is likely to ... Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.14 Ensure Configuration File Encryption is Set
+audit:
+  type: config_regex
+  pattern: (?m)^set system encrypt-configuration-files\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! To enable Configuration File Encryption, you must first set an encryption key by issuing the following command from Operational Mode:
+    request system set-encryption-key You will be prompted to enter and then verify the key. The preferred encryption algorithm may be specified by adding the algorithm option, or left as default. If the device is running the US/Domestic version of JUNOS the default algorithm will be AES. Devices running the Export version of JUNOS will default to the weaker DES standard and cannot be configured to support AES. Optionally, the unique option may be specified. This will cause JUNOS to combine the device's Serial Number as part of the Encryption Key, making the configuration unloadable on any other JUNOS device, even with the key set at the prompt. Once a key has been set the following command should be issued from the hierarchy:
+    set system encrypt-configuration-files The encryption will not be carried out until the configuration is committed.

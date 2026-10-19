@@ -1,0 +1,17 @@
+id: TMA-M365-EXO-MODERN-AUTH
+title: Ensure modern authentication for Exchange Online is enabled
+description: 'Modern authentication is required for MFA and Conditional Access to apply to Outlook clients. Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- authentication
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange admin center / Modern authentication (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $o = Get-OrganizationConfig -ErrorAction Stop; if ($o.OAuth2ClientProfileEnabled -eq $true) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-OrganizationConfig -OAuth2ClientProfileEnabled $true

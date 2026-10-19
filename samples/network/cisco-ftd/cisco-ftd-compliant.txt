@@ -1,0 +1,35 @@
+: Saved
+: Synthetic sample: Cisco FTD "show running-config" (hardened). Not a secure template.
+: Hardware: FPR-2110
+NGFW Version 7.4.1
+!
+hostname ftd-edge-01
+domain-name example.com
+!
+interface GigabitEthernet1/1
+ nameif outside
+ security-level 0
+ ip address 203.0.113.2 255.255.255.248
+!
+interface GigabitEthernet1/2
+ nameif inside
+ security-level 100
+ ip address 192.0.2.1 255.255.255.0
+!
+logging enable
+logging timestamp
+logging buffered informational
+logging host inside 192.0.2.50
+logging trap informational
+!
+fragment chain 1 outside
+fragment chain 1 inside
+!
+ssh 192.0.2.0 255.255.255.0 inside
+ssh timeout 5
+!
+snmp-server group NMS v3 priv
+snmp-server user nmsuser NMS v3 auth sha REDACTED priv aes 128 REDACTED
+snmp-server host inside 192.0.2.51 version 3 nmsuser
+!
+: end

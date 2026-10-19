@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-3.1.9
+title: Ensure syslog messages are not lost due to size
+description: YugabyteDB log messages can exceed 1024 bytes, which is a typical size limit for traditional Syslog implementations. When syslog_split_messages is off, YugabyteDB server log messages are delivered to the Syslog service as is, and it is up to the Syslog service to cope with the potentially bulky messages.
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.9 Ensure syslog messages are not lost due to size
+audit:
+  type: manual
+  command: Run SHOW syslog_split_messages; in ysqlsh. Where syslog is a log destination it must be on (the default), so that messages longer than about 1024 bytes are split instead of truncated or lost; off is a finding.
+remediation:
+  type: iac_patch
+  command: 'Use the yb-tserver binary and its flags to configure the YB-TServer server. Add the following GFLAG to YB-TServer: ./bin/yb-tserver --ysql_pg_conf_csv="syslog_split_messages=''on''"'

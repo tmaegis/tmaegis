@@ -1,0 +1,18 @@
+id: TMA-YUGABYTEDB-3.2
+title: Ensure the YugabyteDB Audit Extension (pgAudit) is enabled
+description: The YugabyteDB Audit Extension (pgAudit) provides detailed session and/or object audit logging via the standard YugabyteDB logging facility. The goal of pgAudit is to provide YugabyteDB users with the capability to produce audit logs often required to comply with government, financial, or ISO certifications. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Passes when pgaudit is in shared_preload_libraries and pgaudit.log includes at least WRITE, DDL, ROLE and MISC (or ALL).
+target: yugabytedb
+level: 1
+severity: high
+tags:
+- yugabytedb
+- logging
+- audit
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.2 Ensure the YugabyteDB Audit Extension (pgAudit) is enabled
+audit:
+  type: sql_query
+  command: libs=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SHOW shared_preload_libraries" 2>/dev/null) || exit 1; lg=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SHOW pgaudit.log" 2>/dev/null) || exit 1; case ",$(printf '%s' "$libs" | tr -d ' ')," in *,pgaudit,*) ;; *) echo 'pgaudit not preloaded'; exit 0;; esac; l=$(printf '%s' "$lg" | tr 'A-Z' 'a-z' | tr -d ' '); case ",$l," in *,all,*) echo compliant; exit 0;; esac; for c in write ddl role misc; do case ",$l," in *,$c,*) ;; *) echo "pgaudit.log missing $c"; exit 0;; esac; done; echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: CREATE EXTENSION IF NOT EXISTS pgaudit; then add --ysql_pg_conf_csv="pgaudit.log='WRITE, DDL, ROLE, MISC',pgaudit.log_level=notice,pgaudit.log_client=ON" to every YB-TServer and restart it.

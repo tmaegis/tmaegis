@@ -1,0 +1,18 @@
+id: TMA-M365-2.1.2
+title: Ensure the Common Attachment Types Filter is enabled
+description: The Common Attachment Types Filter is a setting within Exchange Online Protection's anti-malware policy that blocks inbound and outbound email messages containing attachments of specified file types. When enabled, messages with attachments matching the blocked extensions are quarantined before delivery. Microsoft maintains a default set of file types considered high risk; organizations may also add custom extensions to the list. The recommended state is Enable the common attachments filter set to On, on the default anti-malware policy, with the default list of blocked file types. Email is a primary delivery vector for malware, including ransomware, trojans, and remote access tools distributed via executable, script, and installer file formats. The Common Attachment Types Filter blocks delivery of file types that have no legitimate business use in email but are routinely weaponized (su...
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.1.2 Ensure the Common Attachment Types Filter is enabled
+audit:
+  type: manual
+  command: 'Note: The following procedures audit only the Default anti-malware policy. Auditing custom policies is not required for compliance and is discretionary based on the organization''s needs. To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules. 3. On the Policies & rules page select Threat policies. 4. Under Policies select Anti-malware and click on the Default (Default) policy. 5. On the policy page that appears on the righthand pane, under Protection settings, verify that the Enable the common attachments filter has the value of On. 6. Click on Edit protection settings to view the list of file types that are blocked by the common attachment filter. Verify that the list of file types contains at least the 53 file types found in the Default Value section of this document. Note: Verifying the complete file type list via the UI requires manual comparison against the default extensions listed in
+    the Default Value section of this document. Auditors who require a programmatic comparison should use the PowerShell method. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnli...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules. 3. On the Policies & rules page select Threat policies. 4. Under polices select Anti-malware and click on the Default (Default) policy. 5. On the Policy page that appears on the right hand pane scroll to the bottom and click on Edit protection settings, check the Enable the common attachments filter. o If any of the default file types are missing click Select file types and add the missing file types in. o Reference the Default Value section of this document for the list of extensions that should be blocked. 6. Click Save to save the changes. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following to enable the common attachment filter: Set-MalwareFilterPolicy -Identity Default -EnableFileFilter $true 3. Use Set-MalwareFilterPolicy -Identity Default with the -FileTypes parameter
+    to add any missing file types from the default list. o FileTypes accepts an array of strings. o To avoid using it destructively, first retrieve the existing list of file types using Get-MalwareFilterPolicy...'

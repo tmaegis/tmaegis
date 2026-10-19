@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.38
+title: 'Ensure ''Allow download restrictions'' is set to ''Enabled: Block malicious downloads'''
+description: 'This policy setting controls whether Microsoft Edge blocks certain types of downloads, and prevents users from bypassing security warnings, depending on the classification of Safe Browsing. The recommended state for this setting is: Enabled: Block malicious downloads. Note: These restrictions only apply to downloads from web page content, as well as the ''download link...'' context menu option. Rationale: Downloads could contain malware that has the potential to exfiltrate sensitive data or encrypt critical systems for ransom. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:DownloadRestrictions (REG_DWORD); compliant when it is 4. Remediation writes 4 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: high
+tags:
+- edge
+- browser
+- cis-l1
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.38 Ensure ''Allow download restrictions'' is set to ''Enabled: Block malicious downloads'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''DownloadRestrictions'' -ErrorAction SilentlyContinue).''DownloadRestrictions''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(4) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DownloadRestrictions' -Value 4 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,21 @@
+id: TMA-WIN2025-18.10.4.2
+title: Ensure 'Not allow per-user unsigned packages to install by default (requires explicitly allow per install)' is set to 'Enabled'
+description: 'This setting manages a user''s ability to install unsigned Windows App packages. The recommended state for this setting is: Enabled. Note: Unsigned Windows App packages will require an explicit allow per install if this setting is disabled.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.10.4.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx'' -Name ''DisablePerUserUnsignedPackagesByDefault'' -ErrorAction SilentlyContinue).''DisablePerUserUnsignedPackagesByDefault''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DisablePerUserUnsignedPackagesByDefault='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Appx' -Name 'DisablePerUserUnsignedPackagesByDefault' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,23 @@
+id: TMA-KERBEROS-KDC-LOGGING
+title: Ensure KDC and kadmind logging is configured
+description: 'Without a [logging] section, krb5kdc and kadmind authentication and administration events may not be retained. The audit looks in kdc.conf (/etc/krb5kdc/kdc.conf or /var/kerberos/krb5kdc/kdc.conf) and /etc/krb5.conf for both "kdc =" and "admin_server =" logging destinations (FILE:, SYSLOG, STDERR, CONSOLE or DEVICE=).'
+target: kerberos
+level: 1
+severity: medium
+tags: [kerberos, kdc, logging]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - Logging (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    files=""
+    for f in /etc/krb5kdc/kdc.conf /var/kerberos/krb5kdc/kdc.conf /etc/krb5.conf; do [ -f "$f" ] && files="$files $f"; done
+    [ -n "$files" ] || exit 1
+    lg=$(awk 'FNR==1{s=0} /^[ \t]*\[/{s=($0 ~ /^[ \t]*\[logging\]/)} s' $files)
+    printf '%s\n' "$lg" | grep -Eq '^[[:space:]]*kdc[[:space:]]*=[[:space:]]*(FILE|SYSLOG|STDERR|CONSOLE|DEVICE)' || exit 1
+    printf '%s\n' "$lg" | grep -Eq '^[[:space:]]*admin_server[[:space:]]*=[[:space:]]*(FILE|SYSLOG|STDERR|CONSOLE|DEVICE)' || exit 1
+    echo compliant
+  expected_output: compliant
+  requires_file: [/etc/krb5kdc/kdc.conf, /var/kerberos/krb5kdc/kdc.conf]
+remediation:
+  type: iac_patch
+  command: 'Add to kdc.conf: [logging] kdc = FILE:/var/log/krb5kdc.log  admin_server = FILE:/var/log/kadmind.log  default = SYSLOG:INFO:AUTH. Restart krb5kdc and kadmind, and include the files in log rotation and central collection.'

@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.6.3
+title: Ensure that access to JES2 input sources is controlled
+description: 'nodename NJE node OFF<n>.<qualifier> Spool offload receiver R<nnnn>.<qualifier> RJE workstation RDR<nn> Local card reader Note: The site will have to provide the specific resource names. Verify That all other profiles in the JESINPUT class: Are not in WARNING mode AUDIT a minimum of FAILURES(READ) This exposure may threaten the integrity and availability of the operating system environment and compromise the confidentiality of customer data.'
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.6.3 Ensure that access to JES2 input sources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that JESINPUT appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that JESINPUT appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the JESINPUT entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify That a catch-all profile named * or ** or *.* has been defined in the JESINPUT class that: Has UACC of READ Is ... (full steps: CIS section 8.6.3)'
+remediation:
+  type: iac_patch
+  command: 'Note: If you activate the JESINPUT class and create no profiles for it, users cannot submit batch jobs. To activate the JESINPUT class use the RACF SETROPTS command: SETROPTS CLASSACT(JESINPUT) To enable generic profile checking for the JESINPUT class use the RACF SETROPTS command: SETROPTS GENERIC(JESINPUT) To create a JESINPUT catch-all profile use the RACF RDEFINE and PERMIT commands: RDEFINE JESINPUT ** + UACC(READ) + AUDIT(ALL(READ)) + DATA(''CATCH-ALL PROFILE'') To modify the WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER JESINPUT <profile> + AUDIT(FAILURES(READ)) + NOWARNING To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF
+    RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

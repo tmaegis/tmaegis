@@ -1,0 +1,19 @@
+id: TMA-JUNIPER-JUNOS-6.5.2
+title: Ensure ICMPv6 rate-limit is Set
+description: ICMPv6 traffic should be rate limited to protect the devices resources. Many Denial of Service attacks against network devices will attempt to overwhelm the target's processing, memory or bandwidth by barraging the router with malicious ICMP traffic which may be easily spoofed or generated in significant volumes. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.5.2 Ensure ICMPv6 rate-limit is Set
+audit:
+  type: config_regex
+  pattern: (?m)^set system internet-options icmpv6-rate-limit \S
+remediation:
+  type: iac_patch
+  command: |-
+    ! ICMPv6 Rate Limiting can be configured by issuing the following commands from the hierarchy.
+    set system internet-options icmpv6-rate-limit bucket <bucket> limit <limit> Where: - is the size of the Rate Limit Bucket, in seconds (if not specified, defaults to 5 seconds) - is the rate at which packets are added to the bucket, in packets per second (if not specified, defaults to 1000pps)

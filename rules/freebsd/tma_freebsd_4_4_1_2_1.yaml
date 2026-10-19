@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.4.1.2.1
+title: Ensure pam_unix does not include nullok
+description: 'The nullok argument overrides the default action of pam_unix.so to prevent users from gaining access to a service if their official password is blank. A strong password is essential to help protect personal and sensitive information from unauthorized access. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- hardening
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.4.1.2.1 Ensure pam_unix does not include nullok
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; out=$( { grep -E "^[[:space:]]*(auth|account|password|session)[[:space:]]+(requisite|required|sufficient)[[:space:]]+pam_unix\.so" /etc/pam.d/passwd /etc/pam.d/system | grep -E "[[:space:]]nullok([[:space:]]|$)" ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following script to verify that the system and password files don''t include the nullok option on the pam_unix.so module: # grep -E -- ''^\s*(auth|account|password|session)\s+(requisite|required|sufficient)\s+pam_ unix\.so\b'' /etc/pam.d/{passwd,system} | grep -E -- ''\bnullok\b'' Example output: /etc/pam.d/passwd:password required pam_unix.so no_warn try_first_pass nullok /etc/pam.d/system:auth required pam_unix.so no_warn try_first_pass nullok - IF - any line is returned with nullok, run the following script: # find /etc/pam.d -type f -exec sed -i '''' -E ''s|[[:space:]]?nullok||g'' {} \;'

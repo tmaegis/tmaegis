@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-20.6
+title: Ensure that Only Approved Extensions Are Installed
+description: For added security, only install organization-approved extensions on VMs. Azure virtual machine extensions are small applications that provide post-deployment configuration and automation tasks on Azure virtual machines. These extensions run with administrative privileges and could potentially access anything on a virtual machine. The Azure Portal and community provide several such extensions. Each organization should carefully evaluate these extensions and ensure that only those that are approved for use are actually implemented.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 20.6 Ensure that Only Approved Extensions Are Installed
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Virtual machines. 2. For each virtual machine, click on the server name to select it. 3. In the new column menu, under Settings Click on Extensions + applications. 4. Ensure that all the listed extensions are approved by your organization for use. Audit from Azure CLI Use the below command to list the extensions attached to a VM, and ensure the listed extensions are approved for use. az vm extension list --vm-name <vmName> --resource-group <sourceGroupName> -- query [*].name Audit from PowerShell Get a list of VMs. Get-AzVM For each VM run the following command. Get-AzVMExtension -ResourceGroupName <VM Resource Group> -VMName <VM Name> Review each Name, ExtensionType, and ProvisioningState to make sure no unauthorized extensions are installed on any virtual machines. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed
+    copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: c0e996f8-39cf-4af9-9f45-83fbde810432 - Name: ''Only approved...'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Go to Virtual machines. 2. For each virtual machine, go to Settings. 3. Click on Extensions + applications. 4. If there are unapproved extensions, uninstall them. Remediate from Azure CLI From the audit command identify the unapproved extensions, and use the below CLI command to remove an unapproved extension attached to VM. az vm extension delete --resource-group <resourceGroupName> --vm-name <vmName> --name <extensionName> Remediate from PowerShell For each VM and each insecure extension from the Audit Procedure run the following command. Remove-AzVMExtension -ResourceGroupName <ResourceGroupName> -Name <ExtensionName> -VMName <VirtualMachineName>

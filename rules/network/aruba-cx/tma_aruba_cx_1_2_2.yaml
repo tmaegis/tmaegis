@@ -1,0 +1,27 @@
+id: TMA-ARUBA-CX-1.2.2
+title: SSH Allow List
+description: This sequence describes configuring SSH access control list PASS requires the ssh server allow-list context to be enabled. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- management
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.2.2 SSH Allow List
+audit:
+  type: config_regex
+  pattern: (?m)^ssh server allow-list[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    ssh server allow-list
+        ip 10.0.0.0/24
+        enable
+    # CIS guidance:
+    ssh server allow-list
+    ip 1.1.1.1
+    ip 2.2.2.0/24
+    ipv6 10::10
+    ipv6 20:20::/64
+    enable
+    Active SSH sessions will be terminated. Do you want to continue (y/n)? y switch(config-ssh-al# exit

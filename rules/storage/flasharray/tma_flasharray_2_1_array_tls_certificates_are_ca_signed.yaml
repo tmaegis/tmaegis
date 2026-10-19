@@ -1,0 +1,17 @@
+id: TMA-FLASHARRAY-2.1
+title: Ensure array TLS certificates are CA-signed, adequately sized, and rotated at least every 90 days
+description: FlashArray allows certificates on the system to be centrally managed. This includes both "array-type" certificates, which the FlashArray storage array can use to represent itself to clients, and "external-type" certificates which can be the public certificates of certificate authorities that sign the certificates of other environmental resources or the public certificates of ... Manual review in the Purity//FA GUI or CLI (organization-specific or per-object evidence).
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- encryption
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 2.1 Ensure array TLS certificates are CA-signed, adequately sized, and rotated at least every 90 days
+audit:
+  type: manual
+  command: 'From the CLI: ; Run the command purecert list to display the active certificates on the array. ; Review the output to ensure the following for your array type certificates: ; The Issuer is a trusted Certificate Authority. ; The Key Size is at least 2048 (for RSA) or 256 (for ECDSA). ; The difference between the Valid From and Valid To dates does not exceed 90 days. ; Verify that roots of trust are explicitly stored and listed under the external Type.'
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, generate a properly sized Certificate Signing Request (CSR), have it signed by your CA for a maximum of 90 days, import it, and manage your roots of trust using external certificates. From the GUI: ; Navigate to Settings > System and locate the SSL Certificate / Array Certificates panel. ; Click the menu icon and select Construct Certificate Signing Request. Fill in the required attributes and ensure the key size meets the 2048-bit RSA or 256-bit ECDSA minimums. Click Create and download the CSR. ; Submit the CSR to your organization''s trusted Certificate Authority and request that the signed certificate has a lifetime of 90 days or less.'

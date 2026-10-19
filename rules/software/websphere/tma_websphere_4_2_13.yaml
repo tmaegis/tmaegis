@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-4.2.13
+title: Ensure that hardware crypto cards/modules (HSM) are used to store SSL/TLS certificates
+description: Hardware security modules (HSMs) are hardened, tamper-resistant hardware devices that secure cryptographic processes by generating, protecting, and managing keys used for encrypting and decrypting data and creating digital signatures and certificates. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 2
+severity: high
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 4.2.13 Ensure that hardware crypto cards/modules (HSM) are used to store SSL/TLS certificates
+audit:
+  type: manual
+  command: Ensure that the location attribute is set to the specific hardware crypto configuration file. In addition ensure that type attribute is set to PKCS11. Both these are under the keyStore element of the SSL configuration in the Liberty configuration. grep -w -R -i 'location' ${server.config.dir} grep -w -R -i 'type' ${server.config.dir}
+remediation:
+  type: iac_patch
+  command: Configure the location attribute to the specific hardware crypto card configuration file. In addition configure the type attribute to PKCS11. Both these attributes are in the keyStore element used by the SSL configuration in ${server.config.dir}/configDropins/overrides/*.xml. In this example, the HWCryto.cfg contains the hardware crypto configuration information. <keyStore id="hwKeyStore" location="${server.config.dir}/HWCrypto.cfg" type="PKCS11" fileBased="false" provider="IBMPKCS11Impl" ... />

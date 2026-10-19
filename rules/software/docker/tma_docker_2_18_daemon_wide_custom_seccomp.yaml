@@ -1,0 +1,16 @@
+id: TMA-DOCKER-2.18
+title: Ensure that a daemon-wide custom seccomp profile is applied if appropriate
+description: 'You can choose to apply a custom seccomp profile at a daemon-wide level if needed with this overriding Docker''s default seccomp profile. A large number of system calls are exposed to every userland process with many of them not utilized during the entire lifetime of the process. Reported as a manual review item: the audit needs a site-specific judgement.'
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- manual
+reference: CIS Docker Benchmark v1.9.0 - 2.18 Ensure that a daemon-wide custom seccomp profile is applied if appropriate
+audit:
+  type: manual
+  command: Docker 22.0 and prior You should run the command below and review the seccomp profile listed in the Security Options section. If it is default this indicates that Docker's default seccomp profile is applied. docker info --format '{{ .SecurityOptions }}' Docker 23 and later The Docker default seccomp profile is reported as profile=builtin, not default.
+remediation:
+  type: iac_patch
+  command: By default, Docker's default seccomp profile is applied. If this is adequate for your environment, no action is necessary. Alternatively, if you choose to apply your own seccomp profile, use the --seccomp-profile flag at daemon start or put it in the daemon runtime parameters file. dockerd --seccomp-profile </path/to/seccomp/profile>

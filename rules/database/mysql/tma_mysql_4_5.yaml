@@ -1,0 +1,18 @@
+id: TMA-MYSQL-4.5
+title: Ensure 'mysqld' is Not Started With '--skip-grant-tables'
+description: This option causes mysqld to start without using the privilege system. Counts enabled skip-grant-tables settings in the server option groups and on the running server command line.
+target: mysql
+level: 1
+severity: critical
+tags:
+- mysql
+- database
+- authentication
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 4.5 Ensure 'mysqld' is Not Started With '--skip-grant-tables'
+audit:
+  type: command
+  command: c=$(my_print_defaults mysqld 2>/dev/null) || exit 1; p=$(ps -eo comm=,args= 2>/dev/null) || exit 1; n=$( { printf '%s\n' "$c"; printf '%s\n' "$p" | awk '$1=="mysqld"||$1=="mariadbd"' | tr ' ' '\n'; } | grep -Eic '^--skip[-_]grant[-_]tables(=(1|on|true|yes))?$' ); echo "$n"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove skip-grant-tables (and skip_grant_tables) from the option files or set skip-grant-tables = FALSE, remove it from the start-up command line, and restart MySQL.

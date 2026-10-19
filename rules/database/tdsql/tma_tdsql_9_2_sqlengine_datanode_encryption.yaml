@@ -1,0 +1,18 @@
+id: TMA-TDSQL-9.2
+title: Ensure SQLEngine-to-Data-Node Communication Is Encrypted
+description: Communication between the TDSQL SQLEngine (proxy layer) and backend data nodes should be encrypted with SSL. Passes when tdsql_conn_datanode_ssl_mode and tdsql_conn_system_ssl_mode are at least REQUIRED (VERIFY_CA recommended). Runs the mysql client against the SQLEngine (compute node) selected by TDSQL_SQLENGINE_OPTS (falls back to TDSQL_MYSQL_OPTS); keep the password in ~/.my.cnf or a login path.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- tls
+- encryption
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 9.2 Ensure SQLEngine-to-Data-Node Communication Is Encrypted
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_SQLENGINE_OPTS:-${TDSQL_MYSQL_OPTS:-}} -NBe "SHOW GLOBAL VARIABLES LIKE 'tdsql_conn_datanode_ssl_mode'" 2>/dev/null) || exit 1; a=$(printf '%s\n' "$out" | awk -F'\t' '$1 == "tdsql_conn_datanode_ssl_mode" {print toupper($2)}'); out2=$(mysql ${TDSQL_SQLENGINE_OPTS:-${TDSQL_MYSQL_OPTS:-}} -NBe "SHOW GLOBAL VARIABLES LIKE 'tdsql_conn_system_ssl_mode'" 2>/dev/null) || exit 1; b=$(printf '%s\n' "$out2" | awk -F'\t' '$1 == "tdsql_conn_system_ssl_mode" {print toupper($2)}'); case "$a" in REQUIRED|VERIFY_CA|VERIFY_IDENTITY) ;; *) echo "datanode $a"; exit 0;; esac; case "$b" in REQUIRED|VERIFY_CA|VERIFY_IDENTITY) echo compliant;; *) echo "system $b";; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable three-tier SSL through the OSS SSL centralized-enablement interface: tdsql_enable_ssl = ON, tdsql_conn_datanode_ssl_mode = VERIFY_CA and tdsql_conn_system_ssl_mode = REQUIRED (or stricter).'

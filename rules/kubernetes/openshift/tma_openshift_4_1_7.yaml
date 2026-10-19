@@ -1,0 +1,43 @@
+id: TMA-OPENSHIFT-4.1.7
+title: Ensure that the certificate authorities file permissions are set to 644 or more restrictive
+description: Ensure that the certificate authorities file has permissions of 644 or more restrictive. Runs on each OpenShift node (for example from an oc debug node shell with chroot /host); SKIPs where the file is absent.
+target: openshift
+level: 1
+severity: high
+tags:
+- openshift
+- worker-node
+- file-permissions
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.1.7 Ensure that the certificate authorities file permissions are set to 644 or more restrictive
+audit:
+  type: command
+  command: |-
+    set -f
+    f=""; for x in /etc/kubernetes/kubelet-ca.crt; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    p=$(stat -Lc %a "$f") || exit 1
+    if [ $((0$p & 0133)) -eq 0 ]; then echo compliant; else echo "noncompliant: $f mode $p"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/kubelet-ca.crt
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    set -f
+    f=""; for x in /etc/kubernetes/kubelet-ca.crt; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    p=$(stat -Lc %a "$f"); chmod "$(printf '%o' $(( (0$p) & ~0133 & 07777 )))" "$f"
+  guidance: "Use chmod on kubelet-ca.crt config file and set permissions to 644"

@@ -1,0 +1,17 @@
+id: TMA-AWS-GUARDDUTY-ENABLED
+title: Ensure GuardDuty is enabled in all regions
+description: GuardDuty provides threat detection from CloudTrail, VPC flow and DNS logs. Every enabled region must have a GuardDuty detector with Status ENABLED. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- monitoring
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Monitoring - Amazon GuardDuty enabled (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  d=$(aws guardduty list-detectors --region \"$r\" --query 'DetectorIds[0]' --output text 2>/dev/null) || exit 1\n  if [ -z \"$d\" ] || [ \"$d\" = None ]; then\n    echo \"no detector: $r\"; bad=1\n  else\n    s=$(aws guardduty get-detector --region \"$r\" --detector-id \"$d\" --query Status --output text 2>/dev/null) || exit 1\n    [ \"$s\" = ENABLED ] || { echo \"detector disabled: $r\"; bad=1; }\n  fi\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aws guardduty create-detector --enable --region <region> in each listed region, or enable organisation-wide from the delegated GuardDuty administrator account.

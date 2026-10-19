@@ -1,0 +1,18 @@
+id: TMA-TDSQL-3.7
+title: Ensure Correct Permissions on Backup Directories
+description: 'TDSQL backup directories must have restrictive permissions. Backup files contain complete copies of the database. Key paths: Local backup: /tdsqlbackup/ (default) ZooKeeper backup: /data/home/zkback/ Checks /tdsqlbackup and /data/home/zkback (at least one must exist). Counts files that grant the listed permission to other users; any match fails, and a missing directory fails. (o+r). Expected: directories 0750.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+- backup
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.7 Ensure Correct Permissions on Backup Directories
+audit:
+  type: command
+  command: n=0; for p in "/tdsqlbackup" "/data/home/zkback"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "/tdsqlbackup" "/data/home/zkback"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" ! -type l -perm /o+r -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: chmod 750 /tdsqlbackup /data/home/zkback; chown tdsql:tdsql /tdsqlbackup /data/home/zkback; find /tdsqlbackup -type f -exec chmod 640 {} +

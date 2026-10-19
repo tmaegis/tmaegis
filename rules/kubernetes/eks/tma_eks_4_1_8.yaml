@@ -1,0 +1,18 @@
+id: TMA-EKS-4.1.8
+title: Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+description: In EKS, bind, impersonate, and escalate should be limited to identities with a documented administrative need, because these permissions belong to native Kubernetes RBAC and affect who can obtain or act with Kubernetes permissions. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- rbac
+- file-permissions
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.1.8 Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+audit:
+  type: manual
+  command: Review EKS RBAC to identify any users, groups, or service accounts granted bind, escalate, or impersonate through custom Kubernetes Role or ClusterRole objects. Determine which subjects receive those permissions through RoleBinding or ClusterRoleBinding assignments, and validate that each assignment is required for a defined administrative function.
+remediation:
+  type: iac_patch
+  command: Remove bind, escalate, and impersonate permissions from any custom Role or ClusterRole that does not require them for an approved administrative function. In EKS, use access entries and associated access policies for standard cluster access wherever possible, and reserve custom Kubernetes RBAC for cases where the predefined access policies do not meet the requirement. Where these permissions are still necessary, keep them scoped as narrowly as possible and avoid assigning them to workload service accounts. • Update each affected custom Role to remove unnecessary bind, escalate, or impersonate permissions. • Update each affected custom ClusterRole so it retains only the specific elevated permission that is explicitly required. • Replace broad assignments with lower-privilege roles, and reduce scope from cluster-wide to namespace-scoped where possible.

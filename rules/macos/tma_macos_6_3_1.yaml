@@ -1,0 +1,21 @@
+id: TMA-MACOS-6.3.1
+title: Ensure Automatic Opening of Safe Files in Safari Is Disabled
+description: Safari will automatically run or execute what it considers safe files. This can include installers and other files that execute on the operating system. Safari evaluates file safety by using a list of filetypes maintained by Apple. The list of files include text, image, video and archive formats that would be run in the context of the OS rather than the browser.
+target: macos
+level: 1
+severity: medium
+tags:
+- macos
+- applications
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 6.3.1 Ensure Automatic Opening of Safe Files in Safari Is Disabled
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    out=$(/usr/sbin/system_profiler SPConfigurationProfileDataType 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | /usr/bin/grep -E 'AutoOpenSafeDownloads' | /usr/bin/tr -d ' '
+  expected_output: AutoOpenSafeDownloads=0;
+remediation:
+  type: iac_patch
+  command: 'Profile (preferred): com.apple.Safari AutoOpenSafeDownloads = <false/>.'

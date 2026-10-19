@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.24
+title: Ensure 'log_line_prefix' is set correctly
+description: The log_line_prefix setting specifies a printf-style string that is prefixed to each log line. If blank, no prefix is used. You should configure this as recommended by the pgBadger development team unless directed otherwise by your organization's logging policy. % characters begin "escape sequences" that are replaced with status information as outlined below. Requires the escapes %m %p %l %d %u %a %h (only %d %u %a %h when log_destination is syslog alone). Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- logging
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.24 Ensure 'log_line_prefix' is set correctly
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN (SELECT (d = 'syslog' OR (strpos(s, '%m') > 0 AND strpos(s, '%p') > 0 AND strpos(s, '%l') > 0)) AND strpos(s, '%d') > 0 AND strpos(s, '%u') > 0 AND strpos(s, '%a') > 0 AND strpos(s, '%h') > 0 FROM (SELECT current_setting('log_line_prefix') AS s, replace(current_setting('log_destination'), ' ', '') AS d) x) THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: 'psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET log_line_prefix = ''%m [%p]: [%l-1] db=%d,user=%u,app=%a,client=%h ''" -c "SELECT pg_reload_conf()"'

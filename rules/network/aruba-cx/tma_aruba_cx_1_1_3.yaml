@@ -1,0 +1,43 @@
+id: TMA-ARUBA-CX-1.1.3
+title: Hardening Password Rules
+description: It is critical that customers set good, strong passwords for their local user accounts. The password complexity feature can aid customers in ensuring that users are following company password policies. PASS requires the password complexity context to be enabled with minimum-length of 8 or more (the CIS sample policy); also confirm lowercase/uppercase/special/numeric counts and history-count of at least 1. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.1.3 Hardening Password Rules
+audit:
+  type: config_regex
+  pattern: (?m)^password complexity[ \t]*\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+minimum-length (?:[89]|[1-9]\d)[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+enable[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+minimum-length (?:[89]|[1-9]\d)[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    password complexity
+        minimum-length 8
+        lowercase-count 1
+        uppercase-count 1
+        special-char-count 1
+        numeric-count 1
+        history-count 1
+        enable
+    # CIS guidance:
+    Set a password complexity policy with a minimum of <X> characters long, includes at least <Y> lowercase/uppercase/special/numeric character, and doesn't allow users to reuse the past <Z> passwords:
+    password complexity
+    minimum-length <X>
+    lowercase-count <Y>
+    uppercase-count <Y>
+    special-char-count <Y>
+    numeric-count <Y>
+    history-count <Z>
+    enable
+    Sample recommended password complexity configuration based on https://www.cisecurity.org/insights/white-papers/cis-password-policy-guide
+    password complexity
+    minimum-length 8
+    lowercase-count 1
+    uppercase-count 1
+    special-char-count 1
+    numeric-count 1
+    history-count 1
+    enable

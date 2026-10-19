@@ -1,0 +1,18 @@
+id: TMA-OCEANBASE-3.2.2
+title: Only Approved Servers can Access
+description: Specify an allowlist of approved servers that can access to the cluster. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when _ob_ssl_invited_nodes is a non-empty, explicit list of trusted IPs/hosts on every OBServer (empty, None, ALL or 0.0.0.0/0 fail).
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- tls
+- network
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 3.2.2 Only Approved Servers can Access
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN COUNT(*) > 0 AND SUM(CASE WHEN value IS NOT NULL AND TRIM(value) <> '' AND UPPER(value) NOT IN ('ALL', 'NONE') AND value NOT LIKE '%0.0.0.0/0%' THEN 0 ELSE 1 END) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM oceanbase.GV\$OB_PARAMETERS WHERE name = '_ob_ssl_invited_nodes'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET _ob_ssl_invited_nodes = '<ip1>,<ip2>,...'; listing only the application servers, OCP nodes and backup servers that need TLS connectivity.

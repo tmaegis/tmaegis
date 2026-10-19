@@ -1,0 +1,43 @@
+id: TMA-FORTISWITCH-1.6.2.1
+title: Ensure admin accounts with different privileges have their correct profiles assigned
+description: Verify that users with access to the Fortinet should only have the minimum privileges required for that particular user.
+target: fortiswitch
+level: 1
+severity: medium
+tags:
+- fortiswitch
+- authentication
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.6.2.1 Ensure admin accounts with different privileges have their correct profiles assigned
+audit:
+  type: manual
+  command: 'Run ''show full-configuration system accprofile'' and review each admin profile: privileges (admingrp, loggrp, netgrp, sysgrp, swcoregrp, ...) must match the role. Then ''show full-configuration system admin'' and confirm every administrator''s accprofile matches their role (least privilege).'
+remediation:
+  type: iac_patch
+  command: |-
+    In this example, the goal is to provide the profile "tier_1" the ability to read only. In CLI:
+    config system accprofile
+        edit "tier_1"
+            set admingrp read
+            set exec-alias-grp read
+            set loggrp read
+            set mntgrp read
+            set netgrp read
+            set pktmongrp read
+            set routegrp read
+            set swcoregrp read
+            set swmonguardgrp read
+            set sysgrp read
+            set utilgrp read
+        end
+    For the GUI, go to:
+    1. System > Admin > Profiles, select "tier_1" and click "Edit".
+    2. Click on "Read Only" option for all "Access Control" privileges.
+    3. Click on "Update". In the next example, assign the profile "tier_1" to the account "support1". In the CLI:
+    config system admin
+        edit "support1"
+            set accprofile "tier_1"
+        end
+    For the GUI, go to:
+    1. System > Admin > Administrators.
+    2. Select "support1" and click "Edit".
+    3. Under "Admin Profile", select "tier_1".

@@ -1,0 +1,38 @@
+id: TMA-ORACLE-DB-6.2.2
+title: Ensure 'EXP_FULL_DATABASE' Is Revoked From Unauthorized 'GRANTEE'
+description: The EXP_FULL_DATABASE privilege allows a user to export all objects in the database using Oracle export utility. Unauthorized access to this privilege may result in data leakage. Counts non-Oracle-maintained users and roles holding the privilege directly or through a role chain (CDB_SYS_PRIVS / CDB_ROLE_PRIVS); 0 is required, so every approved grantee must be reviewed and documented as an exception. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- privileges
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.2.2 Ensure 'EXP_FULL_DATABASE' Is Revoked From Unauthorized 'GRANTEE'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    with nm as (
+      select role as grantee from cdb_roles where oracle_maintained = 'N'
+      union select username from cdb_users where oracle_maintained = 'N'
+    ),
+    direct_privs as (select grantee from cdb_role_privs where granted_role in ('EXP_FULL_DATABASE')),
+    indirect_privs as (
+      select grantee from cdb_role_privs
+      start with granted_role in (select p.grantee from cdb_role_privs p, cdb_roles r where p.granted_role in ('EXP_FULL_DATABASE') and p.grantee = r.role)
+      connect by nocycle prior grantee = granted_role
+    )
+    select count(*) from (select grantee from direct_privs union select grantee from indirect_privs) c
+    where c.grantee in (select grantee from nm);
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'To remediate this setting, execute the following SQL statement, keeping in mind if this is granted in both container and pluggable database, you must connect to both places to revoke. Please ensure proper impact analysis is done before revoking the privilege from a role. REVOKE EXP_FULL_DATABASE FROM <grantee>; In the case of a grant via a role: REVOKE <rolename> FROM <grantee>;'

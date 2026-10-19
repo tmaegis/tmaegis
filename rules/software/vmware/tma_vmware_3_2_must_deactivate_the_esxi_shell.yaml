@@ -1,0 +1,39 @@
+id: TMA-VMWARE-3.2
+title: Host must deactivate the ESXi shell
+description: The ESXi shell is an interactive command line environment available from the Direct Console User Interface (DCUI) or remotely via SSH. Activities performed from the ESXi Shell bypass all access controls, but are logged. The recommended setting for the ESXi shell is to be stopped and only started manually when needed, such as when running diagnostics or troubleshooting. The audit parses vim-cmd hostsvc/hostconfig for the TSM (ESXi Shell) service and requires startup policy "off" and the service not running. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: high
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.2 Host must deactivate the ESXi shell
+audit:
+  type: command
+  command: |-
+    out=$(vim-cmd hostsvc/hostconfig 2>/dev/null) || exit 1
+    p=$(printf '%s\n' "$out" | awk '/key = "TSM"/{f=1} f && $1=="policy" {v=$3; gsub(/[",]/, "", v); print v; exit}')
+    r=$(printf '%s\n' "$out" | awk '/key = "TSM"/{f=1} f && $1=="running" {v=$3; gsub(/[",]/, "", v); print v; exit}')
+    [ -n "$p" ] || { echo 'TSM: service not found in hostconfig'; exit 1; }
+    if [ "$p" = off ] && [ "$r" != true ]; then echo compliant; else echo "TSM: policy=$p running=$r"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v vim-cmd >/dev/null 2>&1 || exit 0
+    vim-cmd hostsvc/disable_esx_shell; vim-cmd hostsvc/stop_esx_shell; true
+  guidance: "To disable the ESXi shell, perform the following: 1. From the vSphere Web Client, select the host. 2. Select Configure then expand System and select Services. 3. Click on ESXi Shell then click Edit Startup Policy. 4. Set the Startup Policy is set to Start and Stop Manually. 5. Click on OK. Alternately, use the following PowerCLI command: # Set the ESXi shell to start manually rather than automatically for all hosts Get-VMHost | Get-VMHostService | Where { $_.key -eq \"TSM\" } | Set- VMHostService -Policy Off"

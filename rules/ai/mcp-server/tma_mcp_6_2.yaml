@@ -1,0 +1,21 @@
+id: TMA-MCP-6.2
+title: Ensure tokens and keys are protected in clients and servers
+description: 'All credentials (API tokens, OAuth client secrets, service-account keys) are stored in system keychains, managed secret stores, or KMS-backed stores. As a CIS hardening position, secret values are not embedded in deployed configuration or artifacts in any form, including encrypted, and are referenced from the managed store at runtime instead. Automated credential rotation is in place, with alerts for credentials approaching expiry. Credentials embedded in deployed configuration or artifacts are a leading cause of compromise: they propagate through backups and images and are a primary target of automated scanning by attackers. A managed secret store keeps secret material out of configuration, supports rotation, and centralizes access control.'
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- auth
+- crypto
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 6.2 Ensure tokens and keys are protected in clients and servers
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_6_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 6.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Migrate all inline or embedded secrets to a managed secret store or system keychain, and update deployment configuration to reference them from the store at runtime rather than inline. This is a deployment and configuration change, and the exact store is environment-specific. Implement automated rotation with alerts for credentials approaching expiry. Rotate any secret that was previously embedded in deployed configuration or an artifact since it must be treated as compromised.

@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-3.1.1
+title: Client certificate authentication should not be used for users
+description: Kubernetes provides the option to use client certificates for user authentication. However as there is no way to revoke these certificates when a user leaves an organization or loses their credential, they are not suitable for this purpose. It is not possible to fully disable client certificate use within a cluster as it is used for component to component authentication. The benchmark marks this recommendation Manual.
+target: openshift
+level: 2
+severity: medium
+tags:
+- openshift
+- control-plane
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 3.1.1 Client certificate authentication should not be used for users
+audit:
+  type: manual
+  command: For users to interact with OpenShift Container Platform, they must first authenticate to the cluster. The authentication layer identifies the user with requests to the OpenShift Container Platform API. The authorization layer then uses information about the requesting user to determine if the request is allowed. Understanding authentication | Authentication | OpenShift Container Platform The OpenShift Container Platform includes a built-in OAuth server for token-based authentication. Developers and administrators obtain OAuth access tokens to authenticate themselves to the API.
+remediation:
+  type: iac_patch
+  command: Configure an identity provider for the OpenShift cluster following the OpenShift documentation. Once an identity provider has been defined, you can use RBAC to define and apply permissions. After you define an identity provider and create a new cluster-admin user you can reduce the attack surface by removing the default kubeadmin user.

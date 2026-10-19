@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-1.1
+title: Ensure Device is running Current Junos Software
+description: 'All JUNOS Devices should run the current Recommended Release of JUNOS. As with any software, the JUNOS Operating System installed on Juniper Devices may be subject to Bugs, Instabilities and Security Vulnerabilities discovered over time. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 1.1 Ensure Device is running Current Junos Software
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. This is an example process for deploying a new Junos device or for implementing patch management for the first time within an existing network. For Junos systems already deployed in a production network, SIRT Security Advisories should be used to determine when additional patches are required on an ongoing basis. Step 1: Collect the router chassis information user@host> show version | match model Example: root@LAB-SRX300> show version | match model Model: srx300 This device is an SRX300 Step 2: Check the software version running on ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Software patching procedures may vary between different platforms or organizations and can be accomplished using the CLI, the JWeb GUI, centrally through Junos Space or other management platforms. To update a standalone JUNOS Device through the CLI, first upload the desired software image (downloaded from Juniper or your Support Partner) to the JUNOS Device in the /var/tmp/ folder. In most cases an upgrade is performed with the following command, issued from Operational Mode:
+    request system software add /var/tmp/<image name> Where <image name> is the filename of the JUNOS image provided by Juniper. NOTE
+    - Updating JUNOS Software with this command will result in a reboot of the system and loss of service. In platforms deployed with redundant Routing Engines, as Virtual Chassis or as HA Clusters, an In-Service Software Updates (or ISSU) may be supported. An ISSU update updates and reboots each node or RE separately, failing services on to the other node/RE prior to the reboot. To perform an ISSU Update, on most platforms, issue the following command from Operational Mode:
+    request system software in-service-upgrade /var/tmp/<image name> NOTE
+    - The specific procedure and prerequisites for ISSU varies by platform and deployment type. If some prerequisites (such as NSR or GRES) are not correctly configured a loss of service may still occur. Please refer to the documentation for your platform and network enviroment before attempting to update software.

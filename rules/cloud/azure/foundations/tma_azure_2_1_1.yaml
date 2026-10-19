@@ -1,0 +1,19 @@
+id: TMA-AZURE-2.1.1
+title: Ensure that Azure Databricks is deployed in a customer- managed virtual network (VNet)
+description: 'Networking for Azure Databricks can be set up in a few different ways. Using a customer-managed Virtual Network (VNet) (also known as VNet Injection) ensures that compute clusters and control planes are securely isolated within the organization’s network boundary. By default, Databricks creates a managed VNet, which provides limited control over network security policies, firewall configurations, and routing. Using a customer-managed VNet ensures better control over network security and aligns with zero-trust architecture principles. It allows for: - Restricted outbound internet access to prevent unauthorized data exfiltration. - Integration with on-premises networks via VPN or ExpressRoute for hybrid connectivity. - Fine-grained NSG policies to restrict access at the subnet level. - Private Link for secure API access, avoiding public internet exposure.'
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- network
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 2.1.1 Ensure that Azure Databricks is deployed in a customer- managed virtual network (VNet)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Azure Portal → Search for Databricks Workspaces. 2. Select the Databricks Workspace to audit. 3. Under Networking, check if the workspace is deployed in a Customer-Managed VNet. 4. If the Virtual Network field shows Databricks-Managed VNet, it is non-compliant. 5. Verify NSG rules and Private Endpoints for fine-grained access control. Audit from Azure CLI Run the following command to check if Databricks is using a customer-managed VNet: az network vnet show --resource-group <resource-group-name> --name <vnet- name> Ensure that Databricks subnets are present in the VNet configuration. Validate NSG rules attached to the Databricks subnets. Audit from PowerShell Get-AzDatabricksWorkspace -ResourceGroupName <resource-group-name> -Name <databricks-workspace-name> | Select-Object VirtualNetworkId If VirtualNetworkId is null or shows a Databricks-Managed VNet, it is non-compliant. Audit from Azure Policy If referencing a digital copy of this Benchmark,
+    clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_P...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Delete the existing Databricks workspace (migration required). 2. Create a new Databricks workspace with VNet Injection: 3. Go to Azure Portal → Create Databricks Workspace. 4. Select Advanced Networking. 5. Choose Deploy into your own Virtual Network. 6. Specify a customer-managed VNet and associated subnets. 7. Enable Private Link for secure API access. Remediate from Azure CLI Deploy a new Databricks workspace in a custom VNet: az databricks workspace create --name <databricks-workspace-name> \ --resource-group <resource-group-name> \ --location <region> \ --managed-resource-group <managed-rg-name> \ --enable-no-public-ip true \ --network-security-group-rule "NoAzureServices" \ --public-network-access Disabled \ --custom-virtual-network-id /subscriptions/<subscription- id>/resourceGroups/<resource-group- name>/providers/Microsoft.Network/virtualNetworks/<vnet-name> Ensure NSG Rules are correctly configured: az network nsg rule create --resource-group
+    <resource-group-name> \ --nsg-name <nsg-name> \ --name "DenyAllOutbound" \ --direction Outbound \ --access Deny \ --priority 4096 Remediate from PowerShell New-AzDatabricksWorkspace -ResourceGroupNa...'

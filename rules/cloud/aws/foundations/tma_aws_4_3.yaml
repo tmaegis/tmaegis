@@ -1,0 +1,18 @@
+id: TMA-AWS-4.3
+title: Ensure AWS Config is enabled in all regions
+description: AWS Config is a web service that performs configuration management of supported AWS resources within your account and delivers log files to you. The recorded information includes the configuration items (AWS resources), relationships between configuration items (AWS resources), and any configuration changes between resources. It is recommended that AWS Config be enabled in all regions. In environments using AWS Control Tower or Landing Zone Accelerator (LZA), AWS Config may be centrally managed and automatically enabled across regions. The AWS configuration item history captured by AWS Config enables security analysis, resource change tracking, and compliance auditing.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 4.3 Ensure AWS Config is enabled in all regions
+audit:
+  type: manual
+  command: 'Process to evaluate AWS Config configuration per region: From Console: 1. Sign in to the AWS Management Console and open the AWS Config console at https://console.aws.amazon.com/config/. 2. On the top right of the console select the target region. 3. If a Config Recorder is enabled in this region, you should navigate to the Settings page from the navigation menu on the left-hand side. If a Config Recorder is not yet enabled in this region, proceed to the remediation steps. 4. Ensure "Record all resources supported in this region" is checked. 5. Ensure "Include global resources (e.g., AWS IAM resources)" is checked, unless it is enabled in another region (this is only required in one region). 6. Ensure the correct S3 bucket has been defined. 7. Ensure the correct SNS topic has been defined. 8. Repeat steps 2 to 7 for each region. Note: In environments using AWS Control Tower or Landing Zone Accelerator (LZA), AWS Config configuration may be managed centrally. Verify that AWS Config
+    is enabled and recording through the centralized governance solution. From Command Line: 1. Run this command to show all AWS Config Recorders and their properties: aws configservice describe-configurat...'
+remediation:
+  type: iac_patch
+  command: 'To implement AWS Config configuration: From Console: 1. Select the region you want to focus on in the top right of the console. 2. Click Services. 3. Click Config. 4. If a Config Recorder is enabled in this region, navigate to the Settings page from the navigation menu on the left-hand side. If a Config Recorder is not yet enabled in this region, select "Get Started". 5. Select "Record all resources supported in this region". 6. Choose to include global resources (IAM resources). 7. Specify an S3 bucket in the same account or in another managed AWS account. 8. Create an SNS Topic from the same AWS account or another managed AWS account. Note: In AWS Control Tower or Landing Zone Accelerator (LZA) environments, AWS Config setup and recording may be deployed and managed automatically. Configuration changes should be performed through the centralized governance framework rather than directly in individual accounts. From Command Line: 1. Ensure there is an appropriate S3 bucket,
+    SNS topic, and IAM role per the AWS Config Service prerequisites. 2. Run this command to create a new configuration recorder: aws configservice put-configuration-recorder --configuration-recorder name=<confi...'

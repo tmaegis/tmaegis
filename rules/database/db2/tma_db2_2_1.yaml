@@ -1,0 +1,17 @@
+id: TMA-DB2-2.1
+title: Prevent Database Users from Logging into the Operating System
+description: Db2's default authentication mechanism (SERVER) uses the operating system for authentication. This necessitates that users who require access to the database can be authenticated by the operating system. A by-product of this is that those users will be able to log into a shell in the OS of the database server, such as through ssh. The scope of the problem is greater if the OS has been ...
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 2.1 Prevent Database Users from Logging into the Operating System
+audit:
+  type: manual
+  command: 'RHEL Run the following commands as root: $ grep pam_access /etc/pam.d/system-auth If the command does not return a line from the file, this is a Fail, and the remediation should be followed. AIX In the file /etc/security/user, the default stanza should have the following: rlogin = false This ensure that by default a user is not able to remotely log into the system unless their user has been explicitly configured with rlogin = true. If the rlogin value in the default stanza is not false, that is a finding, and the remediation should be followed. Windows To establish the recommended ...'
+remediation:
+  type: iac_patch
+  command: 'The steps to accomplish this differ per OS and even the level of OS. RHEL 8 Run the following commands as root: 1. Modify the file /etc/security/access.conf Add users who are allowed to log into the OS with a + + : <user1> <user2> Add a deny all rule as the last rule to prevent other users not explicitly allowed to log in, which would apply to database users: - : ALL : ALL 2. Run this command to update the auth configuration: $ authselect enable-feature with-pamaccess Using these steps will ensure that account required pam_access.so is placed into the file /etc/pam.d/system-auth and the access list will be enforced for OS login. AIX 1. Ensure appropriate users are explicitly listed as being allowed to log into the system. It is important that you have users listed with privilege to rlogin so that you do not lock yourself out of the system. Modify the file /etc/security/user, and for ...'

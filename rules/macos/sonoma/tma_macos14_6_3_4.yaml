@@ -1,0 +1,21 @@
+id: TMA-MACOS14-6.3.4
+title: Ensure Prevent Cross-site Tracking in Safari Is Enabled
+description: There is a vast network of groups that collect, use, and sell user data. One method used to collect user data is pay and provide content and services for website owners. Along with that "assistance," the site owners also push tracking cookies on visitors. In many cases the help allows a content owner to keep the site up. The tracking cookies allow information brokers to track web users across visited sites. For better privacy and to provide some resistance to data brokers, prevent cross-tracking. Cross-tracking allows data-brokers to follow you across the Internet to enable their business model of selling personal data. Users should protect their data and not volunteer it to marketing companies.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: low
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 6.3.4 Ensure Prevent Cross-site Tracking in Safari Is Enabled
+audit:
+  type: command
+  command: 'out=$(/usr/sbin/system_profiler SPConfigurationProfileDataType 2>/dev/null | /usr/bin/tr -d '' '') || exit 1
+
+    if printf ''%s\n'' "$out" | /usr/bin/grep -qx ''BlockStoragePolicy=2;'' && printf ''%s\n'' "$out" | /usr/bin/grep -qxF ''WebKitPreferences.storageBlockingPolicy=1;'' && printf ''%s\n'' "$out" | /usr/bin/grep -qx ''WebKitStorageBlockingPolicy=1;''; then echo compliant; else echo noncompliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.Safari 2. The key to include is BlockStoragePolicy 3. The key must be set to: <integer>2</integer> 4. The key to also include is WebKitPreferences.storageBlockingPolicy 5. The key must be set to: <integer>1</integer> 6. The key to also include is WebKitStorageBlockingPolicy 7. The key must be set to: <integer>1</integer>'

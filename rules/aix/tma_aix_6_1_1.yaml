@@ -1,0 +1,17 @@
+id: TMA-AIX-6.1.1
+title: Ensure sudo is installed
+description: 'The recommendation is to install and configure sudo, to reflect the privileged command access requirements of all users of the system. Privileged command access should be limited to and defined by a user''s individual needs. Access to a root command prompt should limited, wherever possible, to minimize the risk of inadvertent or deliberate misuse of the account. Audit: sudo must be installed at version 1.9.17p1 or later.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- services
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 6.1.1 Ensure sudo is installed
+audit:
+  type: command
+  command: 'command -v sudo >/dev/null 2>&1 || exit 1; v=$(sudo -V 2>/dev/null | sed -n "1s/^Sudo version //p"); [ -n "$v" ] || exit 1; printf ''%s\n'' "$v" | awk -F"[.p]" ''{a=$1*1000000+$2*10000+$3*100+($4==""?0:$4); print (a>=1091701 ? "compliant" : "sudo " $0 " is older than 1.9.17p1")}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Install the latest available version for the sudo distribution installed on your system. This version should be 1.9.17p1 or later.

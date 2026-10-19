@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-1.5
+title: Ensure All Cluster Nodes Are Running the Exact Same Version, Including the Patch Release Number
+description: All CockroachDB nodes in a self-hosted cluster must run the same major, minor, and patch version of the CockroachDB binary. The docs explicitly recommend that "all cluster nodes are running exactly the same CockroachDB version, including the patch release version number," and call out version mismatch as an essential alert condition.
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- patching
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 1.5 Ensure All Cluster Nodes Are Running the Exact Same Version, Including the Patch Release Number
+audit:
+  type: manual
+  command: Run cockroach node status --certs-dir=<certs> --host=<node> --format=table (or the DB Console Node List) and compare the build/version of every node. All nodes must report the identical version, including the patch number; persistent version skew is a finding.
+remediation:
+  type: iac_patch
+  command: '1. Identify out-of-date nodes: cockroach node status --certs-dir=/var/lib/cockroach/certs --host=<node> -- format=table Review build or version fields to locate mismatched nodes. 2. Download the latest consistent binary Please refer to Control 1.1 3. Perform a rolling restart (Upgrade one node at a time.): - Use cockroach node drain with --shutdown to gracefully drain and then terminate the node''s process.'

@@ -1,0 +1,26 @@
+id: TMA-PALOALTO-6.15
+title: Ensure that a Zone Protection Profile with an enabled SYN Flood Action of SYN Cookies is attached to all untrusted zones
+description: 'Enable the SYN Flood Action of SYN Cookies for all untrusted zones. The Alert, Activate, and Maximum settings for SYN Flood Protection depend highly on the environment and device used. Perform traffic analysis on the specific environment and firewall to determine accurate thresholds. Do not rely on default values to be appropriate for an environment. Setting these values for all interfaces is an approach that should be considered by many organizations, as traffic floods can result from internal testing or malware as well. As a rough ballpark for most environments, an Activate value of 50% of the firewall''s maximum "New sessions per second"/CPS is a conservative setting. PASS requires a zone protection profile with tcp-syn syn-cookies and at least one zone using a zone protection profile; confirm every untrusted zone has it. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config
+  running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- firewall-policy
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.15 Ensure that a Zone Protection Profile with an enabled SYN Flood Action of SYN Cookies is attached to all untrusted zones
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:template \S+ config )?network profiles zone-protection-profile (?:"[^"\n]*"|\S+) flood tcp-syn syn-cookies \S(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?zone (?:"[^"\n]*"|\S+) network zone-protection-profile \S+|^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?zone (?:"[^"\n]*"|\S+) network zone-protection-profile \S+(?s:.*?)^set (?:template \S+ config )?network profiles zone-protection-profile (?:"[^"\n]*"|\S+) flood tcp-syn syn-cookies \S)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set network profiles zone-protection-profile ZPP flood tcp-syn enable yes
+    set network profiles zone-protection-profile ZPP flood tcp-syn syn-cookies alarm-rate 20000 activate-rate 25000 maximal-rate 1000000
+    set zone <untrust> network zone-protection-profile ZPP
+    commit
+    # CIS guidance:
+    From GUI:
+    Navigate to Network > Network Profiles > Zone Protection > Zone Protection Profile > Flood Protection tab. Check the SYN box. Set the Action dropdown to SYN Cookies Set Alert to 20000 (or appropriate for org). Set Activate to 25000 (50% of maximum for firewall model). Set Maximum to 1000000 (or appropriate for org)
+    Navigate to Network > Zones. Open the zone facing any untrusted network, if one does not exist create it. Set Zone Protection to the Zone Protection Profile created.

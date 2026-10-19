@@ -1,0 +1,19 @@
+id: TMA-AWS-3.1.4
+title: Ensure that S3 is configured with 'Block Public Access' enabled
+description: Amazon S3 provides Block public access (bucket settings) and Block public access (account settings) to help you manage public access to Amazon S3 resources. By default, S3 buckets and objects are created with public access disabled. However, an IAM principal with sufficient S3 permissions can enable public access at the bucket and/or object level. While enabled, Block public access (bucket settings) prevents an individual bucket and its contained objects from becoming publicly accessible. Similarly, Block public access (account settings) prevents all buckets and their contained objects from becoming publicly accessible across the entire account. Amazon S3 Block public access (bucket settings) prevents the accidental or malicious public exposure of data contained within the respective bucket(s). Amazon S3 Block public access (account settings) prevents the accidental or malicious publi...
+target: aws
+level: 1
+severity: high
+tags:
+- access-control
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 3.1.4 Ensure that S3 is configured with 'Block Public Access' enabled
+audit:
+  type: manual
+  command: 'If utilizing Block Public Access (bucket settings) From Console: 1. Login to the AWS Management Console and open the Amazon S3 console using https://console.aws.amazon.com/s3/. 2. Click Bucket name. 3. Click on Permissions tab and check "Block public access (bucket settings)". 4. Ensure that the block public access settings are configured appropriately for this bucket. 5. Repeat for all the buckets in your AWS account. From Command Line: 1. List all of the S3 buckets: aws s3 ls 2. Find the public access settings for a specific bucket: aws s3api get-public-access-block --bucket <bucket-name> Output if Block Public Access is enabled: { "PublicAccessBlockConfiguration": { "BlockPublicAcls": true, "IgnorePublicAcls": true, "BlockPublicPolicy": true, "RestrictPublicBuckets": true } } If the output reads false for the separate configuration settings, then proceed with the remediation. If utilizing Block Public Access (account settings) From Console: 1. Login to the AWS Management Console
+    and open the Amazon S3 console using https://console.aws.amazon.com/s3/. 2. Choose Block public access (account settings). 3. Ensure that the block public access settings are configured appropriately...'
+remediation:
+  type: iac_patch
+  command: 'If utilizing Block Public Access (bucket settings) From Console: 1. Login to the AWS Management Console and open the Amazon S3 console using https://console.aws.amazon.com/s3/. 2. Select the check box next to a bucket. 3. Click ''Edit public access settings''. 4. Click ''Block all public access'' 5. Repeat for all the buckets in your AWS account that contain sensitive data. From Command Line: 1. List all of the S3 buckets: aws s3 ls 2. Enable Block Public Access on a specific bucket: aws s3api put-public-access-block --bucket <bucket-name> --public-access- block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPu blicBuckets=true" If utilizing Block Public Access (account settings) From Console: If the output reads true for the separate configuration settings, then Block Public Access is enabled on the account. 1. Login to the AWS Management Console and open the Amazon S3 console using https://console.aws.amazon.com/s3/. 2. Click Block
+    Public Access (account settings). 3. Click Edit to change the block public access settings for all the buckets in your AWS account. 4. Update the settings and click Save. 5. When you''re asked for confirmation, e...'

@@ -1,0 +1,17 @@
+id: TMA-AIX-4.2.5
+title: Ensure that host based authentication files are not present
+description: 'This recommendation removes all instances of .rhosts, .shosts and .netrc files from the system. The .rhosts, .shosts and .netrc files can be used to circumvent normal login or change control procedures. The existence of such files, with the relevant entries, can allow remote user access to a system bypassing local user and password authentication. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.2.5 Ensure that host based authentication files are not present
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / \( -fstype jfs -o -fstype jfs2 \) \( -name .netrc -o -name .rhosts -o -name .shosts \) -print ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remove the.rhosts and .netrc files from all user home directories: find / \( -fstype jfs -o -fstype jfs2 \) -name ".netrc" -exec rm {} \; find / \( -fstype jfs -o -fstype jfs2 \) -name ".rhosts" -exec rm {} \; find / \( -fstype jfs -o -fstype jfs2 \) -name ".shosts" -exec rm {} \;'

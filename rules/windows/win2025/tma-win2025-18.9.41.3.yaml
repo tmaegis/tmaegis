@@ -1,0 +1,20 @@
+id: TMA-WIN2025-18.9.41.3
+title: 'Ensure ''Configure validation of ROCA-vulnerable WHfB keys during authentication'' is set to ''Enabled: Block'' (DC only)'
+description: 'This policy setting allows you to configure how Domain Controllers handle Windows Hello for Business (WHfB) keys that are vulnerable to the "Return of Coppersmith´s attack" (ROCA) vulnerability. If this policy setting is enabled the following options are supported: • Ignore: During authentication the Domain Controller will not probe any WHfB keys for the ROCA vulnerability. • Audit: During authentication the Domain Controller will emit audit events for WHfB keys that are subject to the ROCA vulnerability (authentications will still succeed). • Block: During authentication the Domain Controller'
+target: windows
+os_family:
+- windows-server-2025-dc
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.9.41.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\SAM'' -Name ''SamNGCKeyROCAValidation'' -ErrorAction SilentlyContinue).''SamNGCKeyROCAValidation''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $bad += ''SamNGCKeyROCAValidation='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\SAM')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\SAM' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\SAM' -Name 'SamNGCKeyROCAValidation' -Value 2 -PropertyType DWord -Force | Out-Null

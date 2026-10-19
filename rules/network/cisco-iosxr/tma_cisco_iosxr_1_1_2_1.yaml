@@ -1,0 +1,21 @@
+id: TMA-CISCO-IOSXR-1.1.2.1
+title: console authentication
+description: Authenticate management access to the network devices. Typically a central authentication store combined with a fallback mechanism should be implemented to allow emergency access, in case the central authentication servers are not available. Management access to network devices must be authenticated. The default under AAA (local or network) is to require users to log in using a valid user name and password. This rule applies for both local and network AAA. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 1
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.1.2.1 console authentication
+audit:
+  type: config_regex
+  pattern: (?m)^line console[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+login authentication \S+
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure an authentication list that references the AAA group that was created in the prerequisites. AAA lists are prioritized list of databases. If the system is unable to use a database, it automatically rolls over to the next database on the list. If the authentication, authorization, or accounting request is rejected by any database, the rollover does not occur and the request is rejected. It is common to include "local" as the last entry in the list, to allow access to manage the device even if all servers from the AAA group are unavailable. Note that it also means that if an attacker can DoS the AAA Servers, they can start to try authenticate locally as well. Hence, always ensure to use strong passwords for local users.
+    aaa authentication login default group {tacacs_group|radius_group} local Above configuration authenticates first against a central aaa group and uses local user accounts as fallback. Ensure the above list is referenced under the line templates:
+    line console login authentication default Ensure the vty pool references the above line template:
+    vty-pool default 0 4 line-template default

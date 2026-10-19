@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-5.1
+title: Ensure Backups Are Encrypted Using an External Method
+description: In self-hosted CockroachDB deployments, the Encryption-at-Rest (EAR) feature encrypts only the node's local on-disk data, including SSTables, write-ahead logs (WAL), and temporary files. EAR does not encrypt backup files created using the BACKUP statement.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- backup
+- encryption
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 5.1 Ensure Backups Are Encrypted Using an External Method
+audit:
+  type: manual
+  command: List recent backups with SHOW BACKUPS IN <collection URI> and SHOW BACKUP FROM <subdir> IN <URI>, and review scheduled backups (SHOW SCHEDULES). Each backup must be created WITH encryption_passphrase or kms = <KMS URI>, or written to storage with enforced server-side encryption; unencrypted backups are a finding.
+remediation:
+  type: iac_patch
+  command: 'Option 1 - Enable AES-256 Passphrase-Based Backup Encryption Configure backups to use passphrase-based encryption: BACKUP DATABASE <db> INTO ''s3://bucket/path?AWS_ACCESS_KEY_ID=...&AWS_SECRET_ACCESS_KEY=...'' WITH encryption_passphrase = ''<strong-passphrase>''; Use an external secret manager (e.g., Vault, AWS Secrets Manager) to store the passphrase (not documented in CockroachDB, but strongly recommended operationally).'

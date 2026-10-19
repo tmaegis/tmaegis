@@ -1,0 +1,18 @@
+id: TMA-EKS-5.1.3
+title: Restrict ECR access for EKS runtime identities to pull-only permissions
+description: Restricting ECR access for EKS runtime identities to pull-only permissions helps ensure that the identities used to run workloads can retrieve required container images without also receiving broader registry visibility or administrative access. In EKS, this applies to worker node IAM roles and, for Fargate workloads, the pod execution role that pulls images from private ECR repositories. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- managed-services
+- registry
+- file-permissions
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.1.3 Restrict ECR access for EKS runtime identities to pull-only permissions
+audit:
+  type: manual
+  command: Review the IAM role permissions and any ECR repository policies that apply to the runtime identities used by EKS to pull images, and verify that those identities are limited to pull-only access. Focus on the worker node IAM role for node-based workloads and the pod execution role for Fargate workloads.
+remediation:
+  type: iac_patch
+  command: Enforce pull-only ECR access for EKS runtime identities by limiting the worker node IAM role, and where applicable the Fargate pod execution role, to only the permissions required to authenticate to ECR and retrieve container image layers. The runtime pull path only needs ecr:GetAuthorizationToken, ecr:BatchCheckLayerAvailability, ecr:BatchGetImage, and ecr:GetDownloadUrlForLayer. Broader policies such as AmazonEC2ContainerRegistryReadOnly or AmazonEC2ContainerRegistryFullAccess expose additional repository visibility or administration capabilities that are not required just to start workloads. • Identify the runtime roles in scope. Review the node IAM role for node-based workloads and the pod execution role for Fargate workloads, because those are the identities used to pull private ECR images. • Remove broader ECR managed policies from runtime roles.

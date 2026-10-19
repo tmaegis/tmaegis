@@ -1,0 +1,20 @@
+id: TMA-MARIADB-3.10
+title: Ensure File Key Management Encryption Plugin files have appropriate permissions
+description: Certain Key Management Encryption plugins must store sensitive information in files for later retrieval. Such files should have proper permissions. Reads file_key_management_filename/filekey from the server option groups; fails when the plugin is not configured or a key file is not mysql:mysql with mode 750 or stricter.
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- filesystem
+- permissions
+- encryption
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 3.10 Ensure File Key Management Encryption Plugin files have appropriate permissions
+audit:
+  type: command
+  command: c=$(my_print_defaults --mysqld 2>/dev/null) || exit 1; fn=$(printf '%s\n' "$c" | sed -n 's/^--file[-_]key[-_]management[-_]filename=//p' | tail -n 1); fk=$(printf '%s\n' "$c" | sed -n 's/^--file[-_]key[-_]management[-_]filekey=//p' | tail -n 1); [ -n "$fn" ] || { echo "file_key_management not configured"; exit 0; }; [ -f "$fn" ] || { echo "missing $fn"; exit 0; }; n=0; for x in "$fn" "${fk#FILE:}"; do [ -n "$x" ] && [ -f "$x" ] || continue; s=$(stat -c '%a %U %G' "$x"); m=${s%% *}; [ "${s#* }" = "mysql mysql" ] && [ $((0$m & 027)) -eq 0 ] || n=$((n+1)); done; [ "$n" -eq 0 ] && echo compliant || echo "$n noncompliant files"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'chmod 750 <file> (or stricter, e.g. 640/600) && chown mysql:mysql <file> for file_key_management_filename and a FILE: file_key_management_filekey; if the plugin is not configured, implement data-at-rest encryption first (4.9).'

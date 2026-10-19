@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.10.3.3
+title: Ensure XNM-SSL Rate Limit is Set
+description: If the XNM-SSL service is configured, the Rate Limit should be set. JUNOScript can be configured to use SSL transport to prevent the exposure of sensitive data and authentication details on the network. If configured the XNM-SSL service will provide services on port TCP/3220. Passes when 'set system services xnm-ssl' is not configured; otherwise requires 'set system services xnm-ssl rate-limit'. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.3.3 Ensure XNM-SSL Rate Limit is Set
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^x\n]|x(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^l\n]|l(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^i\n]|i(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))))))))))))))))))))))[^\n]*\n)*[ \t]*set system services xnm-ssl(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^i\n]|i(?:$|[^t\n]|t(?:$|[^ \n]))))))))))))[^\n]*(?:\n(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^
+    \n]| (?:$|[^x\n]|x(?:$|[^n\n]|n(?:$|[^m\n]|m(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^l\n]|l(?:$|[^ \n]| (?:$|[^r\n]|r(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^i\n]|i(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! The XNM-SSL Rate Limit can be configured by issuing the following command from the hierarchy;
+    set system services xnm-ssl rate-limit <limit> Where <limit> is the desired Rate Limit measured in Connection Attempts per Minute.

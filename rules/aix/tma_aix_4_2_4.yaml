@@ -1,0 +1,17 @@
+id: TMA-AIX-4.2.4
+title: Ensure all entries in /etc/hosts.equiv are removed
+description: 'This process removes all entries from the /etc/hosts.equiv file. The /etc/hosts.equiv file can be used to circumvent normal login or change control procedures. The existence of this file, with the relevant entries, can allow remote user access to a system bypassing local user and password authentication. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.2.4 Ensure all entries in /etc/hosts.equiv are removed
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; out=$( { grep -Ev "^[[:blank:]]*(#|$)" /etc/hosts.equiv ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remove all entries from the /etc/hosts.equiv file: sed ''/^\s*$/d; s/^\(\s*[^#].*\)/#\1/'' /etc/hosts.equiv > /etc/hosts.equiv.work mv hosts.equiv.work hosts.equiv chown root:system /etc/hosts.equiv chmod 644 /etc/hosts.equiv Note: the above command removes blank lines and comments out any non commented entries.'

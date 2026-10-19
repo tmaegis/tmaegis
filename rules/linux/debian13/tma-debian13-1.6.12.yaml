@@ -1,0 +1,35 @@
+id: TMA-DEBIAN13-1.6.12
+title: Ensure update-notifier-motd.timer is not in use
+description: 'update-notifier-motd.timer is the systemd timer shipped on Ubuntu by the update-notifier-common package. It periodically activates update-notifier- motd.service, which in turn refreshes the dynamic MOTD fragments under /var/lib/update-notifier/ (the "N packages can be updated, M are security updates" content surfaced by pam_motd) and drives the motd-news integration via /etc/update-motd.d/50-motd-news. Note: • update-notifier-motd.timer is not present on Debian 13 — the update- notifier-common package is Ubuntu-specific. On systems where the unit is not installed, this recommendation passes by'
+target: linux
+os_family:
+- debian-13
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 13 Benchmark v1.1.0 - 1.6.12
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled update-notifier-motd.timer 2>/dev/null | grep ''"''"''enabled''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active update-notifier-motd.timer 2>/dev/null | grep ''"''"''^active''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    systemctl disable --now update-notifier-motd.timer 2>/dev/null; systemctl mask update-notifier-motd.timer 2>/dev/null; true
+  guidance: "- IF - update-notifier-motd.timer is installed (Ubuntu), run the following commands to stop and mask the unit: # systemctl stop update-notifier-motd.timer # systemctl mask update-notifier-motd.timer Note: • mask is preferred over disable because disable only removes enablement symlinks; the timer can still be reactivated transiently with systemctl start update-notifier-motd.timer. mask redirects the unit to /dev/null so it cannot be started. • This recommendation does not require removing the update-notifier-common package. If the package is also undesired, it may be removed with apt purge update-notifier-common, but that is out of scope for this rule. • The companion update-notifier-motd.se…"

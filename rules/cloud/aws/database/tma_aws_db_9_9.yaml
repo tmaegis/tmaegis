@@ -1,0 +1,18 @@
+id: TMA-AWS-DB-9.9
+title: Ensure Neptune Database has automatic backups enabled
+description: Ensure that Amazon Neptune DB clusters have automated backups enabled with a non- zero backup retention period (for example, 7 to 35 days). Neptune automatically creates continuous, incremental backups of cluster data and retains them for the configured retention period, allowing point-in-time recovery to any second within the backup window. Enabling automated backups with a sufficient retention period ensures that Neptune cluster data can be quickly recovered to any point within the retention window, protecting against accidental deletions, data corruption, application errors, and infrastructure failures. Neptune backups are continuous and incremental, providing robust disaster recovery and business continuity capabilities with minimal storage overhead.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- backup
+- cloud
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 9.9 Ensure Neptune Database has automatic backups enabled
+audit:
+  type: manual
+  command: 'List backup retention status for all Neptune DB clusters: aws neptune describe-db-clusters \ --query "DBClusters[*].{DBClusterIdentifier:DBClusterIdentifier,Engine:Engine,BackupR etentionPeriod:BackupRetentionPeriod}" - BackupRetentionPeriod > 0 ⇒ Automated backups are enabled (compliant). - BackupRetentionPeriod = 0 or missing/null ⇒ Automated backups are not enabled (non-compliant).'
+remediation:
+  type: iac_patch
+  command: 'Enable automated backups on a specific Neptune cluster: aws neptune modify-db-cluster \ --db-cluster-identifier <cluster-identifier> \ --backup-retention-period 7 \ --preferred-backup-window "03:00-04:00" \ --apply-immediately - --backup-retention-period 7 sets a 7-day retention; use a value between 1 and 35 days aligned with your policy. - --preferred-backup-window "03:00-04:00" (optional) sets the daily UTC backup window during off-peak hours to minimize performance impact. - --apply-immediately applies the change without waiting for the next maintenance window.'

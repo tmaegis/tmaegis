@@ -1,0 +1,19 @@
+id: TMA-AZURE-6.1.2.11
+title: Ensure that an Activity Log Alert Exists for Service Health
+description: Create an activity log alert for Service Health. Monitoring for Service Health events provides insight into service issues, planned maintenance, security advisories, and other changes that may affect the Azure services and regions in use.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- logging
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 6.1.2.11 Ensure that an Activity Log Alert Exists for Service Health
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Monitor. 2. Click Alerts. 3. Click Alert rules. 4. Ensure an alert rule exists for a subscription with Condition set to Service names=All, Event types=All and Target resource type set to Subscription. 5. If an alert rule is found for step 4, click the name of the alert rule. 6. Ensure the Actions panel displays an action group configured to notify appropriate personnel. 7. Repeat steps 1-6 for each subscription. Audit from Azure CLI Run the following command to list activity log alerts: az monitor activity-log alert list --subscription <subscription-id> For each activity log alert, run the following command: az monitor activity-log alert show --subscription <subscription-id> -- resource-group <resource-group> --activity-log-alert-name <activity-log- alert> Ensure an alert exists for ServiceHealth with scopes set to a subscription ID. Repeat for each subscription. Audit from PowerShell Run the following command to locate ServiceHealth alert rules
+    for a subscription: Get-AzActivityLogAlert -SubscriptionId <subscription-id> | where-object {$_.ConditionAllOf.Equal -match "ServiceHealth"} | select-object Location,Name,Enabled,ResourceGroupName,Conditi...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Monitor. 2. Click Alerts. 3. Click + Create. 4. Select Alert rule from the drop-down menu. 5. Choose a subscription. 6. Click Apply. 7. Select the Condition tab. 8. Click See all signals. 9. Select Service health. 10. Click Apply. 11. Open the drop-down menu next to Event types. 12. Check the box next to Select all. 13. Select the Actions tab. 14. Click Select action groups to select an existing action group, or Create action group to create a new action group. 15. Follow the prompts to choose or create an action group. 16. Select the Details tab. 17. Select a Resource group, provide an Alert rule name and an optional Alert rule description. 18. Click Review + create. 19. Click Create. 20. Repeat steps 1-19 for each subscription requiring remediation. Remediate from Azure CLI For each subscription requiring remediation, run the following command to create a ServiceHealth alert rule for a subscription: az monitor activity-log alert create --subscription
+    <subscription-id> -- resource-group <resource-group> --name <alert-rule> --condition category=ServiceHealth and properties.incidentType=Incident --scope /subscriptions/<subscription-id> --actio...'

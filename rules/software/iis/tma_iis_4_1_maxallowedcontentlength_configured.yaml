@@ -1,0 +1,16 @@
+id: TMA-IIS-4.1
+title: Ensure 'maxAllowedContentLength' is configured
+description: 'The maxAllowedContentLength Request Filter is the maximum size of the http request, measured in bytes, which can be sent from a client to the server. Configuring this value enables the total request size to be restricted to a configured value. It is recommended that the overall size of requests be restricted to a maximum value appropriate for the server, site, or application. Manual review: the benchmark gives no reliable automated check for this control.'
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.1 Ensure 'maxAllowedContentLength' is configured
+audit:
+  type: manual
+  command: 'Upon exceeding the configured value set for the Request Filter, IIS will throw a Status Code 404.13. To manually verify the change, locate and open the web.config for the web site or application in which the request filter was set. Ensure the value defined for maxAllowedContentLength is what was set. The 28.6MB max example would show: <configuration> <system.webServer> <security> <requestFiltering> <requestLimits maxAllowedContentLength="30000000" /> </requestFiltering> </security> </system.webServer> </configuration> OR To verify using PowerShell enter the following command ...'
+remediation:
+  type: iac_patch
+  command: 'The MaxAllowedContentLength Request Filter may be set for a server, website, or application using the IIS Manager GUI, using AppCmd.exe commands in a command-line window, and/or directly editing the configuration files. To configure using the IIS Manager GUI: 1. Open Internet Information Services (IIS) Manager 2. In the Connections pane, click on the server, site, application, or directory to be configured 3. In the Home pane, double-click Request Filtering 4. Click Edit Feature Settings... in the Actions pane 5. Under the Request Limits section, key the maximum content length in bytes that will allow applications to retain their intended functionality, such as 30000000 (approx. 28.6 MB) Enter the following command in AppCmd.exe to configure ...'

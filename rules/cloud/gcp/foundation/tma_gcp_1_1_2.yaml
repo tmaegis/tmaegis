@@ -1,0 +1,17 @@
+id: TMA-GCP-1.1.2
+title: Ensure Super Admin Account Is Not Used For Google Cloud Administration
+description: It is recommended that super admin accounts are not granted any IAM roles in Google Cloud Platform and are used exclusively for identity management in Google Workspace or Cloud Identity. Google Cloud administration should be performed using separate regular user accounts that are granted appropriate GCP IAM roles. The Super Admin role exists in Google Workspace/Cloud Identity to manage identities (users, groups, domains). Google Cloud resource management (VMs, networks, databases, IAM policies) should be handled by separate regular user accounts in Workspace/Cloud Identity that are granted GCP-specific IAM roles such as Organization Administrator. These are two separate privilege domains that should not be combined in a single account. Separating super admin accounts from GCP administration is critical because Super Admin privileges are irrevocable and can override almost any setting...
+target: gcp
+level: 1
+severity: high
+tags:
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 1.1.2 Ensure Super Admin Account Is Not Used For Google Cloud Administration
+audit:
+  type: manual
+  command: 'From Google Cloud Admin Console 1. Navigate to Google Admin console at https://admin.google.com 2. Go to Account → Admin roles 3. Click on Super Admin role 4. Note all user accounts assigned the Super Admin role 5. Navigate to Google Cloud Console at https://console.cloud.google.com 6. Go to IAM & Admin → IAM 7. At the organization level, click the organization dropdown at the top and select your organization 8. In the Permissions tab, review all IAM policy bindings 9. Verify that: o None of the super admin user accounts identified in step 4 appear in the IAM permissions list o Super admin accounts have NO IAM roles granted at organization, folder, or project levels 10. To audit at folder and project levels: o Navigate to IAM & Admin → IAM for each folder o Navigate to IAM & Admin → IAM for each project o Verify super admin accounts do not appear in any IAM bindings'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Admin Console 1. Create Separate Regular User Account for GCP Administration o Navigate to Google Admin console at https://admin.google.com o Go to Directory → Users o Click Add new user o Create a regular user account (not a super admin) for GCP administration o Click Add new user o Configure additional security settings like enforcing 2-Step Verification o Important: Do NOT assign this user the Super Admin role in Workspace/Cloud Identity 2. Grant GCP IAM Roles to the Cloud Admin User Account o Navigate to Google Cloud Console at https://console.cloud.google.com o Go to IAM & Admin → IAM o Select your organization from the organization dropdown at the top o Click Grant Access o In the Add principals field, enter the regular user account created in Step 1 o In the Select a role dropdown, assign appropriate GCP IAM roles. Example - Organization Administrator for organization-level administration. Add other roles as needed based on responsibilities o Click Save
+    3. Delete All GCP IAM Bindings for Super Admin Users o Navigate to Google Cloud Console at https://console.cloud.google.com o Go to IAM & Admin → IAM at the organization level o Identify all super admin u...'

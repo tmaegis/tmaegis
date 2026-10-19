@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-6.7.5
+title: Ensure Authentication Keys are used for all NTP Servers
+description: Authentication keys should be set for NTP Servers. Having established the need for NTP, it is essential to ensure that the devices time is not manipulated by an attacker as this could allow DoS to services relying on accurate time as well as replay attacks and other malicious activity. Fails if any 'set system ntp server' line has no 'key <id>'. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- ntp
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.7.5 Ensure Authentication Keys are used for all NTP Servers
+audit:
+  type: config_regex
+  pattern: (?m)^set system ntp server (?:(?:[^k \t\n][^ \t\n]*|k(?:|[^e \t\n][^ \t\n]*|e(?:|[^y \t\n][^ \t\n]*|y(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^k \t\n][^ \t\n]*|k(?:|[^e \t\n][^ \t\n]*|e(?:|[^y \t\n][^ \t\n]*|y(?:[^ \t\n][^ \t\n]*)))))?$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Keys are configured on a key ring and identified by an ID number. To add a key enter the following command from the hierarchy;
+    set system ntp authentication-key <Key ID> type <algorithm> value <Key> The <Key ID> is an arbitrary 32-bit non-zero integer used to identify this key locally on the device. The may be set to MD5 (the default), SHA1 or SHA2-256 (with SHA1 and SHA2 only being supported on some devices). Next, for each server, configure the key to be used:
+    set system ntp server key <Key ID> Finally configure the key as trusted so that the router will accept NTP traffic encrypted using it. This mechanism provides an easy method to retire keys in the event of compromise. Enter following command from the hierarchy;
+    set system ntp trusted-key <Key ID> The <Key ID> which is trusted can be one key or several keys by enclosing the list in square brackets or repeating the command.

@@ -1,0 +1,21 @@
+id: TMA-CISCO-IOSXR-1.8.2
+title: Set username secret for all local users
+description: 'A root-system user with a normal password will not be authenticated because the normal password is two-way encrypted and poses a security risk because the password information is stored in the flash disk, which can be easily decrypted. Secrets are one-way encrypted and cannot be easily reverted without brute-forcing. Secrets use a one-way cryptographic hash. CIS marks this Manual; automated: fails if any local username has no ''secret''. Audited against the hierarchical output of ''show running-config'' (run ''terminal length 0'' first; not ''show running-config formal'').'
+target: cisco-iosxr
+level: 1
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.8.2 Set username secret for all local users
+audit:
+  type: config_regex
+  pattern: (?m)^username \S+[^\n]*\n(?:[ \t]+(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^r\n]|r(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n])))))))[^\n]*\n)*(?:[^ \t]|\z)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    username {local_username}
+    secret {local_password} commit

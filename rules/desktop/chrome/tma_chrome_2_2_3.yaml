@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.2.3
+title: 'Ensure ''Control use of the WebUSB API'' is set to ''Enabled: Do not allow any site to request access to USB devices via the WebUSB API'''
+description: 'Google Chrome has an API which allows access to connected USB devices from the browser - Do not allow any site to request access to USB devices via the WebUSB API (2) - Allow sites to ask the user to grant access to a connected USB device (3) The recommended state for this setting is: Enabled with a value of Do not allow any site to request access to USB devices via the WebUSB API (2) Rationale: WebUSB is opening the doors for sophisticated phishing attacks that could bypass hardware-based two-factor authentication devices (e.g. Yubikey devices). Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DefaultWebUsbGuardSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.2.3 Ensure ''Control use of the WebUSB API'' is set to ''Enabled: Do not allow any site to request access to USB devices via the WebUSB API'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultWebUsbGuardSetting'' -ErrorAction SilentlyContinue).''DefaultWebUsbGuardSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultWebUsbGuardSetting' -Value 2 -PropertyType DWord -Force | Out-Null

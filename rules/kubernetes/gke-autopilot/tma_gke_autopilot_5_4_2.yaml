@@ -1,0 +1,22 @@
+id: TMA-GKE-AUTOPILOT-5.4.2
+title: Restrict GKE control plane access with authorized networks
+description: Restrict GKE Autopilot control plane access by enabling authorized networks for IP based control plane endpoints and allowing only approved CIDR ranges. This reduces exposure of the Kubernetes API server by limiting which source IP ranges can reach the control plane over the configured IP endpoint. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke-autopilot
+level: 2
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+- network
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.4.2 Restrict GKE control plane access with authorized networks
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(masterAuthorizedNetworksConfig.enabled,masterAuthorizedNetworksConfig.gcpPublicCidrsAccessEnabled)') || exit 1
+    cidrs=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(masterAuthorizedNetworksConfig.cidrBlocks[].cidrBlock)') || exit 1
+    set -- $(printf '%s' "$out" | tr '\t' ' ')
+    if [ "${1:-}" = True ] && [ "${2:-False}" != True ] && [ -n "$cidrs" ] && ! printf '%s' "$cidrs" | grep -q '0\.0\.0\.0/0'; then echo compliant; else echo "noncompliant: enabled=${1:-} gcpPublicCidrs=${2:-} cidrs=$cidrs"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable control plane authorized networks when the audit shows that masterAuthorizedNetworksConfig is missing, does not show authorized networks as enabled, does not include approved cidrBlocks, or includes broad ranges such as 0.0.0.0/0. Authorized networks should include only trusted administrative, bastion, VPN, CI/CD, or automation source ranges that require access to the GKE Autopilot control plane IP endpoint, and use authorized networks when IP based control plane endpoints are enabled. gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --enable-master-authorized-networks \ --master-authorized-networks <authorized-cidrs> If broad access from Google Cloud external IP addresses is not explicitly approved, disable that access so external IP addresses from Google Cloud are not automatically allowed to reach the control plane.

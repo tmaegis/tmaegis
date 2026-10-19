@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.66.4
+title: Ensure 'Turn off the Store application' is set to 'Enabled'
+description: 'This setting denies or allows access to the Store application. The recommended state for this setting is: Enabled. Note: Per Microsoft TechNet and MSKB 3135657, this policy setting does not apply to any Windows 10 editions other than Enterprise and Education.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.66.4
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore'' -Name ''RemoveWindowsStore'' -ErrorAction SilentlyContinue).''RemoveWindowsStore''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RemoveWindowsStore='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore' -Name 'RemoveWindowsStore' -Value 1 -PropertyType DWord -Force | Out-Null

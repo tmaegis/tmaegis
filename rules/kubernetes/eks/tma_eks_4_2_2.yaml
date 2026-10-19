@@ -1,0 +1,21 @@
+id: TMA-EKS-4.2.2
+title: Minimize the admission of containers wishing to share the host process ID namespace
+description: 'Minimize the admission of pods that request host process ID namespace sharing by restricting use of spec.hostPID: true in EKS workload namespaces. In the EKS Pod Security Standards model, this is enforced through Pod Security Admission or an equivalent policy engine, and AWS recommends enforcing at least the baseline profile cluster-wide and the restricted profile for workload namespaces. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.'
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- pod-security
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.2.2 Minimize the admission of containers wishing to share the host process ID namespace
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.hostPID}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($3=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure Pod Security Admission on workload namespaces so pods that request spec.hostPID: true are denied at admission time. In current EKS guidance, AWS recommends applying Pod Security Standards with at least the baseline profile cluster-wide and the restricted profile for workload namespaces. AWS also states that the baseline profile prohibits hostPID, while restricted inherits that restriction. For remediation, use enforce because AWS documents that only enforce rejects violating pods. warn and audit can help during rollout, but they do not block admission. • Label each workload namespace to enforce restricted. kubectl label ns NAMESPACE pod-security.kubernetes.io/enforce=restricted --overwrite • Add warn and audit during transition if you want visibility into violations before or alongside enforcement.'

@@ -1,0 +1,17 @@
+id: TMA-AWS-NACL-NO-ADMIN-FROM-ANY
+title: Ensure no Network ACLs allow ingress from 0.0.0.0/0 or ::/0 to remote server administration ports
+description: NACL allow entries for 22/3389 from anywhere remove a layer of defence in front of security groups. Evaluates allow entries only (rule ordering is not considered), in every enabled region; the default NACL allow-all entry fails this check by design. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- network
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Networking - no Network ACL ingress from 0.0.0.0/0 to remote administration ports (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  out=$(aws ec2 describe-network-acls --region \"$r\" --query 'NetworkAcls[?Entries[?Egress==`false` && RuleAction==`\"allow\"` && (CidrBlock==`\"0.0.0.0/0\"` || Ipv6CidrBlock==`\"::/0\"`) && (Protocol==`\"-1\"` || ((Protocol==`\"6\"` || Protocol==`\"17\"`) && ((PortRange.From<=`22` && PortRange.To>=`22`) || (PortRange.From<=`3389` && PortRange.To>=`3389`))))]].NetworkAclId' --output text 2>/dev/null) || exit 1\n  [ -z \"$out\" ] || { echo \"open NACL: $r $out\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Replace allow-all inbound NACL entries with explicit entries that permit 22/3389 only from administrative CIDRs (aws ec2 replace-network-acl-entry / delete-network-acl-entry). Test carefully: NACLs are stateless and also affect return traffic.'

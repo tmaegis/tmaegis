@@ -1,0 +1,26 @@
+id: TMA-FORTIGATE-3.4
+title: Ensure logging is enabled on all firewall policies
+description: Logging should be enabled for all firewall policies including the default implicit deny policy. FAILs if any firewall policy has logtraffic disable or utm (allowed policies must log all sessions, denied policies must log violations). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- logging
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 3.4 Ensure logging is enabled on all firewall policies
+audit:
+  type: config_regex
+  pattern: (?m)^config firewall policy\n(?:[ \t]+[^\n]*\n)*?[ \t]+set logtraffic (?:disable|utm)[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config firewall policy
+        edit <id>
+            set logtraffic all
+        next
+    end
+    # CIS guidance:
+    Review firewall policies and ensure that:
+    1. For allowed policies, "Log Allowed Traffic" is set on "All Sessions" option.
+    2. For denied policies, "Log Violation Traffic" is enabled.

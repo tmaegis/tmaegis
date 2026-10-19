@@ -1,0 +1,19 @@
+id: TMA-GCP-CLOUDSQL-NO-OPEN-AUTHORIZED-NETWORKS
+title: Ensure Cloud SQL instances do not allow 0.0.0.0/0 in authorised networks
+description: An authorised network of 0.0.0.0/0 opens the database port to the whole Internet. No instance may list 0.0.0.0/0 as an authorised network. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: critical
+tags:
+- gcp
+- database
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Cloud SQL - authorised networks do not include 0.0.0.0/0 (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud sql instances list --flatten=''settings.ipConfiguration.authorizedNetworks[]'' --format=''value(name,settings.ipConfiguration.authorizedNetworks.value)'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''$2 == "0.0.0.0/0" { n++; print "open: " $1 } END { if (!n) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: gcloud sql instances patch <instance> --authorized-networks=<specific-cidrs> (the flag replaces the whole list), or use the Cloud SQL Auth Proxy / private IP. Enforce with constraints/sql.restrictAuthorizedNetworks.

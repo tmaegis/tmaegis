@@ -1,0 +1,19 @@
+id: TMA-AZURE-COMPUTE-2.1.15
+title: Ensure App Service plan SKU supports private endpoints
+description: Ensure that your App Service plan SKU supports private endpoints. Private endpoints provide secure access over Azure Private Link, which keeps traffic on the Microsoft backbone network and eliminates exposure to the public internet. Note that not all SKUs support private endpoints. An appropriately configured private endpoint eliminates public exposure and helps prevent data exfiltration.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.1.15 Ensure App Service plan SKU supports private endpoints
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. In the Properties pane, under Hosting, next to SKU and size, ensure that the plan tier is one of the following: Basic, Standard, ElasticPremium, Premium, PremiumV2, Premium0V3, PremiumV3, PremiumMV3, IsolatedV2, IsolatedMV2, WorkflowStandard, FlexConsumption, and that the plan name is one of the following: B1, B2, B3, S1, S2, S3, EP1, EP2, EP3, P1, P2, P3, P1V2, P2V2, P3V2, P0V3, P1V3, P2V3, P3V3, P1MV3, P2MV3, P3MV3, P4MV3, P5MV3, I1V2, I2V2, I3V2, I4V2, I5V2, I6V2, I1MV2, I2MV2, I3MV2, I4MV2, I5MV2, WS1, WS2, WS3, FC1. 4. Repeat steps 1-3 for each app. Audit from Azure CLI Run the following command to list apps: az webapp list For each app, run the following command to get the App Service plan ID: az webapp show --resource-group <resource-group-name> --name <app-name> -- query appServicePlanId For each App Service plan, run the following command to get the plan SKU tier and name: az appservice plan
+    show --resource-group <resource-group-name> --name <app- service-plan-name> --query "{tier:sku.tier,name:sku.name}" Ensure that the plan tier is one of the following: Basic, Standard, ElasticPremium, Prem...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. In the Properties pane, under Hosting, next to Name, click the App Service plan name. 4. Under Current App Service plan, next to Name, click the App Service plan name. 5. Under Essentials, next to Pricing plan, click the pricing plan name. 6. Select a pricing plan where the plan tier is one of the following: Basic, Standard, ElasticPremium, Premium, PremiumV2, Premium0V3, PremiumV3, PremiumMV3, IsolatedV2, IsolatedMV2, WorkflowStandard, FlexConsumption, and the plan name is one of the following: B1, B2, B3, S1, S2, S3, EP1, EP2, EP3, P1, P2, P3, P1V2, P2V2, P3V2, P0V3, P1V3, P2V3, P3V3, P1MV3, P2MV3, P3MV3, P4MV3, P5MV3, I1V2, I2V2, I3V2, I4V2, I5V2, I6V2, I1MV2, I2MV2, I3MV2, I4MV2, I5MV2, WS1, WS2, WS3, FC1. 7. Click Select. 8. Click Downgrade or Upgrade to confirm the change. 9. Repeat steps 1-8 for each app and App Service plan requiring remediation. Remediate from Azure CLI For each App Service
+    plan requiring remediation, run the following command to update the SKU: az appservice plan update --resource-group <resource-group-name> --name <app- service-plan-name> --sku <sku>'

@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-4.1.2
+title: Ensure peer authentication is set to IPSEC SA (BGP)
+description: 'BGP Neighbors should be strongly authenticated. Where it is deployed, BGP routing is vital for normal operation of an organization''s network infrastructure. Correct route information is required for routers to correctly direct traffic through the network. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.1.2 Ensure peer authentication is set to IPSEC SA
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options for configuring IPSEC SA based Authentication with BGP, this recommendation is not scorable.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To setup IPSEC SA based authentication, first configure a Security Association at the hierarchy; edit security-association <SA name> set description <description> set mode transport set manual direction bidirectional protocol ah set manual direction bidirectional authentication algorithm <authentication method> set manual direction bidirectional authentication key <key> The SA must be bi-directional and must be configured with the same parameters on all neighbors reachable on the intended interface. Note that only Authenticated Header is configured in this example which provides mutual authentication but does not encrypt BGP protocol messages in transit. To configure IPSEC SA based authentication globally for BGP, issue the following command from the hierarchy;
+    set protocols bgp ipsec-sa To configure IPSEC SA based authentication for a group, issue the following command from the hierarchy;
+    set protocols bgp group <group name> ipsec-sa <SA name> To configure IPSEC SA based authentication for a neighbor, issue the following command from the hierarchy;
+    set protocols bgp group <group name> neighbor <neighbor ip address> ipsec-sa <SA name>

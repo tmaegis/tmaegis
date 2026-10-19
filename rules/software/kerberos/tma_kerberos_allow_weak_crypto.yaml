@@ -1,0 +1,20 @@
+id: TMA-KERBEROS-ALLOW-WEAK-CRYPTO
+title: Ensure allow_weak_crypto is not enabled
+description: 'allow_weak_crypto = true in /etc/krb5.conf re-enables single-DES and export-grade enctypes that MIT disables by default. The audit fails if the setting is true/yes/1.'
+target: kerberos
+level: 1
+severity: high
+tags: [kerberos, crypto]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - Strong Kerberos encryption types (verify section number for your release)
+audit:
+  type: file_regex
+  file_path: /etc/krb5.conf
+  pattern: '(?mi)^\s*allow_weak_crypto\s*=\s*(true|yes|1|on)\b'
+  must_not_match: true
+  requires_file: [/etc/krb5.conf]
+remediation:
+  type: file_line
+  file_path: /etc/krb5.conf
+  match_regex: '(?mi)^\s*allow_weak_crypto\s*=.*$'
+  replace_line: '    allow_weak_crypto = false'
+  backup_files: [/etc/krb5.conf]

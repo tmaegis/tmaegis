@@ -1,0 +1,17 @@
+id: TMA-BIND-8.6
+title: Ensure Full Digital Chain of Trust can be Validated
+description: 'For each authoritative domain ensure the digital signatures are is fully trusted starting from the root zone. Manual review: the check needs remote queries, architecture knowledge or site policy.'
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 8.6 Ensure Full Digital Chain of Trust can be Validated
+audit:
+  type: manual
+  command: 'To audit the chain of trust use the delv command to query an external independent validating name server. Such as: $ delv @8.8.8.8 cisecurity.org ; fully validated cisecurity.org. 21599 IN A 10.1.2.3 cisecurity.org. 21599 IN RRSIG A 8 2 43200 20200328213257 20200224211144 42363 cisecurity.org. gqTNFiJ. . . 2n4Q== The output of "fully validated" indicates the zone is compliant. Other answers are not compliant, and may include "no valid signature found" and "unsigned answer".'
+remediation:
+  type: iac_patch
+  command: 'If the zone has a valid signature but the signature is not trusted, the delegation from the parent zone, or the registrar may not be properly configured. Check with your parent zone administrator or with your name registrar''s process to be sure the required information has been provided and that sufficient time has been allowed for new DS record to propagate. Each registrar may have slightly different processes. Generating a DS record from the KSK will likley provide some of the required information. # dnssec-dsfromkey -a SHA-256 Kexample.com.+013+09798.key example.com. IN DS 9798 13 2 D9AA106E44 . . .'

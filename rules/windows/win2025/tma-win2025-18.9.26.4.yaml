@@ -1,0 +1,20 @@
+id: TMA-WIN2025-18.9.26.4
+title: 'Ensure ''Password Settings: Password Complexity'' is set to ''Enabled: Large letters + small letters + numbers + specials'' or higher (MS only)'
+description: 'This policy setting configures the Windows LAPS Password Settings policy for password complexity. The recommended state for this setting is: Enabled: Large letters + small letters + numbers + specials. Configuring this setting to Large letters + small letters + numbers + specials (improved readability), Passphrase (long words), Passphrase (short words), or Passphrase (short words with unique prefixes) also conforms to the benchmark. Note: Passphrase list is generated from Deep Dive: EFF´s New Wordlists for Random Passphrases by Electronic Frontier Foundation and only supports the English langu'
+target: windows
+os_family:
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.9.26.4
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS'' -Name ''PasswordComplexity'' -ErrorAction SilentlyContinue).''PasswordComplexity''; if (-not ($null -ne $v -and @(4,5,6,7,8) -contains [int64]$v)) { $bad += ''PasswordComplexity='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Name 'PasswordComplexity' -Value 4 -PropertyType DWord -Force | Out-Null

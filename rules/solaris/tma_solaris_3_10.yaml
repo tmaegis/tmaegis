@@ -1,0 +1,50 @@
+id: TMA-SOLARIS-3.10
+title: Disable Response to Multicast Echo Request
+description: 'These settings control whether Solaris responds to multicast IPv4 and IPv6 echo requests. Reduce attack surface by restricting this vector used for host discovery and to prevent denial of service attacks. Audit: `ipadm show-prop -p _respond_to_echo_multicast` must be 0 for both the current and persistent values.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- network
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 3.10 Disable Response to Multicast Echo Request
+audit:
+  type: command
+  command: command -v ipadm >/dev/null 2>&1 || exit 1; r=compliant; for p in ipv4 ipv6; do for k in current persistent; do v=$(ipadm show-prop -p _respond_to_echo_multicast -co $k $p 2>/dev/null); [ "$v" = '0' ] || r="_respond_to_echo_multicast $p $k=$v"; done; done; echo "$r"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    ipadm set-prop -p _respond_to_echo_multicast=0 ipv4
+    ipadm set-prop -p _respond_to_echo_multicast=0 ipv6
+  guidance: "ipadm set-prop -p _respond_to_echo_multicast=0 ipv4; ipadm set-prop -p _respond_to_echo_multicast=0 ipv6"

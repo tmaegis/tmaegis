@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-3.6
+title: Ensure 'PASSWORD_VERIFY_FUNCTION' Is Configured Correctly
+description: 'The setting PASSWORD_VERIFY_FUNCTION is used to enable password complexity verification. If using a custom verification function, it''s important to ensure that the complexity function meets your organization''s policy for password complexity. Review the code to ensure that the password verification function meets the password complexity rules that have been set for your organization. Default: NULL'
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 3.6 Ensure 'PASSWORD_VERIFY_FUNCTION' Is Configured Correctly
+audit:
+  type: manual
+  command: SELECT DECODE(CON_ID,0,'ENTIRE-'||SYS_CONTEXT('USERENV','DB_NAME'), 1,'ROOTONLY-'||SYS_CONTEXT('USERENV','DB_NAME'), CON_ID_TO_CON_NAME(CON_ID)) AS CONTAINERNAME, LINE, TEXT FROM CDB_SOURCE WHERE (CON_ID,NAME) IN ( SELECT DISTINCT CON_ID, LIMIT FROM SYS.CDB_PROFILES WHERE RESOURCE_NAME='PASSWORD_VERIFY_FUNCTION' AND (LIMIT IS NOT NULL OR LIMIT != 'DEFAULT')) ORDER BY CON_ID, NAME, LINE ; To be compliant with this recommendation, review the code to ensure that the function meets your organization's password complexity requirements..
+remediation:
+  type: iac_patch
+  command: If you discover profiles using verification functions that do not meet your organization's standards, you may remediate this setting by executing the following SQL statement for each PROFILE returned by the audit procedure. This will cause accounts assigned those profiles to use the ora12c_strong_verify_function. The next time that account's password is changed, the new function will validate that they meet standards. ALTER PROFILE <profile_name> LIMIT PASSWORD_VERIFY_FUNCTION ORA12C_STRONG_VERIFY_FUNCTION;

@@ -1,0 +1,21 @@
+id: TMA-GCP-NO-DEFAULT-NETWORK
+title: Ensure the default network does not exist in a project
+description: The auto-created default network ships with permissive firewall rules (default-allow-ssh/rdp/internal) and auto-mode subnets. The project must have no VPC network named default. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 2
+severity: medium
+tags:
+- gcp
+- network
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Networking - default network does not exist (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud compute networks list --format=''value(name)'' 2>/dev/null) || exit 1
+
+    n=$(printf ''%s\n'' "$out" | grep -cx default || true)
+
+    [ "$n" -eq 0 ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Migrate workloads to a custom-mode VPC, delete the default firewall rules and then gcloud compute networks delete default. Enforce with the constraints/compute.skipDefaultNetworkCreation organisation policy.

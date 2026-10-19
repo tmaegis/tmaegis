@@ -1,0 +1,17 @@
+id: TMA-DB2-8.1.10
+title: Enable TLS Communication Between HADR Primary and Standby Instances (HADR_SSL_LABEL)
+description: The HADR_SSL_LABEL database configuration parameter controls whether connections between HADR peers are encrypted, and which certificate is served to an HADR peer when establishing an HADR connection.
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.1.10 Enable TLS Communication Between HADR Primary and Standby Instances (HADR_SSL_LABEL)
+audit:
+  type: manual
+  command: 'Perform the following to determine if the HADR_SSL_LABEL is set. These steps should be performed on the primary database and any standby databases. 1. As the instance owner, run the following command. db2 => get db cfg for <database> 2. Locate the value of HADR_SSL_LABEL in the output: HADR SSL certificate label (HADR_SSL_LABEL) ='
+remediation:
+  type: iac_patch
+  command: 'Perform the following steps on both the primary and any standby databases to enable TLS encrypted HADR. A server side keystore and stash file (SSL_SVR_KEYDB/SSL_SVR_STASH) must be configured to enable TLS encrypted HADR communication: ; Run the following command as the instance owner. db2 => update db cfg for <database> using HADR_SSL_LABEL <label> Replace <label> with the name of a certificate present in the server-side keystore (SSL_SVR_KEYDB). If it is active, HADR must be recycled for changes to the HADR_SSL_LABEL registry variable to take effect.'

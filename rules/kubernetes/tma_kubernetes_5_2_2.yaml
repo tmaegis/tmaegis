@@ -1,0 +1,21 @@
+id: TMA-KUBERNETES-5.2.2
+title: Minimize the admission of privileged containers
+description: Do not generally permit containers to be run with the securityContext.privileged flag set to true. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. The benchmark marks this Manual; this audit automates its kubectl inventory step.
+target: kubernetes
+level: 1
+severity: critical
+tags:
+- kubernetes
+- policies
+- pod-security
+reference: CIS Kubernetes Benchmark v2.1.0 - 5.2.2 Minimize the admission of privileged containers
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($4=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add policies to each namespace in the cluster which has user workloads to restrict the admission of privileged containers.

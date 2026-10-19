@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-1.2.24
+title: Ensure that the --service-account-key-file argument is set as appropriate
+description: Explicitly set a service account public key file for service accounts on the apiserver. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: high
+tags:
+- openshift
+- api-server
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 1.2.24 Ensure that the --service-account-key-file argument is set as appropriate
+audit:
+  type: manual
+  command: 'OpenShift API server does not use the service-account-key-file argument. OpenShift does not reuse the apiserver TLS key. The ServiceAccount token authenticator is configured with serviceAccountConfig.publicKeyFiles. OpenShift automatically manages and rotates the keys. Run the following command: oc get configmap config -n openshift-kube-apiserver -ojson | \ jq -r ''.data["config.yaml"]'' | \ jq -r ''.serviceAccountPublicKeyFiles[]'' Verify that the following is returned.'
+remediation:
+  type: iac_patch
+  command: The OpenShift API server does not use the service-account-key-file argument. The ServiceAccount token authenticator is configured with serviceAccountConfig.publicKeyFiles. OpenShift does not reuse the apiserver TLS key. This is not configurable.

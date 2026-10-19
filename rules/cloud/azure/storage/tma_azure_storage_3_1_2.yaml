@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-3.1.2
+title: Ensure immutability for Backup vaults is Enabled
+description: Immutable vaults safeguard backup data by preventing any operations that could result in the loss of recovery points. The immutable vault setting can be locked, making it irreversible and preventing malicious actors from disabling it and deleting backups. Enabling the immutable vault ensures that backup data is protected from unauthorized or accidental deletion. By locking the setting and making it irreversible, malicious actors are prevented from disabling the setting and deleting backups.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- backup
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.1.2 Ensure immutability for Backup vaults is Enabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Backup vaults. 2. From the list of vaults, ensure that the value in the Immutability column for each vault is Not locked or Locked. Audit from Azure CLI Run the following command to list Backup vaults: az dataprotection backup-vault list For each Backup vault, run the following command: az dataprotection backup-vault show --resource-group <resource-group> -- vault-name <backup-vault> Ensure that under immutabilitySettings, state is set to Unlocked or Locked. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 2514263b-bc0d-4b06-ac3e-f262c0979018 - Name: ''[Preview]: Immutability must be enabled for backup vaults'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Under the Immutable vault setting value, click Settings. 5. Check the box under Enable vault immutability. Note: It is not possible to lock immutability until immutability has been enabled. 6. Click Apply. 7. If it is appropriate for your organization to lock immutability, under the Immutable vault setting value, click Settings. 8. Click the toggle under Lock immutability for this vault to set it to Locked. 9. Check the box next to Confirm locking immutability. 10. Click Apply. 11. Repeat steps 1-10 for each Backup vault requiring remediation. Remediate from Azure CLI Run the following command to list Backup vaults: az dataprotection backup-vault list For each Backup vault requiring remediation, run the following command to enable vault immutability: az dataprotection backup-vault update --resource-group <resource-group> -- vault-name <backup-vault> --immutability-state
+    Unlocked Note: To lock the Backup vault immutability state, the above command can be executed with --immutability-state Locked. Once enabled, this setting cannot be disabled and it will n...'

@@ -1,0 +1,24 @@
+id: TMA-CHECKPOINT-1.9
+title: Ensure Days of non-use before lock-out is set to 30
+description: Days of non-use before lock-out. The number of days in which a user has not (successfully) logged in before that user is locked out. This only takes effect if Deny access to unused accounts is selected. PASS requires deny-on-nonuse allowed-days of 30 or less. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: medium
+tags:
+- checkpoint
+- hardening
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 1.9 Ensure Days of non-use before lock-out is set to 30
+audit:
+  type: config_regex
+  pattern: (?m)^set password-controls deny-on-nonuse allowed-days (?:[1-9]|[12]\d|30)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    set password-controls deny-on-nonuse allowed-days 30
+    save config
+    # CIS guidance:
+    Run the following command to set the deny-on-nonuse allowed-days setting. CLI:
+    set password-controls deny-on-nonuse allowed-days 30
+    GUI:
+    Navigate to User Management > Password Policy > Deny access to unused accounts:
+    Set 'Days of non-use before lock-out' to 30 or less. Note: This setting only takes effect if 'Deny access to unused accounts' is enabled.

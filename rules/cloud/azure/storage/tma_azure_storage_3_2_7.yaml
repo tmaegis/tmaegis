@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-3.2.7
+title: Ensure 'Cross Subscription Restore' is set to 'Disabled' or 'Permanently Disabled' on Recovery Services vaults
+description: Disable cross subscription restore for Recovery Services vaults to ensure that backup data can only be restored within the same subscription as the Recovery Services vault, preventing restoration to targets in other subscriptions. Cross subscription restores increases security risks by widening access to sensitive backup data, potentially leading to accidental or intentional exposure, unauthorized access, or data exfiltration across environments.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.2.7 Ensure 'Cross Subscription Restore' is set to 'Disabled' or 'Permanently Disabled' on Recovery Services vaults
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a Recovery Services vault. 3. Under Settings, click Properties. 4. Under Cross Subscription Restore, click Update. 5. Ensure that Disable Cross Subscription Restore or Permanently disable Cross Subscription Restore on this vault is selected. 6. Repeat steps 1-5 for each Recovery Services vault. Audit from Azure CLI Run the following command to list Recovery Services vaults: az backup vault list For each Recovery Services vault, run the following command: az backup vault show --resource-group <resource-group> --name <recovery- services-vault> Ensure that under properties > restoreSettings > crossSubscriptionRestoreSettings, crossSubscriptionRestoreState is set to Disabled or PermanentlyDisabled. Audit from PowerShell Run the following command to list Recovery Services vaults: Get-AzRecoveryServicesVault Run the following command to get the Recovery Services vault in a resource group with a given name:
+    $vault = Get-AzRecoveryServicesVault -ResourceGroupName <resource-group> - Name <recovery-services-vault> Run the following command to get the cross subscription restore setting for the Recovery Services...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a Recovery Services vault. 3. Under Settings, click Properties. 4. Under Cross Subscription Restore, click Update. 5. Select the radio button next to Disable Cross Subscription Restore or Permanently disable Cross Subscription Restore on this vault. 6. If selecting to permanently disable cross subscription restore, check the box next to Are you sure you want to permanently disable Cross Subscription Restore? Once disabled, it cannot be re-enabled. 7. Click Update. 8. Repeat steps 1-7 for each Recovery Services vault requiring remediation. Remediate from Azure CLI For each Recovery Services vault requiring remediation, run the following command to disable cross subscription restore: az backup vault update --resource-group <resource-group> --name <recovery- services-vault> --cross-subscription-restore-state Disable Note: Use --cross-subscription-restore-state PermanentlyDisable with the above command
+    to permanently disable cross subscription restore. Remediate from PowerShell For each Recovery Services vault requiring remediation, run the following command to disable cross subscription restore: Upd...'

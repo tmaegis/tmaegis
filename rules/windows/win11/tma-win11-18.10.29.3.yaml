@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.29.3
+title: Ensure 'Turn off account-based insights, recent, favorite, and recommended files in File Explorer' is set to 'Enabled'
+description: 'This policy setting configures whether File Explorer can request cloud file metadata and display it in the homepage and other views in File Explorer (such as Quick access view). The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.29.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer'' -Name ''DisableGraphRecentItems'' -ErrorAction SilentlyContinue).''DisableGraphRecentItems''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DisableGraphRecentItems='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Explorer' -Name 'DisableGraphRecentItems' -Value 1 -PropertyType DWord -Force | Out-Null

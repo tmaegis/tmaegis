@@ -1,0 +1,21 @@
+id: TMA-KUBERNETES-5.2.6
+title: Minimize the admission of containers with allowPrivilegeEscalation
+description: 'Do not generally permit containers to be run with the allowPrivilegeEscalation flag set to true. Allowing this right can lead to a process running a container getting more rights than it started with. It''s important to note that these rights are still constrained by the overall container sandbox, and this setting does not relate to the use of privileged containers. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Containers that do not explicitly set allowPrivilegeEscalation: false are reported. The benchmark marks this Manual; this audit automates its kubectl inventory step.'
+target: kubernetes
+level: 1
+severity: high
+tags:
+- kubernetes
+- policies
+- pod-security
+reference: CIS Kubernetes Benchmark v2.1.0 - 5.2.6 Minimize the admission of containers with allowPrivilegeEscalation
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.allowPrivilegeEscalation}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($4!="false")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add policies to each namespace in the cluster which has user workloads to restrict the admission of containers with securityContext: allowPrivilegeEscalation: true'

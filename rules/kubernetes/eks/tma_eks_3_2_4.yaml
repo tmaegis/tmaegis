@@ -1,0 +1,26 @@
+id: TMA-EKS-3.2.4
+title: Ensure the kubelet read-only port is disabled
+description: In EKS, this setting is intended to keep kubelet access limited to the standard secured management path used for node operations, instead of exposing an additional legacy interface on the worker node. In practice, it should be assessed in the node’s effective kubelet configuration because AWS applies node behavior through bootstrap configuration, launch templates, and managed node initialization rather than relying only on visible runtime flags. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access. A missing readOnlyPort means 0 (disabled).
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- worker-node
+- kubelet
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.2.4 Ensure the kubelet read-only port is disabled
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { ! printf '%s' "$c" | grep -Eq '"readOnlyPort":[1-9]'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns a nonzero readOnlyPort, the worker node is exposing the kubelet read-only service and should be treated as noncompliant. If the field is missing from configz, first confirm whether it is simply omitted because the effective value is 0, since the kubelet configuration schema defines readOnlyPort as the unauthenticated read-only service and states that 0 disables it. Once a noncompliant state is confirmed, remediation in EKS should be performed through the supported node provisioning or node update workflow, not by directly editing the kubelet config file on the host. AWS documents that managed node customization is applied through launch templates and bootstrap logic, and that updating a managed node group to a new launch template version replaces the nodes to match that configuration.

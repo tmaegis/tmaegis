@@ -1,0 +1,18 @@
+id: TMA-MYSQL-7.7
+title: Ensure No Anonymous Accounts Exist
+description: 'Anonymous accounts are users with empty usernames (''''). Anonymous accounts have no passwords, so anyone can use them to connect to the MySQL server. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- authentication
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 7.7 Ensure No Anonymous Accounts Exist
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT COUNT(*) FROM mysql.user WHERE user = ''" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: DROP USER ''@'<host>'; for each anonymous account (or run mysql_secure_installation).

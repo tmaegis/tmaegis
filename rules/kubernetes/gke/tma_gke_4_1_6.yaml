@@ -1,0 +1,21 @@
+id: TMA-GKE-4.1.6
+title: Avoid granting cluster admin level access through the system:masters group
+description: The special Kubernetes group system:masters should not be used to grant cluster admin level access to users, groups, or service accounts. In GKE, administrative access should be granted through explicit RBAC bindings and limited to the minimum permissions required. The system:masters group is a default Kubernetes group, and adding custom subjects to it gives those subjects access to do anything to any resource in the cluster. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. The default cluster-admin ClusterRoleBinding is expected and ignored.
+target: gke
+level: 1
+severity: critical
+tags:
+- gke
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.6 Avoid granting cluster admin level access through the system:masters group
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get clusterrolebindings,rolebindings -A -o go-template='{{range .items}}{{$b:=.metadata.name}}{{range .subjects}}{{if eq .name "system:masters"}}{{$b}}{{"\n"}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | grep -v '^$' | grep -Evx 'cluster-admin' | sort -u)
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remediate custom system:masters usage by replacing it with explicit, auditable RBAC assignments. Do not remove the default cluster-admin ClusterRoleBinding to system:masters, because it supports Kubernetes system functionality. Instead, remove custom paths that add users, groups, service accounts, or client certificates to system:masters, and grant required access through least privilege Roles, ClusterRoles, RoleBindings, or ClusterRoleBindings. • Remove any custom RoleBinding or ClusterRoleBinding that references system:masters, after confirming it is not a required system binding • Remove system:masters from identity provider mappings, certificate subject groups, or other external authentication sources used for cluster access • Replace required administrative access with explicit RBAC bindings to cluster-admin only where full cluster access is justified • For most users, groups, ...

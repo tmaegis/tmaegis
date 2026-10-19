@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.27.14
+title: Ensure 'Encryption type for password protected Office Open XML files' is set to 'Enabled'
+description: 'This policy setting allows for specification of an encryption type for Office Open XML files. The chosen encryption type must have a corresponding cryptographic service provider (CSP) installed on the computer that encrypts the file. Note: This policy setting does not take effect unless the registry key HKEY_CURRENT_USER\Software\Microsoft\Office\16.0<office application name>\Security\Crypto\CompatMode is set to 0. By default the CompatMode registry key is set to 1. The recommended state for this setting is: Enabled: Microsoft Enhanced RSA and AES Cryptographic Provider,AES 256,256. Audit: reads the registry value(s) openxmlencryption that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: high
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.27.14 Ensure 'Encryption type for password protected Office Open XML files' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\security'') -Name ''openxmlencryption'' -ErrorAction SilentlyContinue).''openxmlencryption''; if (-not ($null -ne $v -and (($v -replace ''\s'','''') -eq ''MicrosoftEnhancedRSAandAESCryptographicProvider,AES256,256''))) { $_.PSChildName + '':openxmlencryption='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Enhanced RSA and AES Cryptographic Provider,AES 256,256: Microsoft Office 2016\Security Settings\Encryption type for password protected Office Open XML files'

@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-4.1.5
+title: Ensure Ingress Filtering is set for EBGP peers
+description: 'Filter prefixes advertised to the router through eBGP. In addition to filtering Bogon and Maritan routes JUNOS routers peering with eBGP neighbors should also apply Ingress Filtering to prevent the router processing bad updates sent from the neighbor router, either maliciously or by accident. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- routing
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.1.5 Ensure Ingress Filtering is set for EBGP peers
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Because a policy may be applied at one or more different levels depending on the requirements of a specific organization, it is not possible to score this recommendation.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! From the hierarchy, define a new policy by issuing the following commands:
+    edit policy-options policy-statement <policy name> term <term name>
+    set policy-options policy-statement <policy name> term <term name> from route-filter <network>/<mask> <exact | orlonger | prefix-length-range <start>-<end>> reject Now apply the policy, either globally, to a group or to an individual peer as required by your environment.
+    set protocols bgp <group name> import <policy name>

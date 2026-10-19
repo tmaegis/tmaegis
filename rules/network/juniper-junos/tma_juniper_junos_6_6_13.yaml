@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.6.13
+title: Ensure SSH Key Authentication is not set for User Logins
+description: SSH Key Based Authentication should not be used for User Logins. Due to the sensitive nature of SSH, potentially allowing full management of the targeted device, protecting SSH access using strong authentication methods is essential to the security of the device. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.6.13 Ensure SSH Key Authentication is not set for User Logins
+audit:
+  type: config_regex
+  pattern: (?m)^set system login user \S+ authentication ssh-(?:dsa|ecdsa|ed25519|rsa)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! For each User Login configured with SSH Key based Authentication, you can delete the SSH Key with the following command from the hierarchy:
+    delete system login user <User ID> authentication The user can then be configured with a password locally or, inline with Recommendation 6.8.1 Ensure External AAA Server is set , leave the authentication method blank and allow the External AAA to control Authentication. Alternatively, you may wish to delete the local user account entirely using the following command:
+    delete system login user <User ID>

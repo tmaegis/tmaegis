@@ -1,0 +1,67 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.2.4
+title: Ensure sshd Ciphers are configured
+description: 'This variable limits the ciphers that SSH can use during communication. Notes: • Some organizations may have stricter requirements for approved ciphers. • Ensure that ciphers used are in compliance with site policy. • The only "strong" ciphers currently FIPS 140 compliant are: • aes256-gcm@openssh.com • aes128-gcm@openssh.com • aes256-ctr • aes192-ctr • aes128-ctr Audit: Passes when the effective sshd Ciphers list (sshd -T, needs root) contains none of 3des-cbc, blowfish-cbc, cast128-cbc, aes*-cbc, arcfour, rijndael-cbc. Review CVE-2023-48795 manually if chacha20-poly1305 is listed. Match blocks are not evaluated.'
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- ssh
+- crypto
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.2.4 Ensure sshd Ciphers are configured
+audit:
+  type: command
+  shell: bash
+  command: out=$(sshd -T 2>/dev/null) || exit 1; printf "%s\n" "$out" | grep -Pi -- '^ciphers\h+"?([^#\n\r]+,)?((3des|blowfish|cast128|aes(128|192|256))-cbc|arcfour(128|256)?|rijndael-cbc@lysator\.liu\.se)\b' >/dev/null && echo noncompliant || echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # tma_sshd_apply "Name value" ... : replace every existing setting, put ours first, validate, reload.
+    tma_sshd_apply() {
+      c=/etc/ssh/sshd_config
+      [ -f "$c" ] || { echo "sshd_config not present, nothing to do"; return 0; }
+      files="$c $(ls /etc/ssh/sshd_config.d/*.conf 2>/dev/null)"
+      sv=$(mktemp -d)
+      for f in $files; do tma_bak "$f"; cp -a "$f" "$sv/$(echo "$f" | tr / _)"; done
+      for kv in "$@"; do
+        n=${kv%% *}
+        for f in $files; do
+          [ -L "$f" ] && continue
+          sed -i -E "s/^([[:space:]]*$n[[:space:]=].*)$/# tmaegis: \1/I" "$f"
+        done
+      done
+      tmp=$(mktemp); : > "$tmp"
+      for kv in "$@"; do printf '%s\n' "$kv" >> "$tmp"; done
+      cat "$c" >> "$tmp"; cat "$tmp" > "$c"; rm -f "$tmp"
+      if command -v sshd >/dev/null 2>&1 && ! sshd -t 2>/dev/null; then
+        echo "sshd -t failed, restoring" >&2
+        for f in $files; do cat "$sv/$(echo "$f" | tr / _)" > "$f"; done
+        rm -rf "$sv"; return 1
+      fi
+      rm -rf "$sv"
+      for u in sshd ssh; do systemctl reload "$u" 2>/dev/null && break; done
+      return 0
+    }
+    v=$(ssh -Q cipher 2>/dev/null | grep -E "gcm|ctr|chacha20" | paste -sd, -)
+    [ -n "$v" ] || v=chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+    tma_sshd_apply "Ciphers $v"
+  guidance: "Edit the /etc/ssh/sshd_config file and add/modify the Ciphers line to contain a comma separated list of the site unapproved (weak) Ciphers preceded with a - above any Include entries: Example: Ciphers -3des-cbc,aes128-cbc,aes192-cbc,aes256-cbc,chacha20-poly1305@openssh.com - IF - CVE-2023-48795 has been addressed, and it meets local site policy, chacha20-poly1305@openssh.com may be removed from the list of excluded ciphers. Note: First occurrence of an option takes precedence. If Include locations are enabled, used, and order of precedence is understood in your environment, the entry may be created in a file in Include location."

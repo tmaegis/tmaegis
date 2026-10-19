@@ -1,0 +1,20 @@
+id: TMA-WIN10-17.2.3
+title: Ensure 'Audit User Account Management' is set to 'Success and Failure'
+description: 'This subcategory reports each event of user account management, such as when a user account is created, changed, or deleted; a user account is renamed, disabled, or enabled; or a password is set or changed. If you enable this Audit policy setting, administrators can track events to detect malicious, accidental, and authorized creation of user accounts. Events for this subcategory include: • 4720: A user account was created. • 4722: A user account was enabled. • 4723: An attempt was made to change an account''s password. • 4724: An attempt was made to reset an account''s password. • 4725: A user '
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 17.2.3
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9235-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9235-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

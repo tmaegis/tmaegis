@@ -1,0 +1,20 @@
+id: TMA-MYSQL-3.4
+title: Ensure 'slow_query_log' Has Appropriate Permissions
+description: 'MySQL can operate using a variety of log files, each used for different purposes. These are the binary log (which can be encrypted), error log, slow query log, relay log, general log, and in the enterprise edition, the audit log (which can be encrypted). Passes when the slow query log is off; otherwise the file must not be accessible to other users, executable, or owned by anyone but mysql:mysql. Remove old slow log files manually. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- filesystem
+- permissions
+- logging
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 3.4 Ensure 'slow_query_log' Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; on=$(mysql -NBe "SELECT IFNULL(@@global.slow_query_log + 0, '''')" 2>/dev/null) || exit 1; [ "$on" = 0 ] && { echo compliant; exit 0; }; f=$(mysql -NBe "SELECT IFNULL(@@global.slow_query_log_file, '''')" 2>/dev/null) || exit 1; case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; [ -f "$f" ] || exit 1; [ -z "$(find "$f" -maxdepth 0 \( -perm /0117 -o ! -user mysql -o ! -group mysql \))" ] && echo compliant || echo "bad permissions on $f"'
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST slow_query_log = OFF"

@@ -1,0 +1,21 @@
+id: TMA-ARUBA-CX-1.11.2
+title: Configure syslog-client to log using TLS
+description: Logging to a remote syslog server should be configured to use TLS and include auditable events. PASS requires a TLS syslog server that includes auditable events. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- logging
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.11.2 Configure syslog-client to log using TLS
+audit:
+  type: config_regex
+  pattern: (?m)^logging \S+ tls\b[^\n]*\binclude-auditable-events\b
+remediation:
+  type: iac_patch
+  command: |-
+    logging syslog.example.com tls 6514 auth-mode subject-name vrf mgmt include-auditable-events
+    # CIS guidance:
+    Configure the switch to send logs to a syslog-server using tls on the mgmt VRF and include auditable events.
+    logging <SYSLOG-SERVER> tls <PORT> auth-mode subject-name vrf mgmt include-
+    auditable-events

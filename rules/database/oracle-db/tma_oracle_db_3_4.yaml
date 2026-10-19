@@ -1,0 +1,33 @@
+id: TMA-ORACLE-DB-3.4
+title: Ensure 'PASSWORD_REUSE_MAX' Is Set To 'UNLIMITED'
+description: 'The PASSWORD_REUSE_MAX setting determines how many different passwords must be used before the user is allowed to reuse a prior password. The suggested value for this is UNLIMITED. Only UNLIMITED (9999) passes, exactly as the benchmark query states. Default: UNLIMITED Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- password-policy
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 3.4 Ensure 'PASSWORD_REUSE_MAX' Is Set To 'UNLIMITED'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from (
+      select p.con_id, p.profile, to_number(decode(p.limit, 'DEFAULT',
+        (select decode(d.limit, 'UNLIMITED', '9999', d.limit) from cdb_profiles d
+          where d.profile = 'DEFAULT' and d.resource_name = p.resource_name and d.con_id = p.con_id),
+        'UNLIMITED', '9999', p.limit)) lim
+      from cdb_profiles p where p.resource_name = 'PASSWORD_REUSE_MAX'
+    ) where lim < 9999;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remediate this setting by executing the following SQL statement for each PROFILE returned by the audit procedure. ALTER PROFILE <profile_name> LIMIT PASSWORD_REUSE_MAX 'UNLIMITED';

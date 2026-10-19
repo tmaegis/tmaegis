@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-1.1.13
+title: Ensure that the kubeconfig file permissions are set to 600 or more restrictive
+description: Ensure that the kubeconfig file has permissions of 600 or more restrictive. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- control-plane
+- file-permissions
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 1.1.13 Ensure that the kubeconfig file permissions are set to 600 or more restrictive
+audit:
+  type: manual
+  command: 'In OpenShift 4 the admin config file is stored in /etc/kubernetes/kubeconfig with permissions 600. Run the following command: for i in $(oc get nodes -o name) do oc debug $i -- <<EOF chroot /host stat -c%a /etc/kubernetes/kubeconfig EOF done Verify that the permissions are 600 or more restrictive.'
+remediation:
+  type: iac_patch
+  command: There is no remediation for updating the permissions of kubeconfig. The file is owned by an OpenShift operator and any changes to the file will result in a degraded cluster state. Please do not attempt to remediate the permissions of this file.

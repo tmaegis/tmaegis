@@ -1,0 +1,17 @@
+id: TMA-AIX-5.3.7
+title: Ensure user nuucp is secured
+description: 'This change locks and disables login access for the nuucp user account. This change disables direct local and remote login to the nuucp user account. Do not set a password on this account to ensure that the only access is via su from the root account. There should not be a requirement to log in as the nuucp user directly. Audit: `lsuser -a account_locked login rlogin nuucp` must show true/false/false; an absent account is compliant.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.3.7 Ensure user nuucp is secured
+audit:
+  type: command
+  command: command -v lsuser >/dev/null 2>&1 || exit 1; lsuser nuucp >/dev/null 2>&1 || { echo compliant; exit 0; }; out=$(lsuser -a account_locked login rlogin nuucp 2>/dev/null); [ "$out" = "nuucp account_locked=true login=false rlogin=false" ] && echo compliant || echo "$out"
+  expected_output: compliant
+remediation:
+  type: command
+  command: chuser account_locked=true login=false rlogin=false nuucp

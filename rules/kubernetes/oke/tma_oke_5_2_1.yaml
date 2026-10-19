@@ -1,0 +1,21 @@
+id: TMA-OKE-5.2.1
+title: Use dedicated Kubernetes service accounts for OKE workloads
+description: Using dedicated Kubernetes service accounts for OKE workloads helps isolate OCI permissions by application, job, or trust boundary instead of sharing a single identity across multiple workloads. This supports more controlled access to OCI services and reduces the security impact if one workload is compromised or misconfigured. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Reports pods running as the namespace default service account.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- managed-services
+- rbac
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.2.1 Use dedicated Kubernetes service accounts for OKE workloads
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{.metadata.namespace}} {{.metadata.name}} {{.spec.serviceAccountName}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($3=="default" || $3=="<no")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Use dedicated Kubernetes service accounts for OKE workloads and associate OCI permissions to those service accounts instead of relying on the namespace default service account or broad node based OCI permissions. Use OKE workload identity for workloads that need OCI resource access. Create one dedicated service account and OCI IAM policy design for each application or distinct permission boundary, and update workload manifests to reference the intended service account explicitly. Disable automatic service account token mounting for workloads that do not need Kubernetes API access. After migrating workloads to dedicated service accounts, restrict access to node or instance principal credentials where applicable so pods cannot inherit broader node credentials.

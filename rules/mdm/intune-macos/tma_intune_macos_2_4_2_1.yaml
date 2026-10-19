@@ -1,0 +1,17 @@
+id: TMA-INTUNE-MACOS-2.4.2.1
+title: Ensure "Disable Login Items Suppression" is set to "True"
+description: This setting prevents users from disabling the automatic launch of login items by holding down the Shift key during login. When set to True, all designated login items will launch regardless of user intervention. The benchmark marks this a Manual check of an Intune macOS policy setting that cannot be read from the endpoint with a script, so TMAegis lists it as a manual review item with the audit steps (the policy must be inspected in the Intune admin center or on the managed device).
+target: intune-macos
+level: 1
+severity: medium
+tags:
+- intune-macos
+- intune
+- manual-review
+reference: CIS Apple macOS 26 Tahoe Intune Benchmark v1.0.0 - 2.4.2.1 Ensure "Disable Login Items Suppression" is set to "True"
+audit:
+  type: manual
+  command: 'macOS: Intune admin center: Expand the Login heading; Under the Login Window Login Items subheading; Verify that Disable Login Items Suppression is present and set to True. On the device: Double-click loginwindow Profile; Under the Details section; Confirm Login Items Suppression Disabled is set to True In some cases the above policy will not be visible on device, in this case the following command can be run: $ sudo /usr/bin/find /Library/Managed\ Preferences -name "*.plist" -exec /usr/libexec/PlistBuddy -c "Print" {} \; | /usr/bin/awk ''/DisableLoginItemsSuppression.*=.*/{p=1;c=0} p{print; ...'
+remediation:
+  type: iac_patch
+  command: 'Intune admin center: Select Login then Login Window Login Items; Check Disable Login Items Suppression; On the left side of the page set Disable Login Items Suppression to True; Verify that Disable Login Items Suppression is present and set to True'

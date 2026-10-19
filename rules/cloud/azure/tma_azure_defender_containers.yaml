@@ -1,0 +1,19 @@
+id: TMA-AZURE-DEFENDER-CONTAINERS
+title: Ensure Microsoft Defender for Containers is set to On
+description: The Defender for Containers plan adds threat detection and vulnerability assessment for those resources. Checks that the Containers pricing tier is Standard. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- defender
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Microsoft Defender for Cloud - Defender plans (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(az security pricing show --name Containers --query pricingTier -o tsv 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out"'
+  expected_output: Standard
+remediation:
+  type: iac_patch
+  command: 'az security pricing create --name Containers --tier Standard (Terraform: azurerm_security_center_subscription_pricing with resource_type = "Containers", tier = "Standard").'

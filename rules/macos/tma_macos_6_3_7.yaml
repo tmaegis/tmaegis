@@ -1,0 +1,21 @@
+id: TMA-MACOS-6.3.7
+title: Ensure Show Full Website Address in Safari Is Enabled
+description: Attackers use websites with malicious or unwanted content to exploit the user or the computer. Part of the attack chain is to lure someone to load their content rather than the desired content. In order to reduce the risk in interacting with unwanted content, the full website address should always be displayed in Safari.
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- applications
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 6.3.7 Ensure Show Full Website Address in Safari Is Enabled
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    out=$(/usr/sbin/system_profiler SPConfigurationProfileDataType 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | /usr/bin/grep -E 'ShowFullURLInSmartSearchField' | /usr/bin/tr -d ' '
+  expected_output: ShowFullURLInSmartSearchField=1;
+remediation:
+  type: iac_patch
+  command: 'Profile (preferred): com.apple.Safari ShowFullURLInSmartSearchField = <true/>.'

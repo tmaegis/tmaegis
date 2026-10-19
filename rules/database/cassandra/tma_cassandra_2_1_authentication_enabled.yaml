@@ -1,0 +1,19 @@
+id: TMA-CASSANDRA-2.1
+title: Ensure that authentication is enabled for Cassandra databases
+description: Authentication is pluggable in Cassandra and is configured using the authenticator setting in cassandra.yaml. Cassandra ships with two options included in the default distribution, AllowAllAuthenticator and PasswordAuthenticator. The default, AllowAllAuthenticator, performs no authentication checks and therefore requires no credentials. It is used to disable authentication completely. Checks /etc/cassandra/cassandra.yaml (package install; SKIP when it does not exist).
+target: cassandra
+level: 1
+severity: critical
+tags:
+- cassandra
+- authentication
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 2.1 Ensure that authentication is enabled for Cassandra databases
+audit:
+  type: file_regex
+  file_path: /etc/cassandra/cassandra.yaml
+  pattern: (?m)^authenticator:[ \t]*(?:\n(?:[ \t]*(?:#[^\n]*)?\n|[ \t]+[^\n]*\n)*?[ \t]+class_name[ \t]*:[ \t]*)?['\x22]?(?:[\w.]*\.)?(?:PasswordAuthenticator|MutualTlsAuthenticator|MutualTlsWithPasswordFallbackAuthenticator)\b
+  requires_file:
+  - /etc/cassandra/cassandra.yaml
+remediation:
+  type: iac_patch
+  command: 'Set ''authenticator: PasswordAuthenticator'' in cassandra.yaml, raise system_auth replication (NetworkTopologyStrategy, RF 3 per DC), rolling-restart the nodes and create a new superuser.'

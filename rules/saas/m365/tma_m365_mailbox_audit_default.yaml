@@ -1,0 +1,17 @@
+id: TMA-M365-MAILBOX-AUDIT-DEFAULT
+title: Ensure mailbox auditing by default is enabled for the organization
+description: 'Auditing by default records owner, delegate and admin mailbox actions for every mailbox; AuditDisabled must be False. Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- logging
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange Online / Mailbox auditing on by default (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $o = Get-OrganizationConfig -ErrorAction Stop; if ($o.AuditDisabled -eq $false) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-OrganizationConfig -AuditDisabled $false

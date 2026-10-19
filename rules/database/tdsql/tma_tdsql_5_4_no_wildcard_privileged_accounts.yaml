@@ -1,0 +1,18 @@
+id: TMA-TDSQL-5.4
+title: Ensure No High-Privilege Accounts Use Wildcard Hostnames
+description: A MySQL Host field of % allows connections from any IP. High-privilege accounts (especially those holding SUPER, FILE, SHUTDOWN, etc.) should not use wildcard hostnames. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5).
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- privileges
+- network
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.4 Ensure No High-Privilege Accounts Use Wildcard Hostnames
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT COUNT(*) FROM mysql.user WHERE Host = '%' AND (Super_priv = 'Y' OR File_priv = 'Y' OR Shutdown_priv = 'Y' OR Grant_priv = 'Y') AND User NOT LIKE 'tdsqlsys%'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: RENAME USER '<user>'@'%' TO '<user>'@'<approved subnet, e.g. 10.0.0.%>'; for every high-privilege account returned.

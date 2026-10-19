@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-5.4.4
+title: Use TLS certificates for EKS Auto Mode load balancer listeners
+description: Using TLS certificates on EKS Auto Mode load balancer listeners protects client traffic by presenting a trusted server certificate and negotiating encrypted HTTPS or TLS connections at the listener. In EKS Auto Mode, this commonly means configuring TLS on a Network Load Balancer created from a Kubernetes Service or specifying certificate ARNs for an Application Load Balancer created from IngressClassParams and Ingress resources so externally ... The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- managed-services
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.4.4 Use TLS certificates for EKS Auto Mode load balancer listeners
+audit:
+  type: manual
+  command: Review all client facing EKS Auto Mode load balancers and verify that listeners use HTTPS or TLS with a valid certificate. For NLB backed Service resources, listener TLS is configured with annotations such as aws-load-balancer-ssl-cert for the ACM certificate ARN and aws-load-balancer-ssl-ports for the encrypted listener ports. For ALB backed Ingress resources, the certificate is configured through IngressClassParams using certificateARNs.
+remediation:
+  type: iac_patch
+  command: Configure every client facing EKS Auto Mode load balancer listener to use HTTPS or TLS with a valid certificate so client to load balancer traffic is encrypted in transit. For NLB backed Service resources, add the ACM certificate ARN and encrypted listener ports in the Service annotations. For ALB backed Ingress resources, configure HTTPS listener behavior through IngressClassParams and associate the required ACM certificate ARN using certificateARNs. If encryption is required beyond the load balancer, implement backend TLS separately because listener TLS alone protects only the client facing connection. • Add a valid ACM certificate to each client facing NLB or ALB listener that should serve encrypted traffic. • For NLB Services, set aws-load-balancer-ssl-cert to the ACM certificate ARN and aws-load-balancer-ssl-ports to the required listener ports.

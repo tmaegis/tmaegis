@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.14
+title: Ensure the correct messages are written to the server log
+description: The log_min_messages setting specifies the message levels that are written to the server log. Each level includes all the levels that follow it. The lower the level (vertically, below), the fewer messages are logged. Passes when log_min_messages is warning or a more verbose level. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- logging
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.14 Ensure the correct messages are written to the server log
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN lower(current_setting('log_min_messages')) IN ('debug5','debug4','debug3','debug2','debug1','info','notice','warning') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET log_min_messages = 'warning'" -c "SELECT pg_reload_conf()"

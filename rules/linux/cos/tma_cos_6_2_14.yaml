@@ -1,0 +1,16 @@
+id: TMA-COS-6.2.14
+title: Ensure no users have .rhosts files
+description: While no .rhosts files are shipped by default, users can easily create them. This action is only meaningful if .rhosts support is permitted in the file /etc/pam.conf . Even though the .rhosts files are ineffective if support is disabled in /etc/pam.conf , they may have been brought over from other systems and could contain information useful to an attacker for those other systems.
+target: cos
+level: 2
+severity: low
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 6.2.14 Ensure no users have .rhosts files
+audit:
+  type: manual
+  command: 'Run the following script and verify no results are returned: #!/bin/bash grep -E -v ''^(root|system-halt|sync|system-shutdown)'' /etc/passwd | awk -F: ''($7 != "''"$(which nologin)"''" && $7 != "/bin/false") { print $1 " " $6 }'' | while read user dir; do if [ ! -d "$dir" ]; then echo "The home directory ($dir) of user $user does not exist." else for file in $dir/.rhosts; do if [ ! -h "$file" -a -f "$file" ]; then echo ".rhosts file in $dir" fi done fi done'
+remediation:
+  type: iac_patch
+  command: Making global modifications to users' files without alerting the user community can result in unexpected outages and unhappy users. Therefore, it is recommended that a monitoring policy be established to report user .rhosts files and determine the action to be taken in accordance with site policy.

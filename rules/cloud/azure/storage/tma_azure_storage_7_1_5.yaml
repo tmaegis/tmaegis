@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-7.1.5
+title: Ensure private endpoints are configured for File Shares (Microsoft.FileShares)
+description: 'Note: This recommendation applies to NFS file shares created with the Microsoft.FileShares provider. A private endpoint gives the file share a private, static IP address inside a virtual network, so client traffic reaches the share over the Microsoft backbone and peered virtual networks instead of the public internet. With Microsoft.FileShares, the private endpoint is created at the file-share level (sub-resource FileShare), and each share has its own private endpoint. Accessing an NFS file share through a private endpoint keeps traffic off the public internet and confines it to approved virtual networks, removing exposure of the share''s public endpoint and reducing the risk of interception or unauthorized network access. Private endpoints are also the prerequisite for disabling public endpoint access entirely (a follow-on control).'
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 7.1.5 Ensure private endpoints are configured for File Shares (Microsoft.FileShares)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to audit. 3. Under the share''s Settings, select Networking, then Private endpoint connections. 4. Confirm at least one private endpoint connection exists in an Approved state. If none exist, the file share is non-compliant. 5. Repeat for each Microsoft.FileShares NFS file share. Audit from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share, run the following command: az fileshare private-endpoint-connection list --resource-group <resource- group> --resource-name <file-share-name> A compliant share returns at least one connection in an Approved state. A share with no private endpoint connections is non-compliant. Audit from PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share, run the following command: Get-AzFileShare
+    -ResourceGroupName <resource-group> -ResourceName <file- share-name> | Select-Object -ExpandProperty PrivateEndpointConnection A compliant share returns at least one private endpoint connection in an...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to remediate. 3. Under the share''s Settings, select Networking, then select + Create private endpoint. 4. Choose the target sub-resource FileShare, select the virtual network and subnet, and enable Private DNS Integration (privatelink.file.core.windows.net). 5. Select Add, then complete the wizard with Review + create and Create. 6. Repeat for each file share requiring remediation. Remediate from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share requiring remediation, create a private endpoint targeting the share (group ID FileShare): az network private-endpoint create --resource-group <resource-group> --name <private-endpoint-name> --vnet-name <vnet-name> --subnet <subnet-name> -- private-connection-resource-id <file-share-resource-id> --group-id FileShare --connection-name <connection-name> Then
+    integrate the privatelink.file.core.windows.net private DNS zone and add an A record for the share''s host-name prefix. Remediate from PowerShell If the Az.FileShare module is not installed, install it: In...'

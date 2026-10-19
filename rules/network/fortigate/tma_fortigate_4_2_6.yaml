@@ -1,0 +1,67 @@
+id: TMA-FORTIGATE-4.2.6
+title: Ensure inline scanning with FortiGuard AI-Based Sandbox Service is enabled
+description: Inline scanning is supported when the FortiGate is licensed with the FortiGuard AI- Based Sandbox Service (FAIS). It works similar to inline scanning for the FortiSandbox appliance, by holding a file up to 50 seconds for the verdict to be returned. Timed out scans can either be set to block, log, or ignore. Inline scanning can be enabled from the GUI on the Cloud Sandbox configuration page. PASS requires sandbox-inline-scan enable; also confirm AV profiles use fortisandbox-mode inline with fortisandbox block per protocol. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- threat-prevention
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.2.6 Ensure inline scanning with FortiGuard AI-Based Sandbox Service is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^config system fortiguard\n(?:[ \t]+[^\n]*\n)*?[ \t]+set sandbox-inline-scan enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    On GUI:
+    Enable the FortiGate Cloud feature visibility:
+    1. Go to System > Feature Visibility.
+    2. In the Additional Features section, enable FortiGate Cloud Sandbox.
+    3. Click Apply. Configure the Cloud Sandbox Fabric connector:
+    1. Go to Security Fabric > Fabric Connectors and double-click the Cloud Sandbox card.
+    2. Set the Type to FortiGate Cloud.
+    3. Select a Region.
+    4. Enable Inline scan.
+    5. Click OK. Configure the antivirus profile:
+    1. Go to Security Profiles > AntiVirus and click Create New.
+    2. Set the Feature set to Proxy-based.
+    3. Enable the protocols to inspect.
+    4. Enable Send files to FortiSandbox for inspection.
+    5. Set the Scan strategy to Inline, and set the Action to Block.
+    6. Click OK. On
+    CLI: Disable FortiSandbox appliance and FortiSandbox Cloud:
+    config system fortisandbox
+        set status disable
+    end
+    Configure FortiGate Cloud Sandbox (example given is setting it as "Global" region):
+    # execute forticloud-sandbox region 0  Global 1  Europe 2  Japan 3  US Please select cloud sandbox region[0-3]:0 Cloud sandbox region is selected: Global Enable inline scanning for FortiGate Cloud:
+    config system fortiguard
+        set sandbox-region "Global"
+        set sandbox-inline-scan enable
+    end
+    Enforced on AV security profile:
+    config antivirus profile
+        edit <profile name>
+            set feature-set proxy
+            set fortisandbox-mode inline
+            config http
+                set fortisandbox block
+            end
+            config ftp
+                set fortisandbox block
+            end
+            config imap
+                set fortisandbox block
+            end
+            config pop3
+                set fortisandbox block
+            end
+            config mapi
+                set fortisandbox block
+            end
+            config nntp
+                set fortisandbox block
+            end
+            config cifs
+    (see the CIS PDF for the remaining steps)

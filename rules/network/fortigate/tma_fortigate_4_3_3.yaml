@@ -1,0 +1,24 @@
+id: TMA-FORTIGATE-4.3.3
+title: Apply DNS Filter Security Profile to Policies
+description: Ensuring that traffic traversing to the Internet on the FortiGate has a DNS Filter security profile inspecting it. PASS requires at least one firewall policy with a DNS filter profile; confirm all outbound Internet policies have one. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- threat-prevention
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.3.3 Apply DNS Filter Security Profile to Policies
+audit:
+  type: config_regex
+  pattern: (?m)^config firewall policy\n(?:[ \t]+[^\n]*\n)*?[ \t]+set dnsfilter-profile "[^"\n]+"[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config firewall policy
+        edit <id>
+            set utm-status enable
+            set dnsfilter-profile "<profile>"
+        next
+    end
+    # CIS guidance:
+    Configure on "Allowed" firewall policies that handle traffic outbound to Internet to have an appropriate DNS Filter security profile applied to policies.

@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.51
+title: Ensure 'Allow or block video capture' is set to 'Disabled'
+description: 'This policy setting allows you to set whether the end-user is prompted for access to audio capture devices. The recommended state for this setting is: Disabled. Note: The VideoCaptureAllowedUrls setting will need to be configured along with this setting if this feature is needed for specific websites. Rationale: End-user having the ability to allow or deny video capture for websites in Microsoft Edge, could open an organization up to malicious sites that capture proprietary information through the browser. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:VideoCaptureAllowed (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.51 Ensure 'Allow or block video capture' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''VideoCaptureAllowed'' -ErrorAction SilentlyContinue).''VideoCaptureAllowed''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'VideoCaptureAllowed' -Value 0 -PropertyType DWord -Force | Out-Null

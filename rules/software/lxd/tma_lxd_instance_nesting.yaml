@@ -1,0 +1,23 @@
+id: TMA-LXD-INSTANCE-NESTING
+title: Ensure LXD instances do not enable container nesting
+description: 'security.nesting=true exposes /proc and /sys more widely and relaxes AppArmor so containers can run their own container runtimes, enlarging the escape surface. The audit loops over instances from "lxc list --format csv -c n" (default project) and fails if any expanded configuration sets security.nesting to a truthy value. Hosts that deliberately run Docker-in-LXD should document the exception.'
+target: lxd
+level: 2
+severity: medium
+tags: [lxd, containers, isolation]
+reference: CIS-style LXD hardening guidance - Container nesting (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: command
+  command: |-
+    lxc info >/dev/null 2>&1 || exit 1
+    names=$(lxc list --format csv -c n 2>/dev/null) || exit 1
+    bad=0
+    for n in $names; do
+      cfg=$(lxc config show --expanded "$n" 2>/dev/null) || exit 1
+      if printf '%s\n' "$cfg" | grep -Eiq '^[[:space:]]*security\.nesting:[[:space:]]*"?(true|1|yes|on)"?[[:space:]]*$'; then echo "nesting: $n"; bad=1; fi
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'lxc config unset <instance> security.nesting (or remove it from the profile), then restart the instance. Move workloads that need nested containers to a VM instance (lxc launch --vm).'

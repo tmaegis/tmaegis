@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.2.6
+title: Ensure 'Block macros from running in Office files from the internet' is set to 'Enabled'
+description: 'This policy setting allows the blocking of macros from running in Office files that come from the internet. By enabling this policy setting, macros are blocked from running, even if "Enable all macros" is selected in the Macro Settings section of the Trust Center. Users will receive a notification that macros are blocked from running. The exceptions when macros will be allowed to run are: • The Office file is saved to a Trusted Location. • The Office file was previously trusted by the user. • Macros are digitally signed and the matching Trusted Publisher certificate is installed on the device. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) blockcontentexecutionfrominternet that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.2.6 Ensure 'Block macros from running in Office files from the internet' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\security'') -Name ''blockcontentexecutionfrominternet'' -ErrorAction SilentlyContinue).''blockcontentexecutionfrominternet''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':blockcontentexecutionfrominternet='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft Excel 2016\Excel Options\Security\Trust Center\Block macros from running in Office files from the internet

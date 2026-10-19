@@ -1,0 +1,17 @@
+id: TMA-AKS-4.1.9
+title: Minimize access to the proxy sub-resource of nodes
+description: Review AKS RBAC to ensure access to the nodes/proxy subresource is granted only to identities with a documented operational need. This review should include Role and ClusterRole rules, RoleBinding and ClusterRoleBinding assignments, and any service accounts that receive node-proxy access, because AKS uses Kubernetes RBAC to grant in-cluster permissions and service accounts continue to rely on Kubernetes RBAC authorization. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.9 Minimize access to the proxy sub-resource of nodes
+audit:
+  type: manual
+  command: Review AKS RBAC to identify custom Role and ClusterRole objects that grant access to the nodes/proxy subresource, and validate that each permission is required for an approved troubleshooting, maintenance, or platform-administration function. This review should focus on customer-managed RBAC because AKS uses Kubernetes RBAC to grant in-cluster permissions, and service accounts continue to rely on Kubernetes RBAC authorization when the identity is outside Microsoft Entra ID.
+remediation:
+  type: iac_patch
+  command: Reduce custom RBAC access to the nodes/proxy API path so it is limited to approved administrative identities that require node-level access. In AKS, node access is treated as privileged, and service accounts continue to use Kubernetes RBAC for in-cluster authorization. • Remove nodes/proxy from any custom Role or ClusterRole where node-level proxying is not explicitly required for support, troubleshooting, or platform operations. • Where some node-related access is still needed, replace nodes/proxy with narrower permissions on only the specific resources and verbs required, and reduce scope from ClusterRole to namespace-scoped Role where the function allows it. AKS guidance favors minimum required permissions and separation of access boundaries.

@@ -1,0 +1,38 @@
+id: TMA-ESXI9-3.7
+title: Host must automatically terminate idle DCUI sessions
+description: By configuring a session timeout, unattended console sessions are automatically terminated, thereby reducing the potential security risks associated with lingering active sessions. The parameter governing this behavior is UserVars.DcuiTimeOut, with a recommended setting of 600 (10 minutes). The audit reads UserVars.DcuiTimeOut with esxcli and requires 600 seconds or less (0 disables the timeout and fails). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 3.7 Host must automatically terminate idle DCUI sessions
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /UserVars/DcuiTimeOut 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/UserVars/DcuiTimeOut: no integer value'; exit 1 ;; esac
+    if [ "$v" -gt 0 ] && [ "$v" -le 600 ]; then echo compliant; else echo "/UserVars/DcuiTimeOut = $v (expected 1-600)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /UserVars/DcuiTimeOut -i 600
+  guidance: "To correct the DCUI timeout setting, perform the following steps: 1. From the vSphere Web Client, select the host. 2. Click Configure, then under System select Advanced System Settings. 3. Select Edit then enter UserVars.DcuiTimeOut in the filter. 4. Click in the box for the current value, then set the value to 600 seconds or less. Alternately, use the following PowerCLI command: Get-VMHost | Get-AdvancedSetting -Name UserVars.DcuiTimeOut | Set-AdvancedSetting -Value 600"

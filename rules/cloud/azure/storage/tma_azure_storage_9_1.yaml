@@ -1,0 +1,21 @@
+id: TMA-AZURE-STORAGE-9.1
+title: Ensure 'Encryption key source' is set to 'Customer Managed Key' for Azure NetApp Files accounts
+description: Customer-managed keys (CMK) for Azure NetApp Files volume encryption enable organizations to use their own keys instead of platform-managed ones, providing full control over encryption. Using customer-managed keys (CMKs) to encrypt Azure NetApp Files volumes enhances security by granting organizations complete control over their encryption keys.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 9.1 Ensure 'Encryption key source' is set to 'Customer Managed Key' for Azure NetApp Files accounts
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Azure NetApp Files. 2. Click the name of a NetApp account. 3. Under Azure NetApp Files, click Encryption. 4. Ensure that Encryption key source is set to Customer Managed Key. 5. Repeat steps 1-4 for each NetApp Files account. Audit from Azure CLI Run the following command to list NetApp Files accounts: az netappfiles account list For each NetApp Files account, run the following command: az netappfiles account show --resource-group <resource-group> --account-name <netapp-files-account> Ensure that under encryption, keySource is set to Microsoft.KeyVault. Audit from PowerShell Run the following command to install the Az.NetAppFiles module: Install-Module Az.NetAppFiles Enter Y when prompted. Run the following command to list NetApp Files accounts: Get-AzResource | ? {$_.ResourceType -like ''Microsoft.NetApp/netAppAccounts''} | Format-Table Run the following command to get the NetApp Files account in a resource group with a given name: $netapp =
+    Get-AzNetAppFilesAccount -ResourceGroupName <resource-group> -Name <netapp-files-account> Run the following command to get the encryption key source for the NetApp Files account: $netapp.Encryption.KeySource E...'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1) Go to Azure NetApp Files. 2) Click the name of a NetApp account. 3) Under Azure NetApp Files, click Encryption. 4) Next to Encryption key source, click the radio button next to Customer Managed Key. 5) Next to Encryption key, click the radio button next to Enter key URI to provide a known key URI, or click the radio button next to Select from key vault to select a key from a key vault. 6) If entering a key URI, provide the key URI in the text box next to Key URI. 7) If selecting a key from a key vault, click Select a key vault and key. a) From the drop-down menu next to Key vault, select a key vault. b) From the drop-down menu next to Key, select a key. c) Click Select. 8) Next to Identity type, click the radio button next to System-assigned to use a system-assigned managed identity, or click the radio button next to User-assigned to use a user-assigned managed identity. 9) If selecting a user-assigned managed identity, next to User-assigned identity,
+    click Select an identity. a) In the filter box, type to filter by identity name and/or resource group name. b) Check the box next to a managed identity. c) Click Add. 10) Click Save. 11) Repeat steps...

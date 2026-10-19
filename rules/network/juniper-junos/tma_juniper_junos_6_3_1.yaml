@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-6.3.1
+title: Ensure external AAA is used
+description: At least one external Authentication method should be specified. RADIUS and TACACS+ are centralized Authentication, Authorization and Accounting (AAA) services. Both protocols provide services to authenticate users on routers, switches and other systems. Juniper routers support both RADIUS and TACACS+ authentication. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.3.1 Ensure external AAA is used
+audit:
+  type: config_regex
+  pattern: (?m)^set system authentication-order [^\n]*\b(?:radius|tacplus)\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure at least one external Authentication method using the following commands under the hierarchy; For RADIUS
+    set system authentication-order radius For TACACS+
+    set system authentication-order tacplus For RADIUS then TACACS+
+    set system authentication-order [radius, tacplus] For TACACS+ then RADIUS
+    set system authentication-order [tacplus, radius]

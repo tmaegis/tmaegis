@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-6.2.2
+title: Ensure startup parameters for the FTP daemon do not allow ANONYMOUS or INACTIVE keywords
+description: During initialization, the FTP daemon reads JCL keywords and configuration files to determine values for critical operational parameters. Inappropriate values could result in undesirable operations and degraded security. This exposure may result in unauthorized access impacting data integrity or the availability of some system services.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- network
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 6.2.2 Ensure startup parameters for the FTP daemon do not allow ANONYMOUS or INACTIVE keywords
+audit:
+  type: manual
+  command: 'Request a copy of all JESJCL of all active site FTP server started tasks. Note: If an FTP server is inactive, review the procedure libraries defined to JES2 and locate the FTP JCL member. Verify that: The following DD statements appear: o SYSTCPD o SYSFTPD If a PARM parameter is specified on the EXEC statement, it must not contain: o The ANONYMOUS keyword or any of it''s combinations o The INACTIVE keyword The following instructions are only applicable if a site uses AUTOLOG in any PROFILE.TCPIP TCP/IP profiles to start FTP servers. Request a copy of all ... (full steps: CIS section 6.2.2)'
+remediation:
+  type: iac_patch
+  command: The site will need to follow their standard change management process for updating started task procedures to to add DD statements or update non-compliant PARM parameters. The site will need to follow their standard change management process for updating PROFILE.TCPIP TCP/IP profiles to remove non-compliant PARMSTRING parameters.

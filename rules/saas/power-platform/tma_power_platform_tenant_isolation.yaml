@@ -1,0 +1,17 @@
+id: TMA-POWERPLATFORM-TENANT-ISOLATION
+title: Ensure Power Platform tenant isolation is enabled
+description: Tenant isolation blocks connectors from authenticating to (and moving data to or from) other Microsoft Entra tenants. Set PP_TENANT_ID to the tenant GUID. Requires Microsoft.PowerApps.Administration.PowerShell and an authenticated session (Add-PowerAppsAccount) as a Power Platform administrator; the audit throws if the module is missing.
+target: power-platform
+level: 2
+severity: high
+tags:
+- power-platform
+- data-loss
+reference: CIS Microsoft Dynamics 365 Power Platform Benchmark v1.0.1 - Tenant isolation (no dedicated CIS benchmark exists for Power Platform)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-TenantSettings -ErrorAction SilentlyContinue)) { throw ''Microsoft.PowerApps.Administration.PowerShell is not loaded: run Add-PowerAppsAccount first'' }; if (-not $env:PP_TENANT_ID) { throw ''Set PP_TENANT_ID'' }; $p = Get-PowerAppTenantIsolationPolicy -TenantId $env:PP_TENANT_ID -ErrorAction Stop; if ($p.properties -and $p.properties.isDisabled -eq $false) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Power Platform admin center > Security > Identity and access > Tenant isolation > On, adding allowed inbound/outbound tenants as needed (or Set-PowerAppTenantIsolationPolicy with properties.isDisabled = $false).

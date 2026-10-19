@@ -1,0 +1,31 @@
+id: TMA-CISCO-ASA-3.13
+title: Ensure VPN traffic goes through the relevant ACL
+description: By default, the traffic going through IPSEC tunnel (policy-based) bypasses the ACL of the interface the VPN terminates on, often the outside ACL. VPN are used to interconnect sites, whether intra or inter companies. In many cases, these are seen to extensions of the local network and very little filtering is applied. CIS marks this Manual; automated because the non-default 'no sysopt connection permit-vpn' line is visible in the config. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 2
+severity: high
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 3.13 Ensure VPN traffic goes through the relevant ACL
+audit:
+  type: config_regex
+  pattern: (?m)^no sysopt connection permit-vpn\s*$
+remediation:
+  type: iac_patch
+  command: |-
+    Summary
+    - Step 1: determine on which interface(s) the IPSEC tunnel ends
+    - Step 2: determine the ACL applied to the interface
+    - Step 3: add an ACE to the ACL to permit the traffic temporarily
+    - Step 4: disable the bypass
+    Step 1
+    show run full | grep crypto.map..*.interface. crypto map my_remote_sites interface outside In this example, the crypto map my_remote_sites is applied to the interface outside: the IPSEC tunnel terminates on the interface outside.
+    Step 2
+    sh run access-group | grep interface.outside access-group outside_acl in interface outside The ACL outside_acl is applied to the interface outside.
+    Step 3 Note: this considers that the remote site networks are defined in an object called obj-remote-site and the local site networks in an object called obj-local-site. The ACE is added as the first entry in this case but could be after an initial series of denies to known "bad" destinations.
+    access-list outside_acl line 1 permit ip object obj-remote-site object obj-local-site log notifications
+    access-list outside_acl line 2 remark Temporary permit from remote site. Restrict as soon as possible.
+    Step 4
+    no sysopt connection permit-vpn

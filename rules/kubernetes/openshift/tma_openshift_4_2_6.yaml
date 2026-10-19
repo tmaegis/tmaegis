@@ -1,0 +1,26 @@
+id: TMA-OPENSHIFT-4.2.6
+title: Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+description: Do not disable timeouts on streaming connections. Reads every node's effective kubelet configuration with oc get --raw /api/v1/nodes/<node>/proxy/configz; requires a cluster-admin oc login. A missing value means the 4h default.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- worker-node
+- kubelet
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.2.6 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+audit:
+  type: command
+  command: |-
+    nodes=$(oc get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(oc get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { ! printf '%s' "$c" | grep -Eq '"streamingConnectionIdleTimeout":"0s"'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Follow the instructions in the documentation to create a kubeletconfig CRD and set the streamingConnectionIdleTimeout to the desired value. Do not set the value to 0.

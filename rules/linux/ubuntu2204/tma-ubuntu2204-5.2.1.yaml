@@ -1,0 +1,35 @@
+id: TMA-UBUNTU2204-5.2.1
+title: Ensure sudo is installed
+description: sudo allows a permitted user to execute a command as the superuser or another user, as specified by the security policy. The invoking user's real (not effective) user ID is used to determine the user name with which to query the security policy.
+target: linux
+os_family:
+- ubuntu-22.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 22.04 LTS Benchmark v3.0.0 - 5.2.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -s sudo &>/dev/null && echo "sudo is installed"'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''sudo is installed'' || { echo step1: missing ''sudo is installed''; return 1; }; }; alt1() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -s sudo-ldap &>/dev/null && echo "sudo-ldap is installed"'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''sudo-ldap is installed'' || { echo step1: missing ''sudo-ldap is installed''; return 1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_pkg_install sudo
+  guidance: "First determine is LDAP functionality is required. If so, then install sudo-ldap, else install sudo. Example: # apt install sudo"

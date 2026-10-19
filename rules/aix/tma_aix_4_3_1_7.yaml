@@ -1,0 +1,17 @@
+id: TMA-AIX-4.3.1.7
+title: Ensure NIM master is not installed
+description: 'The NIM master provides services to support network based installation, patching and automation against managed AIX client systems. The fileset bos.sysmgt.nim.master is not installed by default IBM installation processes. Only system(s) specifically designated and additionally hardened to safely perform the service NIM master should have this fileset installed. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- services
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.3.1.7 Ensure NIM master is not installed
+audit:
+  type: command
+  command: command -v lslpp >/dev/null 2>&1 || exit 1; out=$( { lslpp -Lc bos.sysmgt.nim.master bos.sysmgt.nim.spot 2>/dev/null | grep sysmgt.nim ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove the software installp -u bos.sysmgt.nim.master bos.sysmgt.nim.spot

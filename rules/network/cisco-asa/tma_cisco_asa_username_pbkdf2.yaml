@@ -1,0 +1,21 @@
+id: TMA-CISCO-ASA-USERNAME-PBKDF2
+title: Ensure local user passwords are not stored with the legacy MD5 hash
+description: Local usernames shown with 'encrypted' use the legacy MD5-based hash; re-set them so they are stored as 'pbkdf2'. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works but shows secrets in clear text).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- aaa
+reference: CIS Cisco Firewall ASA Benchmark - Management Plane / Password Management (verify section number for your release)
+audit:
+  type: config_regex
+  pattern: (?m)^username \S+ password \S+ encrypted\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+     username <USER> password <STRONG_PASSWORD> privilege 15
+    end

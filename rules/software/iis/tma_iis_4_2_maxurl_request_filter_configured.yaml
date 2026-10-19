@@ -1,0 +1,19 @@
+id: TMA-IIS-4.2
+title: Ensure 'maxURL request filter' is configured
+description: The maxURL attribute of the <requestLimits> property is the maximum length (in Bytes) in which a requested URL can be (excluding query string) in order for IIS to accept. Configuring this Request Filter enables administrators to restrict the length of the requests that the server will accept. It is recommended that a limit be put on the length of URL. requestLimits maxUrl must be 4096 or lower at server level and for every site (default 4096). PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.2 Ensure 'maxURL request filter' is configured
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT/APPHOST') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.webServer/security/requestFiltering/requestLimits' -PSPath $_; [long]$c.maxUrl -gt 4096 }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/requestFiltering/requestLimits -Name maxUrl -Value 4096

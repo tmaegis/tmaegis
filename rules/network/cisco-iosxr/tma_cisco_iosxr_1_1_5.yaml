@@ -1,0 +1,23 @@
+id: TMA-CISCO-IOSXR-1.1.5
+title: Local users, groups and tasks
+description: 'To provide controlled access to the XR and System Admin configurations on the router, user profiles are created with assigned privileges. The privileges are specified using command rules and data rules. The authentication, authorization, and accounting (aaa) commands are used for the creation of users, groups, command rules, and data rules. The aaa commands are also used for changing the disaster-recovery password. IOS-XR has a very strong embedded mechanism to do user authentication and authorization. While XR does not have the concept of privilege-levels as what IOS had, the embedded user task group management is extremely strong allow for the creation of different ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-iosxr
+level: 2
+severity: medium
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.1.5 Local users, groups and tasks
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. "show run aaa" shows all hierarchic configuration on a single line with the hierarchy prepended. IOSXR#sh run aaa taskgroup TASKGROUP task read bgp ! usergroup XRGROUP taskgroup TASKGROUP ! username cisco group root-lr group cisco-support secret 10 $6$O51Wr/lUsR6S5r/.$.qUOapiguyRPwNwix3FVwc9APW3WvrhZv84z0F7cM0zxcyCiXwQ45YuX/ p/jDXb4cS7bTxemvGK73giBtJHoj. ! username USER1 group XRGROUP secret 10 $6$cTTjN1rrPqxaBN1.$jq8GqQ.hSwZXb72YxgTCPgm3kZ2MT51FAlXcJDN54l/vY9TNa8Nob6cyY tT4vT4Y9wjtH9R7aK3KmUgwjR5pz0 !'
+remediation:
+  type: iac_patch
+  command: |-
+    ! The commands below will enable authorizarion for a user.
+    taskgroup {task_group} task read {task}
+    usergroup {user_group} taskgroup {task_group}
+    username {username}
+    secret {password}
+    group {user_group}

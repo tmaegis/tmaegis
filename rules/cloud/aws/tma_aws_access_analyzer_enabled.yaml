@@ -1,0 +1,17 @@
+id: TMA-AWS-ACCESS-ANALYZER-ENABLED
+title: Ensure IAM Access Analyzer is enabled in all regions
+description: Access Analyzer reports resources (S3, KMS, IAM roles, etc.) shared outside the account or organisation. Every enabled region must have at least one ACTIVE analyzer. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- iam
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Identity and Access Management - IAM Access Analyzer enabled (verify section number for your release)
+audit:
+  type: command
+  command: "regions=$(aws ec2 describe-regions --query 'Regions[].RegionName' --output text 2>/dev/null) || exit 1\n[ -n \"$regions\" ] || exit 1\nbad=0\nfor r in $regions; do\n  n=$(aws accessanalyzer list-analyzers --region \"$r\" --query 'length(analyzers[?status==`\"ACTIVE\"`])' --output text 2>/dev/null) || exit 1\n  [ \"$n\" -gt 0 ] || { echo \"no analyzer: $r\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aws accessanalyzer create-analyzer --analyzer-name default --type ACCOUNT (or ORGANIZATION from the delegated admin) --region <region> in each listed region.

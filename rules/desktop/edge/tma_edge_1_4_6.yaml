@@ -1,0 +1,19 @@
+id: TMA-EDGE-1.4.6
+title: 'Ensure ''Control use of the File System API for writing'' is set to ''Enabled: Don''t allow any site to request write access to files and directories'''
+description: "This policy setting specifies whether websites can ask for write access to the host operating system\xB4s filesystem using the File System API. By default, websites can ask for access. Users can change this setting. By setting this policy to (2), access is denied. The recommended state for this setting is: Enabled: Don't allow any site to request write access to files and directories. Rationale: There is a large category of attack vectors that are opened by allowing web applications access to files. By setting this policy to Enabled: Don't allow any site to request write access to files and directories implements additional protection to safeguard against accidental sharing of sensitive inf... Audit reads the Group Policy registry value and prints 'compliant', 'unset' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge:DefaultFileSystemWriteGuardSetting (REG_DWORD); compliant when it is 2. Remediation\
+  \ writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it."
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.4.6 Ensure ''Control use of the File System API for writing'' is set to ''Enabled: Don''t allow any site to request write access to files and directories'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''DefaultFileSystemWriteGuardSetting'' -ErrorAction SilentlyContinue).''DefaultFileSystemWriteGuardSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultFileSystemWriteGuardSetting' -Value 2 -PropertyType DWord -Force | Out-Null

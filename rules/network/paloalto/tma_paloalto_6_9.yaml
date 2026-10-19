@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-6.9
+title: Ensure that URL Filtering uses the action of "block" or "override" on the URL categories
+description: 'Ideally, deciding which URL categories to block, and which to allow, is a joint effort between IT and another entity of authority within an organization—such as the legal department or administration. For most organizations, blocking or requiring an override on the following categories represents a minimum baseline: adult, hacking, command- and-control, copyright-infringement, extremism, malware, phishing, proxy-avoidance- and-anonymizers, and parked. Some organizations may add "unknown" and "dynamic- dns" to this list, at the expense of some support calls on those topics. PASS requires a URL filtering profile with block or override categories; confirm the organisation''s designated categories are listed. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.9 Ensure that URL Filtering uses the action of "block" or "override" on the URL categories
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles url-filtering (?:"[^"\n]*"|\S+) (?:block|override) \S
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles url-filtering <profile> block [ malware phishing command-and-control grayware ]
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > URL Filtering. Set a URL filter so that all URL categories designated by the organization are listed.
+    Navigate to the Actions tab. Set the action to Block.

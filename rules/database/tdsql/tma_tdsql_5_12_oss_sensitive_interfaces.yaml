@@ -1,0 +1,16 @@
+id: TMA-TDSQL-5.12
+title: Ensure the Callable Scope of OSS Sensitive Interfaces Is Restricted
+description: 'OSS provides two layers of interface-level access control: interface_mask (sensitive interface allowlist) and deny_interfacename (interface denylist): interface_mask (oss.json:240-246) - lists interfaces that only authenticated privileged callers may invoke (such as TDSQL.AddUser, TDSQL.ResetPwd, TDSQL.GetKmsConfig, TDSQL.CreateKmsConfig).'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- oss
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.12 Ensure the Callable Scope of OSS Sensitive Interfaces Is Restricted
+audit:
+  type: manual
+  command: Run grep -A2 interface_mask <tdsql>/conf/oss.json and grep "<deny_interfacename" <tdsql>/conf/scheduler.xml. The mask must include TDSQL.AddUser, AddMultiUser, ModifyOssUser, ResetPwd, RegisterOssUser, ListUser, GetKmsConfig, CreateKmsConfig, ReplaceIp, ForceSwitchInstance, ForceSwitchMaster and ForceDelInstance; any missing interface is a finding.
+remediation:
+  type: iac_patch
+  command: 'Extend the sensitive interface list in oss.json: { "name": "interface_mask", "value": "TDSQL.AddUser,TDSQL.ListUser,TDSQL.AddMultiUser,TDSQL.RegisterOssUser,TDSQL.Modif yOssUser,TDSQL.ResetPwd,TDSQL.GetKmsConfig,TDSQL.CreateKmsConfig,TDSQL.ReplaceIp,T DSQL.ForceSwitchInstance,TDSQL.DeleteInstance" } Add denylist interfaces in scheduler.xml (callable by no one): <deny_interfacename name="TDSQL.ReplaceIp"/> <deny_interfacename ...'

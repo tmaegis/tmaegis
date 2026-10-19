@@ -1,0 +1,47 @@
+id: TMA-MACOS14-2.6.1.1
+title: Ensure Location Services Is Enabled
+description: macOS uses location information gathered through local Wi-Fi networks to enable applications to supply relevant information to users. With the operating system verifying the location, users do not need to change the time or the time zone. The computer will change them based on the user's location. They do not need to specify their location for weather or travel times, and they will receive alerts on travel times to meetings and appointments where location information is supplied. Location Services simplify some processes with mobile computers, such as asset management and time or log management. There are some use cases where it is important that the computer not be able to report its exact location. While the general use case is to enable Location Services, it should not be allowed if the physical location of the computer and the user should not be public knowledge. Location Services...
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.6.1.1 Ensure Location Services Is Enabled
+audit:
+  type: command
+  command: 'n=$(/bin/launchctl list 2>/dev/null | /usr/bin/grep -c com.apple.locationd)
+
+    e=$(/usr/bin/sudo -u _locationd /usr/bin/osascript -l JavaScript <<''EOS''
+
+    $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.locationd'').objectForKey(''LocationServicesEnabled'').js
+
+    EOS
+
+    ) || exit 1
+
+    if [ "${n:-0}" -ge 1 ] && [ "$e" = true ]; then echo compliant; else echo "locationd=$n LocationServicesEnabled=${e:-unset}"; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/sudo -u _locationd /usr/bin/defaults -currentHost write com.apple.locationd LocationServicesEnabled -bool true
+    /bin/launchctl enable system/com.apple.locationd 2>/dev/null
+    /bin/launchctl bootstrap system /System/Library/LaunchDaemons/com.apple.locationd.plist 2>/dev/null
+    /bin/launchctl kickstart -k system/com.apple.locationd 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to enable Location Services: 1. Open System Settings 2. Select Privacy & Security 3. Select Location Services 4. Set Location Services to enabled Terminal Method: Run the following command to enable Location Services: % /usr/bin/sudo /bin/launchctl load -w /System/Library/LaunchDaemons/com.apple.locationd.plist If the com.apple.locationd.plist outputs 0, run the following command to also ensure Location Services is running: % /usr/bin/sudo /usr/bin/defaults write /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd LocationServicesEnabled -bool true % /usr/bin/sudo /usr/bin/killall locationd Note: In some use cases, organizations may not want Location Services running. To disable Location Services, run the command: /usr/bin/sudo /usr/bin/defaults write /var/db/locationd/Library/Preferences/ByHost/com.apple.locationd LocationServicesEnabled -bool false"

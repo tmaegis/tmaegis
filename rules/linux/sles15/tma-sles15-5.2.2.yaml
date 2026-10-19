@@ -1,0 +1,62 @@
+id: TMA-SLES15-5.2.2
+title: Ensure sudo commands use pty
+description: sudo can be configured to run only from a pseudo terminal (pseudo-pty).
+target: linux
+os_family:
+- sles-15
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 15 Benchmark v2.0.1 - 5.2.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -rPi -- ''"''"''^\h*Defaults\h+([^#\n\r]+,\h*)?use_pty\b''"''"'' /etc/sudoers*'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''/etc/sudoers:Defaults use_pty'' || { echo step1: missing ''/etc/sudoers:Defaults use_pty''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''grep -rPi -- ''"''"''^\h*Defaults\h+([^#\n\r]+,\h*)?!use_pty\b''"''"'' /etc/sudoers*'' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    tma_sudo_ok() { visudo -c >/dev/null 2>&1; }
+    tma_sudo_drop() { f=/etc/sudoers.d/60-tmaegis-$1; mkdir -p /etc/sudoers.d
+      grep -Eqs '^[#@]includedir[[:space:]]+/etc/sudoers\.d' /etc/sudoers || { tma_bak /etc/sudoers; echo '#includedir /etc/sudoers.d' >> /etc/sudoers; }
+      printf '%s\n' "$2" > "$f.tmp" && chmod 0440 "$f.tmp" && visudo -cqf "$f.tmp" && mv "$f.tmp" "$f" || { rm -f "$f.tmp"; echo "invalid sudoers snippet $1" >&2; return 1; }; }
+    tma_sudo_rm() { # $1 = ERE for the option to strip from Defaults lines
+      for f in /etc/sudoers /etc/sudoers.d/*; do
+        [ -f "$f" ] && [ ! -L "$f" ] || continue
+        case "$f" in *tmaegis*) continue;; esac
+        grep -Eqs "^[[:space:]]*Defaults[^#]*$1" "$f" || continue
+        tma_bak "$f"
+        sed -i -E -e "/^[[:space:]]*Defaults[[:space:]]+($1)[[:space:]]*(#.*)?\$/d" \
+          -e "/^[[:space:]]*Defaults/ s/,[[:space:]]*($1)([[:space:]]*(,|#|\$))/\2/" \
+          -e "/^[[:space:]]*Defaults/ s/(Defaults[[:space:]]+)($1)[[:space:]]*,[[:space:]]*/\1/" "$f"
+        tma_sudo_ok || { cp -a "$f.tmaegis.bak.$TMA_TS" "$f"; echo "restored $f" >&2; }
+      done; }
+    tma_sudo_rm '!use_pty'
+    tma_sudo_drop use_pty 'Defaults use_pty'
+  guidance: "Edit the file /etc/sudoers with visudo or a file in /etc/sudoers.d/ with visudo -f <PATH TO FILE> and add the following line: Defaults use_pty Edit the file /etc/sudoers with visudo and any files in /etc/sudoers.d/ with visudo -f <PATH TO FILE> and remove any occurrence of !use_pty Note: • sudo will read each file in /etc/sudoers.d, skipping file names that end in ~ or contain a . character to avoid causing problems with package manager or editor temporary/backup files. • Files are parsed in sorted lexical order. That is, /etc/sudoers.d/01_first will be parsed before /etc/sudoers.d/10_second. • Be aware that because the sorting is lexical, not numeric, /etc/sudoers.d/1_whoops would be loaded…"

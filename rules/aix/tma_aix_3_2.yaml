@@ -1,0 +1,17 @@
+id: TMA-AIX-3.2
+title: Ensure world writable directories have the SVTX bit set
+description: 'The system is audited for world writable directories. World writable directories are considered as a common application component - usually a location for temporary files. An audit should be performed on the system to search for the presence of world writable directories. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 3.2 Ensure world writable directories have the SVTX bit set
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / \( -fstype jfs -o -fstype jfs2 \) -type d -perm -o+w ! -perm -1000 -ls ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Review the local mounted JFS/JFS2 filesystems using the following command to find all world writable directories missing the SVTX bit: find / \( -fstype jfs -o -fstype jfs2 \) -type d -perm -o+w ! -perm -1000 -ls If a directory must retain world writable access, ensure that SVTX bit is set so that users can only remove the filenames they own: chmod o+t ${dir} NOTE: This will leave existing modes while adding the SVTX (also known as sticky bit) to the directory. The documented meaning of the flag for directories is: Sets the link permission to directories. Otherwise, remove world-write permission - without modifying the other mode bits: chmod o-w ${dir}'

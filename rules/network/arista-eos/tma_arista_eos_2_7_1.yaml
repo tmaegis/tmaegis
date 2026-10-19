@@ -1,0 +1,17 @@
+id: TMA-ARISTA-EOS-2.7.1
+title: Limit SNMP Access To Management VRF
+description: SNMP access should be restricted to the management vrf. Detailed information about the network is sent across the network via SNMP. If this information is discovered by attackers it could be used to trace the network, show the network topology, and possibly gain access to network devices. Requires 'snmp-server vrf <mgmt>' and 'no snmp-server vrf default'. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: medium
+tags:
+- arista-eos
+- network
+- snmp
+reference: CIS Arista EOS Benchmark v1.0.0 - 2.7.1 Limit SNMP Access To Management VRF
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^snmp-server vrf \S+.*^no snmp-server vrf default\s*$)|(?s:^no snmp-server vrf default\s*$.*^snmp-server vrf \S+)
+remediation:
+  type: iac_patch
+  command: snmp-server vrf {management VRF} no snmp-server vrf default

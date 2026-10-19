@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-1.4
+title: Ensure Data Cluster Initialized Successfully
+description: First-time installs of a given PostgreSQL major release require the instantiation of the database cluster. A database cluster is a collection of databases that are managed by a single server instance. Checks that data_directory holds an initialized cluster (PG_VERSION) owned by postgres with mode 0700 or 0750; run on the database host. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- filesystem
+- permissions
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 1.4 Ensure Data Cluster Initialized Successfully
+audit:
+  type: command
+  command: d=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SHOW data_directory" 2>/dev/null) || exit 1; [ -f "$d/PG_VERSION" ] || { echo "no PG_VERSION in $d"; exit 0; }; s=$(stat -c '%a %U' "$d" 2>/dev/null) || exit 1; case "$s" in "700 postgres"|"750 postgres") echo compliant ;; *) echo "$s" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Initialize the cluster with checksums (PGSETUP_INITDB_OPTIONS="-k" postgresql-18-setup initdb, or initdb -k) and ensure the data directory is owned by postgres with mode 0700 (0750 with group access): chown postgres:postgres <data_directory>; chmod 0700 <data_directory>.'

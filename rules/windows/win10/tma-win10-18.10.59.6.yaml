@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.59.6
+title: Ensure 'Allow search and Cortana to use location' is set to 'Disabled'
+description: 'This policy setting specifies whether search and Cortana can provide location aware search and Cortana results. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.59.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search'' -Name ''AllowSearchToUseLocation'' -ErrorAction SilentlyContinue).''AllowSearchToUseLocation''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowSearchToUseLocation='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name 'AllowSearchToUseLocation' -Value 0 -PropertyType DWord -Force | Out-Null

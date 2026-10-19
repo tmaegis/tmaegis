@@ -1,0 +1,20 @@
+id: TMA-WIN11-2.2.28
+title: Ensure 'Log on as a service' is set to 'No One'
+description: 'This policy setting allows accounts to launch network services or to register a process as a service running on the system. This user right should be restricted on any computer in a high security environment, but because many applications may require this privilege, it should be carefully evaluated and tested before configuring it in an enterprise environment. On Windows Vista-based (or newer) computers, no users or groups have this privilege by default. The recommended state for this setting is: No One or (when the Hyper-V feature is installed) NT VIRTUAL MACHINE\Virtual Machines or (when usi'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- secedit
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 2.2.28
+audit:
+  type: command
+  command: '$f = Join-Path $env:TEMP (''tmaegis-'' + [guid]::NewGuid().ToString() + ''.inf''); secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null; $c = Get-Content $f -ErrorAction SilentlyContinue; Remove-Item $f -Force -ErrorAction SilentlyContinue; $line = $c | Where-Object { $_ -match ''^\s*SeServiceLogonRight\s*='' } | Select-Object -First 1; $v = if ($line) { ($line -split ''='', 2)[1].Trim().Trim(''"'') } else { $null }; $have = @(if ($v) { $v -split '','' | ForEach-Object { $_.Trim().TrimStart(''*'') } | Where-Object { $_ } }); if ((($have | Sort-Object -Unique) -join '','') -eq '''') { ''compliant'' } else { ''non-compliant: '' + ($have -join '','') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set through Group Policy (domain policy for domain members): Computer Configuration\Windows Settings\Security Settings\Local Policies\User Rights Assignment\Log on as a service'

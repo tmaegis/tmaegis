@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-4.12.2
+title: Ensure LLDP-MED is Disabled if not Required
+description: 'LLDP-MED should be disabled when not required. The Link Layer Discovery Protocol (LLDP) is a vendor-neutral and widely supported standard used for network devices to advertise information about their capabilities, identity, software and management details to other network devices on the LAN. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- routing
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.12.2 Ensure LLDP-MED is Disabled if not Required
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options as to the type of device, deployment scenario and where LLDP will be used in the network, it is not possible to provide Automated Scoring of this recommendation. To check whether LLDP is enabled, use the following command from the [edit protocols] configuration hierarchy: [edit protocols] user@host#show lldp-med | display set | match "interface|disable" LLDP-MED is enabled by default on EX series platforms, so will be enabled for all Interfaces if set protocols lldp-med interface all disable is not ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To turn off LLDP-MED globally for all interfaces, issue the following command from the configuration hierarchy:
+    set protocols lldp-med interface all disable Sending of LLDPDUs will be disabled, while any other LLDP-MED related configuration will be retained (but ignored). Alternatively, you may wish to disable LLDP on a per-interface basis by issuing the following command from the configuration hierarchy: To disable LLDP-MED for a specific interface, leaving LLDP-MED enabled for all others:
+    set protocols lldp-med interface <interface name> disable Or to disable LLDP-MED for all interfaces and allow only for specific ports:
+    set protocols lldp-med interface all disable
+    set protocols lldp-med interface <interface name> This procedure should be repeated for all Routing Instances/Logical Systems where LLDP-MED is configured but not required.

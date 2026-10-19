@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-3.5
+title: Ensure that SharePoint specific malware (i.e. anti-virus) protection software is integrated and configured
+description: SharePoint-specific malware (i.e. anti-virus) protection software must be integrated and configured. Prints compliant when the farm antivirus settings scan documents on upload and download and attempt to clean infected documents. A SharePoint-integrated antivirus product must also be installed for the settings to take effect. Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: high
+tags:
+- sharepoint
+- malware
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 3.5 Ensure that SharePoint specific malware (i.e. anti-virus) protection software is integrated and configured
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $av = [Microsoft.SharePoint.Administration.SPWebService]::ContentService.AntivirusSettings; if ($null -ne $av -and $av.UploadScanEnabled -eq $true -and $av.DownloadScanEnabled -eq $true -and $av.CleaningEnabled -eq $true) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Install a SharePoint-integrated antivirus product, then Central Administration > Security > Manage antivirus settings: select Scan documents on upload, Scan documents on download and Attempt to clean infected documents.'

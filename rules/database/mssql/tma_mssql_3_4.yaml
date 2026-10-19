@@ -1,0 +1,18 @@
+id: TMA-MSSQL-3.4
+title: Ensure SQL Authentication is not used in contained databases
+description: 'Contained databases do not enforce password complexity rules for SQL Authenticated users. Iterates contained databases only. Default: SQL Authenticated users (USER WITH PASSWORD authentication) are allowed in contained databases. Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- authentication
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 3.4 Ensure SQL Authentication is not used in contained databases
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; DECLARE @n int = 0, @k int, @db sysname, @s nvarchar(max); DECLARE c CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.databases WHERE state = 0 AND HAS_DBACCESS(name) = 1 AND containment <> 0; OPEN c; FETCH NEXT FROM c INTO @db; WHILE @@FETCH_STATUS = 0 BEGIN SET @s = N'USE ' + QUOTENAME(@db) + N'; SELECT @k = COUNT(*) FROM (SELECT name FROM sys.database_principals WHERE name NOT IN (''dbo'',''Information_Schema'',''sys'',''guest'') AND type IN (''U'',''S'',''G'') AND authentication_type = 2) AS x;'; EXEC sp_executesql @s, N'@k int OUTPUT', @k = @k OUTPUT; SET @n = @n + @k; FETCH NEXT FROM c INTO @db; END; CLOSE c; DEALLOCATE c; SELECT @n;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Leverage Windows Authenticated users in contained databases.

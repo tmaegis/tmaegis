@@ -1,0 +1,22 @@
+id: TMA-BIND-2.9
+title: Isolate BIND with chroot'ed Subdirectory
+description: The chroot() system call causes an application to run with limited file system access so that a subdirectory becomes the root directory for the application environment. When this is done, the application is "jailed" and no longer has access to the entire file structure but is limited to the given subdirectory. The audit reads /proc/<named pid>/root and requires a chroot directory; SELinux in enforcing mode is accepted as the documented alternative.
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.9 Isolate BIND with chroot'ed Subdirectory
+audit:
+  type: command
+  command: |-
+    pid=$(pidof named 2>/dev/null | awk '{print $1}')
+    [ -n "$pid" ] || { echo 'named is not running'; exit 1; }
+    r=$(readlink /proc/$pid/root) || exit 1
+    if [ "$r" != / ]; then echo compliant; elif [ "$(getenforce 2>/dev/null)" = Enforcing ]; then echo compliant; else echo 'named is not chrooted (and SELinux is not enforcing)'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following: ; Stop the named service and install the bind-chroot package to provide the chroot directories. # systemctl stop named.service # yum install bind-chroot ; Edit the /etc/sysconfig/named configuration file to have a line similar to the one shown below that sets the ROOTDIR environment variable. ROOTDIR="/var/named/chroot" ; Move all the configuration files and any master zone files into their respective directions under the subdirectory /var/named/chroot/'

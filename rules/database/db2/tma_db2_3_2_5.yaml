@@ -1,0 +1,34 @@
+id: TMA-DB2-3.2.5
+title: Limit OS Privileges of Fenced Mode Process (DB2_LIMIT_FENCED_GROUP)
+description: 'The DB2_LIMIT_FENCED_GROUP registry variable allows restricting the operating system privileges of the fenced mode process (db2fmp) to the privileges assigned to the DB2USERS group. This variable only has effect if extended security is enabled (DB2_EXTSEC) and the Db2 Service Account is not LocalSystem. This registry variable only applies to Db2 Servers running on Windows. Must be ON. Default: The default value of DB2_LIMIT_FENCED_GROUP is OFF. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- registry
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.2.5 Limit OS Privileges of Fenced Mode Process (DB2_LIMIT_FENCED_GROUP)
+audit:
+  type: command
+  command: 'out=$(db2set -all 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''/^\[[a-zA-Z]\]/ { l = $0; sub(/^\[[a-zA-Z]\] */, "", l); k = l; sub(/=.*/, "", k); v = l; sub(/^[^=]*=/, "", v); gsub(/[ \t]/, "", v); if (!(k in r)) r[k] = v } END { if (toupper(r["DB2_LIMIT_FENCED_GROUP"]) == "ON") print "compliant"; else print "noncompliant: " "DB2_LIMIT_FENCED_GROUP=" r["DB2_LIMIT_FENCED_GROUP"] }'''
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v db2 >/dev/null 2>&1 || exit 0
+    db2set DB2_LIMIT_FENCED_GROUP=ON
+  guidance: "Run the following command to set the DB2_LIMIT_FENCED_GROUP registry variable to ON: db2set DB2_LIMIT_FENCED_GROUP=ON"

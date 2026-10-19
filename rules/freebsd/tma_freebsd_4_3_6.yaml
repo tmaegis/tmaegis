@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.3.6
+title: Ensure sudo authentication timeout is configured correctly
+description: 'sudo caches used credentials for a default of 5 minutes. This is for ease of use when there are multiple administrative tasks to perform. The timeout can be modified to suit local security policies. Setting a timeout value reduces the window of opportunity for unauthorized privileged access to another user. Audit: any timestamp_timeout in sudoers must be 0-15 minutes (unset defaults to 5).'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- hardening
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.3.6 Ensure sudo authentication timeout is configured correctly
+audit:
+  type: command
+  command: c=$(cat /usr/local/etc/sudoers /usr/local/etc/sudoers.d/* 2>/dev/null); [ -n "$c" ] || exit 1; r=compliant; for v in $(printf '%s\n' "$c" | grep -v "^[[:space:]]*#" | grep -oE "timestamp_timeout=-?[0-9]+" | cut -d= -f2); do if [ "$v" -lt 0 ] || [ "$v" -gt 15 ]; then r="timestamp_timeout=$v"; fi; done; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'If the currently configured timeout is larger than 15 minutes, edit the file listed in the audit section with visudo -f <PATH TO FILE> and modify the entry timestamp_timeout= to 15 minutes or less as per your site policy. The value is in minutes. This particular entry may appear on its own, or on the same line as env_reset. See the following two examples: Defaults env_reset, timestamp_timeout=15 Defaults timestamp_timeout=15 Defaults env_reset'

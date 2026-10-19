@@ -1,0 +1,20 @@
+id: TMA-ROS1-1.1.13
+title: Ensure separate partition exists for /home
+description: The /home directory is used to support disk storage needs of local users. The audit requires /home to be a separate mount (findmnt). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: low
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.1.13 Ensure separate partition exists for /home
+audit:
+  type: command
+  shell: bash
+  command: findmnt -kn /home >/dev/null 2>&1 && echo compliant || echo '/home is not a separate partition'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new installations, during installation create a custom partition setup and specify a separate partition for /home . For systems that were previously installed, create a new partition and configure /etc/fstab as appropriate.

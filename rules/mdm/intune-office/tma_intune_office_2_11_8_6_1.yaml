@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.11.8.6.1
+title: 'Ensure ''Default file format'' is set to ''Enabled: Word Document (.docx)'''
+description: 'This policy setting determines the default file format for saving files in Word. Note: This policy setting is often set in combination with the Save As Open XML in Compatibility Mode policy setting. The recommended state for this setting is: Enabled: Word Document (.docx). Audit: reads the registry value(s) defaultformat that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.11.8.6.1 Ensure ''Default file format'' is set to ''Enabled: Word Document (.docx)'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\word\options'') -Name ''defaultformat'' -ErrorAction SilentlyContinue).''defaultformat''; if (-not ($null -eq $v)) { $_.PSChildName + '':defaultformat='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Word Document (.docx). Microsoft Word 2016\Word Options\Save\Default file format'

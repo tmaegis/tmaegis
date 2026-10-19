@@ -1,0 +1,20 @@
+id: TMA-AWS-4.7
+title: Ensure VPC flow logging is enabled in all VPCs
+description: VPC Flow Logs is a feature that enables you to capture information about the IP traffic going to and from network interfaces in your VPC. After you've created a flow log, you can view and retrieve its data in Amazon CloudWatch Logs. It is recommended that VPC Flow Logs be enabled for packet "Rejects" for VPCs. VPC Flow Logs provide visibility into network traffic that traverses the VPC and can be used to detect anomalous traffic or gain insights during security workflows.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- logging
+- network
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 4.7 Ensure VPC flow logging is enabled in all VPCs
+audit:
+  type: manual
+  command: 'Perform the following to determine if VPC Flow logs are enabled: From Console: 1. Sign into the management console. 2. Select Services, then select VPC. 3. In the left navigation pane, select Your VPCs. 4. Select a VPC. 5. In the right pane, select the Flow Logs tab. 6. Ensure a Log Flow exists that has Active in the Status column. From Command Line: 1. Run the describe-vpcs command (OSX/Linux/UNIX) to list the VPC networks available in the current AWS region: aws ec2 describe-vpcs --region <region> --query Vpcs[].VpcId The command output returns the VpcId of VPCs available in the selected region. 2. Run the describe-flow-logs command (OSX/Linux/UNIX) using the VPC ID to determine if the selected virtual network has the Flow Logs feature enabled: aws ec2 describe-flow-logs --filter "Name=resource-id,Values=<vpc-id>" If there are no Flow Logs created for the selected VPC, the command output will return an empty list []. 3. Repeat step 2 for other VPCs in the same region. 4. Change
+    the region by updating --region, and repeat steps 1-4 for each region. 5. Alternatively, the following command can be used to identify VPCs with and without Flow Logs: VPCS=$(aws ec2 describe-vpcs --que...'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to enable VPC Flow Logs: From Console: 1. Sign into the management console. 2. Select Services, then select VPC. 3. In the left navigation pane, select Your VPCs. 4. Select a VPC. 5. In the right pane, select the Flow Logs tab. 6. If no Flow Log exists, click Create Flow Log. 7. For Filter, select Reject. 8. Enter a Role and Destination Log Group. 9. Click Create Log Flow. 10. Click on CloudWatch Logs Group. Note: Setting the filter to "Reject" will dramatically reduce the accumulation of logging data for this recommendation and provide sufficient information for the purposes of breach detection, research, and remediation. However, during periods of least privilege security group engineering, setting the filter to "All" can be very helpful in discovering existing traffic flows required for the proper operation of an already running environment. From Command Line: 1. Create a policy document, name it role_policy_document.json, and paste the following content:
+    { "Version": "2012-10-17", "Statement": [ { "Sid": "test", "Effect": "Allow", "Principal": { "Service": "vpc-flow-logs.amazonaws.com" }, "Action": "sts:AssumeRole" } ] } 2. Create another policy documen...'

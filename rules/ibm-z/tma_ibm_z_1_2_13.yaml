@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-1.2.13
+title: Ensure that RACF default user ID IBMUSER is disabled
+description: The default IBMUSER user ID is intended for use only during the initial RACF installation process. After installation, the IBMUSER user ID should be revoked so that it cannot be used by unauthorized users.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.2.13 Ensure that RACF default user ID IBMUSER is disabled
+audit:
+  type: manual
+  command: 'Request reports generated using IRRDBU00 output that will allow you to: Verify That the IBMUSER user ID: Has the REVOKE status Has the PROTECTED attribute Has the RESTRICTED attribute Has the UAUDIT attribute Does not appear on any RACF data set or general resource access list Does not have any segments beyond base (ex. no OMVS segment) Does not have any extra system or group privileges (ex. SPECIAL, OPERATIONS, group-JOIN, etc.)'
+remediation:
+  type: iac_patch
+  command: 'To adjust IBMUSER properties use the ALTUSER and CONNECT commands: ALTUSER IBMUSER + NOPASSWORD + RESTRICTED + UAUDIT + REVOKE + NOSPECIAL + NOAUDIT + NOPERATIONS + NOROAUDIT + NOTSO + NOOMVS + NOCICS CONNECT IBMUSER + GROUP(group) + AUTHORITY(USE) + NOAUDITOR + NOOPERATIONS + NOSPECIAL To remove IBMUSER from an access list entry use the RACF PERMIT command: PERMIT <profile> CLASS(<class>) + DELETE ID(IBMUSER)'

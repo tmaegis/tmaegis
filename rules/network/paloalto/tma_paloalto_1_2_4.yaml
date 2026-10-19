@@ -1,0 +1,23 @@
+id: TMA-PALOALTO-1.2.4
+title: Ensure HTTP and Telnet options are disabled for all management profiles
+description: 'HTTP and Telnet options should not be enabled for device management. FAILs if any interface management profile sets telnet yes or http yes. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- management
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.2.4 Ensure HTTP and Telnet options are disabled for all management profiles
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?network profiles interface-management-profile (?:"[^"\n]*"|\S+) (?:telnet|http) yes[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set network profiles interface-management-profile <profile> telnet no
+    set network profiles interface-management-profile <profile> http no
+    commit
+    # CIS guidance:
+    Navigate to Network > Network Profiles > Interface Management. For each Profile, set the HTTP and Telnet boxes to unchecked.

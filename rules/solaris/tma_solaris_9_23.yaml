@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.23
+title: Find Un-owned Files and Directories
+description: 'Sometimes when administrators delete users from the password file they neglect to remove all files owned by those users from the system. A new user who is assigned the deleted user''s user ID or group ID may then end up "owning" these files, and thus have more access on the system than was intended. Audit: long running; false positives may appear under /zones in the global zone.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- permissions
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.23 Find Un-owned Files and Directories
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o \( -nouser -o -nogroup \) -ls ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine the existence of any files that are not attributed to current users or groups on the system, and determine the best course of action in accordance with site policy. Note that the Solaris OS is shipped with all files appropriately owned.

@@ -1,0 +1,19 @@
+id: TMA-MCP-4.1.1
+title: Ensure per-tool consent or pre-approved allowlists are required
+description: MCP hosts display the canonical tool definition to the operator before a tool is executed for the first time, and require either an explicit user decision or a pre-approved allowlist entry before execution proceeds. The canonical tool definition includes at least the tool name, title, description, and input schema, the output schema where present, and the annotations, though server-provided annotations are untrusted and do not determine enterprise risk. The pre-approved allowlist path and the per-invocation consent path are each configured explicitly and are not interchangeable. A tool newly advertised or modified through a notifications/tools/list_changed notification is not added to the allowlist automatically. The tool is quarantined until re-validated under the capability baseline, after which it becomes eligible for allowlist addition or per-invocation consent. Tool invocation co...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.1.1 Ensure per-tool consent or pre-approved allowlists are required
+audit:
+  type: manual
+  command: 'Review the host configuration and audit log to confirm that an authorizing decision is recorded and precedes each tool''s first execution, and that the full canonical tool definition is shown before execution is permitted. Set the field names to match the deployment''s log schema if they differ. Run the following command: LOG="<MCP_AUDIT_LOG>" command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is required and not installed (cannot verify)"; exit 0; } [ -s "$LOG" ] || { echo "ERROR: audit log <MCP_AUDIT_LOG> is missing or empty (cannot verify)"; exit 0; } recs=$(grep -E ''"event":"tool_(consent|allowlist)"'' "$LOG") total=$(printf ''%s\n'' "$recs" | grep -c .) [ "$total" -gt 0 ] || { echo "REVIEW: no tool consent or allowlist records found (control not evidenced)"; exit 0; } printf ''%s\n'' "$recs" | jq -e . >/dev/null 2>&1 || { echo "ERROR: audit log contains unparseable records (cannot verify)"; exit 0; } bad=$(printf ''%s\n'' "$recs" | jq -c '' select( (.tool==null or .tool=="")
+    or (.manifest_shown!=true) or (((.decision//"")|test("^(user_approved|user_denied|allowlist_match)$"))|not) or (((.decision//"")|test("^user_")) and (.decision_source!="user")) or ((.decision//"")=="allowlist_mat...'
+remediation:
+  type: iac_patch
+  command: Configure the host to require per-tool consent or a pre-approved allowlist before first execution, and to present the full, unsummarized canonical tool definition (name, description, input schema, output schema where present, title, and annotations) at the point of decision. This behavior is set in host or client configuration, with no portable command. Populate the pre-approved allowlist from the operator's assessment of which tools are sensitive or high-impact and from the capability baseline, and configure the host so that a newly advertised or modified tool from a notifications/tools/list_changed notification is quarantined for re-validation rather than auto-added. Record each consent and allowlist decision to the audit log with the tool name, the decision (an explicit user approval, an explicit user denial, or an approved allowlist match with a reference), the decision source, and confirmation that the canonical tool definition was shown. Record tool executions with the tool
+    name and a timestamp, so the decision can be confirmed to precede first execution.

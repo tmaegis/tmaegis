@@ -1,0 +1,27 @@
+id: TMA-GKE-5.7.1
+title: Enable Cloud Logging and Cloud Monitoring for GKE clusters
+description: Enable Cloud Logging and Cloud Monitoring for GKE clusters so cluster, system, and workload telemetry is sent to centralized Google Cloud observability services. This helps preserve logs and metrics outside the cluster for troubleshooting, security, performance analysis, and alerts. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 1
+severity: medium
+tags:
+- gke
+- managed-services
+- logging
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.7.1 Enable Cloud Logging and Cloud Monitoring for GKE clusters
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(loggingService,monitoringService,loggingConfig.componentConfig.enableComponents.list(),monitoringConfig.componentConfig.enableComponents.list())') || exit 1
+    set -- $(printf '%s' "$out" | tr '\t' '|' | awk -F '|' '{for(i=1;i<=4;i++) printf "%s ", ($i=="" ? "-" : $i)}')
+    ok=1
+    case "$1" in none|-) ok=0;; esac
+    case "$2" in none|-) ok=0;; esac
+    case ",$3," in *SYSTEM_COMPONENTS*) ;; *) ok=0;; esac
+    case ",$3," in *WORKLOADS*) ;; *) ok=0;; esac
+    case ",$4," in *SYSTEM_COMPONENTS*) ;; *) ok=0;; esac
+    if [ "$ok" -eq 1 ]; then echo compliant; else echo "noncompliant: $out"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable Cloud Logging and Cloud Monitoring for the required GKE components. At minimum, enable system logging and system monitoring so cluster operations, troubleshooting, and security investigations have centralized telemetry. Enable workload logging when application logs should be collected in Cloud Logging. gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --logging=SYSTEM,WORKLOAD \ --monitoring=SYSTEM • Note: If additional observability is required, enable the appropriate monitoring components such as API server, scheduler, controller manager, kube state, cAdvisor, kubelet, storage, or GPU metrics based on the cluster’s operational requirements.'

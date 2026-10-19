@@ -1,0 +1,16 @@
+id: TMA-CASSANDRA-3.8
+title: Review Superuser/Admin Roles
+description: The IS_SUPERUSER privilege found in the system_auth.roles table governs who can control the entire Cassandra database and all of its data contained within.
+target: cassandra
+level: 1
+severity: high
+tags:
+- cassandra
+- privileges
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 3.8 Review Superuser/Admin Roles
+audit:
+  type: manual
+  command: 'Execute the following SQL statement to audit this setting: select role, is_superuser from system_auth.roles; Looking for is_superuser = True'
+remediation:
+  type: iac_patch
+  command: 'Perform the following steps to remediate this setting: Looking at those users from the query that have is_superuser = True, decide if that user truly needs that role, if not, for each user, issue the following SQL statement (replace <role> with the role name from the query): alter role <role> with superuser=false;'

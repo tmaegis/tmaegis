@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.3.27
+title: 'Ensure ''Retrieving CRLs (Certificate Revocation Lists)'' is set to ''Enabled: When online always retrieve the CRL'''
+description: 'This policy setting controls how Outlook retrieves Certificate Revocation Lists (CRLs) to verify the validity of certificates. CRLs are lists of digital certificates that have been revoked by their controlling Certificate Authority (CAs), typically because the certificates were issued improperly, or their associated private keys were compromised. The recommended state for this setting is: Enabled: When online always retrieve the CRL. Audit: reads the registry value(s) usecrlchasing that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.3.27 Ensure ''Retrieving CRLs (Certificate Revocation Lists)'' is set to ''Enabled: When online always retrieve the CRL'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''usecrlchasing'' -ErrorAction SilentlyContinue).''usecrlchasing''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':usecrlchasing='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: When online always retrieve the CRL: Microsoft Outlook 2016\Security\Security Form Settings\Outlook Security Mode > Retrieving CRLs (Certificate Revocation Lists) Important: For this setting to apply, the Outlook Security Mode setting must be enabled in Microsoft Outlook 2016\Security\Security Form Settings with Use Outlook Security Group Policy selected, as set in this benchmark.'

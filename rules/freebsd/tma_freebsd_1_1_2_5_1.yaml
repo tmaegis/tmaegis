@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-1.1.2.5.1
+title: Ensure separate partition exists for /var/log
+description: 'The /var/log directory is used by system services to store log data. The reasoning for mounting /var/log on a separate partition is as follows. Protection from resource exhaustion The default installation only creates a single / partition. Audit: `mount -p` must list /var/log as its own mount point.'
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.1.2.5.1 Ensure separate partition exists for /var/log
+audit:
+  type: command
+  command: command -v mount >/dev/null 2>&1 || exit 1; l=$(mount -p | awk '$2=="/var/log"'); [ -n "$l" ] && echo compliant || echo "/var/log is not a separate mount"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new installations, during installation create a custom partition setup and specify a separate partition for /var/log . For systems that were previously installed, create a new partition and configure /etc/fstab as appropriate.

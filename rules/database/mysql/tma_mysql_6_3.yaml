@@ -1,0 +1,18 @@
+id: TMA-MYSQL-6.3
+title: Ensure 'log_error_verbosity' is Set to '2'
+description: 'The log_error_verbosity system variable, set to 2 by default, specifies the verbosity of events sent to the MySQL error log. A value of 2 enables logging of error and warning messages, a value of 3 also includes informational logging, a value of 1 logs only errors. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: low
+tags:
+- mysql
+- database
+- logging
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 6.3 Ensure 'log_error_verbosity' is Set to '2'
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.log_error_verbosity = 2, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST log_error_verbosity = 2"

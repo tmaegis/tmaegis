@@ -1,0 +1,22 @@
+id: TMA-CISCO-NXOS-3.3.1
+title: Configure DHCP Trust
+description: 'You can configure whether DHCP snooping trusts traffic sources. An untrusted source may initiate traffic attacks or other hostile actions. To prevent such attacks, DHCP snooping filters messages from untrusted sources. In an enterprise network, a trusted source is a device that is under your administrative control. These devices include the switches, routers, and servers in the network. In a service provider environment, any device that is not in the service provider network is an untrusted source (such as a customer switch). Host ports are untrusted sources. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- management-plane
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.3.1 Configure DHCP Trust
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. switch(config)# show running-config dhcp'
+remediation:
+  type: iac_patch
+  command: |-
+    ! First, enable DHCP Snooping
+    ip dhcp snooping Next, enable DHCP Snooping on target VLANs
+    ip dhcp snooping vlan 100,200,250-252 Configure Interface as Trusted
+    interface port-channel 5
+    ip dhcp snooping trust On a distribution or access switch (for instance in a wiring closet or branch office), typically only the uplink ports are configured as trusted - the ports leading towards the DHCP server On a datacenter switch, especially with virtualization, usually multiple ports are candidates for where the DHCP servers may appear on, all possible ports that may have a DHCP server on them should be trusted.

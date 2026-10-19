@@ -1,0 +1,23 @@
+id: TMA-GKE-4.1.4
+title: Ensure that default service accounts are not actively used
+description: 'The Kubernetes default service account should not be actively used by application workloads. Instead, each workload should use a dedicated Kubernetes service account so permissions can be explicitly assigned, audited, and reviewed. Create a Kubernetes service account for each workload and not use the default service account. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Fails when a default service account does not set automountServiceAccountToken: false or is bound to a Role/ClusterRole.'
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.4 Ensure that default service accounts are not actively used
+audit:
+  type: command
+  command: |-
+    sa=$(kubectl get serviceaccounts -A -o go-template='{{range .items}}{{if eq .metadata.name "default"}}{{.metadata.namespace}} {{.automountServiceAccountToken}}{{"\n"}}{{end}}{{end}}') || exit 1
+    rb=$(kubectl get rolebindings,clusterrolebindings -A -o go-template='{{range .items}}{{$b:=.metadata.name}}{{$bn:=.metadata.namespace}}{{range .subjects}}{{if eq .kind "ServiceAccount"}}{{if eq .name "default"}}{{if .namespace}}{{.namespace}}{{else}}{{$bn}}{{end}} {{$b}}{{"\n"}}{{end}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$sa" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gmp-system|gmp-public|gke-[a-z0-9-]+)$' 'NF && $1 !~ ex && $2!="false" {print "automount: " $1}')
+    bad2=$(printf '%s\n' "$rb" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gmp-system|gmp-public|gke-[a-z0-9-]+)$' 'NF && $1 !~ ex {print "binding: " $0}')
+    if [ -z "$bad$bad2" ]; then echo compliant; else printf '%s\n%s\n' "$bad" "$bad2" | grep . | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Each workload that requires Kubernetes API access should have its own service account with narrowly defined permissions. Workloads that do not need Kubernetes API access should disable automatic token mounting to reduce unnecessary credential exposure. For Google Cloud API access, use Workload Identity Federation for GKE instead of relying on static credentials in Pods. • Create dedicated Kubernetes service accounts for workloads that require Kubernetes API access • Update workload manifests to specify serviceAccountName instead of relying on the namespace default service account • Remove RoleBinding and ClusterRoleBinding assignments from the default service account that are not needed • Set automountServiceAccountToken=false for Pods that do not need to communicate with the Kubernetes API server • Configure the namespace default service account with automountServiceAccountToken: false ...'

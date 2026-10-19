@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-1.4.2
+title: Ensure 'Failed Attempts' and 'Lockout Time' for Authentication Profile are properly configured
+description: 'Configure values for Failed Login Attempts and Account Lockout Time set to organization-defined values (for example, 3 failed attempts and a 15 minute lockout time). Do not set Failed Attempts and Lockout Time in the Authentication Settings section; any Failed Attempts or Lockout Time settings within the selected Authentication Profile do not apply in the Authentication Settings section. PASS requires an authentication profile with non-zero lockout failed-attempts and lockout-time; confirm every profile in use has them. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- authentication
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.4.2 Ensure 'Failed Attempts' and 'Lockout Time' for Authentication Profile are properly configured
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?authentication-profile (?:"[^"\n]*"|\S+) lockout failed-attempts [1-9]\d*[ \t]*$(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?authentication-profile (?:"[^"\n]*"|\S+) lockout lockout-time [1-9]\d*[ \t]*$|^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?authentication-profile (?:"[^"\n]*"|\S+) lockout lockout-time [1-9]\d*[ \t]*$(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?authentication-profile (?:"[^"\n]*"|\S+) lockout failed-attempts [1-9]\d*[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set shared authentication-profile <profile> lockout failed-attempts 5
+    set shared authentication-profile <profile> lockout lockout-time 30
+    commit
+    # CIS guidance:
+    Navigate to Device > Authentication Profile. Set Failed Attempts to the non-zero organization-defined value. Set Lockout Time to the non-zero organization-defined value.

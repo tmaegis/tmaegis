@@ -1,0 +1,18 @@
+id: TMA-DB2-4.1.1
+title: Creating the Database Without PUBLIC Grants (RESTRICTIVE)
+description: 'This parameter indicates whether the database was created with the RESTRICTIVE clause in the CREATE DATABASE statement. When creating a database, the use of the RESTRICTIVE clause will cause certain privileges to be revoked from PUBLIC. RESTRICT_ACCESS = YES means the database was created with the RESTRICTIVE clause. Database-level check: set DB2DBDFT to the database name to audit (the rule connects to it with the instance owner''s credentials and fails when DB2DBDFT is unset). Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 2
+severity: medium
+tags:
+- db2
+- database
+- privileges
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 4.1.1 Creating the Database Without PUBLIC Grants (RESTRICTIVE)
+audit:
+  type: sql_query
+  command: db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"; db2 connect to "$db" >/dev/null || exit 1; db2 -x "select value from sysibmadm.dbcfg where name = 'restrict_access'"; rc=$?; db2 connect reset >/dev/null 2>&1; db2 terminate >/dev/null 2>&1; exit $rc
+  expected_output: 'YES'
+remediation:
+  type: iac_patch
+  command: 'There is no remediation for this parameter due to the fact that the placement of the RESTRICTIVE clause happens within the CREATE DATABASE statement. Unless your backup strategies allow for a complete overhaul of your environment where you are able to recreate the database with the RESTRICTIVE clause, we do not recommend changing this parameter. However, if you would like to align your database configuration to that which the RESTRICTIVE clause would provide, please ensure the following: 1. SYSCAT.DBAUTH - Ensure PUBLIC is NOT granted the following authorities: o CREATETAB o BINDADD o CONNECT o IMPLICIT_SCHEMA 2. SYSCAT.TABAUTH - Ensure PUBLIC is NOT granted the following privileges: o SELECT on all SYSCAT and SYSIBM tables o SELECT and UPDATE on all SYSSTAT tables o SELECT on the following views in schema SYSIBMADM: - ALL_* - USER_* - ROLE_* - SESSION_* - DICTIONARY - TAB 3. ...'

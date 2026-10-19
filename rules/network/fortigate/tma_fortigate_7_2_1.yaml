@@ -1,0 +1,24 @@
+id: TMA-FORTIGATE-7.2.1
+title: Centralized Logging and Reporting
+description: Device logs should be sent to a centralized device for log collection, retention, and reporting. This could be a SIEM. syslog device, FortiAnalyzer, FortiManager, etc. PASS requires remote syslog (config log syslogd setting) status enable. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: medium
+tags:
+- fortigate
+- logging
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 7.2.1 Centralized Logging and Reporting
+audit:
+  type: config_regex
+  pattern: (?m)^config log syslogd setting\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config log syslogd setting
+        set status enable
+        set server "10.0.0.50"
+    end
+    # CIS guidance:
+    Configure a remote server for logs to be sent to:
+    1. Go to Log & Report > Log Settings.
+    2. Under "Syslog logging" configure a remote server to send logs to.

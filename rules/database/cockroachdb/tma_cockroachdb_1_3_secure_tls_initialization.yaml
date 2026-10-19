@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-1.3
+title: Ensure CockroachDB Cluster is Initialized Securely with TLS
+description: CockroachDB clusters must be initialized and operated in secure mode so that all inter- node and client-node communication uses TLS with certificates signed by a trusted CA. CockroachDB's production documentation strongly recommends running secure clusters (with --certs-dir and valid certificates) instead of using --insecure, which disables all encryption and authentication.
+target: cockroachdb
+level: 1
+severity: critical
+tags:
+- cockroachdb
+- tls
+- authentication
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 1.3 Ensure CockroachDB Cluster is Initialized Securely with TLS
+audit:
+  type: manual
+  command: 'Run ps -ef | grep "[c]ockroach start": --insecure must not appear (--accept-sql-without-tls is also a weakness). Verify the certs directory (e.g. /var/lib/cockroach/certs) contains ca.crt, node.crt/node.key and client certificates, is owned by cockroach, and that the CA key is kept off the nodes. Confirm cockroach sql --insecure is rejected.'
+remediation:
+  type: iac_patch
+  command: '1. Generate the cluster Certificate Authority (CA): The documentation suggests creating two directories on your local machine: certs (for public files) and my-safe-directory (for the private CA key). On a secure workstation: # Create directories for certificates # `certs` : You''ll generate your CA certificate and all node and client certificates and keys in this directory.'

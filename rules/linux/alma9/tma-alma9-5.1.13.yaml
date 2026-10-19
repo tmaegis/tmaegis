@@ -1,0 +1,66 @@
+id: TMA-ALMA9-5.1.13
+title: Ensure sshd HostbasedAuthentication is disabled
+description: The HostbasedAuthentication parameter specifies if authentication is allowed through trusted hosts via the user of .rhosts, or /etc/hosts.equiv, along with successful public key client host authentication.
+target: linux
+os_family:
+- almalinux-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS AlmaLinux OS 9 Benchmark v3.0.0 - 5.1.13
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v sshd >/dev/null 2>&1 || { echo "step1: sshd not installed"; return 1; }; o=$(bash -c ''sshd -T | grep hostbasedauthentication'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''hostbasedauthentication no'' || { echo step1: missing ''hostbasedauthentication no''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # tma_sshd_apply "Name value" ... : replace every existing setting, put ours first, validate, reload.
+    tma_sshd_apply() {
+      c=/etc/ssh/sshd_config
+      [ -f "$c" ] || { echo "sshd_config not present, nothing to do"; return 0; }
+      files="$c $(ls /etc/ssh/sshd_config.d/*.conf 2>/dev/null)"
+      sv=$(mktemp -d)
+      for f in $files; do tma_bak "$f"; cp -a "$f" "$sv/$(echo "$f" | tr / _)"; done
+      for kv in "$@"; do
+        n=${kv%% *}
+        for f in $files; do
+          [ -L "$f" ] && continue
+          sed -i -E "s/^([[:space:]]*$n[[:space:]=].*)$/# tmaegis: \1/I" "$f"
+        done
+      done
+      tmp=$(mktemp); : > "$tmp"
+      for kv in "$@"; do printf '%s\n' "$kv" >> "$tmp"; done
+      cat "$c" >> "$tmp"; cat "$tmp" > "$c"; rm -f "$tmp"
+      if command -v sshd >/dev/null 2>&1 && ! sshd -t 2>/dev/null; then
+        echo "sshd -t failed, restoring" >&2
+        for f in $files; do cat "$sv/$(echo "$f" | tr / _)" > "$f"; done
+        rm -rf "$sv"; return 1
+      fi
+      rm -rf "$sv"
+      for u in sshd ssh; do systemctl reload "$u" 2>/dev/null && break; done
+      return 0
+    }
+
+    tma_sshd_apply 'HostbasedAuthentication no'
+  guidance: "Edit the /etc/ssh/sshd_config file to set the HostbasedAuthentication parameter to no above any Include and Match entries as follows: HostbasedAuthentication no"

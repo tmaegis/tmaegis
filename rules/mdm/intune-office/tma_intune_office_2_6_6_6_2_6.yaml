@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.6.6.6.2.6
+title: Ensure 'Disable Trust Bar Notification for unsigned application add-ins and block them' is set to 'Enabled'
+description: 'This policy setting controls whether the specified Office application notifies users when unsigned application add-ins are loaded or silently disable such add-ins without notification. Note: For this policy to apply, the Require that application add-ins are signed by Trusted Publisher policy setting needs to be enabled. This will prevent users from changing the Disable Trust Bar Notification for Unsigned Application Add-ins and Block Them policy setting. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) notbpromptunsignedaddin that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.6.6.6.2.6 Ensure 'Disable Trust Bar Notification for unsigned application add-ins and block them' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\powerpoint\security'') -Name ''notbpromptunsignedaddin'' -ErrorAction SilentlyContinue).''notbpromptunsignedaddin''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':notbpromptunsignedaddin='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft PowerPoint 2016\PowerPoint Options\Security\Trust Center\Require that application add-ins are signed by Trusted Publisher\Disable Trust Bar Notification for Unsigned Application Add-ins and Block Them

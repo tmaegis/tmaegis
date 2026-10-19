@@ -1,0 +1,41 @@
+id: TMA-SLES16-1.6.7
+title: Ensure system wide crypto policy disables chacha20- poly1305 for ssh
+description: ChaCha20-Poly1305 is an authenticated encryption with additional data (AEAD) algorithm, that combines the ChaCha20 stream cipher with the Poly1305 message authentication code. Its usage in IETF protocols is standardized in RFC 8439.
+target: linux
+os_family:
+- sles-16
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 16 Benchmark v1.0.0 - 1.6.7
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   if grep -Piq -- '\"'\"'^\\h*cipher\\h*=\\h*([^#\\n\\r]+)?-CBC\\b'\"'\"' /etc/crypto- policies/state/CURRENT.pol; then\n      if grep -Piq -- '\"'\"'^\\h*cipher@(lib|open)ssh(-server|-client)?\\h*=\\h*'\"'\"' /etc/crypto-policies/state/CURRENT.pol; then\n         if ! grep -Piq -- '\"'\"'^\\h*cipher@(lib|open)ssh(-server|- client)?\\h*=\\h*([^#\\n\\r]+)?\\bchacha20-poly1305\\b'\"'\"' /etc/crypto- policies/state/CURRENT.pol; then\n            l_output=\"$l_output\\n - chacha20-poly1305 is disabled for SSH\"\n         else\n            l_output2=\"$l_output2\\n - chacha20-poly1305 is enabled for SSH\"\n         fi\n      else\n         l_output2=\"$l_output2\\n - chacha20-poly1305 is enabled for SSH\"\n      fi\n   else\n      l_output=\" - chacha20-poly1305 is disabled\"\n   fi\n   if [ -z \"$l_output2\" ]; then # Provide output from checks\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n$l_output\\\
+    n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\\n\"\n      [ -n \"$l_output\" ] && echo -e \"\\n- Correctly set:\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v update-crypto-policies >/dev/null 2>&1 || { echo "update-crypto-policies not available"; exit 0; }
+    d=/etc/crypto-policies/policies/modules; mkdir -p $d
+    printf '# TMAegis subpolicy NO-SSHCHACHA20\n%s\n' 'cipher@SSH = -CHACHA20-POLY1305' > $d/NO-SSHCHACHA20.pmod
+    cur=$(update-crypto-policies --show 2>/dev/null | head -1); [ -n "$cur" ] || cur=DEFAULT
+    case ":$cur:" in *:NO-SSHCHACHA20:*) ;; *) cur="$cur:NO-SSHCHACHA20";; esac
+    update-crypto-policies --set "$cur"
+  guidance: "Note: • The commands below are written for the included DEFAULT system-wide crypto policy. If another policy is in use and follows local site policy, replace DEFAULT with the name of your system-wide crypto policy. • chacha20-poly1305 can be turned off globally by using the argument cipher opposed to cipher@SSH • Multiple subpolicies may be assigned to a policy as a colon separated list. e.g. DEFAULT:NO-SHA1:NO-SSHCBC • Subpolicies: o Not included in the update-crypto-policies --set command will not be applied to the system wide crypto policy. o must exist before they can be applied to the system wide crypto policy. o .pmod file filenames must be in all upper case, upper case, e.g. NO- SSHCH…"

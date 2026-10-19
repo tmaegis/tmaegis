@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.18
+title: Ensure 'Turn off routine remediation' is set to 'Disabled'
+description: 'This policy setting configures whether Microsoft Defender Antivirus automatically takes action on all detected threats. The action to be taken on a particular threat is determined by the combination of the policy-defined action, user-defined action, and the signature- defined action. The recommended state for this setting is: Disabled. Rationale: If this setting is enabled, Microsoft Defender prompts the user to take action on detected threats. Allowing users to choose threat remediation actions is not considered a best practice, as it can lead to inconsistent or unsafe responses. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender:DisableRoutinelyTakingAction (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.18 Ensure 'Turn off routine remediation' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender'' -Name ''DisableRoutinelyTakingAction'' -ErrorAction SilentlyContinue).''DisableRoutinelyTakingAction''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DisableRoutinelyTakingAction' -Value 0 -PropertyType DWord -Force | Out-Null

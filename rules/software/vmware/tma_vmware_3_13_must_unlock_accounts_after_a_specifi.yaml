@@ -1,0 +1,38 @@
+id: TMA-VMWARE-3.13
+title: Host must unlock accounts after a specified timeout period
+description: Ensuring that user accounts on the ESXi host are automatically unlocked after a specified period contributes to a balance between security and operational usability. This mechanism reactivates idle accounts promptly while mitigating potential unauthorized access risks. The audit reads Security.AccountUnlockTime with esxcli and requires 900 seconds. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.13 Host must unlock accounts after a specified timeout period
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Security/AccountUnlockTime 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/Security/AccountUnlockTime: no integer value'; exit 1 ;; esac
+    if [ "$v" -eq 900 ]; then echo compliant; else echo "/Security/AccountUnlockTime = $v (expected 900)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Security/AccountUnlockTime -i 900
+  guidance: "To set the account lockout to 15 minutes, perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand System. 3. Select Advanced System Settings then click Edit. 4. Enter Security.AccountUnlockTime in the filter. 5. Set the value for this parameter to 900. Alternately, use the following PowerCLI command: Get-VMHost | Get-AdvancedSetting -Name Security.AccountUnlockTime | Set- AdvancedSetting -Value 900"

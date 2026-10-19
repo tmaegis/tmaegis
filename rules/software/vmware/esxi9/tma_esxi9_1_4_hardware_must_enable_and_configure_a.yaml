@@ -1,0 +1,21 @@
+id: TMA-ESXI9-1.4
+title: Host hardware must enable and configure a TPM 2.0
+description: 'ESXi can use Trusted Platform Modules (TPM) 2.0 to enable advanced security features that prevent malware, remove dependencies, and secure hardware lifecycle operations. The audit runs esxcli hardware trustedboot get and requires "Tpm Present: true"; TPM attestation alarms are still reviewed in vCenter. Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- hardware
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 1.4 Host hardware must enable and configure a TPM 2.0
+audit:
+  type: command
+  command: |-
+    out=$(esxcli hardware trustedboot get 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk -F': *' 'tolower($1) ~ /^ *tpm present$/ {print $2; exit}' | tr 'A-Z' 'a-z' | sed 's/ *$//')
+    if [ "$v" = true ]; then echo compliant; else echo "Tpm Present: ${v:-not reported}"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 1. Place the host in maintenance mode. 2. reboot into BIOS/UEFI. 3. Enable and activate the TPM 4. Select TPM 2.0 mode, and ensure UEFI/Secure Boot prerequisites required by the server vendor are enabled. 5. Save changes. 6. reboot with command reboot 7. Verify again with esxcli hardware trustedboot get and esxcli system settings encryption get.

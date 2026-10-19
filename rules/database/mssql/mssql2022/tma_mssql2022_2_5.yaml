@@ -1,0 +1,19 @@
+id: TMA-MSSQL2022-2.5
+title: Ensure 'Ole Automation Procedures' Server Configuration Option is set to '0'
+description: The Ole Automation Procedures option controls whether OLE Automation objects can be instantiated within Transact-SQL batches. These are extended stored procedures that allow SQL Server users to execute functions external to SQL Server. Enabling this option will increase the attack surface of SQL Server and allow users to execute functions in the security context of SQL Server.
+target: mssql
+level: 1
+severity: high
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.5 Ensure 'Ole Automation Procedures' Server Configuration Option is set to '0'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN CAST(value AS int) = 0 AND CAST(value_in_use AS int) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM sys.configurations WHERE name = 'Ole Automation Procedures';"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'Ole Automation Procedures', 0; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"
+  guidance: "Run the following T-SQL command: EXECUTE sp_configure 'show advanced options', 1; RECONFIGURE; EXECUTE sp_configure 'Ole Automation Procedures', 0; RECONFIGURE; GO EXECUTE sp_configure 'show advanced options', 0; RECONFIGURE;"

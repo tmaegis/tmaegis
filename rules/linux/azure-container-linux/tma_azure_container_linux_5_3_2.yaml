@@ -1,0 +1,49 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.3.2
+title: Ensure sudo authentication timeout is configured correctly
+description: 'sudo caches used credentials for a default of 5 minutes. This is for ease of use when there are multiple administrative tasks to perform. The timeout can be modified to suit local security policies. Audit: Passes when every timestamp_timeout in /etc/sudoers and /etc/sudoers.d is between 0 and 15 minutes; with none set the sudo default of 5 minutes applies.'
+target: azure-container-linux
+level: 1
+severity: high
+tags:
+- azure-container-linux
+- sudo
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.3.2 Ensure sudo authentication timeout is configured correctly
+audit:
+  type: command
+  shell: bash
+  command: bad=0; for v in $(grep -rhoP "timestamp_timeout=\K-?[0-9.]*" /etc/sudoers /etc/sudoers.d 2>/dev/null); do case $v in -*|"") bad=1;; *) [ "${v%.*}" -le 15 ] 2>/dev/null || bad=1;; esac; done; [ $bad -eq 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    command -v visudo >/dev/null 2>&1 || exit 0
+    for f in /etc/sudoers $(ls /etc/sudoers.d/* 2>/dev/null); do
+      [ -f "$f" ] || continue
+      grep -Eq 'timestamp_timeout[[:space:]]*=[[:space:]]*(-|1[6-9]|[2-9][0-9]|[0-9]{3,})' "$f" || continue
+      t=$(mktemp); cp -a "$f" "$t"
+      sed -i -E 's/(timestamp_timeout[[:space:]]*=[[:space:]]*)(-[0-9.]*|1[6-9][0-9.]*|[2-9][0-9][0-9.]*|[0-9]{3,}[0-9.]*)/\115/' "$t"
+      if visudo -cf "$t" >/dev/null 2>&1; then tma_bak "$f"; cat "$t" > "$f"; fi
+      rm -f "$t"
+    done
+    grep -rqE '^[[:space:]]*Defaults[[:space:]].*timestamp_timeout' /etc/sudoers /etc/sudoers.d 2>/dev/null || {
+      t=$(mktemp); echo 'Defaults timestamp_timeout=15' > "$t"
+      if visudo -cf "$t" >/dev/null 2>&1; then umask 077; cp "$t" /etc/sudoers.d/00-tmaegis-timeout; chmod 440 /etc/sudoers.d/00-tmaegis-timeout; fi
+      rm -f "$t"; }
+    true
+  guidance: "If the currently configured timeout is larger than 15 minutes, edit the file listed in the audit section with visudo -f <PATH TO FILE> and modify the entry timestamp_timeout= to 15 minutes or less as per your site policy. The value is in minutes. This particular entry may appear on its own, or on the same line as env_reset. See the following two examples: Defaults env_reset, timestamp_timeout=15 Defaults timestamp_timeout=15 Defaults env_reset"

@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-ROOT-AUTH-SHA512
+title: Ensure the root password is stored as a SHA-512 hash
+description: Root authentication should use an encrypted-password with the $6$ (SHA-512) prefix, not MD5 ($1$) or SHA-256 ($5$). Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark - System Login / Root Authentication (verify section number for your release)
+audit:
+  type: config_regex
+  pattern: (?m)^set system root-authentication encrypted-password \"?\$6\$
+remediation:
+  type: iac_patch
+  command: |-
+    set system login password format sha512
+    set system root-authentication plain-text-password
+    ! enter a strong root password at the prompt
+    commit

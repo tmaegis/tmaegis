@@ -1,0 +1,37 @@
+id: TMA-VMWARE-3.5
+title: Host must deactivate CIM
+description: 'Deactivating the Common Information Model (CIM) service, when not in use, aligns with the principle of minimizing the attack surface by disabling non-essential services. This action helps in reducing the potential vectors of attack, thus bolstering the host''s security posture. The audit runs esxcli system wbem get and requires "Enabled: false". Document an exception when CIM is required. Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.5 Host must deactivate CIM
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system wbem get 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk -F': *' 'tolower($1) ~ /^ *enabled$/ {print $2; exit}' | tr 'A-Z' 'a-z' | sed 's/ *$//')
+    if [ "$v" = false ]; then echo compliant; else echo "WBEM Enabled: ${v:-not reported}"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system wbem set --enable false
+  guidance: "Prerequisite Confirm monitoring/storage integrations do not require CIM/WBEM. If not required: 1. Disable WBEM/CIM using: esxcli system wbem set --enable false"

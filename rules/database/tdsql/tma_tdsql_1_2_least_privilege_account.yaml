@@ -1,0 +1,17 @@
+id: TMA-TDSQL-1.2
+title: Ensure a Dedicated Least-Privilege Account Is Used for TDSQL Processes
+description: Each TDSQL component (OSS, Manager/Scheduler/Keeper, Agent, MySQL) should run under a dedicated, non-root, least-privilege operating system account. The MySQL daemon should not run as root. TDSQL management processes should run under a dedicated account (e.g., tdsql). Counts mysqld, oss_server, scheduler and ZooKeeper processes running as root (FAIL when none of these processes is running).
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- service-account
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.2 Ensure a Dedicated Least-Privilege Account Is Used for TDSQL Processes
+audit:
+  type: command
+  command: out=$(ps -eo user=,comm=,args= 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '$2 ~ /^(mysqld|mysqld_safe|oss_server|scheduler)$/ || ($2 == "java" && /zookeeper/) {n++; if ($1 == "root") r++} END {if (n == 0) exit 1; print r + 0}'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Create a dedicated system account (groupadd -r tdsql; useradd -r -g tdsql -s /sbin/nologin -d /data/tdsql tdsql), chown the TDSQL directories to it and restart each component under that account.

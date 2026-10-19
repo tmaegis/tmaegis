@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.32
+title: Ensure that file systems are mounted with set-id files disabled wherever possible
+description: set-user-ID and set-group-ID files are those containing executables that run under the identity of the file owner rather than the person running the executable. These are often the target of attackers. On the other hand, some applications rely on these types of files to operate as expected. Mounting a file system in NOSETUID mode reduces the attack surface of your zFS file systems.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.32 Ensure that file systems are mounted with set-id files disabled wherever possible
+audit:
+  type: manual
+  command: 'The UNIX shell command named df displays a list of the currently mounted file systems, by mount point (UNIX directory path) and data set name. Using the verbose option, yields additional information, including the mount mode. Issue the following shell command: df -v The presence of the string No SUID indicates the file system is mounted with the NOSETUID option. If it is mounted with the default of SETUID, no option is displayed. Verify that zFS file systems mounted with SETUID have a business justification. Note: Examples of SETUID justification includes ... (full steps: CIS section 9.32)'
+remediation:
+  type: iac_patch
+  command: 'The shell find command can be used to search for occurrences of set-user-ID and set-group-ID files starting at the path name specified. For example, to see if any set- id files exist in the file system mounted on the /usr/lpp/appx directory: find /usr/lpp/appx -type f \( -perm -4000 -o -perm -2000 \) Note: The spaces within the parentheses are significant. For each file system in which you don''t expect set-id files to exist, plan to remount it with the NOSETUID option as application availability allows, and update the BPXPRMxx member of SYS1.PARMLIB to make the change effective at the next IPL.'

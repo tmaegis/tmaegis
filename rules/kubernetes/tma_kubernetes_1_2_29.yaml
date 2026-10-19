@@ -1,0 +1,16 @@
+id: TMA-KUBERNETES-1.2.29
+title: Ensure that the API Server only makes use of Strong Cryptographic Ciphers
+description: Ensure that the API server is configured to only use strong cryptographic ciphers. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- api-server
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.2.29 Ensure that the API Server only makes use of Strong Cryptographic Ciphers
+audit:
+  type: manual
+  command: 'Run the following command on the Control Plane node: ps -ef | grep kube-apiserver Verify that `--tls-cipher-suites'' argument returns a value that is in this list TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POL Y1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE _ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_ POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECD HE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM _SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WIT H_CHACHA20_POLY1305_SHA256'
+remediation:
+  type: iac_patch
+  command: Edit the API server pod specification file /etc/kubernetes/manifests/kube-apiserver.yaml on the Control Plane node and set the below parameter with this full set of values or the cipher suite that your org is specifically utilizing. --tls-cipher-suites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,T LS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TL S_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE _RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256

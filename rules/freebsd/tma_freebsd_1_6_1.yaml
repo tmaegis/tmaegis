@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-1.6.1
+title: Ensure message of the day is configured properly
+description: 'The contents of the /etc/motd file are displayed to users after login and function as a message of the day for authenticated users. Unix-based systems have typically displayed information about the OS release and patch level upon logging in to the system. This information can be useful to developers who are developing software for a particular OS platform. Audit: /etc/motd must not disclose the OS version from /etc/os-release; review the wording against site policy.'
+target: freebsd
+level: 1
+severity: low
+tags:
+- freebsd
+- hardening
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.6.1 Ensure message of the day is configured properly
+audit:
+  type: command
+  command: '[ -f /etc/motd ] || { echo compliant; exit 0; }; v=$(grep "^VERSION=" /etc/os-release 2>/dev/null | cut -d= -f2 | sed -e ''s/"//g''); [ -n "$v" ] || exit 1; grep -Fiq "$v" /etc/motd && echo "/etc/motd discloses the OS version" || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/motd file with the appropriate contents according to your site policy, remove any references to the OS platform. -OR- -IF- the motd is not used, this file can be removed. Run the following command to disable the motd service: # rm -f /etc/motd # service motd stop # service motd disable # cat /etc/mot Add the default template without any version-specific information: # cp /etc/motd.template /etc/motd -OR- Edit the file /etc/motd with content that is appropriate to your site policy.'

@@ -1,0 +1,18 @@
+id: TMA-CHROME-1.8
+title: 'Ensure ''Control SafeSites adult content filtering'' is set to ''Enabled: Filter top level sites (but not embedded iframes) for adult content'''
+description: 'Google Chrome can use the Google Safe Search API to classify URLs as pornographic or not. The recommended state for this setting is: Enabled with a value of Filter top level sites (but not embedded iframes) for adult content (1) Rationale: Allowing search results to present sites that may have malicious content should be prohibited to help ensure users do not accidentally visit sites that are more prone to malicious content including spyware, adware, and viruses. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:SafeSitesFilterBehavior (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 1.8 Ensure ''Control SafeSites adult content filtering'' is set to ''Enabled: Filter top level sites (but not embedded iframes) for adult content'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''SafeSitesFilterBehavior'' -ErrorAction SilentlyContinue).''SafeSitesFilterBehavior''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SafeSitesFilterBehavior' -Value 1 -PropertyType DWord -Force | Out-Null

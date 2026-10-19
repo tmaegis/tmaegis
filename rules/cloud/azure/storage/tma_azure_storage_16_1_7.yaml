@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-16.1.7
+title: Ensure 'Allow storage account key access' for Azure Storage Accounts is 'Disabled'
+description: Every secure request to an Azure Storage account must be authorized. By default, requests can be authorized with either Microsoft Entra credentials or by using the account access key for Shared Key authorization. Microsoft Entra ID provides superior security and ease of use compared to Shared Key and is recommended by Microsoft. To require clients to use Microsoft Entra ID for authorizing requests, you can disallow requests to the storage account that are authorized with Shared Key.
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- crypto
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.1.7 Ensure 'Allow storage account key access' for Azure Storage Accounts is 'Disabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Settings, select Configuration. 3. Confirm Allow storage account key access is set to Disabled. Audit from Azure CLI For each storage account, read the allowSharedKeyAccess property directly: az storage account show \ --name <storage-account> \ --resource-group <resource-group> \ --query allowSharedKeyAccess \ --output tsv A result of false is compliant; true is non-compliant. An empty result is also non- compliant: the property is unset (null) by default, and a null value permits Shared Key authorization - compliant requires allowSharedKeyAccess explicitly set to false. Audit from PowerShell (Get-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account>).AllowSharedKeyAccess False is compliant; True or an empty/unset value is non-compliant. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy
+    definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 8c6a50c6-9ffd...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage accounts. 2. Click on a storage account. 3. Under Settings, click Configuration. 4. Under Allow storage account key access, click the radio button next to Disabled. 5. Click Save. 6. Repeat steps 1-5 for each storage account requiring remediation. Remediate from Azure CLI For each storage account requiring remediation, run the following command to disallow shared key authorization: az storage account update --resource-group <resource-group> --name <storage- account> --allow-shared-key-access false Remediate from PowerShell For each storage account requiring remediation, run the following command to disallow shared key authorization: Set-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account> -AllowSharedKeyAccess $false'

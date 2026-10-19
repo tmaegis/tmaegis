@@ -1,0 +1,25 @@
+id: TMA-GITHUB-1.5.4
+title: Ensure scanners are in place for code vulnerabilities
+description: 'Detect and prevent known open source vulnerabilities in the code. Open source code blocks are used a lot in developed software. This has its own advantages, but it also has risks. Because the code is open for everyone, it means that attackers can publish or add malicious code to these ... Code scanning must be active: CodeQL default setup configured or at least one code scanning analysis uploaded. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.5.4 Ensure scanners are in place for code vulnerabilities
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    d=$(gh api "repos/$R/code-scanning/default-setup" --jq .state 2>/dev/null) || d=none
+    n=$(gh api "repos/$R/code-scanning/analyses?per_page=1" --jq length 2>/dev/null) || n=0
+    { [ "$d" = configured ] || [ "${n:-0}" -gt 0 ]; } && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable code scanning (CodeQL default/advanced setup or a third-party SAST tool uploading SARIF).

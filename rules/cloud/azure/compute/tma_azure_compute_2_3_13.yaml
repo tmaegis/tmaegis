@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.3.13
+title: Ensure public network access is disabled
+description: Disable public network access to prevent exposure to the internet and reduce the risk of unauthorized access. Use private endpoints to securely manage access within trusted networks. Disabling public network access improves security by ensuring that the service is not directly exposed to the public Internet. This has the added benefit of providing more granular control over security settings and configurations for those additional layers of separation.
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- compute
+- network
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.13 Ensure public network access is disabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Networking. 4. Under Inbound traffic configuration, ensure that Public network access is set to Disabled. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the public network access setting: az functionapp show --resource-group <resource-group-name> --name <function- app-name> --query "publicNetworkAccess" Ensure that the command returns "Disabled". Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 969ac98b-88a8-449f-883c-2e9adb123127 - Name: ''Function
+    apps should disable public network access'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Networking. 4. Under Inbound traffic configuration, click the text next to Public network access. 5. Select the radio button next to Disabled. 6. Click Save. 7. Check the box to confirm the change. 8. Click Continue. 9. Repeat steps 1-8 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to disable public network access: az resource update --resource-group <resource-group-name> --name <function- app-name> --resource-type "Microsoft.Web/sites" --set properties.publicNetworkAccess=Disabled'

@@ -1,0 +1,16 @@
+id: TMA-OKE-2.1.1
+title: Use OCI IAM or OIDC tokens instead of user client certificates
+description: OKE authenticates cluster users through OCI IAM by default, and enhanced clusters can also be configured to use an external OIDC identity provider for user authentication. User access should rely on OCI IAM or OIDC tokens rather than Kubernetes client certificates, because these mechanisms align user access to managed identity, policy, and RBAC controls. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- control-plane
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 2.1.1 Use OCI IAM or OIDC tokens instead of user client certificates
+audit:
+  type: manual
+  command: 'Review user access to the cluster and ensure that users are not making use of Kubernetes client certificate authentication. Review approved user kubeconfig files and confirm that user entries use OCI IAM generated tokens or OIDC tokens instead of client certificate fields. Run the following command to verify the authentication method configured for users in the current kubeconfig file: kubectl config view --raw -o json | jq -r '' .users[] | [ .name, ( if .user.exec then "exec_token" elif .user["auth-provider"]?.name == "oidc" then "oidc_token" elif .user.token then "static_token" ...'
+remediation:
+  type: iac_patch
+  command: Replace user kubeconfig entries that use client certificates with OCI IAM generated tokens or OIDC token based authentication. For OKE clusters, user authentication should align to the supported OKE access model, where OCI IAM is used by default and OIDC can be configured for external identity provider based authentication. This allows user access to be managed through identity, policy, and Kubernetes RBAC controls rather than long lived certificate material stored in kubeconfig files. • For OCI IAM based access, regenerate the user kubeconfig file from OKE using kubeconfig token version 2.0.0 so the user entry uses the OCI CLI exec plugin to generate authentication tokens. • For OIDC based access, configure the OKE cluster for OIDC authentication and update the user kubeconfig entry to use the approved OIDC identity provider token flow.

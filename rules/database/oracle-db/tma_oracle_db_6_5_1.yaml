@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-6.5.1
+title: Ensure 'DBA_COL_PRIVS' Is Revoked from Unauthorized 'GRANTEE'
+description: The DBA_COL_PRIVS view provides DBAs a view to manage all column level privileges granted to users and roles.
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.5.1 Ensure 'DBA_COL_PRIVS' Is Revoked from Unauthorized 'GRANTEE'
+audit:
+  type: manual
+  command: SELECT CON_ID_TO_CON_NAME(C.CON_ID) AS CONTAINERNAME,O.ORACLE_MAINTAINED, C.* FROM CDB_COL_PRIVS C JOIN CDB_OBJECTS O ON C.CON_ID = O.CON_ID AND C.OWNER=O.OWNER AND O.OBJECT_NAME=C.TABLE_NAME AND O.ORACLE_MAINTAINED='N'; If any unauthorized users are granted DBA_COL_PRIVS, this is a fail.
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, execute the following SQL statement. REVOKE UPDATE ON <TABLE> FROM <GRANTEE>;

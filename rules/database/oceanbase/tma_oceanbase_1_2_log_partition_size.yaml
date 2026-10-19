@@ -1,0 +1,16 @@
+id: TMA-OCEANBASE-1.2
+title: Ensure the Partition Size for Log Files is Large Enough
+description: The database files and directories should place to a non-system partition and the partition size should be large enough. For OceanBase stable running and accommondating log growth, the partition size for OceanBase log files must have at least 3-4 times the available memory .
+target: oceanbase
+level: 1
+severity: medium
+tags:
+- oceanbase
+- storage
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 1.2 Ensure the Partition Size for Log Files is Large Enough
+audit:
+  type: manual
+  command: Run SELECT svr_ip, name, value FROM oceanbase.GV$OB_PARAMETERS WHERE name IN ('data_dir','memory_limit','memory_limit_percentage'); Derive available memory (memory_limit, or memory_limit_percentage x MemTotal from /proc/meminfo). For each log directory (e.g. /data/log1, df -h <dir>) the partition must be at least 3-4 times the observer available memory; a smaller log partition is a finding.
+remediation:
+  type: iac_patch
+  command: 'Assume the disk used for the log partition is large enough. Then perform the following steps to remediate this setting for the log directory: 1. Backup the database. 2. Stop observer using a command like: pkill -9 observer. 3. Dismount the log partition usming command like: umount /data/log1. 4. Resize the log partition and the filesystem. 5. Mount the log partition to the original directory: mount <partition> /data/log1. 6. Restart observer. 7.'

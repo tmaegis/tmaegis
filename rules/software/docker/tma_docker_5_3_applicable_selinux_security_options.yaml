@@ -1,0 +1,20 @@
+id: TMA-DOCKER-5.3
+title: Ensure that, if applicable, SELinux security options are set
+description: SELinux labels confine container processes on SELinux hosts. Applies only where SELinux is enabled (requires /sys/fs/selinux/enforce); flags containers without a ProcessLabel (daemon not started with --selinux-enabled, or label=disable). The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- runtime
+- selinux
+reference: CIS Docker Benchmark v1.9.0 - 5.3 Ensure that, if applicable, SELinux security options are set
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{.ProcessLabel}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk 'NF<2 {print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /sys/fs/selinux/enforce
+remediation:
+  type: iac_patch
+  command: 'Start dockerd with --selinux-enabled ("selinux-enabled": true in daemon.json) and run containers with appropriate --security-opt label=... options instead of label=disable.'

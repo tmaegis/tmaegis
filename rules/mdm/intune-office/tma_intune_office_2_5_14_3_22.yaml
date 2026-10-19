@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.3.22
+title: 'Ensure ''Minimum encryption settings'' is set to ''Enabled: 256'''
+description: 'This policy setting allows the configuration of the minimum cryptographic key length for encrypting e-mail messages. The recommended state for this setting is: Enabled: 256. Audit: reads the registry value(s) minenckey that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: high
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.3.22 Ensure ''Minimum encryption settings'' is set to ''Enabled: 256'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''minenckey'' -ErrorAction SilentlyContinue).''minenckey''; if (-not ($null -ne $v -and @(256) -contains [int64]$v)) { $_.PSChildName + '':minenckey='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: 256: Microsoft Outlook 2016\Security\Security Form Settings\Outlook Security Mode > Minimum encryption settings Important: For this setting to apply, the Outlook Security Mode setting must be enabled in Microsoft Outlook 2016\Security\Security Form Settings with Use Outlook Security Group Policy selected, as set in this benchmark.'

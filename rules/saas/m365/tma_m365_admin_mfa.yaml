@@ -1,0 +1,17 @@
+id: TMA-M365-ADMIN-MFA
+title: Ensure multifactor authentication is required for administrative roles
+description: 'Privileged accounts are the highest-value target. Compliant when security defaults are on or an enabled Conditional Access policy targets directory roles (or all users) with the mfa grant control. Requires an already-connected Microsoft Graph session: Install-Module Microsoft.Graph; Connect-MgGraph -Scopes Policy.Read.All,Directory.Read.All,RoleManagement.Read.Directory (read-only scopes). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: critical
+tags:
+- m365
+- identity
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Microsoft Entra ID / Conditional Access - MFA for administrative roles (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-MgContext -ErrorAction SilentlyContinue) -or -not (Get-MgContext)) { throw ''Not connected: run Connect-MgGraph first'' }; $sd = (Get-MgPolicyIdentitySecurityDefaultEnforcementPolicy -ErrorAction Stop).IsEnabled; $ca = @(Get-MgIdentityConditionalAccessPolicy -All -ErrorAction Stop | Where-Object { $_.State -eq ''enabled'' }); $mfa = @($ca | Where-Object { ($_.GrantControls.BuiltInControls -contains ''mfa'' -or $_.GrantControls.AuthenticationStrength.Id) -and (@($_.Conditions.Users.IncludeRoles).Count -gt 0 -or $_.Conditions.Users.IncludeUsers -contains ''All'') }); if ($sd -eq $true -or $mfa.Count -gt 0) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create a Conditional Access policy: Users = Directory roles (at least Global, Privileged Role, Security, Exchange, SharePoint, User, Billing, Conditional Access, Helpdesk administrators), Target resources = All cloud apps, Grant = Require multifactor authentication (or a phishing-resistant authentication strength), State = On.'

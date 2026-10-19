@@ -1,0 +1,34 @@
+id: TMA-MACOS14-2.12.2
+title: Ensure Guest Access to Shared Folders Is Disabled
+description: Allowing guests to connect to shared folders enables users to access selected shared folders and their contents from different computers on a network. Not allowing guests to connect to shared folders mitigates the risk of an untrusted user doing basic reconnaissance and possibly using privilege escalation attacks to take control of the system.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: low
+tags:
+- access-control
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.12.2 Ensure Guest Access to Shared Folders Is Disabled
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to ensure that guests cannot connect to shared folders: 1. Open System Settings 2. Select Users & Groups 3. Select the i next to the Guest User 4. Verify that Allow guests to connect to shared folders is disabled Terminal Method: Run the following commands to verify that shared folders are not accessible to guest users: % /usr/bin/sudo /usr/sbin/sysadminctl -smbGuestAccess status The output should include SMB guest access disabled.'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/sbin/sysadminctl -smbGuestAccess off 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to no longer allow guest user access to shared folders: 1. Open System Settings 2. Select Users & Groups 3. Select the i next to the Guest User 4. Set Allow guests to connect to shared folders to disabled Terminal Method: Run the following commands to ensure that shared folders are not accessible to guest users: % /usr/bin/sudo /usr/sbin/sysadminctl -smbGuestAccess off"

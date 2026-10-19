@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.4.16
+title: Ensure cross-origin resource sharing does not allow all origins
+description: Cross-origin resource sharing (CORS) is a security feature that controls how applications interact with resources hosted on different domains. This recommendation applies to function apps using the Consumption, Premium, or Dedicated (App Service) plans, which support deployment slots. Restrict CORS to only trusted origins to help enforce proper access control and reduce exposure to malicious cross-origin requests.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.4.16 Ensure cross-origin resource sharing does not allow all origins
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Service or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of deployment slot. 5. Under API, click CORS. 6. Ensure Allowed Origins does not include *. 7. Repeat steps 1-6 for each function app and deployment slot. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to list deployment slots: az functionapp deployment slot list --resource-group <resource-group-name> -- name <function-app-name> For each deployment slot, run the following command to get the CORS allowed origins setting: az resource show --name web --resource-group <resource-group-name> -- namespace Microsoft.Web --resource-type config --parent sites/<function-app- name>/slots/<deployment-slot-name> --query properties.cors.allowedOrigins Ensure that the response does not include *. Audit from Azure Policy If referencing a digital
+    copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Service or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of deployment slot. 5. Under API, click CORS. 6. Under Allowed Origins, delete the entry that equals *. 7. Specify the origins that should be allowed to make cross-origin calls. 8. Click Save. 9. Repeat steps 1-8 for each function app and deployment slot requiring remediation. Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to update the allowed origins array to contain only the origins that should be allowed: az resource update --name web --resource-group <resource-group-name> -- namespace Microsoft.Web --resource-type config --parent sites/<function-app- name>/slots/<deployment-slot-name> --set properties.cors.allowedOrigins="[''<allowed-origin>'']"'

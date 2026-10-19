@@ -1,0 +1,19 @@
+id: TMA-MCP-7.2.1
+title: Ensure alerts are generated on audience and issuer validation failures
+description: A structured audit event is emitted whenever a token audience or an authorization- server issuer fails validation, and each event carries a recognized event identifier and a standardized error code. A SIEM rule alerts the security operations team on those events. Two kinds of failure are covered. In its resource-server role, an MCP server validates that an access token was issued for it as the intended audience and returns HTTP 401 when it is not. As an OAuth client, an MCP client validates the issuer (iss) on an authorization response to catch a response returned by the wrong authorization server. Audience and issuer validation failures are signs of a stolen or misdirected token, or of a response coming back from the wrong authorization server, which is a bigger risk in the single-client, many-server pattern MCP encourages. An alert is only reliable if each failure is a structured ev...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 7.2.1 Ensure alerts are generated on audience and issuer validation failures
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_7_2_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 7.2.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure the resource-server audience validation and the client issuer validation to emit a structured audit event on every failure, each carrying a recognized event identifier and an error code rather than a free-text log line. Add a SIEM rule that alerts on those event identifiers and routes to the security operations team. As optional defense in depth, a deployment may wire authorization-server introspection and revocation checks into the validation path so revoked tokens also surface, but that is not required to satisfy this Recommendation. The exact event schema and SIEM rule syntax are platform-specific.

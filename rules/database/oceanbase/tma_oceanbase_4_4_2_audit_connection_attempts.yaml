@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-4.4.2
+title: Ensure Audit Filters Capture Connection Attempts
+description: The functions audit_log_filter_set_filter and audit_log_filter_set_user are used to define audit rules, which can audit both successful and failed connection events and write them to the audit log file.
+target: oceanbase
+level: 1
+severity: medium
+tags:
+- oceanbase
+- logging
+- audit
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.4.2 Ensure Audit Filters Capture Connection Attempts
+audit:
+  type: manual
+  command: Run SHOW PARAMETERS LIKE 'audit_trail'; (must not be None). Then review SELECT * FROM oceanbase.__all_tenant_security_audit_record ORDER BY gmt_create DESC LIMIT 20; and/or SELECT * FROM oceanbase.__all_tenant_user_failed_login_stat LIMIT 20; Connection and authentication attempts, including failures, must appear in the audit records; otherwise this is a finding.
+remediation:
+  type: iac_patch
+  command: 'For OceanBase 4.2.4 and later: SELECT AUDIT_LOG_FILTER_SET_FILTER( ''conn_attempt_filter'', ''{ "filter": { "log": true, "class": [ { "name": "connection" } ] } }'' ); SELECT AUDIT_LOG_FILTER_SET_USER(''test_user'', ''conn_attempt_filter''); For versions earlier than 4.2.4: The above functions are not supported. Use the auditing features available in that version to capture successful and failed connection attempts.'

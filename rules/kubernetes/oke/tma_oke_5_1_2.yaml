@@ -1,0 +1,17 @@
+id: TMA-OKE-5.1.2
+title: Restrict OKE and Kubernetes API access to required users
+description: Restrict access to OKE and Kubernetes API operations to only authorized OCI IAM users, groups, and Kubernetes service accounts. Access should be limited based on the user’s required administrative, operational, or workload function. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- managed-services
+- rbac
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.1.2 Restrict OKE and Kubernetes API access to required users
+audit:
+  type: manual
+  command: For most operations on Kubernetes clusters created and managed by Container Engine for Kubernetes, Oracle Cloud Infrastructure Identity and Access Management (IAM) provides access control. A user's permissions to access clusters comes from the groups to which they belong. The permissions for a group are defined by policies. Policies define what actions members of a group can perform, and in which compartments. Users can then access clusters and perform operations based on the policies set for the groups they are members of.
+remediation:
+  type: iac_patch
+  command: By default, users are not assigned any Kubernetes RBAC roles (or clusterroles) by default. So before attempting to create a new role (or clusterrole), you must be assigned an appropriately privileged role (or clusterrole). A number of such roles and clusterroles are always created by default, including the cluster-admin clusterrole (for a full list, see Default Roles and Role Bindings in the Kubernetes documentation). The cluster-admin clusterrole essentially confers super-user privileges. A user granted the cluster-admin clusterrole can perform any operation across all namespaces in a given cluster. Remove or reduce OCI IAM policies that grant unnecessary OKE permissions, and use Kubernetes RBAC roles and rolebindings to grant only the required Kubernetes API permissions inside the cluster. Avoid granting cluster-admin unless full cluster administration is required.

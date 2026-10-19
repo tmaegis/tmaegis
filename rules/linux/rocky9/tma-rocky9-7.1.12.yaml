@@ -1,0 +1,20 @@
+id: TMA-ROCKY9-7.1.12
+title: Ensure no files or directories without an owner and a group exist
+description: Administrators may delete users or groups from the system and neglect to remove all files and/or directories owned by those users or groups.
+target: linux
+os_family:
+- rocky-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 9 Benchmark v3.0.0 - 7.1.12
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   a_path=(-path \"*/containers/storage/*\" -o -path \"*/containerd/*\" -o -path \"*/kubelet/*\" -o -path \"*/docker/*\" -o -path \"/sys/*\" -o -path \"/snap/*\" -o - path \"/boot/efi/*\")\n   while IFS= read -r l_mount; do\n      find \"$l_mount\" -mount -xdev \\( \"${a_path[@]}\" \\) -prune -o \\\n         \\( -type f -o -type d \\) \\( -nouser -o -nogroup \\) -printf '\"'\"'%u %g %p\\n'\"'\"' 2>/dev/null\n   done < <(findmnt -Dkerno fstype,target | awk '\"'\"'($1 !~ /^[[:space:]]*(nfs|proc|cifs|smb|vfat|iso9660|efivarfs|selinuxfs|ncpfs)/ && $2 !~ /^(\\/run|\\/tmp|\\/var\\/tmp)(\\/|$)/){print $2}'\"'\"')\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove or set ownership and group ownership of these files and/or directories to an active user on the system as appropriate.

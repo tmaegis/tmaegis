@@ -1,0 +1,16 @@
+id: TMA-TDSQL-2.11
+title: Ensure Adequate Disk Space Monitoring Is Configured
+description: 'Disk space monitoring with alerting should be configured for all TDSQL partitions (data, log, backup, temporary directories). TDSQL includes a built-in log cleanup mechanism: OSS logs are retained for up to 30 days / 100 GB (cleaned every 12 hours), and Manager logs up to 20 GB (cleaned every 3 minutes).'
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- monitoring
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 2.11 Ensure Adequate Disk Space Monitoring Is Configured
+audit:
+  type: manual
+  command: '# Check current disk usage df -h /data/tdsql/ /tdsqlbackup/ /data/home/zkback/ 2>/dev/null # Check the TDSQL log cleanup configuration grep -A3 ''log_clean'' /path/to/tdsql/conf/scheduler.xml grep -A3 ''clear_log'' /path/to/tdsql/conf/scheduler.xml'
+remediation:
+  type: iac_patch
+  command: '1. Configure disk alerts at 80% and 90% thresholds. 2. Verify that TDSQL log cleanup is enabled: <log_clean enable="1" max_save_days="30" max_size="100000000000" hz="12"/> <clear_log enable="on" resv_capacity="20" distance_time="3" /> 3. Deploy external monitoring (Prometheus, Zabbix) covering all TDSQL partitions.'

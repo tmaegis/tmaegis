@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.6
+title: Ensure password expiration is configured
+description: 'The maximum password age attribute (maxage) determines the maximum number of weeks that you can use a password before you must change it. The window of opportunity for an attacker to leverage compromised credentials or successfully compromise credentials via an online brute force attack is limited by the age of the password. Audit: reads `lssec -f /etc/security/user -s default -a maxage`.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.6 Ensure password expiration is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a maxage 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*maxage=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 1 ] && [ "$v" -le 52 ]; then echo compliant; else echo "maxage=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a maxage=52

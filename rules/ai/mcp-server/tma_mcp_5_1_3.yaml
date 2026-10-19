@@ -1,0 +1,19 @@
+id: TMA-MCP-5.1.3
+title: Ensure prompt templates declare and validate their arguments
+description: The server publishes MCP prompts with an explicit arguments declaration for every parameter. Each argument names the parameter with a non-empty name, and where it marks whether the argument is required it uses a boolean required value, so the client knows what to supply. The base protocol makes the arguments list optional, so requiring an explicit declaration for parameterized prompts is a stricter posture. The server validates provided argument values before processing. This Recommendation requires it to reject an invalid prompt name or a missing required argument with a JSON-RPC -32602 error, which the specification recommends and this Recommendation elevates to a deterministic requirement for auditing. By design, prompts are user-controlled and explicitly selected, so a deployment runs prompt logic only in response to an explicit, identifiable prompts/get call and not as a side eff...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.1.3 Ensure prompt templates declare and validate their arguments
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_5_1_3"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 5.1.3"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Declare an arguments entry for every parameter of each prompt in the server configuration, naming the parameter with a non-empty name and, where the argument is required, marking it with a boolean required value. Configure the server to validate provided argument values and, as the CIS-chosen deterministic behavior, reject an invalid prompt name or a missing required argument with -32602. Run prompt logic only in response to an explicit prompts/get call, and disable any path that runs a prompt as a side effect of discovery or another operation. Configure the audit log to record the prompt name on every invocation, and its out-of-band version where the deployment versions prompts. This is server configuration, and there is no portable command.

@@ -1,0 +1,25 @@
+id: TMA-PALOALTO-2.1
+title: Ensure that IP addresses are mapped to usernames
+description: 'Configure appropriate settings to map IP addresses to usernames. Mapping userids to IP addresses is what permits the firewall to create rules based on userids and groups rather than IP addresses and subnets, as well as log events by userids rather than IP addresses or DNS names. The specifics of how to achieve IP-to-username mapping is highly dependent on the environment. It can be enabled by integrating the firewall with a domain controller, Exchange server, captive portal, Terminal Server, User-ID Agent, XML API, or syslog data from a variety of devices. PASS requires at least one zone with enable-user-identification yes (the PDF also checks that trusted-zone traffic logs show Source User). Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 2
+severity: medium
+tags:
+- paloalto
+- authentication
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 2.1 Ensure that IP addresses are mapped to usernames
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?zone (?:"[^"\n]*"|\S+) enable-user-identification yes[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set zone <trusted-zone> enable-user-identification yes
+    commit
+    # CIS guidance:
+    To Set User-ID Agents:
+    Navigate to Device > User Identification > User-ID Agents Set the Name, IP Address and Port of the User-ID Agent' Enable User Identification for each monitored zone that will have user accounts:
+    Navigate to Network > Zone, for each relevant zone enable User Identification To Set Terminal Services Agents:
+    Navigate to Device > Terminal Services Agents Set the Name, IP Address and Port of the Terminal Services Agent Enable User Identification for each monitored zone that will have Terminal Servers:
+    Navigate to Network > Zone, enable User Identification

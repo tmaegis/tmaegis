@@ -1,0 +1,47 @@
+id: TMA-MACOS15-3.4
+title: Ensure Security Auditing Logs Are Retained for 30 Days
+description: 'The macOS audit capability contains important information to investigate security or operational issues. This resource is only completely useful if it is retained long enough to allow technical staff to find the root cause of anomalies in the records. Retention can be set to respect both size and longevity. Audit: Requires a day-based expire-after value of at least 30d.'
+target: macos
+level: 1
+severity: medium
+tags:
+- macos
+- logging-auditing
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 3.4 Ensure Security Auditing Logs Are Retained for 30 Days
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    l=$(/usr/bin/grep -e "^expire-after" /etc/security/audit_control 2>/dev/null) || exit 1
+    d=$(printf '%s' "$l" | /usr/bin/grep -oE '[0-9]+d' | /usr/bin/head -1 | /usr/bin/tr -d d)
+    if [ -n "$d" ] && [ "$d" -ge 30 ]; then echo compliant; else echo "$l"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    f=/etc/security/audit_control
+    [ -f "$f" ] || exit 1
+    d=$(/usr/bin/grep -e '^expire-after' "$f" | /usr/bin/grep -oE '[0-9]+d' | /usr/bin/head -1 | /usr/bin/tr -d d)
+    if [ -z "$d" ] || [ "$d" -lt 30 ]; then
+      tma_bak "$f"
+      if /usr/bin/grep -q '^expire-after' "$f"; then /usr/bin/sed -i '' 's|^expire-after.*|expire-after:60d OR 5G|' "$f"; else printf 'expire-after:60d OR 5G\n' >> "$f"; fi
+      /usr/sbin/audit -s 2>/dev/null
+    fi
+    true
+  guidance: "Terminal: Edit the /etc/security/audit_control file so that expire-after: is at least 30d"

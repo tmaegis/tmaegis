@@ -1,0 +1,25 @@
+id: TMA-ALIBABA-5.4
+title: Ensure that 'Secure transfer required' is set to 'Enabled'
+description: Enable the data encryption in transit. The secure transfer enhances the security of OSS bucket by only allowing requests to the storage account by a secure connection. For example, when calling REST APIs to access storage accounts, the connection must use ... Every bucket policy must contain a Deny statement conditioned on acs:SecureTransport (requests over plain HTTP are rejected); a bucket without a policy fails. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- oss
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 5.4 Ensure that 'Secure transfer required' is set to 'Enabled'
+audit:
+  type: command
+  command: |-
+    out=$(aliyun oss ls -s 2>/dev/null) || exit 1
+    bs=$(printf '%s\n' "$out" | grep -o 'oss://[^[:space:]]*' | sed 's#^oss://##; s#/$##')
+    bad=0
+    for b in $bs; do
+      pl=$(aliyun oss bucket-policy --method get "oss://$b" 2>&1) || { printf '%s\n' "$pl" | grep -q 'NoSuchBucketPolicy' || exit 1; pl=""; }
+      if printf '%s\n' "$pl" | grep -q 'acs:SecureTransport' && printf '%s\n' "$pl" | grep -q '"Deny"'; then :; else echo "HTTP not denied: $b"; bad=1; fi
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add a bucket policy statement {"Effect":"Deny","Action":["oss:*"],"Principal":["*"],"Resource":["acs:oss:*:*:<bucket>","acs:oss:*:*:<bucket>/*"],"Condition":{"Bool":{"acs:SecureTransport":["false"]}}} (aliyun oss bucket-policy --method put oss://<bucket> policy.json).

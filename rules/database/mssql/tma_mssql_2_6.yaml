@@ -1,0 +1,18 @@
+id: TMA-MSSQL-2.6
+title: Ensure 'Remote Access' Server Configuration Option is set to '0'
+description: 'The remote access option controls the execution of local stored procedures on remote servers or remote stored procedures on local server. Both value and value_in_use must equal 0. The change takes effect after the Database Engine is restarted. Default: By default, this option is enabled (1). Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- surface-area
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 2.6 Ensure 'Remote Access' Server Configuration Option is set to '0'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN CAST(value AS int) = 0 AND CAST(value_in_use AS int) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM sys.configurations WHERE name = 'remote access';"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'remote access', 0; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"

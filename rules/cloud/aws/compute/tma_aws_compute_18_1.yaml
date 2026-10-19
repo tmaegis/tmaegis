@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-18.1
+title: Ensure ECR repositories have image scanning enabled
+description: 'Amazon ECR supports image scanning to identify known software vulnerabilities (CVEs) in container images. Two scan types are available: Basic scanning (Clair-based, free) provides OS package vulnerability detection, while Enhanced scanning (powered by Amazon Inspector) provides continuous monitoring of both OS packages and programming language libraries. Scan-on-push ensures every image is assessed before deployment. Container images may contain base OS layers or application dependencies with known critical vulnerabilities. Without scanning, vulnerable images are deployed to production where they can be exploited by attackers. Image scanning provides visibility into known vulnerabilities before deployment and enables enforcement of vulnerability thresholds in CI/CD pipelines.'
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 18.1 Ensure ECR repositories have image scanning enabled
+audit:
+  type: manual
+  command: 'The ECR registry passes the audit procedure if either Basic or Enhanced scanning is enabled and covers all repositories. Enhanced (Amazon Inspector) is the stronger option as it scans both OS packages and programming language libraries; Basic (Clair- based) scans OS packages only. 1. Check the registry-level scanning configuration: aws ecr get-registry-scanning-configuration --region $AWS_REGION \ --query ''scanningConfiguration.{ScanType:scanType,Rules:rules}'' --output json - If ScanType is ENHANCED with a rule covering all repositories ("filter":"*"), the registry Passes — skip the remaining steps. 2. If ScanType is BASIC, list all repositories in the region: aws ecr describe-repositories --region $AWS_REGION \ --query ''repositories[].repositoryName'' --output table 3. For each repository returned above, check its scan-on-push setting: aws ecr describe-repositories --repository-names <repo-name> --region $AWS_REGION \ --query ''repositories[].imageScanningConfiguration.scanOnPush''
+    --output text - Under BASIC scan mode, the repository Fails if the returned value is False.'
+remediation:
+  type: iac_patch
+  command: 'Before remediating, teams should determine the appropriate scanning level for their workload: - Basic scanning — Free, Clair-based, scans OS packages only. Suitable for teams with cost sensitivity or where container images are thin OS layers only. - Enhanced scanning — Amazon Inspector-powered, scans OS packages plus programming language libraries, supports continuous rescanning. Suitable for teams deploying application code in containers where library CVEs are a concern. Incurs Amazon Inspector per-image assessment charges. Apply the remediation for whichever level you select. Option A — Enable Enhanced scanning (recommended for application workloads): aws ecr put-registry-scanning-configuration --region $AWS_REGION \ --scan-type ENHANCED \ --rules ''[{"scanFrequency":"CONTINUOUS_SCAN","repositoryFilters":[{"filter":"*","filt erType":"WILDCARD"}]}]'' - The put-registry-scanning-configuration call auto-enables Amazon Inspector for ECR. Valid scan frequencies under Enhanced scanning
+    are SCAN_ON_PUSH (scan only when images are pushed) or CONTINUOUS_SCAN (push + ongoing rescans as new CVEs are disclosed — recommended). Option B — Enable Basic scanning per repository: For each reposit...'

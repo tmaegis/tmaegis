@@ -1,0 +1,18 @@
+id: TMA-MACOS-6.3.5
+title: Audit Hide IP Address in Safari Setting
+description: Public (Routable) IP addresses can be used to track people to their current location, including home and business addresses. While a valid IP address is necessary to load the site, the valid address does not need to be provided to known trackers and should be hidden.
+target: macos
+level: 2
+severity: low
+tags:
+- macos
+- applications
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 6.3.5 Audit Hide IP Address in Safari Setting
+os_family:
+- macos-26
+audit:
+  type: manual
+  command: 'GUI: Safari > Safari from the menu bar > Settings > Privacy > Verify that Hide IP address from trackers is set to your organization''s requirement. Terminal: sudo -u <username> /usr/bin/defaults read /Users/<username>/Library/Containers/com.apple.Safari/Data/Library/Preference s/com.apple.Safari WBSPrivacyProxyAvailabilityTraffic ; sudo -u firstuser /usr/bin/defaults read /Users/firstuser/Library/Containers/com.apple.Safari/Data/Library/Preferences /com.apple.Safari WBSPrivacyProxyAvailabilityTraffic The output will be either 33422560 if hide IP address from trackers is ... (see benchmark)'
+remediation:
+  type: iac_patch
+  command: 'Terminal: sudo -u <username> /usr/bin/defaults write /Users/<username>/Library/Containers/com.apple.Safari/Data/Library/Preference s/com.apple.Safari WBSPrivacyProxyAvailabilityTraffic -int <130272/130276> 33422560 will set hide IP address from trackers to disabled. 33422564 will enable from Trackers Only, and 33422572 will enabled from Trackers and Websites. ; sudo -u firstuser /usr/bin/defaults write /Users/firstuser/Library/Containers/com.apple.Safari/Data/Library/Preferences /com.apple.Safari WBSPrivacyProxyAvailabilityTraffic -int 33422560 ; sudo -u seconduser /usr/bin/defaults write /Users/seconduser/Library/Containers/com.apple.Safari/Data/Library/Preference s/com.apple.Safari WBSPrivacyProxyAvailabilityTraffic -int 33422564. GUI: Safari > Safari from the menu bar > Settings > Privacy > Set Hide IP address from trackers to your organization''s requirements.'

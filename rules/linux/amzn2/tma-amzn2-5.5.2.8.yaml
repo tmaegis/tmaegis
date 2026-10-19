@@ -1,0 +1,44 @@
+id: TMA-AMZN2-5.5.2.8
+title: Ensure accounts without a valid login shell are locked
+description: There are a number of accounts provided with most distributions that are used to manage applications. Additionally, a administrator may add special accounts that are not intended for interactive use.
+target: linux
+os_family:
+- amzn-2
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Amazon Linux 2 Benchmark v4.0.0 - 5.5.2.8
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_valid_shells=\"^($(awk -F\\/ '\"'\"'($NF != \"nologin\" && $NF != \"false\") {print}'\"'\"' /etc/shells | sed -rn '\"'\"'/^\\//{s,/,\\\\\\\\/,g;p}'\"'\"' | paste -s -d '\"'\"'|'\"'\"' - ))$\"\n   while IFS= read -r l_user; do\n      passwd -S \"$l_user\" | awk '\"'\"'$2 !~ /^L/ {print \"Account: \\\"\" $1 \"\\\" does not have a valid login shell and is not locked\"}'\"'\"'\n   done < <(awk -v pat=\"$l_valid_shells\" -F: '\"'\"'($1 != \"root\" && $(NF) !~ pat) {print $1}'\"'\"' /etc/passwd)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    vs=$(awk -F/ '/^\// && $NF != "nologin"' /etc/shells)
+    is_valid() { printf '%s\n' "$vs" | grep -qxF -- "$1"; }
+    # root is never touched; locking only blocks password logins of accounts that cannot log in anyway
+    while IFS=: read -r u p uid gid c h sh; do
+      [ "$u" = root ] && continue
+      case "$u" in +*|-*) continue;; esac
+      is_valid "$sh" && continue
+      passwd -S "$u" 2>/dev/null | awk '$2 !~ /^L/ {exit 1}' || usermod -L "$u"
+    done < /etc/passwd
+    true
+  guidance: "Run the following command to lock any non-root accounts without a valid login shell returned by the audit: # usermod -L <user> Example script:: #!/usr/bin/env bash { l_valid_shells=\"^($(awk -F\\/ '($NF != \"nologin\" && $NF != \"false\") {print}' /etc/shells | sed -rn '/^\\//{s,/,\\\\\\\\/,g;p}' | paste -s -d '|' - ))$\" while IFS= read -r l_user; do passwd -S \"$l_user\" | awk '$2 !~ /^L/ {system (\"usermod -L \" $1)}' done < <(awk -v pat=\"$l_valid_shells\" -F: '($1 != \"root\" && $(NF) !~ pat) {print $1}' /etc/passwd) }"

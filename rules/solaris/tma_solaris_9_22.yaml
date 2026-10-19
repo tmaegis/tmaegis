@@ -1,0 +1,16 @@
+id: TMA-SOLARIS-9.22
+title: Find SUID/SGID System Executables
+description: The owner of a file can set the file's permissions to run with the owner's or group's permissions, even if the user running the program is not the owner or a member of the group. The most common reason for a SUID/SGID program is to enable users to perform functions (such as changing their password), which requires root privileges.
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- permissions
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.22 Find SUID/SGID System Executables
+audit:
+  type: manual
+  command: 'Perform the following to verify that the result is as recommended: # find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f \( - perm -4000 -o -perm -2000 \) -print No output should be returned. Note: The script above does a transversal of all files under the "/" directory, including NFS attached file systems, so running this search command may take quite some time.'
+remediation:
+  type: iac_patch
+  command: 'Correct or justify any items discovered in the Audit step. Determine the existence of any set-UID programs that do not belong on the system, and work with the owner (or system administrator) to determine the best course of action in accordance with site policy. Digital signatures on the Solaris Set-UID binaries can be verified with the elfsign utility, such as this example: # elfsign verify -e /usr/bin/su elfsign: verification of /usr/bin/su passed.'

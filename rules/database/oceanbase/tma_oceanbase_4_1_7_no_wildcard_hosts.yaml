@@ -1,0 +1,18 @@
+id: TMA-OCEANBASE-4.1.7
+title: Ensure No Users Have Wildcard Hostnames
+description: All user accounts in the database should be strictly restricted to connect only from specific hosts or IP addresses explicitly required for their business operations. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. Passes when no account has host '%' (the defaults root@% and ORAAUDITOR@% fail until restricted).
+target: oceanbase
+level: 2
+severity: high
+tags:
+- oceanbase
+- authentication
+- network
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.1.7 Ensure No Users Have Wildcard Hostnames
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT COUNT(*) FROM mysql.user WHERE host = '%'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: RENAME USER '<user>'@'%' TO '<user>'@'<approved host or subnet>'; for every account returned.

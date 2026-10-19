@@ -1,0 +1,20 @@
+id: TMA-KUBERNETES-5.6.4
+title: The default namespace should not be used
+description: Kubernetes provides a default namespace, where objects are placed if no namespace is specified for them. Placing objects in this namespace makes application of RBAC and other controls more difficult. Requires kubectl read access; fails when the default namespace holds objects other than the kubernetes Service, kube-root-ca.crt ConfigMap and default ServiceAccount. The benchmark marks this Manual; this audit automates its kubectl inventory step.
+target: kubernetes
+level: 2
+severity: low
+tags:
+- kubernetes
+- policies
+reference: CIS Kubernetes Benchmark v2.1.0 - 5.6.4 The default namespace should not be used
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods,services,configmaps,secrets,serviceaccounts,deployments,statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings -n default -o name) || exit 1
+    bad=$(printf '%s\n' "$out" | grep -v '^$' | sed 's#^\([a-z]*\)\.[^/]*/#\1/#' | grep -Evx 'service/kubernetes|configmap/kube-root-ca\.crt|serviceaccount/default')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Ensure that namespaces are created to allow for appropriate segregation of Kubernetes resources and that all new resources are created in a specific namespace.

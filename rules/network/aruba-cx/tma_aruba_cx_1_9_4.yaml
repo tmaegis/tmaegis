@@ -1,0 +1,20 @@
+id: TMA-ARUBA-CX-1.9.4
+title: Assign a custom certificate to the https-server
+description: The https-server is enabled by default and is assigned the "local-cert" as its server certificate. The "local-cert" is a self-signed certificate generated internally by the switch at first boot. Self-signed certificates generally aren't trusted by browsers and shouldn't be used in normal operation. It is recommended that customers add their own server certificate to the switch and assign it to the https-server. PASS requires a custom certificate assigned to the https-server application. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- crypto
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.9.4 Assign a custom certificate to the https-server
+audit:
+  type: config_regex
+  pattern: (?m)^crypto pki application https-server certificate \S+
+remediation:
+  type: iac_patch
+  command: |-
+    crypto pki application https-server certificate <CERT-NAME>
+    # CIS guidance:
+    The 'crypto pki application' command can be used to assign a certificate to the https- server:
+    crypto pki application https-server certificate <CERT-NAME>

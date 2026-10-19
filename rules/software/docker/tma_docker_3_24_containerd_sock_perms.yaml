@@ -1,0 +1,19 @@
+id: TMA-DOCKER-3.24
+title: Ensure that the Containerd socket file permissions are set to 660 or more restrictively
+description: The containerd socket /run/containerd/containerd.sock must have mode 660 or more restrictive so that it cannot be modified by non-root users. The audit flags any existing candidate path (/run/containerd/containerd.sock) with permission bits outside 660; not applicable when none exists.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.24 Ensure that the Containerd socket file permissions are set to 660 or more restrictively
+audit:
+  type: command
+  command: for f in /run/containerd/containerd.sock; do [ -e "$f" ] || continue; out=$(find "$f" -maxdepth 0 -perm /7117) || exit 1; [ -z "$out" ] || { echo "$f"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /run/containerd/containerd.sock
+remediation:
+  type: command
+  command: for f in /run/containerd/containerd.sock; do if [ -e "$f" ]; then chmod 660 "$f" || exit 1; fi; done

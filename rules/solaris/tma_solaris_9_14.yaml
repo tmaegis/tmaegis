@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.14
+title: Check That Users Are Assigned Home Directories
+description: 'passwd defines a home directory that each user is placed in upon login. If there is no defined home directory, a user will be placed in / and will not be able to write any files or have local environment variables set. All users must be assigned a home directory in passwd. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.14 Check That Users Are Assigned Home Directories
+audit:
+  type: command
+  command: 'command -v logins >/dev/null 2>&1 || exit 1; out=$( { logins -xo | awk -F: ''($6 == "") { print $1 }'' ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if there exists any users who are in passwd but do not have a home directory, and work with those users to determine the best course of action in accordance with site policy.

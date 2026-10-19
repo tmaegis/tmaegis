@@ -1,0 +1,29 @@
+id: TMA-ARUBA-CX-3.1.1.1
+title: OSPF Passive Interfaces
+description: Enable OSPF Passive Interfaces
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- management
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.1.1.1 OSPF Passive Interfaces
+audit:
+  type: manual
+  command: Where OSPF/OSPFv3 runs, confirm 'passive-interface default' is set under 'router ospf'/'router ospfv3' and that only interfaces with expected neighbours have 'no ip ospf passive' (check 'show ip ospf interface').
+remediation:
+  type: iac_patch
+  command: |-
+    Configure all OSPF enabled interfaces to be passive in OSPF router context OSPF -
+    router ospf <OSPF Process ID>
+    passive-interface default
+    OSPFv3 -
+    router ospfv3 <OSPF Process ID>
+    passive-interface default
+    The passive interface is then removed from each interface where OSPF neighbor relationships are allowed. Since this is an interface-level configuration change, it can be done from the interface context:
+    To disable passive interface from selective interfaces - OSPF -
+    interface <interface ID>
+    no ip ospf passive
+    OSPFv3 -
+    interface <interface ID>
+    no ipv6 ospfv3 passive

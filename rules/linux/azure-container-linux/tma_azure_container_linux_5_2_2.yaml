@@ -1,0 +1,45 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.2.2
+title: Ensure access to SSH private host key files is configured
+description: 'An SSH private key is one of two files used in SSH public key authentication. In this authentication method, the possession of the private key is proof of identity. Only a private key that corresponds to a public key will be able to authenticate successfully. The private keys need to be stored and handled carefully, and no copies of the private key should be distributed. Audit: Passes when every OpenSSH private host key under /etc/ssh is owned by root and is either group root with mode 0600 or more restrictive, or group ssh_keys/_ssh with mode 0640 or more restrictive.'
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- ssh
+- file-permissions
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.2.2 Ensure access to SSH private host key files is configured
+audit:
+  type: command
+  shell: bash
+  command: 'command -v ssh-keygen >/dev/null 2>&1 || exit 1; bad=0; g=$(awk -F: ''$1 ~ /^(ssh_keys|_?ssh)$/ {print $1; exit}'' /etc/group); for f in $(find -L /etc/ssh -xdev -type f 2>/dev/null); do ssh-keygen -lf "$f" >/dev/null 2>&1 || continue; file "$f" | grep -Piq "openssh.*private key" || continue; m=$(stat -Lc %a "$f"); o=$(stat -Lc %U "$f"); gr=$(stat -Lc %G "$f"); [ "$o" = root ] || bad=1; if [ -n "$g" ] && [ "$gr" = "$g" ]; then [ $((8#$m & 8#137)) -eq 0 ] || bad=1; elif [ "$gr" = root ]; then [ $((8#$m & 8#177)) -eq 0 ] || bad=1; else bad=1; fi; done; [ $bad -eq 0 ] && echo compliant || echo noncompliant'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -d /etc/ssh ] || exit 0
+    grp=root; grep -q '^ssh_keys:' /etc/group && grp_keys=ssh_keys || grp_keys=
+    for f in $(find /etc/ssh -xdev -maxdepth 1 -type f -name 'ssh_host_*'); do
+      case "$f" in
+        *.pub) chown root:root "$f"; m=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$m & 8#0644)))" "$f";;
+        *)
+          g=$(stat -Lc %G "$f"); m=$(stat -Lc %a "$f")
+          if [ -n "$grp_keys" ] && [ "$g" = ssh_keys ]; then chown root:ssh_keys "$f"; chmod "$(printf '%o' $((8#$m & 8#0640)))" "$f"
+          else chown root:root "$f"; chmod "$(printf '%o' $((8#$m & 8#0600)))" "$f"; fi;;
+      esac
+    done
+    exit 0
+  guidance: "Run the following script to set mode, ownership, and group on the private SSH host key files: #!/usr/bin/env bash { a_output=(); a_output2=(); l_ssh_group_name=\"$(awk -F: '($1 ~ /^(ssh_keys|_?ssh)$/) {print $1}' /etc/group)\" f_file_access_fix() { while IFS=: read -r l_file_mode l_file_owner l_file_group; do a_out2=() [ \"$l_file_group\" = \"$l_ssh_group_name\" ] && l_pmask=\"0137\" || l_pmask=\"0177\" l_maxperm=\"$( printf '%o' $(( 0777 & ~$l_pmask )) )\" if [ $(( $l_file_mode & $l_pmask )) -gt 0 ]; then a_out2+=(\" Mode: \\\"$l_file_mode\\\" should be mode: \\\"$l_maxperm\\\" or more restrictive\" \\ \" updating to mode: \\:$l_maxperm\\\"\") if [ \"l_file_group\" = \"$l_ssh_group_name\" ]; then chmod u-x,g-wx,o-rwx \"$l_file\" else chmod u-x,go-rwx \"$l_file\" fi fi if [ \"$l_file_owner\" != \"root\" ]; ..."

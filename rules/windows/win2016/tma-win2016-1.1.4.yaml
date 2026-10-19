@@ -1,0 +1,51 @@
+id: TMA-WIN2016-1.1.4
+title: Ensure 'Minimum password length' is set to '14 or more character(s)'
+description: This policy setting determines the least number of characters that make up a password for a user account. There are many different theories about how to determine the best password length for an organization, but perhaps "passphrase" is a better term than "password." In Microsoft Windows 2000 or newer, passphrases can be quite long and can include spaces. Therefore, a phrase such as "I want to drink a $5 milkshake" is a valid passphrase; it is a considerably stronger password than an 8 or 10 character string of random numbers and letters, and yet is easier to remember. Users must be educated a
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- secedit
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 1.1.4
+audit:
+  type: command
+  command: '$f = Join-Path $env:TEMP (''tmaegis-'' + [guid]::NewGuid().ToString() + ''.inf''); secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null; $c = Get-Content $f -ErrorAction SilentlyContinue; Remove-Item $f -Force -ErrorAction SilentlyContinue; $line = $c | Where-Object { $_ -match ''^\s*MinimumPasswordLength\s*='' } | Select-Object -First 1; $v = if ($line) { ($line -split ''='', 2)[1].Trim().Trim(''"'') } else { $null }; if (($null -ne $v -and [int64]$v -ge 14)) { ''compliant'' } else { ''non-compliant: '' + $v }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    function Get-TmaSec([string]$Key) {
+      $f = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      secedit /export /cfg $f /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $c = Get-Content $f -ErrorAction SilentlyContinue
+      Remove-Item $f -Force -ErrorAction SilentlyContinue
+      $line = $c | Where-Object { $_ -match ('^\s*' + $Key + '\s*=') } | Select-Object -First 1
+      if ($line) { ($line -split '=', 2)[1].Trim().Trim('"') } else { $null }
+    }
+    function Backup-TmaSec {
+      $bk = Join-Path $env:ProgramData 'TMAegis\backup'
+      New-Item -ItemType Directory -Force -Path $bk | Out-Null
+      secedit /export /cfg (Join-Path $bk ('secedit-' + (Get-Date -Format 'yyyyMMddHHmmss') + '.inf')) /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+    }
+    function Set-TmaSec([string]$Section, [string]$Line) {
+      $inf = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.inf')
+      $db = Join-Path $env:TEMP ('tmaegis-' + [guid]::NewGuid().ToString() + '.sdb')
+      $txt = @('[Unicode]', 'Unicode=yes', '[Version]', 'signature="$CHICAGO$"', 'Revision=1', ('[' + $Section + ']'), $Line) -join "`r`n"
+      Set-Content -Path $inf -Value $txt -Encoding Unicode
+      secedit /configure /db $db /cfg $inf /areas SECURITYPOLICY USER_RIGHTS /quiet | Out-Null
+      $rc = $LASTEXITCODE
+      Remove-Item $inf, $db -Force -ErrorAction SilentlyContinue
+      if ($rc -ne 0) { throw ('secedit /configure failed: ' + $rc) }
+    }
+    $v = Get-TmaSec 'MinimumPasswordLength'
+    if (-not ($null -ne $v -and [int64]$v -ge 14)) {
+      Backup-TmaSec
+      net accounts /minpwlen:14 | Out-Null; if ($LASTEXITCODE -ne 0) { throw 'net accounts failed' }
+    }
+  guidance: "Set through Group Policy (domain policy for domain members): Computer Configuration\\Policies\\Windows Settings\\Security Settings\\Account Policies\\Password Policy\\Minimum password length"

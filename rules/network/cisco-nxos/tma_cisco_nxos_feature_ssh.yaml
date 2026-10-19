@@ -1,0 +1,22 @@
+id: TMA-CISCO-NXOS-FEATURE-SSH
+title: Ensure the SSH server is enabled
+description: SSH is the only acceptable remote CLI transport. It is enabled by default; fails if 'no feature ssh' is present. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- management-plane
+reference: CIS Cisco NX-OS Benchmark - Management Plane / Remote Access (verify section number for your release)
+audit:
+  type: config_regex
+  pattern: (?m)^no feature ssh\s*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+     ssh key rsa 2048 force
+     feature ssh
+    end

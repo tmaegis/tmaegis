@@ -1,0 +1,28 @@
+id: TMA-BIND-2.8
+title: Set Other Permissions Read-Only for All BIND Directories and Files
+description: All the directories and files in BIND home and run time directories should have other permissions set to not be writable. Configuration files should, of course, not be writable by named, and any run time files created by BIND will be owned by named and writable by the user. A chroot'ed tmp directory only needs to be writable by the named group. The audit lists regular files and directories under $BIND_HOME and $RUNDIR writable by other and requires none. $BIND_HOME is taken as the existing ones of /var/named (RHEL, including a chroot), /etc/bind and /var/cache/bind (Debian/Ubuntu) and $RUNDIR as /run/named; the runtime directories (dynamic, slaves, data, run, log, tmp, /var/cache/bind) are excluded where the benchmark excludes them.
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.8 Set Other Permissions Read-Only for All BIND Directories and Files
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    out=$(find $BH $RUN \( -type f -o -type d \) -perm /002 -print 2>/dev/null) || exit 1
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out" | head -n 20; echo 'other-writable BIND files or directories'; }
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: 'Perform the following: ; Capture the output from the audit commands above into a file with the name $TMPDIR/write-files.txt ; Review the purpose for the identified files and either delete them if the file is not needed, or change the permissions of the file to not be writable by group or other. ; The following commands can be used to change the permissions of the appropriate files. # find $BIND_HOME $RUNDIR -type f -perm /022 > $TMPDIR/write-files.txt # xargs -a $TMPDIR/write-files.txt chmod go-w # rm $TMPDIR/write-files.txt'

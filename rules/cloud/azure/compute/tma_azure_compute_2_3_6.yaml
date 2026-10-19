@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.3.6
+title: Ensure 'HTTPS Only' is set to 'On'
+description: Azure App Service allows function apps to run under both HTTP and HTTPS by default. Function apps can be accessed by anyone using non-secure HTTP links by default. Non-secure HTTP requests can be restricted and all HTTP requests redirected to the secure HTTPS port. It is recommended to enforce HTTPS-only traffic. Enabling HTTPS-only traffic will redirect all non-secure HTTP requests to HTTPS ports. HTTPS uses the TLS/SSL protocol to provide a secure connection which is both encrypted and authenticated. It is therefore important to support HTTPS for the security benefits.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.6 Ensure 'HTTPS Only' is set to 'On'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings tab, under Platform settings, ensure that HTTPS Only is set to On. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the HTTPS setting: az functionapp show --resource-group <resource-group-name> --name <function- app-name> --query "httpsOnly" Ensure that the command returns true. Audit from PowerShell Run the following command to list function apps: Get-AzFunctionApp Run the following command to get the function app with a given name: $app = Get-AzFunctionApp -ResourceGroupName <resource-group-name> -Name <function-app-name> Run the following command to get the HTTPS setting for the function app: $app.httpsOnly Ensure that the command returns True. Repeat for each function app.
+    Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search P...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings tab, under Platform settings, next to HTTPS Only, select the radio button next to On. 5. Click Save. 6. Click Continue. 7. Repeat steps 1-6 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to enable HTTPS Only: az resource update --resource-group <resource-group-name> --name <function- app-name> --resource-type "Microsoft.Web/sites" --set properties.httpsOnly=true'

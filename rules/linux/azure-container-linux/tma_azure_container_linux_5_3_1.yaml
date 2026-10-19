@@ -1,0 +1,18 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.3.1
+title: Ensure re-authentication for privilege escalation is not disabled globally
+description: 'The operating system must be configured so that users must re-authenticate for privilege escalation. Audit: Passes when no uncommented !authenticate tag exists in /etc/sudoers or /etc/sudoers.d.'
+target: azure-container-linux
+level: 1
+severity: high
+tags:
+- azure-container-linux
+- sudo
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.3.1 Ensure re-authentication for privilege escalation is not disabled globally
+audit:
+  type: command
+  shell: bash
+  command: grep -rEq "^[^#]*!authenticate" /etc/sudoers /etc/sudoers.d 2>/dev/null && echo noncompliant || echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure the operating system to require users to reauthenticate for privilege escalation. Based on the outcome of the audit procedure, use visudo -f <PATH TO FILE> to edit the relevant sudoers file. Remove any occurrences of !authenticate tags in the file(s).

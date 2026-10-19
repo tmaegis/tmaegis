@@ -1,0 +1,22 @@
+id: TMA-VMWARE-5.2
+title: Host must block network traffic by default
+description: 'By default, the host is configured to block all incoming and outgoing network traffic, except for the traffic pertaining to services enabled in the host security profile. This configuration is pivotal in reducing the attack surface and averting unauthorized access to the host. The audit runs esxcli network firewall get and requires "Enabled: true" and "Default Action: DROP"; review enabled rulesets as well. Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- network
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 5.2 Host must block network traffic by default
+audit:
+  type: command
+  command: |-
+    out=$(esxcli network firewall get 2>/dev/null) || exit 1
+    a=$(printf '%s\n' "$out" | sed -n 's/^ *Default Action: *//p' | head -n 1)
+    e=$(printf '%s\n' "$out" | sed -n 's/^ *Enabled: *//p' | head -n 1)
+    [ "$a" = DROP ] && [ "$e" = true ] && echo compliant || echo "firewall enabled=$e default action=$a"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: '1. Enable the ESXi firewall if disabled and disable unnecessary rulesets. 2. Use: esxcli network firewall set --enabled true 3. Configure only the required rulesets for documented services.'

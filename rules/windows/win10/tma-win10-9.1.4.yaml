@@ -1,0 +1,20 @@
+id: TMA-WIN10-9.1.4
+title: 'Ensure ''Windows Firewall: Domain: Logging: Name'' is set to ''%SystemRoot%\System32\logfiles\firewall\domainfw.log'''
+description: 'Use this option to specify the path and name of the file in which Windows Firewall will write its log information. The recommended state for this setting is: %SystemRoot%\System32\logfiles\firewall\domainfw.log.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 9.1.4
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile\Logging'' -Name ''LogFilePath'' -ErrorAction SilentlyContinue).''LogFilePath''; if (-not ($null -ne $v -and (($v -replace ''\s'','''') -eq ''%SystemRoot%\System32\logfiles\firewall\domainfw.log''))) { $bad += ''LogFilePath='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile\Logging')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile\Logging' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsFirewall\DomainProfile\Logging' -Name 'LogFilePath' -Value '%SystemRoot%\System32\logfiles\firewall\domainfw.log' -PropertyType String -Force | Out-Null

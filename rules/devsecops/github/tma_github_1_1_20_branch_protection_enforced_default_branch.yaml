@@ -1,0 +1,25 @@
+id: TMA-GITHUB-1.1.20
+title: Ensure branch protection is enforced on the default branch
+description: 'Enforce branch protection on the default and main branch. The default or main branch of repositories is considered very important, as it is eventually gets deployed to the production. Therefore it needs protection. The default branch must have classic branch protection or at least one active ruleset rule. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 1
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.20 Ensure branch protection is enforced on the default branch
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    gh api "repos/$R/branches/$B/protection" --silent >/dev/null 2>&1 && { echo compliant; exit 0; }
+    n=$(gh api "repos/$R/rules/branches/$B" --jq 'length' 2>/dev/null) || n=0
+    [ "${n:-0}" -gt 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: create a branch protection rule or ruleset targeting the default branch.'

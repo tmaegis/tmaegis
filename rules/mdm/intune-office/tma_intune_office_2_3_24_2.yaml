@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.24.2
+title: Ensure 'Block opening of pre-release versions of file formats new to PowerPoint 2016 through the Compatibility Pack for Office 2016 and PowerPoint 2016 Converter' is set to 'Enabled'
+description: 'This policy setting controls whether users with the Microsoft Office Compatibility Pack for Word, Excel, and PowerPoint 2016 File Formats installed can open Office Open XML files saved with pre-release versions of PowerPoint 2016. PowerPoint Open XML files usually have the following extensions: .pptx, .pptm, .potx, .potm, .ppsx, .ppsm, .ppam, .thmx, .xml. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) powerpoint12betafilesfromconverters that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.24.2 Ensure 'Block opening of pre-release versions of file formats new to PowerPoint 2016 through the Compatibility Pack for Office 2016 and PowerPoint 2016 Converter' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\powerpoint\security\fileblock'') -Name ''powerpoint12betafilesfromconverters'' -ErrorAction SilentlyContinue).''powerpoint12betafilesfromconverters''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':powerpoint12betafilesfromconverters='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Office 2016\Office 2016 Converters\Block opening of pre-release versions of file formats new to PowerPoint 2016 through the Compatibility Pack for Office 2016 and PowerPoint 2016 Converter'

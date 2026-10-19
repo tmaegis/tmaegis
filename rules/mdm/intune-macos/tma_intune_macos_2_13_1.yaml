@@ -1,0 +1,17 @@
+id: TMA-INTUNE-MACOS-2.13.1
+title: Ensure Configuration Profile Can Not be Removed by an End User
+description: This recommendation focuses on preventing end users from removing management profiles from organizational macOS devices. When properly implemented, the option to remove a management profile in System Settings should be grayed out (disabled), which indicates the device is enrolled via Apple Business Manager (ABM). If the removal button is clickable but requires authentication, this represents an alternative implementation. The ABM enrollment method is preferred and the most effective method to ensure management profiles remain locked to devices and cannot be removed, even by users with administrative privileges. The benchmark marks this a Manual check of an Intune macOS policy setting that cannot be read from the endpoint with a script, so TMAegis lists it as a manual review item with the audit steps (the policy must be inspected in the Intune admin center or on the managed device).
+target: intune-macos
+level: 1
+severity: medium
+tags:
+- intune-macos
+- intune
+- manual-review
+reference: CIS Apple macOS 26 Tahoe Intune Benchmark v1.0.0 - 2.13.1 Ensure Configuration Profile Can Not be Removed by an End User
+audit:
+  type: manual
+  command: 'macOS: Intune admin center: Select MacOS; Select Enrollment; Select Enrollment program tokens; Select the organizations token with devices synced to it; Under the Manage heading, select profiles; Select the macOS profile assigned to organization macOS machines; Under the Manage heading, select Properties; Ensure Locked enrollment is set to Yes; Under the Monitor heading, select Assigned devices; Ensure that this profile is assigned to all organization macOS devices; From the macOS device:; Select Management Profile; Click the − symbol; Ensure this cannot be clicked (grayed out); ...'
+remediation:
+  type: iac_patch
+  command: 'Intune admin center: Select MacOS; Select Enrollment; Select Enrollment program tokens; If no token exists, select Create token and follow the ABM/ASM token creation workflow; Select the token for your organization; Under the Manage heading, select Profiles; Either select an existing profile or select Create profile; Configure the profile and ensure Locked enrollment is set to Yes; Under Assignment, ensure the profile is assigned to appropriate device groups; Click Create'

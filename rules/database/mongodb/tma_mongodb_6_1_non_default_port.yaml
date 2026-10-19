@@ -1,0 +1,19 @@
+id: TMA-MONGODB-6.1
+title: Ensure that MongoDB uses a non-default port
+description: Changing the default port used by MongoDB makes it harder for attackers to find the database and target it. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). A missing net.port means the default 27017 is used and fails.
+target: mongodb
+level: 1
+severity: low
+tags:
+- mongodb
+- network
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 6.1 Ensure that MongoDB uses a non-default port
+audit:
+  type: command
+  command: '[ -r /etc/mongod.conf ] || exit 1; awk ''/^[[:space:]]*port:/ {v=$2; gsub(/["\047]/, "", v); p=v} END {print (p != "" && p != "27017") ? "compliant" : "default port"}'' /etc/mongod.conf'
+  expected_output: compliant
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: Set net.port to an organisation-defined port other than 27017 in /etc/mongod.conf, update firewall rules and client connection strings, then restart mongod.

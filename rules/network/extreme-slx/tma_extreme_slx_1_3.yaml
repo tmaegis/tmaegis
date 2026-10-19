@@ -1,0 +1,24 @@
+id: TMA-EXTREME-SLX-1.3
+title: Ensure that the Default Chassis Name is changed
+description: It is incredibly important to change default ID's to ensure that they are not easily compromised from an attacker. FAILs if the chassis name is still the factory model name (SLXnnnn...). Audited against SLX-OS 'show running-config' output (saved in full).
+target: extreme-slx
+level: 1
+severity: low
+tags:
+- extreme-slx
+- hardening
+reference: CIS ExtremeNetworks SLX-OS 20.X.X Benchmark v1.0.1 - 1.3 Ensure that the Default Chassis Name is changed
+audit:
+  type: config_regex
+  pattern: (?m)^switch-attributes chassis-name "?SLX\d{4}[A-Za-z0-9-]*"?[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+    switch-attributes chassis-name <new_chassis_name>
+    end
+    # CIS guidance:
+    config terminal
+    switch-attributes chassis-name new_switch
+    end

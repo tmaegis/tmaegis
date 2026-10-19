@@ -1,0 +1,69 @@
+# Synthetic sample: F5 BIG-IP tmsh "list" output (hardened). Not a secure template.
+# Command: tmsh list sys
+auth password-policy {
+    expiration-warning 14
+    lockout-duration 900
+    max-duration 90
+    max-login-failures 3
+    min-duration 99
+    minimum-length 14
+    password-memory 24
+    policy-enforcement enabled
+    required-lowercase 1
+    required-numeric 1
+    required-special 1
+    required-uppercase 1
+}
+auth remote-user {
+    default-partition Common
+    default-role no-access
+    remote-console-access disabled
+}
+sys global-settings {
+    console-inactivity-timeout 300
+    gui-setup disabled
+    hostname bigip01.example.com
+}
+cli global-settings {
+    idle-timeout 10
+}
+sys httpd {
+    allow { 192.0.2.0/24 }
+    auth-pam-idle-timeout 600
+    include "
+        FileETag MTime Size
+    "
+    ssl-protocol TLSv1.2
+}
+sys sshd {
+    allow { 192.0.2.0/24 }
+    banner enabled
+    banner-text "Authorized access only. Activity is logged."
+    include "
+        MACs hmac-sha2-256,hmac-sha2-512
+        KexAlgorithms diffie-hellman-group-exchange-sha256,curve25519-sha256@libssh.org
+    "
+    inactivity-timeout 600
+}
+sys ntp {
+    servers { 192.0.2.123 192.0.2.124 }
+    timezone UTC
+}
+sys snmp {
+    allowed-addresses { 192.0.2.0/24 }
+    agent-addresses { tcp6:161 udp6:161 tcp:161 udp:161 }
+}
+sys syslog {
+    remote-servers {
+        remote-syslog1 {
+            host 192.0.2.50
+            remote-port 514
+        }
+    }
+}
+net self self_internal {
+    address 192.0.2.5/24
+    allow-service none
+    traffic-group traffic-group-local-only
+    vlan internal
+}

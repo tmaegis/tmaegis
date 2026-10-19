@@ -1,0 +1,29 @@
+id: TMA-ROS1-5.2.13
+title: Ensure only strong Ciphers are used
+description: This variable limits the ciphers that SSH can use during communication. The audit fails when sshd -T lists any of the weak ciphers named in the benchmark. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.2.13 Ensure only strong Ciphers are used
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v sshd >/dev/null 2>&1 || exit 1
+    out=$(sshd -T -C user=root -C host="$(hostname)" -C addr="$(hostname -I 2>/dev/null | cut -d' ' -f1)" 2>/dev/null) || out=$(sshd -T 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk 'tolower($1)=="ciphers"{print tolower($2); exit}')
+    [ -n "$v" ] || { echo 'Ciphers unset'; exit 1; }
+    bad=0
+    for w in 3des-cbc aes128-cbc aes192-cbc aes256-cbc arcfour arcfour128 arcfour256 blowfish-cbc cast128-cbc rijndael-cbc@lysator.liu.se; do case ",$v," in *",$w,"*) echo "weak Ciphers: $w"; bad=1 ;; esac; done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/ssh/sshd_config
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/ssh/sshd_config file add/modify the Ciphers line to contain a comma separated list of the site approved ciphers Example: Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128- gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr'

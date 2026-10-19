@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-9.3
+title: Ensure 'safkeyringhw:' is set to use a hardware crypto card
+description: Use hardware crypto card to store to store cryptographic keys and certificates. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 2
+severity: high
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 9.3 Ensure 'safkeyringhw:' is set to use a hardware crypto card
+audit:
+  type: manual
+  command: Hardware crypto cards are external devices that can store certificates that can be used for the SSL/TLS communications. They store and protect the cryptographic keys throughout their lifecycles. The use of these devices have to be weighed against the security requirements and the additional expenses this would entail. There are two ways a hardware crypto card can be used. One can configure to use the keys contained in only the hardware crypto card or configure a hybrid provider that can handle keys in both the crypto card as well as in the software. ...
+remediation:
+  type: iac_patch
+  command: For the crypto card configuration, configure the location attribute in the keyStore elements referenced by the SSL configurations to point to a valid hardware crypto keyring configuration and set the type attribute to JCECCARACFKS in ${server.config.dir}/configDropins/overrides/<any file name>.xml. <keyStore id="defaultKeyStore" location="safkeyringhw:///myHWKeyring" type="JCECCARACFKS" ... /> In addition, make sure that the com.ibm.crypto.hdwrCCA.provider.IBMJCECCA provider is configured in the $JAVA_HOME/jre/lib/security/java.security file. ... security.provider.3=com.ibm.crypto.hdwrCCA.provider.IBMJCECCA ... ...

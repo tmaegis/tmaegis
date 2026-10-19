@@ -1,0 +1,16 @@
+id: TMA-TOMCAT-7.5
+title: Ensure pattern in context.xml is correct
+description: 'The pattern setting informs Tomcat what information should be logged per application. At a minimum, enough information to uniquely identify a request, what was requested, where the requested originated from, and when the request occurred should be logged. Manual review: the benchmark gives no reliable automated check for this control.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- logging
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 7.5 Ensure pattern in context.xml is correct
+audit:
+  type: manual
+  command: 'Review the pattern settings to ensure it contains all of the variables required by the installation. # grep pattern $CATALINA_BASE/webapps/<app_name>/META-INF/context.xml'
+remediation:
+  type: iac_patch
+  command: Add the following statement into the $CATALINA_BASE/webapps/<app_name>/META- INF/context.xml file if it does not already exist. <Valve className="org.apache.catalina.valves.AccessLogValve" directory="$CATALINA_HOME/logs/" prefix="access_log" fileDateFormat="yyyy-MM- dd.HH" suffix=".log" pattern="%h %t %H cookie:%{SESSIONID}c request:%{SESSIONID}r %m %U %s %q %r" />

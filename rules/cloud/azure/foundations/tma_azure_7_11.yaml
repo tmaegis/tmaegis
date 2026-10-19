@@ -1,0 +1,18 @@
+id: TMA-AZURE-7.11
+title: Ensure Subnets Are Associated with Network Security Groups
+description: Protect subnet resources by ensuring subnets are associated with network security groups, which can filter inbound and outbound traffic using security rules. Unprotected subnets can expose resources to unauthorized access.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- network
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 7.11 Ensure Subnets Are Associated with Network Security Groups
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Virtual networks. 2. Click the name of a virtual network. 3. Under Settings, click Subnets. 4. Click the name of a subnet. 5. Under Security, ensure Network security group is not set to None. 6. Repeat steps 1-5 for each virtual network and subnet. Audit from Azure CLI Run the following command to list virtual networks: az network vnet list For each virtual network, run the following command to list subnets: az network vnet show --resource-group <resource-group> --name <virtual- network> --query subnets For each subnet, run the following command to get the network security group id: az network vnet subnet show --resource-group <resource-group> --vnet-name <virtual-network> --name <subnet> --query networkSecurityGroup.id Ensure a network security group id is returned. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed
+    copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: e71308d3-144b-4262-b144-efdc3cc90517 - Name: ''Subnets should...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Virtual networks. 2. Click the name of a virtual network. 3. Under Settings, click Subnets. 4. Click the name of a subnet. 5. Under Security, next to Network security group, click None to display the drop-down menu. 6. Select a network security group. 7. Click Save. 8. Repeat steps 1-7 for each virtual network and subnet requiring remediation. Remediate from Azure CLI For each subnet requiring remediation, run the following command to associate it with a network security group: az network vnet subnet update --resource-group <resource-group> --vnet-name <virtual-network> --name <subnet> --network-security-group <network-security- group>'

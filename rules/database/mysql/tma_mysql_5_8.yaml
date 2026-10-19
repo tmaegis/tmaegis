@@ -1,0 +1,18 @@
+id: TMA-MYSQL-5.8
+title: Ensure 'REPLICATION SLAVE' is Not Granted to Non-Administrative Users
+description: The REPLICATION SLAVE privilege governs whether a given user (in the context of the source server) can request updates that have been made on the source server.
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- authorization
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 5.8 Ensure 'REPLICATION SLAVE' is Not Granted to Non-Administrative Users
+audit:
+  type: manual
+  command: Run SELECT GRANTEE FROM INFORMATION_SCHEMA.USER_PRIVILEGES WHERE PRIVILEGE_TYPE = 'REPLICATION SLAVE'; Ensure only accounts designated for replica users are returned.
+remediation:
+  type: iac_patch
+  command: REVOKE REPLICATION SLAVE ON *.* FROM '<user>'@'<host>'; for each non-administrative grantee.

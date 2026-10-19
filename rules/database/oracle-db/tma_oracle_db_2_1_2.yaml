@@ -1,0 +1,20 @@
+id: TMA-ORACLE-DB-2.1.2
+title: Ensure 'ACCEPT_MD5_CERTS' Is Configured Correctly
+description: 'The setting ACCEPT_MD5_CERTS specifies whether Oracle accepts certificates signed with the MD5 algorithm. Note: See Additional Information regarding the deprecation of this setting. Fails when an uncommented ACCEPT_MD5_CERTS = TRUE line is present in listener.ora. Default: The default value for ACCEPT_MD5_CERTS is FALSE. Reads the file from $TNS_ADMIN, or $ORACLE_HOME/network/admin when TNS_ADMIN is unset (Linux/UNIX hosts); fails when neither directory exists.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- network
+- tls
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.1.2 Ensure 'ACCEPT_MD5_CERTS' Is Configured Correctly
+audit:
+  type: command
+  command: 'd="${TNS_ADMIN:-${ORACLE_HOME:?ORACLE_HOME not set}/network/admin}"; [ -d "$d" ] || { echo "missing $d"; exit 1; }; f="$d/listener.ora"; [ -f "$f" ] || { echo compliant; exit 0; }; n=$(grep -Eic ''^[^#]*ACCEPT_MD5_CERTS[[:space:]]*=[[:space:]]*TRUE[[:space:]]*$'' "$f"); [ "$n" = 0 ] && echo compliant || echo "noncompliant: TRUE set in $f"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, remove ACCEPT_MD5_CERTS from listener.ora or set ACCEPT_MD5_CERTS to the value FALSE. In addition to listener.ora, this parameter must also be set in sqlnet.ora.

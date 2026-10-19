@@ -1,0 +1,18 @@
+id: TMA-TDSQL-3.11
+title: Ensure Correct Permissions on MySQL Error Log Files
+description: The MySQL error log contains diagnostic information including startup/shutdown, errors, warnings, and notes, which may expose sensitive configuration and operational details. Searches /data/tdsql (the benchmark path). Counts *error*.log files readable by other users; expected 0640.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- permissions
+- logging
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.11 Ensure Correct Permissions on MySQL Error Log Files
+audit:
+  type: command
+  command: n=0; for p in "/data/tdsql"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "/data/tdsql"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" -type f -name '*error*' -name '*.log' -perm /o+r -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: find /data/tdsql -name '*error*' -name '*.log' -exec chmod 640 {} +; chown mysql:mysql those files.

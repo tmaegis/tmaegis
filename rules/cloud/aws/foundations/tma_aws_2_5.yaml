@@ -1,0 +1,17 @@
+id: TMA-AWS-2.5
+title: Ensure MFA is enabled for the 'root' user account
+description: 'The ''root'' user account is the most privileged user in an AWS account. Multi-Factor Authentication (MFA) adds an extra layer of protection on top of a username and password. With MFA enabled, when a user signs in to an AWS website, they are prompted for their username and password as well as an authentication code from their MFA device. Note: When virtual MFA is used for ''root'' accounts, it is recommended that the device used is not a personal device, but rather a dedicated mobile device (tablet or phone) that is kept charged and secured, independent of any individual (“non-personal virtual MFA”). This reduces the risk of losing access to MFA due to device loss, device replacement, or employee turnover. Where an AWS Organization is using centralized root access, root credentials can be removed from member accounts. In that case, it is neither possible nor necessary to configure root M...'
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- mfa
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.5 Ensure MFA is enabled for the 'root' user account
+audit:
+  type: manual
+  command: 'Perform the following to determine if the ''root'' user account has MFA configured: From Console: 1. Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/iam 2. Click on Credential Report 3. Download the .csv file containing credential usage for all IAM users within an AWS Account 4. Open this file 5. For the root user, ensure: - mfa_active is set to TRUE, or - password_enabled is set to FALSE From Command Line: 1. Run the following command: aws iam get-account-summary | grep "AccountMFAEnabled" aws iam get-account-summary | grep "AccountPasswordPresent" 2. Ensure: - AccountMFAEnabled property is set to 1, or - AccountPasswordPresent property is set to 0'
+remediation:
+  type: iac_patch
+  command: 'Note: To manage MFA devices for the ''root'' AWS account, you must use root credentials. MFA cannot be managed for the root account using IAM users or roles. Perform the following to establish MFA for the ''root'' user account: From Console: 1. Sign in to the AWS Management Console using the root user email 2. In the top right corner, click the account name 3. Choose Security Credentials 4. Under the Multi-Factor authentication (MFA), locate the root user 5. Choose Assign MFA device (or Activate MFA, depending on UI version) 6. Select Virtual MFA device 7. Choose one of the following: - Scan the QR code using your MFA app, or - Select Show secret key for manual configuration and enter it into your MFA app 8. Enter the first authentication code in Authentication Code 1 9. Wait for a new code, then enter it in Authentication Code 2 10. Click Assign Virtual MFA'

@@ -1,0 +1,21 @@
+id: TMA-CISCO-NXOS-3.1.3.1
+title: Set Interfaces with no Peers to Passive-Interface
+description: 'By default, OSPF will advertise via multicast to solicit peers, and will listen for neighbor / peer advertisements on all OSPF configured interfaces. If an interface is set to "passive", then EIGRP will not advertise out of that interface or listen on that interface for EIGRP neighbors. I will however still advertise the networks associated with that interface to peers on other interfaces. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- routing
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.3.1 Set Interfaces with no Peers to Passive-Interface
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The "show running-configuration ospf" command will list the complete OSPF configuration. For all interfaces that do not have facing peers, ensure that those interfaces have the "ip ospf passive-interface" set. Every routeable interface should be set to either passive-interface, or be configured with authentication keys. switch# sho running-config ospf !Command: show running-config ospf !Running configuration last done at: Wed May 20 14:24:49 2020 !Time: Wed May 20 14:26:46 2020 version 9.3(3) Bios:version feature ospf router ospf 10 ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! For each routeable interface, if there is no facing peer on that interface set that interface to passive with the "ip ospf passive-interface" configuration command. Every routeable interface should be set to either passive-interface, or be configured with authentication keys.
+    int vlan 1
+    ip router ospf 10 area 0
+    ip ospf passive-interface

@@ -1,0 +1,39 @@
+id: TMA-DOCKER-3.9
+title: Ensure that TLS CA certificate file ownership is set to root:root
+description: The TLS CA certificate file must be owned by root:root so that it cannot be replaced by unprivileged users. The path is taken from --tlscacert on the dockerd command line or "tlscacert" in /etc/docker/daemon.json (default /root/.docker/ca.pem); compliant when no such file exists (TLS not configured).
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+- tls
+reference: CIS Docker Benchmark v1.9.0 - 3.9 Ensure that TLS CA certificate file ownership is set to root:root
+audit:
+  type: command
+  command: args=$(ps -eo args 2>/dev/null) || exit 1; s=$(printf '%s\n' "$args" | grep '[d]ockerd'; cat /etc/docker/daemon.json 2>/dev/null); p=$(printf '%s\n' "$s" | sed -n -e 's/.*--tlscacert[= ]\([^ ]*\).*/\1/p' -e 's/.*"tlscacert"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1); [ -n "$p" ] || p=/root/.docker/ca.pem; [ -e "$p" ] || { echo compliant; exit 0; }; o=$(stat -Lc '%U:%G' "$p") || exit 1; [ "$o" = root:root ] && echo compliant || echo "$p $o"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    args=$(ps -eo args 2>/dev/null) || exit 1; s=$(printf '%s\n' "$args" | grep '[d]ockerd'; cat /etc/docker/daemon.json 2>/dev/null); p=$(printf '%s\n' "$s" | sed -n -e 's/.*--tlscacert[= ]\([^ ]*\).*/\1/p' -e 's/.*"tlscacert"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1); [ -n "$p" ] || p=/root/.docker/ca.pem; [ -e "$p" ] || exit 0
+    chown root:root "$p"
+  guidance: "chown root:root <path of the tlscacert file> (as configured for dockerd)."

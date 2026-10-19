@@ -1,0 +1,17 @@
+id: TMA-AKS-5.2.1
+title: Prefer using dedicated AKS Service Accounts
+description: It is important to use dedicated Kubernetes service accounts in AKS so identity, permissions, and token use are isolated to the specific workload that requires them, rather than shared across unrelated pods. In AKS, service accounts remain a core Kubernetes identity construct and also serve as the anchor for Microsoft Entra Workload ID, which allows access to Kubernetes and Azure resources to be scoped per workload. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- managed-services
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.2.1 Prefer using dedicated AKS Service Accounts
+audit:
+  type: manual
+  command: For each namespace, verify that workloads do not use the default service account unless required, and confirm that the default service account has no custom role bindings beyond baseline defaults. Review workload-specific service accounts to ensure permissions are scoped with least privilege, and confirm automountServiceAccountToken is disabled where token access is not needed.
+remediation:
+  type: iac_patch
+  command: 'Use a dedicated Kubernetes service account for each AKS workload that requires identity, and replace use of the namespace default service account wherever it is not explicitly required. Scope each service account to only the Kubernetes permissions and Azure resource access needed by that workload, and prevent service account tokens from being mounted into pods unless token-based access is required. 1. Create a separate Kubernetes service account for each workload or application boundary that requires distinct access. 2. Bind each service account only to the minimum required Kubernetes Role or ClusterRole, and avoid granting custom permissions to the namespace default service account. 3. Set automountServiceAccountToken: false for pods that do not need a service account token. 4.'

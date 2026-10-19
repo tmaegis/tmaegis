@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.124
+title: 'Ensure ''Enforce Bing SafeSearch'' is set to ''Enabled: Configure moderate search restrictions in Bing'''
+description: 'This policy setting ensures that web search results with Bing are presented with the SafeSearch settings that can be specified in this setting. The recommended state for this setting is: Enabled: Configure moderate search restrictions in Bing. Rationale: Allowing search results to present sites that may have malicious content should be prohibited to help ensure users do not accidentally visit sites that are prone to malicious content including spyware, adware, and viruses. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:ForceBingSafeSearch (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 2
+severity: low
+tags:
+- edge
+- browser
+- cis-l2
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.124 Ensure ''Enforce Bing SafeSearch'' is set to ''Enabled: Configure moderate search restrictions in Bing'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''ForceBingSafeSearch'' -ErrorAction SilentlyContinue).''ForceBingSafeSearch''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ForceBingSafeSearch' -Value 1 -PropertyType DWord -Force | Out-Null

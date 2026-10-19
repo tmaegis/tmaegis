@@ -1,0 +1,24 @@
+id: TMA-KERBEROS-KDC-DB-PERMS
+title: Ensure the KDC database and master key stash are accessible only by root
+description: 'The principal database and the stash file (.k5.<REALM>) together expose every long-term key in the realm. The audit inspects the KDC state directory (/var/lib/krb5kdc on Debian/Ubuntu, /var/kerberos/krb5kdc on RHEL) and fails if any principal* or .k5.* file has group or other permissions or is not owned by root.'
+target: kerberos
+level: 1
+severity: critical
+tags: [kerberos, kdc, permissions, keys]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - KDC database and stash file protection (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    n=0
+    for d in /var/lib/krb5kdc /var/kerberos/krb5kdc; do
+      [ -d "$d" ] || continue
+      n=$((n+1))
+      bad=$(find "$d" -maxdepth 1 -type f \( -name 'principal*' -o -name '.k5.*' \) \( -perm /077 -o ! -user root \) 2>/dev/null) || exit 1
+      [ -z "$bad" ] || { printf '%s\n' "$bad"; exit 1; }
+    done
+    [ "$n" -gt 0 ] && echo compliant
+  expected_output: compliant
+  requires_file: [/var/lib/krb5kdc, /var/kerberos/krb5kdc]
+remediation:
+  type: command
+  command: for d in /var/lib/krb5kdc /var/kerberos/krb5kdc; do if [ -d "$d" ]; then find "$d" -maxdepth 1 -type f \( -name 'principal*' -o -name '.k5.*' \) -exec chown root:root {} + -exec chmod 600 {} + || exit 1; fi; done

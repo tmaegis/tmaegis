@@ -1,0 +1,21 @@
+id: TMA-WIN2019-18.7.8
+title: Ensure 'Configure RPC packet level privacy setting for incoming connections' is set to 'Enabled'
+description: 'This policy setting controls packet level privacy for Remote Procedure Call (RPC) incoming connections. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 18.7.8
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print'' -Name ''RpcAuthnLevelPrivacyEnabled'' -ErrorAction SilentlyContinue).''RpcAuthnLevelPrivacyEnabled''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RpcAuthnLevelPrivacyEnabled='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print' -Name 'RpcAuthnLevelPrivacyEnabled' -Value 1 -PropertyType DWord -Force | Out-Null

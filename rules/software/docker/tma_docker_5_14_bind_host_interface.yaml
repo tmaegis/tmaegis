@@ -1,0 +1,23 @@
+id: TMA-DOCKER-5.14
+title: Ensure that incoming container traffic is bound to a specific host interface
+description: Ports published without a host IP listen on all interfaces (0.0.0.0 / ::), exposing the service on every network the host is attached to. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+- network
+reference: CIS Docker Benchmark v1.9.0 - 5.14 Ensure that incoming container traffic is bound to a specific host interface
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}}{{range $p, $c := .NetworkSettings.Ports}}{{range $c}} [{{.HostIp}}]{{end}}{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '{for(i=2;i<=NF;i++) if($i=="[]" || $i=="[0.0.0.0]" || $i=="[::]") {print $1; break}}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Republish the container bound to a specific interface, e.g. docker run -p 10.2.3.4:49153:80 ... (compose: "10.2.3.4:49153:80").'

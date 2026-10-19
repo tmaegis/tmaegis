@@ -1,0 +1,27 @@
+id: TMA-ARUBA-CX-1.5.2.2
+title: Limit Login Attempts
+description: The "Limiting Login Attempts" feature on Aruba AOS-CX switches is designed to enhance the security of the system by restricting the number of consecutive failed login attempts allowed for user accounts. Once the maximum number of failed attempts is reached, the account is blocked for a predetermined period - lockout-time. This local login attempt limiting feature is only available when not using remote authentication through AAA servers (TACACS+ or RADIUS) on any interface. Remote authentication through AAA servers (TACACS+ or RADIUS) is not possible when limit login attempts is configured on any interface. PASS requires login attempt limiting of 3 or fewer for SSH/https-server and for the console (the CIS sample uses 3 attempts and a 60 second lockout). Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 2
+severity: medium
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.5.2.2 Limit Login Attempts
+audit:
+  type: config_regex
+  pattern: (?m)(?:^aaa authentication limit-login-attempts [1-3] lockout-time \d+(?s:.*?)^aaa authentication console-login-attempts [1-3] console-lockout-time \d+|^aaa authentication console-login-attempts [1-3] console-lockout-time \d+(?s:.*?)^aaa authentication limit-login-attempts [1-3] lockout-time \d+)
+remediation:
+  type: iac_patch
+  command: |-
+    aaa authentication console-login-attempts 3 console-lockout-time 60
+    aaa authentication limit-login-attempts 3 lockout-time 60
+    # CIS guidance:
+    For the console interface (channel) only, enables console login attempt limiting. If the number of failed console login attempts equals the configured threshold, the user is locked out for the configured duration -
+    aaa authentication console-login-attempts <ATTEMPTS> console-
+    lockout-time <LOCKOUT-TIME> For SSH/Telnet/https-server -
+    aaa authentication limit-login-attempts <ATTEMPTS> lockout-
+    time <LOCKOUT-TIME> Sample recommendation - Enabling login attempt failure limiting with a 60 second lockout being triggered upon the third consecutive login attempt failure -
+    aaa authentication console-login-attempts 3 console-lockout-
+    time 60
+    aaa authentication limit-login-attempts 3 lockout-time 60

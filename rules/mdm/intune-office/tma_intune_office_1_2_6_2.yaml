@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-1.2.6.2
+title: Ensure 'Hide option to enable or disable updates' is set to 'Enabled'
+description: 'This policy setting determines if the user interface (UI) options to enable or disable Office automatic updates is visible to users. These options are found in the Product Information area of all Office applications installed via Click-to-Run. This policy setting has no effect on Office applications installed via Windows Installer. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) hideenabledisableupdates that the Intune policy writes under HKEY_LOCAL_MACHINE and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 1.2.6.2 Ensure 'Hide option to enable or disable updates' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\office\16.0\common\officeupdate'' -Name ''hideenabledisableupdates'' -ErrorAction SilentlyContinue).''hideenabledisableupdates''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''hideenabledisableupdates='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft Office 2016 (Machine)\Updates\Hide option to enable or disable updates

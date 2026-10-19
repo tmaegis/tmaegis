@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.2.2.2
+title: Ensure audit logs are not automatically deleted
+description: The expire-after specifies when audit log files will expire and be removed. In high-security contexts, the benefits of maintaining a long audit history exceed the cost of storing the audit history.
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.2.2.2 Ensure audit logs are not automatically deleted
+audit:
+  type: manual
+  command: 'Run the following command and verify output matches: # grep "^expire-after:" /etc/security/audit_control expire-after:10M'
+remediation:
+  type: iac_patch
+  command: 'Based on local site policy either remove the expire-after directive or set it to a larger value to retain older logs. The directive can be set in /etc/security/audit_control expire-after:10M The expiration specification can be one value or two values with the logical conjunction of AND/OR between them. Values for the audit log file age are numbers with the following suffixes: s Log file age in seconds. h Log file age in hours. d Log file age in days. y Log file age in years. Values for the disk space used are numbers with the following suffixes: (space) or B Disk space used in Bytes. K Disk space used in Kilobytes. M Disk space used in Megabytes. G Disk space used in Gigabytes. The suffixes on the values are case-sensitive. If both an age and disk space value are used they are separated by AND or OR and both values are used to determine when audit log files expire. In the case of AND, both the age and disk space conditions must be met before the log file is removed. In the case
+    of OR, either condition may expire the log file. For example: expire-after: 60d AND 1G will expire files that are older than 60 days but only if 1 gigabyte of disk space total ... (see CIS section 5.2.2.2)'

@@ -1,0 +1,19 @@
+id: TMA-MYSQL-7.5
+title: Ensure Password Complexity Policies are in Place
+description: 'Password complexity includes password characteristics such as length, case, numerical, and character sets. Requires the validate_password component with length >= 14, check_user_name ON and policy STRONG (the dictionary file contents are not checked). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- authentication
+- password
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 7.5 Ensure Password Complexity Policies are in Place
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF((SELECT COUNT(*) FROM mysql.component WHERE component_urn LIKE '%validate_password') > 0 AND (SELECT VARIABLE_VALUE FROM performance_schema.global_variables WHERE LOWER(VARIABLE_NAME) = 'validate_password.length') >= 14 AND (SELECT VARIABLE_VALUE FROM performance_schema.global_variables WHERE LOWER(VARIABLE_NAME) = 'validate_password.check_user_name') = 'ON' AND (SELECT VARIABLE_VALUE FROM performance_schema.global_variables WHERE LOWER(VARIABLE_NAME) = 'validate_password.policy') = 'STRONG', 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: INSTALL COMPONENT 'file://component_validate_password'; SET PERSIST validate_password.length = 14; SET PERSIST validate_password.check_user_name = ON; SET PERSIST validate_password.policy = STRONG; SET PERSIST validate_password.dictionary_file = '<dictionary file>'; then change passwords that equal the user name.

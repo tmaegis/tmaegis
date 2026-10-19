@@ -1,0 +1,17 @@
+id: TMA-AKS-3.2.4
+title: Ensure that the --read-only-port is set to 0
+description: this worker-node kubelet setting ensures that the --read-only-port value is set to 0, which disables the kubelet’s unauthenticated read-only endpoint. This helps prevent unauthenticated access to node and workload information exposed by the kubelet and remains a current AKS worker-node control. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- worker-node
+- kubelet
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.2.4 Ensure that the --read-only-port is set to 0
+audit:
+  type: manual
+  command: 'On each node (or in a kubectl debug node/$NODE_NAME shell): Run the following command on each node to find the appropriate kubeconfig value: ps -efww | grep ''[k]ubelet'' | grep -- ''--read-only-port'' The command line output should show the -read-only-port flag is set to 0. For AKS worker nodes, this audit check verifies that the kubelet --read-only-port setting is configured to 0, which disables the kubelet’s unauthenticated read-only endpoint.'
+remediation:
+  type: iac_patch
+  command: 'If the --read-only-port parameter is not set to 0, and manual modification is required, review the following file, which contains the KUBELET_FLAGS values used to build the kubelet command-line parameters. /etc/default/kubelet Before editing anything, enter debug mode and run chroot to verify what your node is actually using: kubectl debug node/$NODE_NAME -it --image=$IMAGE --profile=general chroot /host systemctl cat kubelet If the service shows an EnvironmentFile=/etc/default/kubelet and references KUBELET_FLAGS, that is the file you would edit. If it does not, then the next place to check is the kubelet systemd unit or drop-in, such as: /etc/systemd/system/kubelet.service /etc/systemd/system/kubelet.service.d/*.conf After a changing the kubelet config file, restart the kubelet service and check status.'

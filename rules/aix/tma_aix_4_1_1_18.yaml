@@ -1,0 +1,16 @@
+id: TMA-AIX-4.1.1.18
+title: Ensure local interactive user dot files access is configured
+description: USER configuration files in their respective HOME directory e.g. $HOME/.profile, should only be accessible to the owner aka UID of the file. Write access to USER or account configuration files may enable malicious users to steal or modify other user's data, or to gain elevated privileges while read access may reveal secrets.
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.1.18 Ensure local interactive user dot files access is configured
+audit:
+  type: manual
+  command: 'Validate the permissions of all user configuration files: lsuser -a home ALL |cut -f2 -d= |egrep -v "^/$|/etc|/bin|/var|/usr|/usr/sys" |while read homedir; do if [[ -d ${homedir} ]]; then echo "Listing all user confguration files in ''${homedir}''" ls -a ${homedir} |egrep "^\.[a-z]" |while read file; do if [[ -f "${homedir}/${file}" ]]; then ls -l "${homedir}/${file}" fi done else echo "ERROR - no home directory for ''${homedir}''" fi done'
+remediation:
+  type: iac_patch
+  command: 'Search and remediate any user configuration files which have group or world writable access: lsuser -a home ALL |cut -f2 -d= |egrep -v "^/$|/etc|/bin|/var|/usr|/usr/sys" |while read homedir; do if [[ -d ${homedir} ]]; then echo "Removing ''go-w'' from all user confguration files in ''${homedir}''" ls -a ${homedir} |egrep "^\.[a-z]" |while read file; do if [[ -f "${homedir}/${file}" ]]; then echo "Running ''chmod go-w'' on ''${homedir}/${file}''" chmod go-w "${homedir}/${file}" fi done else echo "ERROR - no home directory for ''${homedir}''" fi done NOTE: The permission change is automatically applied'

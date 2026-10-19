@@ -1,0 +1,19 @@
+id: TMA-MONGODB-4.5
+title: Ensure Encryption of Data at Rest
+description: Encryption of data at rest must be enabled to ensure compliance with security and privacy standards including HIPAA, PCI-DSS, and FERPA. Encryption at rest, when used in conjunction with transport encryption and good security policies that protect relevant accounts, passwords, and encryption keys. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). Requires MongoDB Enterprise (encrypted WiredTiger storage engine); also confirm a KMIP server or encryptionKeyFile holds the master key and that keys are rotated.
+target: mongodb
+level: 2
+severity: medium
+tags:
+- mongodb
+- encryption
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 4.5 Ensure Encryption of Data at Rest
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*enableEncryption:[ \t]*['\x22]?true\b
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'Configure security.enableEncryption: true with security.kmip.* (recommended) or security.encryptionKeyFile, then resync each member so its data files are rewritten encrypted; rotate keys per policy.'

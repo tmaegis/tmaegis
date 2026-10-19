@@ -1,0 +1,19 @@
+id: TMA-M365-5.2.2.5
+title: Ensure 'Phishing-resistant MFA strength' is required for Administrators
+description: 'Authentication strength is a Conditional Access control that allows administrators to specify which combination of authentication methods can be used to access a resource. For example, they can make only phishing-resistant authentication methods available to access a sensitive resource. But to access a non-sensitive resource, they can allow less secure multifactor authentication (MFA) combinations, such as password + SMS. Microsoft has 3 built-in authentication strengths. MFA strength, Passwordless MFA strength, and Phishing-resistant MFA strength. Ensure administrator roles are using a CA policy with Phishing-resistant MFA strength. Administrators can then enroll using one of 3 methods: - FIDO2 Security Key - Windows Hello for Business - Certificate-based authentication (Multi-Factor) Note: Additional steps to configure methods such as FIDO2 keys are not covered here but can be found...'
+target: m365
+level: 2
+severity: medium
+tags:
+- m365
+- mfa
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.5 Ensure 'Phishing-resistant MFA strength' is required for Administrators
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify Directory roles specific to administrators are included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Directory Roles should include at minimum the roles listed in the remediation section. o Under Target resources verify All resources (formerly ''All cloud apps'') is selected with no exclusions. o Under Grant verify Grant Access is selected and Require authentication strength is checked with Phishing-resistant MFA set as the value. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies
+    2. Filter to policies where GrantControls.AuthenticationStrength.Id contains any valid id. 3. For each policy returned, verify the following criteria: o Conditions.Users.Incl...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Click New policy. o Under Users or agents (Preview) include Select users and groups and check Directory roles. o At a minimum, include the directory roles listed below in this section of the document. o Under Target resources include All resources (formerly ''All cloud apps'') and do not create any exclusions other than break-glass accounts. o Under Grant select Grant Access and check Require authentication strength and set Phishing-resistant MFA in the dropdown box. o Click Select. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On. Warning: Ensure administrators are pre-registered with strong authentication before enforcing
+    the policy. After which the policy must be set to On. At minimum these directory roles should be included for the policy: - Application administrator - Authentication administrator - Billing administra...'

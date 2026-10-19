@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-6.2
+title: Ensure login via "host" TCP/IP Socket is configured correctly
+description: 'A large number of authentication METHODs are available for hosts connecting using TCP/IP sockets, including: - trust - reject - md5 - scram-sha-256 - password - gss - sspi - ident - pam - ldap - radius - cert METHODs trust, password, and ident are not to be used for remote logins.'
+target: yugabytedb
+level: 1
+severity: high
+tags:
+- yugabytedb
+- authentication
+reference: CIS YugabyteDB Benchmark v2.0.0 - 6.2 Ensure login via "host" TCP/IP Socket is configured correctly
+audit:
+  type: manual
+  command: 'Test TCP logins: ysqlsh ''host=localhost user=yugabyte sslmode=disable'' and ''sslmode=require'', then repeat from a remote host. Every host rule in the HBA configuration (--ysql_hba_conf_csv / pg_hba_file_rules) must require a strong method (scram-sha-256 or cert), unencrypted sessions should be rejected (hostssl), and failed attempts must be logged.'
+remediation:
+  type: iac_patch
+  command: 'Confirm a login attempt has been made by looking for a logged error message detailing the nature of the authenticating failure. In the case of failed login attempts, whether encrypted or unencrypted, check the following: - The server should be sitting on a port exposed to the remote connecting host i.e.'

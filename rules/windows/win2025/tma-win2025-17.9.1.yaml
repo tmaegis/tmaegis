@@ -1,0 +1,21 @@
+id: TMA-WIN2025-17.9.1
+title: Ensure 'Audit IPsec Driver' is set to 'Success and Failure'
+description: 'This subcategory reports on the activities of the Internet Protocol security (IPsec) driver. Events for this subcategory include: • 4960: IPsec dropped an inbound packet that failed an integrity check. If this problem persists, it could indicate a network issue or that packets are being modified in transit to this computer. Verify that the packets sent from the remote computer are the same as those received by this computer. This error might also indicate interoperability problems with other IPsec implementations. • 4961: IPsec dropped an inbound packet that failed a replay check. If this prob'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 17.9.1
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9213-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9213-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

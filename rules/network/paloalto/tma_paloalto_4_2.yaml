@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-4.2
+title: Ensure 'Applications and Threats Update Schedule' is set to download and install updates at daily or shorter intervals
+description: 'Set the Applications and Threats Update Schedule to download and install updates at daily or shorter intervals. PASS requires the threats update schedule to be daily, hourly or every-30-mins (or shorter) with action download-and-install. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 4.2 Ensure 'Applications and Threats Update Schedule' is set to download and install updates at daily or shorter intervals
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig system update-schedule threats recurring (?:daily|hourly|every-\d+-mins) action download-and-install[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system update-schedule threats recurring every-30-mins at 2
+    set deviceconfig system update-schedule threats recurring every-30-mins action download-and-install
+    commit
+    # CIS guidance:
+    Navigate to Device > Dynamic Updates > Application and Threats Update Schedule. Set Action to Download and Install. Set Recurrence to Daily, Hourly or Every 30 Minutes

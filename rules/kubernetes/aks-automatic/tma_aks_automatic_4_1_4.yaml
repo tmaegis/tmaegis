@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.1.4
+title: Minimize access to create pods
+description: The ability to create pods in a namespace can provide opportunities for privilege escalation, such as assigning privileged service accounts to these pods or mounting hostPath volumes with access to sensitive data. Pod Security Policies are no longer supported. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: medium
+tags:
+- aks-automatic
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.4 Minimize access to create pods
+audit:
+  type: manual
+  command: Review Azure role assignments used by Microsoft Entra ID authorization for the Kubernetes API and Kubernetes RBAC permissions granted to service accounts. Identify the users, groups, and service accounts that can create Pods. Confirm that each assignment is required for the principal’s function, with particular attention to service accounts and namespace write access. Flag unnecessary pod creation rights for remediation.
+remediation:
+  type: iac_patch
+  command: 'The following steps help reduce pod creation access to the minimum required in AKS Automatic: • Identify all Azure role assignments used by Microsoft Entra ID authorization for the Kubernetes API and Kubernetes RBAC bindings that allow pod creation, including access within a namespace and access throughout the cluster. • Remove pod creation rights from any user, group, or service account that does not have a documented operational need. • Replace broad permissions with a role that has only the required permissions, preferably limited to the required namespace rather than throughout the cluster. • Ensure workloads use dedicated service accounts with only the permissions required for the application or controller. • Revalidate access after changes to confirm required workloads still run and unnecessary pod creation rights have been removed.'

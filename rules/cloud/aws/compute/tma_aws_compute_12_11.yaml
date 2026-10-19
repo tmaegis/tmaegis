@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-12.11
+title: Ensure that the runtime environment versions used for your Lambda functions do not have end of support dates.
+description: Always using a recent version of the execution environment configured for your Amazon Lambda functions adheres to best practices for the newest software features, the latest security patches and bug fixes, and performance and reliability. When you execute your Lambda functions using recent versions of the implemented runtime environment, you should benefit from new features and enhancements, better security, along with performance and reliability.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.11 Ensure that the runtime environment versions used for your Lambda functions do not have end of support dates.
+audit:
+  type: manual
+  command: From the Console 1. Login to the AWS Console using https://console.aws.amazon.com/lambda/. 2. In the left column, under AWS Lambda, click Functions. 3. Under Function name click on the name of the function that you want to review 4. Click Code tab 5. In the Runtime settings section, check the Runtime attribute value to determine the runtime version. 6. Compare the function runtime with the updated list of Amazon Lambda runtimes. Link is in the resource section 7. If the version you are using is not the latest or is on the EOL list, the selected Amazon Lambda function is using an old and deprecated runtime environment. 8. Refer to the remediation below. 9. Repeat steps 2-6 for each Lambda function within the current region. Then repeat the Audit process for all other regions. From the Command Line 1. Run aws lambda list-functions aws lambda list-functions --output table --query 'Functions[*].FunctionName' This command will provide a table titled ListFunctions 2. Run aws lambda
+    get-function-configuration using the Function names returned in the table. aws lambda get-function-configuration --function-name "name_of_fuunction" -- query 'Runtime' 3. The command output should return th...
+remediation:
+  type: iac_patch
+  command: From the Console 1. Login to the AWS Console using https://console.aws.amazon.com/lambda/. 2. In the left column, under AWS Lambda, click Functions. 3. Under Function name click on the name of the function that you want to review 4. Click Code tab 5. Go to the Runtime settings section. 6. Click Edit 7. On the Edit runtime settings page, select the latest supported version of the runtime environment from the dropdown list. **Note - make sure the correct architecture is also selected. 8. Click Save 9. Select the Code tab 10. Click Test from the Code source section. 11. Once the testing is completed, the execution result of your Lambda function will be listed 12. Repeat steps for each Lambda function that failed the Audit within the current region. From the Command Line 1. Run aws lambda update-function-configuration using the name of the Function you need to remediate aws lambda update-function-configuration --output table --query 'Functions[*].FunctionName' This command will provide
+    a table titled ListFunctions 2. Run aws lambda get-function-configuration using the Function names returned in the table. aws lambda get-function-configuration --function-name "name_of_fuunction" -- f...

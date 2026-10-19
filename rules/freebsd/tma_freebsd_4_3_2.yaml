@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.3.2
+title: Ensure sudo commands use pty
+description: 'sudo can be configured to run only from a pseudo terminal (pseudo-pty). Attackers can run a malicious program using sudo which would fork a background process that remains even when the main program has finished executing. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- hardening
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.3.2 Ensure sudo commands use pty
+audit:
+  type: command
+  command: c=$(cat /usr/local/etc/sudoers /usr/local/etc/sudoers.d/* 2>/dev/null); [ -n "$c" ] || exit 1; printf '%s\n' "$c" | grep -Eiq "^[[:space:]]*Defaults[[:space:]]+([^#]+,[[:space:]]*)?!use_pty" && { echo "!use_pty set"; exit 0; }; printf '%s\n' "$c" | grep -Eiq "^[[:space:]]*Defaults[[:space:]]+([^#]+,[[:space:]]*)?use_pty([[:space:]]*,|[[:space:]]*$|[[:space:]]+#)" && echo compliant || echo "Defaults use_pty not set"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the file /usr/local/etc/sudoers with visudo or a file in /usr/local/etc/sudoers.d/ with visudo -f <PATH_TO_FILE> and add the following line: Defaults use_pty Note: sudo will read each file in /usr/local/etc/sudoers.d, skipping file names that end in ~ or contain a . character to avoid causing problems with package manager or editor temporary/backup files. Files are parsed in sorted lexical order. That is, /usr/local/etc/sudoers.d/01_first will be parsed before /usr/local/etc/sudoers.d/10_second. Be aware that because the sorting is lexical, not numeric, /usr/local/etc/sudoers.d/1_whoops would be loaded after /usr/local/etc/sudoers.d/10_second. Using a consistent number of leading zeroes in the file names can be used to avoid such problems.'

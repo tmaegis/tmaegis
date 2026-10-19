@@ -1,0 +1,17 @@
+id: TMA-AKS-4.5.2
+title: Consider external secret storage
+description: Consider external secret storage for AKS workloads by storing sensitive values in Azure Key Vault and retrieving them at runtime through the Azure Key Vault provider for Secrets Store CSI Driver instead of treating in-cluster Kubernetes Secret objects as the primary secret system. The benchmark marks this recommendation Manual.
+target: aks
+level: 2
+severity: medium
+tags:
+- aks
+- policies
+- secrets
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.5.2 Consider external secret storage
+audit:
+  type: manual
+  command: Audit secrets management by confirming that sensitive values are stored externally, delivered to pods through the AKS-supported secret path, and rotated without relying on manual redeployments. Microsoft’s current AKS guidance centers on Azure Key Vault, the Azure Key Vault provider for Secrets Store CSI Driver, and mounted secret delivery with autorotation support. • Verify secrets are primarily stored in Azure Key Vault, not embedded in code, manifests, or pipelines.
+remediation:
+  type: iac_patch
+  command: Move application secrets out of Kubernetes-native storage and deployment artifacts and into Azure Key Vault and then to pods at runtime through the Azure Key Vault provider for Secrets Store CSI Driver. In AKS, pair the CSI driver with Microsoft Entra Workload ID or the add-on managed identity, use mounted secret files as the primary consumption path, and enable autorotation where secret freshness matters. • Inventory secrets currently stored in code, manifests, pipelines, or standalone Kubernetes Secret objects and classify them for migration to Key Vault. • Enable the Azure Key Vault provider for Secrets Store CSI Driver on the cluster if it is not already enabled. • Configure workload access through Workload ID or the AKS-managed identity, with least-privilege Key Vault permissions scoped to only the required secret objects.

@@ -1,0 +1,17 @@
+id: TMA-AIX-4.7.1
+title: Ensure herald is configured
+description: 'The contents of the herald are displayed to users prior to login for local terminals. Warning messages inform users who are attempting to login to the system of their legal status regarding the system and should include the name of the organization that owns the system and any monitoring policies that are in place. Audit: a default herald must be set in /etc/security/login.cfg (review wording against site policy).'
+target: aix
+level: 1
+severity: low
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.7.1 Ensure herald is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/login.cfg -s default -a herald 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*herald=\([^ ]*\).*/\1/p'); if [ -n "$v" ]; then echo compliant; else echo "herald=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add a default login herald to /etc/security/login.cfg with the appropriate contents according to your site policy: chsec -f /etc/security/login.cfg -s default -a herald="Authorized users only. All activity may be monitored and reported.\\nlogin: "'

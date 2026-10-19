@@ -1,0 +1,21 @@
+id: TMA-CISCO-NXOS-1.6.3
+title: If a Local Time Zone is used, Configure Daylight Savings
+description: 'If local time zones are configured on network infrastructure, it is important to also configure the time "shift" that occurs as a result of Daylight Savings Time. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: low
+tags:
+- cisco-nxos
+- network
+- ntp
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.6.3 If a Local Time Zone is used, Configure Daylight Savings
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. switch(config)# sho run | i summer-time clock summer-time EDT 2 Sun Mar 02:00 1 Sun Nov 02:00 60'
+remediation:
+  type: iac_patch
+  command: |-
+    ! In most cases, just the name of the DST timezone name is sufficient. NX-OS assumes 1 hour offset, using the United States dates for DST.
+    clock summer-time <DST Timezone Name> for example:
+    clock summer-time EDT If a full definition of the change is needed, it can certainly be set:
+    clock summer-time <DST Timezone Name> <day1> <month1> <time1> <day2> <month2> <time2> <offset in minutes> where: - day1, month1, time1 define the start of the DST period - day2, month2, time2 define the end of the DST period

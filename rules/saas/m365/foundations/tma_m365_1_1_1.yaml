@@ -1,0 +1,17 @@
+id: TMA-M365-1.1.1
+title: Ensure Administrative accounts are cloud-only
+description: Administrative accounts are special privileged accounts that could have varying levels of access to data, users, and settings. Regular user accounts should never be utilized for administrative tasks and care should be taken, in the case of a hybrid environment, to keep administrative accounts separate from on-prem accounts. Administrative accounts should not have applications assigned so that they have no access to potentially vulnerable services (EX. email, Teams, SharePoint, etc.) and only access to perform tasks as needed for administrative purposes. Ensure administrative accounts are not On-premises sync enabled. In a hybrid environment, having separate accounts will help ensure that in the event of a breach in the cloud, that the breach does not affect the on-prem environment and vice versa.
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 1.1.1 Ensure Administrative accounts are cloud-only
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Identity > Users and select All users. 3. To the right of the search box click the Add filter button. 4. Add the On-premises sync enabled filter with the value set to Yes and click Apply. 5. Verify that no user accounts in administrative roles are present in the filtered list. To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "RoleManagement.Read.Directory","User.Read.All" 2. Run the following PowerShell script: $DirectoryRoles = Get-MgDirectoryRole # Get privileged role IDs $PrivilegedRoles = $DirectoryRoles | Where-Object { $_.DisplayName -like "*Administrator*" -or $_.DisplayName -eq "Global Reader" } # Get the members of these various roles $RoleMembers = $PrivilegedRoles | ForEach-Object { Get-MgDirectoryRoleMember -DirectoryRoleId $_.Id } | Select-Object Id -Unique # Retrieve details about the members in these roles $PrivilegedUsers
+    = $RoleMembers | ForEach-Object { Get-MgUser -UserId $_.Id -Property UserPrincipalName, DisplayName, Id, OnPremisesSyncEnabled } $PrivilegedUsers | Where-Object { $_.OnPremisesSyncEnabled -eq $true } |...'
+remediation:
+  type: iac_patch
+  command: Remediation will require first identifying the privileged accounts that are synced from on- premises and then creating a new cloud-only account for that user. Once a replacement account is established, the hybrid account should have its role reduced to that of a non- privileged user or removed depending on the need.

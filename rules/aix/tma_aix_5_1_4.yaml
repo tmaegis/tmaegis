@@ -1,0 +1,16 @@
+id: TMA-AIX-5.1.4
+title: Ensure an Inventory of Administrator accounts is established and maintained
+description: AIX defines Administrator accounts with the with the attribute admin. When true the account is Administrator and when false the account is considered User. An inventory of accounts with the attribute "admin=true" allows verification that all accounts considered administrative are so labeled by the system.
+target: aix
+level: 1
+severity: low
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.1.4 Ensure an Inventory of Administrator accounts is established and maintained
+audit:
+  type: manual
+  command: Verify that there is, off system, an inventory of Administrative accounts and that the date is not more 13 weeks old.
+remediation:
+  type: iac_patch
+  command: 'A printable report can be prepared using the following example: cnt=0 printf "%4s%68s\n" "AIX" "Administator Accounts" lsuser -R files -a admin ALL | while read usr adm; do if [[ ${adm} = "admin=true" ]] ; then printf "%12s" ${usr} let cnt=cnt+1 [[ $(expr ${cnt} % 6) == 0 ]] && print fi done [[ $(expr ${cnt} % 6) != 0 ]] && print'

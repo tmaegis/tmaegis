@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.4.1
+title: Ensure that data sets on SPOOL are encrypted
+description: One way to encrypt data sets on SPOOL is to associate a KeyLabel with a JESJOBS resource with a high-level qualifier of ENCRYPT. This profile is not used to protect or audit use of KeyLabels, just to specify what KeyLabel is associated with a SYSOUT or instream data set. Encrypting data sets on SPOOL provides an extra level of security for the data. Access to the data requires both access via the JESSPOOL class and access to the key label used to encrypt the data.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.4.1 Ensure that data sets on SPOOL are encrypted
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY and JESJOBS appear. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY and JESJOBS appear. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries that would cover the following resources ... (full steps: CIS section 8.4.1)'
+remediation:
+  type: iac_patch
+  command: 'To activate a class use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) SETROPTS CLASSACT(JESJOBS) To enable generic profile checking for the a class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) SETROPTS GENERIC(JESJOBS) To RACLIST the a class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To create a JESJOBS profile use the RACF RDEFINE command: RDEFINE JESJOBS ENCRYPT.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''DEFAULT KEY LABEL TO USE TO ENCRYPT JES SPOOL DATA SETS'') + JES( + KEYLABEL(DEFAULTKEY) ) To modify the KEYLABEL settings for a general resource profile use the RACF RALTER command: RALTER JESJOBS ENCRYPT.** + JES( + KEYLABEL(DEFAULTKEY) ) To create an FACILITY profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE FACILITY JES.ENCRYPT.OWNER + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''ALLOW DSKEYLBL= FOR OWNING USER ID'') RDEFINE FACILITY JES.ENCRYPT.SUBMITTER + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''ALLOW DSKEYLBL=
+    FOR SUBMITTING USER ID'') PERMIT <profile> CLASS(FACILITY) + ACCESS(READ) ID(<compliant>) SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant access list entries use the RACF ... (see CIS section 8.4.1)'

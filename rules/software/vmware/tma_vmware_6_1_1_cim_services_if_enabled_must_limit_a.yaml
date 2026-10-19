@@ -1,0 +1,17 @@
+id: TMA-VMWARE-6.1.1
+title: Host CIM services, if enabled, must limit access
+description: 'The Common Information Model (CIM) system allows for hardware-level management from remote applications through standard APIs. Ensuring only minimal access necessary to these applications is imperative to prevent potential security compromises. A dedicated service account, specific to each CIM application, should be created to limit access and privileges. Manual review: the check needs vCenter/PowerCLI, firmware or guest access, or an organization-specific value.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- services
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 6.1.1 Host CIM services, if enabled, must limit access
+audit:
+  type: manual
+  command: 'To verify CIM access is limited, check for a limited-privileged service account with the following CIM roles applied: Host.Config.SystemManagement Host.CIM.CIMInteraction Alternately, the following PowerCLI command may be used: # List all user accounts on the Host -Host Local connection required- Get-VMHostAccount'
+remediation:
+  type: iac_patch
+  command: 'To limit CIM access, perform the following: 1. Create a limited-privileged service account for CIM and other third-party applications. 2. This account should access the system via vCenter. 3. Give the account the CIM Interaction privilege only. This will enable the account to obtain a CIM ticket, which can then be used to perform both read and write CIM operations on the target host. If an account must connect to the host directly, this account must be granted the full "Administrator" role on the host. This is not recommended unless required by the monitoring software being used.'

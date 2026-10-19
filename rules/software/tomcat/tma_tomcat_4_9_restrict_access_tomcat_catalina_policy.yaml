@@ -1,0 +1,40 @@
+id: TMA-TOMCAT-4.9
+title: Restrict access to Tomcat catalina.policy
+description: 'The catalina.policy file is used to configure security policies for Tomcat. It is recommended that access to this file has the proper permissions to properly protect from unauthorized changes. $CATALINA_BASE/conf/catalina.policy must not match -perm /o+rwx,g+rwx,u+x and must be owned by $TOMCAT_OWNER:$TOMCAT_GROUP; expects 0 findings. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored. The expected owner/group are tomcat_admin:tomcat as in the benchmark; override with TOMCAT_OWNER / TOMCAT_GROUP.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- permissions
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 4.9 Restrict access to Tomcat catalina.policy
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; p="$B/conf/catalina.policy"; [ -e "$p" ] || exit 1; find -L "$p" -maxdepth 0 \( -perm /o+rwx,g+rwx,u+x -o ! -user "$O" -o ! -group "$G" \) -print 2>/dev/null | wc -l
+  expected_output: '0'
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; p="$B/conf/catalina.policy"; [ -e "$p" ] || exit 0; id -u "$O" >/dev/null 2>&1 && getent group "$G" >/dev/null 2>&1 || { echo "owner $O / group $G do not exist (set TOMCAT_OWNER/TOMCAT_GROUP)" >&2; exit 1; }
+    chown "$O:$G" "$p" && chmod 600 "$p"
+  guidance: "chown tomcat_admin:tomcat $CATALINA_BASE/conf/catalina.policy && chmod 600 $CATALINA_BASE/conf/catalina.policy. Restart Tomcat afterwards."

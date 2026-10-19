@@ -1,0 +1,20 @@
+id: TMA-MCP-5.2.3
+title: Ensure legacy Streamable HTTP session and stream- resumption mechanisms are disabled
+description: Under the 2026-07-28 revision, a server does not implement the legacy Streamable HTTP session and stream-resumption mechanisms that earlier revisions defined. A server that supports only this revision responds to a standalone GET or a DELETE on the MCP endpoint with 405, ignores a client-supplied Mcp-Session-Id header and neither mints nor echoes one, and ignores a Last-Event-ID header while still serving the request normally, because streams are not resumable. These mechanisms were removed in 2026-07-28, so a server that still honors them exposes a legacy session or replay surface an attacker can use to receive another identity's server-initiated messages or to resume a stream that should not be resumable. Deployments that stream must also scope each streamed response to its originating authenticated request so it cannot be retrieved across identities. This request-scoped SSE propert...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.2.3 Ensure legacy Streamable HTTP session and stream- resumption mechanisms are disabled
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_5_2_3"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 5.2.3"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For the 2026-07-28 revision, do not implement resumable streams or protocol-level sessions. Reject a standalone GET and a DELETE on the MCP endpoint with 405, ignore a Last-Event-ID header, and neither mint nor echo an Mcp-Session-Id header. Where a deployment streams responses, scope each streamed response to its originating authenticated request and maintain per-identity separation so events cannot be retrieved across identities. Where a tool uses the multi round-trip pattern, bind the requestState blob to the originating identity and authorize it on the follow-up call. Where the SDK in use exposes no server-side switch for the legacy surface, enforce the rejection at a front proxy or gateway, returning 405 to a standalone GET or DELETE on the MCP endpoint and stripping Mcp-Session-Id and Last-Event-ID before the origin. Gateway enforcement covers only paths that traverse the gateway, so restrict direct network reach to the origin where this layer is the enforcement point. This
+    is server middleware and configuration, and there is no portable command.

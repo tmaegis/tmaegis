@@ -1,0 +1,22 @@
+id: TMA-AKS-4.4.2
+title: Ensure that all Namespaces have Network Policies defined
+description: Ensure each namespace that hosts workloads has explicit NetworkPolicy resources defined so pod ingress and egress behavior is intentionally governed instead of left to the default state. In AKS, Azure CNI Overlay provides direct pod-to-pod communication on an overlay CIDR, and Microsoft documents that pods in an AKS cluster can send and receive traffic without limitations unless network policies are created. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Lists namespaces without any NetworkPolicy.
+target: aks
+level: 2
+severity: medium
+tags:
+- aks
+- policies
+- network
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.4.2 Ensure that all Namespaces have Network Policies defined
+audit:
+  type: command
+  command: |-
+    ns=$(kubectl get namespaces -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    np=$(kubectl get networkpolicies -A -o go-template='{{range .items}}{{.metadata.namespace}}{{"\n"}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$ns" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex' | grep -vxF "$(printf '%s\n' "$np" | sort -u)")
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | sed 's/^/no NetworkPolicy: /' | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Ensure the AKS cluster is using a supported network policy engine with Azure CNI Overlay, then defining explicit NetworkPolicy objects for every workload-hosting namespace. In AKS, pod traffic is unrestricted by default until policies are applied, Azure CNI Overlay supports Azure network policies, Calico, and Cilium, and Microsoft currently recommends Cilium for new policy deployments because of its scalability, security, and eBPF-based enforcement. 1. Enable or migrate to a supported network policy engine for the cluster if networkPolicy is unset or still using a legacy design. 2. Create a baseline deny-all policy in each workload namespace so traffic is blocked until explicitly allowed. 3. Add targeted ingress and egress allow rules for required application, platform, DNS, logging, and external service flows. 4.

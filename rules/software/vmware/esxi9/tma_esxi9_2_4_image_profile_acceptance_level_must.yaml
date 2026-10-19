@@ -1,0 +1,36 @@
+id: TMA-ESXI9-2.4
+title: Host image profile acceptance level must be PartnerSupported or higher
+description: 'The acceptance level on ESXi regulates the type of software that can be installed on the system, with four distinct levels: VMwareCertified, VMwareAccepted, PartnerSupported, and CommunitySupported. It''s advised to set the acceptance level to PartnerSupported or higher to ensure that only tested and digitally signed vSphere Installation Bundles (VIBs) are allowed for ... The audit runs esxcli software acceptance get and accepts VMwareCertified, VMwareAccepted or PartnerSupported. Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: high
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 2.4 Host image profile acceptance level must be PartnerSupported or higher
+audit:
+  type: command
+  command: |-
+    v=$(esxcli software acceptance get 2>/dev/null) || exit 1
+    case "$v" in VMwareCertified|VMwareAccepted|PartnerSupported) echo compliant ;; *) echo "acceptance level: $v" ;; esac
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    case "$(esxcli software acceptance get 2>/dev/null)" in CommunitySupported) esxcli software acceptance set --level=PartnerSupported ;; esac
+  guidance: "To verify the host image profile acceptance level perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure, then under System select Security Profile. 3. Under Host Image Profile Acceptance Level select Edit 4. In the dropdown select one of the following - VMware Certified, VMware Accepted, or Partner Supported. To implement the recommended configuration state, run the following PowerCLI command (in the example code, the level is Partner Supported): # Set the Software AcceptanceLevel for each host<span> Foreach ($VMHost in Get-VMHost ) { $ESXCli = Get-EsxCli -VMHost $VMHost $ESXCli.software.acceptance.Set(\"PartnerSupported\") }"

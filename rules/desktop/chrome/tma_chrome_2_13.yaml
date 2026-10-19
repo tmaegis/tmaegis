@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.13
+title: Ensure 'Disable proceeding from the Safe Browsing warning page' is set to 'Enabled'
+description: 'Google provides the Safe Browsing service. It shows a warning page when users navigate to sites that are flagged as potentially malicious. Disabled (0): Users can choose to proceed to the flagged site after the warning appears. The recommended state for this setting is: Enabled (1) Rationale: Malicious web pages are widely spread on the internet and pose the most significant threat to the user today. Users shall be prevented from navigating to potentially malicious web content. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DisableSafeBrowsingProceedAnyway (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.13 Ensure 'Disable proceeding from the Safe Browsing warning page' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DisableSafeBrowsingProceedAnyway'' -ErrorAction SilentlyContinue).''DisableSafeBrowsingProceedAnyway''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DisableSafeBrowsingProceedAnyway' -Value 1 -PropertyType DWord -Force | Out-Null

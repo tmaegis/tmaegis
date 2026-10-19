@@ -1,0 +1,17 @@
+id: TMA-AIX-4.9.1
+title: Ensure Address space layout randomization is enabled
+description: 'Address space layout randomization (ASLR) is an exploit mitigation technique which randomly arranges the address space of key data areas of a process. The recommendations here are focused on a system level rather than enterprise. The controls mention both user and administrator accounts. For the purpose of this benchmark, and account is administrator when the AIX user attribute admin is true. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.9.1 Ensure Address space layout randomization is enabled
+audit:
+  type: command
+  command: 'command -v vmo >/dev/null 2>&1 || exit 1; out=$(vmo -aF 2>/dev/null) || exit 1; r=compliant; for p in ''^[[:blank:]]*aslr[[:blank:]]*=[[:blank:]]*2$'' ''^[[:blank:]]*aslr32[[:blank:]]*=[[:blank:]]*"?0"?$'' ''^[[:blank:]]*aslr64[[:blank:]]*=[[:blank:]]*"?0"?$'' ''^[[:blank:]]*aslr32r[[:blank:]]*=[[:blank:]]*333$'' ''^[[:blank:]]*aslr64r[[:blank:]]*=[[:blank:]]*33333$'' ''^[[:blank:]]*aslr_r[[:blank:]]*=[[:blank:]]*0$''; do printf ''%s\n'' "$out" | grep -Eq -- "$p" || r="missing: $p"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to enable ASLR for all programs: # /usr/sbin/vmo -r -o aslr=2 -o aslr32=0 -o aslr32r=333 -o aslr64=0 -o aslr64r=33333 -o alsr_r=0 A reboot is required before this change takes effect.'

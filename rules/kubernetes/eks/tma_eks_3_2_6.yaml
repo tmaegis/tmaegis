@@ -1,0 +1,17 @@
+id: TMA-EKS-3.2.6
+title: Ensure the kubelet event recording QPS is set to an appropriate value
+description: In EKS, this control is about tuning how quickly the kubelet records events so worker nodes capture useful operational data without generating unnecessary event volume. AWS documents the kubelet as a customer-configurable component in EKS and supports kubelet tuning through managed node configuration paths such as launch templates, while the Kubernetes kubelet configuration defines eventRecordQPS with a default value of 50 events per second. Reported as a manual review because it needs site-specific judgement.
+target: eks
+level: 1
+severity: low
+tags:
+- eks
+- worker-node
+- kubelet
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.2.6 Ensure the kubelet event recording QPS is set to an appropriate value
+audit:
+  type: manual
+  command: To audit whether the kubelet event recording QPS is appropriately set on an Amazon EKS worker node, query the live effective kubelet configuration through the Kubernetes API server proxy and inspect the kubelet configz output for eventRecordQPS. Kubernetes identifies configz as the view of the kubelet’s final actuated configuration, and AWS notes that kubelet QPS settings are part of the customer-configurable side of EKS and can affect downstream components if changed carelessly.
+remediation:
+  type: iac_patch
+  command: If the audit shows eventRecordQPS is set too low, the worker node may throttle useful event creation during burst conditions and should be adjusted. If the value is 0, Kubernetes defines that as no limit enforced, so it should be used only when the additional event volume is intentional and downstream capacity has been considered. If the field is missing or null, first confirm the configz response is complete, because Kubernetes identifies configz as the view of the kubelet’s final actuated configuration. In EKS, remediation should be made through the supported node provisioning or node update workflow, not by directly editing the kubelet config file on the host, because AWS applies deeper node customization through launch templates and merged bootstrap user data.

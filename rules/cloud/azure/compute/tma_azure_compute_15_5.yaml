@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-15.5
+title: Ensure public network access is disabled for Batch accounts
+description: Disabling public network access ensures all connectivity occurs through private endpoints or approved virtual networks. Public network access exposes Batch accounts to internet threats like DDoS attacks and unauthorized access, violating Zero Trust principles and compliance requirements for secure data processing environments.
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- compute
+- network
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 15.5 Ensure public network access is disabled for Batch accounts
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Login to https://portal.azure.com 2. For each Batch Account, click on the Batch account name 3. Navigate to the Settings drop-down, then click Networking. 4. Under the Public access tab, ensure that Public Network Access is set to Disabled. Repeat for each Batch account in scope. Audit from Azure CLI az batch account show \ --name <batch-account-name> \ --resource-group <resource-group> \ --query "publicNetworkAccess" Audit from PowerShell (Get-AzBatchAccount -Name "<batch-account-name>").PublicNetworkAccess Expected Output: Disabled Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: c520cefc-285f-40f3-86e2-2efc38ef1f64 - Name: '' Configure Batch accounts to disable public network
+    access'' - Policy ID: 74c5a0ae-5e48-4738-b093-65e23a060488 - Name: ''Public network access should be disabled for Batch accounts'''
+remediation:
+  type: iac_patch
+  command: Remediation Procedure 1. Login to https://portal.azure.com 2. For each Batch Account, click on the Batch account name 3. Navigate to the Settings drop-down, then click Networking. 4. Under the Public access tab, ensure that Public Network Access is set to Disabled. 5. Click Save Repeat for each Batch account in scope. Remediate from Azure CLI az batch account update \ --name <account-name> \ --resource-group <rg-name> \ --public-network-access Disabled Remediate from PowerShell Update-AzBatchAccount -Name <account-name> -ResourceGroupName <rg-name> - PublicNetworkAccess Disabled

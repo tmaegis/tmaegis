@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.7.9
+title: Ensure 'Configure Windows protected print' is set to 'Enabled'
+description: 'This policy setting controls whether Windows protected print is enabled on the system. Windows protected print uses the modern print platform and Windows protected print mode. Modern print is designed to work only with Mopria-certified printers. Mopria is a collection of printer manufacturers and software vendors that define standards for IPP printing and eSCL scanning. The recommended state for this setting is: Enabled. Note: Windows protected print will not prohibit administrators or users from installing third-party print drivers through an installation package provided by the print device '
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.7.9
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\WPP'' -Name ''WindowsProtectedPrintGroupPolicyState'' -ErrorAction SilentlyContinue).''WindowsProtectedPrintGroupPolicyState''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''WindowsProtectedPrintGroupPolicyState='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\WPP')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\WPP' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Printers\WPP' -Name 'WindowsProtectedPrintGroupPolicyState' -Value 1 -PropertyType DWord -Force | Out-Null

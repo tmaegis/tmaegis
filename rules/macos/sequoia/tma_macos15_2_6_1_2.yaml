@@ -1,0 +1,41 @@
+id: TMA-MACOS15-2.6.1.2
+title: Ensure 'Show Location Icon in Control Center when System Services Request Your Location' Is Enabled
+description: This setting provides the user an understanding of the current status of Location Services and which applications are using it.
+target: macos
+level: 2
+severity: low
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.6.1.2 Ensure 'Show Location Icon in Control Center when System Services Request Your Location' Is Enabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    /usr/bin/osascript -l JavaScript <<'EOS'
+    $.NSUserDefaults.alloc.initWithSuiteName('com.apple.locationmenu').objectForKey('ShowSystemServices').js
+    EOS
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.locationmenu" 'ShowSystemServices' -bool true
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.locationmenu" 'ShowSystemServices' -bool true; true
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Terminal: sudo /usr/bin/defaults write /Library/Preferences/com.apple.locationmenu.plist ShowSystemServices -bool true. GUI: System Settings > Privacy & Security > Location Services > Details > Set Show location icon in menu bar when System Services request your location to enabled."

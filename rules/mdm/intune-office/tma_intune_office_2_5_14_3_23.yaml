@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.3.23
+title: Ensure 'Outlook Security Policy' is set to 'Use Outlook Security Group Policy'
+description: 'This policy setting controls which set of security settings are enforced in Outlook. When the option Use Outlook Security Group Policy is selected, Outlook uses security settings from Intune configuration profiles. Note: In previous versions of Outlook, when security settings were published in a form in Exchange Server public folders, users who needed these settings required the HKEY_CURRENT_USER\Software\Policies\Microsoft\Security:CheckAdminSettings registry key to be set on their computers for the settings to apply. In Outlook, the CheckAdminSettings registry key is no longer used to determine user''s security settings. ... Audit: reads the registry value(s) adminsecuritymode that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.3.23 Ensure 'Outlook Security Policy' is set to 'Use Outlook Security Group Policy'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''adminsecuritymode'' -ErrorAction SilentlyContinue).''adminsecuritymode''; if (-not ($null -ne $v -and @(3) -contains [int64]$v)) { $_.PSChildName + '':adminsecuritymode='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Outlook 2016\Security\Security Form Settings\Outlook Security Mode > Outlook Security Policy Important: For this setting to apply, the Outlook Security Mode setting must be enabled in Microsoft Outlook 2016\Security\Security Form Settings with Use Outlook Security Group Policy selected, as set in this benchmark.'

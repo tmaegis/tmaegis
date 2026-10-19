@@ -1,0 +1,40 @@
+id: TMA-MACOS14-2.12.3
+title: Ensure Automatic Login Is Disabled
+description: The automatic login feature saves a user's system access credentials and bypasses the login screen. Instead, the system automatically loads to the user's desktop screen. Disabling automatic login decreases the likelihood of an unauthorized person gaining access to a system.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.12.3 Ensure Automatic Login Is Disabled
+audit:
+  type: command
+  command: "/usr/bin/osascript -l JavaScript <<'EOS'\nfunction run() {\n  let pref1 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.loginwindow').objectForKey('com.apple.login.mcx.DisableAutoLoginClient'))\n  let pref2 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.loginwindow').objectForKey('autoLoginUser'))\n  if ( pref1 == 1 || pref2 == null ) {\n    return(\"true\")\n  } else {\n    return(\"false\")\n  }\n}\nEOS"
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    tma_bak /etc/kcpassword
+    /usr/bin/defaults delete /Library/Preferences/com.apple.loginwindow autoLoginUser 2>/dev/null
+    /bin/rm -f /etc/kcpassword
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Graphical Method: Perform the following steps to set automatic login to off: 1. Open System Settings 2. Select Users & Groups 3. Set Automatic login in as... to Off Terminal Method: Run the following command to disable automatic login: % /usr/bin/sudo /usr/bin/defaults delete /Library/Preferences/com.apple.loginwindow autoLoginUser Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.loginwindow 2. The key to include is com.apple.login.mcx.DisableAutoLoginClient 3. The key must be set to <true/> Note: If both the profile is enabled and a user is set to autologin, the profile will take precedent. In this case, the graphical or terminal remediation method should also be applied in case the profile is ever removed."

@@ -1,0 +1,17 @@
+id: TMA-FLASHARRAY-2.6
+title: Ensure the SMTP relay host is configured with STARTTLS encryption and authentication
+description: 'FlashArray supports configuring a relayhost for the simple mail transfer protocol (SMTP) for the purpose of ensuring email delivery for alert emails. Everpure recommends the following: ; Configure an SMTP relayhost. ; Configure the starttls encryption mode for SMTP. Passes when a relay host is configured and Encryption Mode is starttls; confirm a Username is set when the relay requires authentication. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "puresmtp list --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- encryption
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 2.6 Ensure the SMTP relay host is configured with STARTTLS encryption and authentication
+audit:
+  type: config_regex
+  pattern: (?is)(?:relay[ _-]?host[ \t]*[=:]?[ \t]*[A-Za-z0-9].*encryption[ _-]?mode[ \t]*[=:]?[ \t]*starttls|encryption[ _-]?mode[ \t]*[=:]?[ \t]*starttls.*relay[ _-]?host[ \t]*[=:]?[ \t]*[A-Za-z0-9])
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, update your SMTP configuration to specify your relay host, enforce TLS encryption, and configure authentication credentials. From the GUI: ; Navigate to Settings > System and locate the Alert Routing (Relay Host) panel. ; Enter your SMTP Relay Host address. ; Set the Encryption Mode to starttls. ; If authentication is required, enter the Username and Password. ; Click Save. From the CLI: ; Configure the relay host and enforce TLS: Use the puresmtp setattr command to specify your server and set the encryption mode to starttls. ; Command Syntax: puresmtp setattr --relay-host <HOST> --encryption- mode starttls'

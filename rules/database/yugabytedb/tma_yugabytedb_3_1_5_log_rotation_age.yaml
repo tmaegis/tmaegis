@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.5
+title: Ensure the maximum log file lifetime is set correctly
+description: When logging_collector is enabled, the log_rotation_age parameter determines the maximum lifetime of an individual log file (depending on the value of log_filename). After this many minutes have elapsed, a new log file will be created via automatic log file rotation. Current best practices advise log rotation at least daily, but your organization's logging policy should dictate your rotation schedule. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Passes when time-based rotation is enabled (log_rotation_age > 0, default 1d); confirm the value matches the logging policy.
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.5 Ensure the maximum log file lifetime is set correctly
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SELECT CASE WHEN setting::bigint > 0 THEN 'compliant' ELSE 'disabled' END FROM pg_settings WHERE name = 'log_rotation_age'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_rotation_age='1d'" (or the value your policy requires) on every YB-TServer and restart it.

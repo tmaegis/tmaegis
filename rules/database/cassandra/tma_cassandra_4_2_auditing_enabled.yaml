@@ -1,0 +1,20 @@
+id: TMA-CASSANDRA-4.2
+title: Ensure that auditing is enabled
+description: Audit logging in Cassandra logs every incoming CQL command request, Authentication (successful as well as unsuccessful login) to C* node. Currently, there are two implementations provided, the custom logger can be implemented and injected with the class name as a parameter in cassandra.yaml. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Checks /etc/cassandra/cassandra.yaml (package install; SKIP when it does not exist).
+target: cassandra
+level: 1
+severity: high
+tags:
+- cassandra
+- logging
+- audit
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 4.2 Ensure that auditing is enabled
+audit:
+  type: file_regex
+  file_path: /etc/cassandra/cassandra.yaml
+  pattern: (?m)^audit_logging_options:[ \t]*\n(?:[ \t]*(?:#[^\n]*)?\n|[ \t]+[^\n]*\n)*?[ \t]+enabled:[ \t]*['\x22]?true\b
+  requires_file:
+  - /etc/cassandra/cassandra.yaml
+remediation:
+  type: iac_patch
+  command: 'Set audit_logging_options.enabled: true (logger BinAuditLogger or FileAuditLogger, with included_categories) in cassandra.yaml and restart, or run nodetool enableauditlog on each node.'

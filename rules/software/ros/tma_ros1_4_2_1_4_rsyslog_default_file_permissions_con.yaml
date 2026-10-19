@@ -1,0 +1,23 @@
+id: TMA-ROS1-4.2.1.4
+title: Ensure rsyslog default file permissions configured
+description: rsyslog will create logfiles that do not already exist on the system. This setting controls what permissions will be applied to these newly created files. The audit requires $FileCreateMode 0640 or more restrictive in /etc/rsyslog.conf or rsyslog.d. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.2.1.4 Ensure rsyslog default file permissions configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    m=$(grep -hs '^\$FileCreateMode' /etc/rsyslog.conf /etc/rsyslog.d/*.conf | awk '{print $2}' | tail -n 1)
+    [ -n "$m" ] || { echo '$FileCreateMode not set'; exit 1; }
+    [ $(( 8#$m & 8#0137 )) -eq 0 ] && echo compliant || echo "\$FileCreateMode $m"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/rsyslog.conf and /etc/rsyslog.d/*.conf files and set $FileCreateMode to 0640 or more restrictive: $FileCreateMode 0640'

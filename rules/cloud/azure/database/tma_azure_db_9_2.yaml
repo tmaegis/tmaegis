@@ -1,0 +1,19 @@
+id: TMA-AZURE-DB-9.2
+title: Ensure that 'Public Network Access' is set to 'Disable'
+description: Disabling public network access restricts the service from accessing public networks. A secure network architecture requires carefully constructed network segmentation. Public network access is overly permissive and introduces unintended vectors for threat activity.
+target: azure
+level: 2
+severity: low
+tags:
+- access-control
+- azure
+- cloud
+- database
+- network
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 9.2 Ensure that 'Public Network Access' is set to 'Disable'
+audit:
+  type: manual
+  command: 'From Azure Portal 1. Go to SQL servers. 2. For each SQL server, under Security, click Networking. 3. Ensure that Public network access is set to Disable. From Azure CLI List all SQL Servers and ensure publicNetworkAccess is not Enabled: az sql server list --query "[].{name:name, resourceGroup:resourceGroup, publicNetworkAccess:publicNetworkAccess}" From PowerShell List all SQL Servers and ensure PublicNetworkAccess is not Enabled: Get-AzSqlServer | Select-Object -Property ServerName, ResourceGroupName, PublicNetworkAccess Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 1b8ca024-1d5c-4dec-8995-b1a932b41780 - Name: ''Public network access on Azure SQL Database should be disabled'''
+remediation:
+  type: iac_patch
+  command: 'From Azure Portal 1. Go to SQL servers. 2. For each SQL server, under Security, click Networking. 3. Set Public network access to Disable. 4. Click Save. From Azure CLI For each SQL server with publicNetworkAccess Enabled, set it to Disabled: az sql server update -n <sqlServerName> -g <resourceGroup> --set publicNetworkAccess="Disabled" From PowerShell For each SQL server with PublicNetworkAccess Enabled, set it to Disabled: Set-AzSqlServer -ServerName <sqlServerName> -ResourceGroupName <resourceGroup> -PublicNetworkAccess "Disabled"'

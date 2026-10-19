@@ -1,0 +1,25 @@
+id: TMA-F5-BIGIP-4.6
+title: Ensure to set SSH MAC algorithm to hmac-sha2-256
+description: 'To set strong Hashing algorithm PASS requires the sys sshd include statement to contain a MACs line listing hmac-sha2-256. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- crypto
+reference: CIS F5 Networks Benchmark v1.0.0 - 4.6 Ensure to set SSH MAC algorithm to hmac-sha2-256
+audit:
+  type: config_regex
+  pattern: (?ms)^sys sshd \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+include \"[^\"]*\bMACs [^\"\n]*\bhmac-sha2-256\b
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys sshd include "MACs hmac-sha2-256"
+    (merge with any existing Ciphers/KexAlgorithms lines in the same include string)
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to tmsh by typing the following command:tmsh
+    2-To modify the sshd configuration, type the following command to start the vi editor:edit /sys sshd all-properties
+    3-To change the list of ciphers, you can navigate to the line that starts with the include statement, and use the keyword MACs ,and adding the list of desired MACs to the 2-line include statement:
+    include "Ciphers aes128-cbc,aes128-ctr,aes192-ctr,aes256-
+    ctr,arcfour128,arcfour256,arcfour MACs hmac-sha2-256"

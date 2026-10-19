@@ -1,0 +1,24 @@
+id: TMA-CISCO-NXOS-1.2.1
+title: Restrict Access to VTY Sessions
+description: 'Restrict Management Access to trusted management stations and VLANs. Exposing the management interface too broadly exposes that interface to MiTM (Monkey in the Middle) attacks as well as to credential stuffing attacks. The question "should your receptionist have access to your core switch?" usually illustrates the need for ... CIS marks this Manual; automated: requires an ''access-class ... in'' under ''line vty''. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- management-plane
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.2.1 Restrict Access to VTY Sessions
+audit:
+  type: config_regex
+  pattern: (?m)^line vty[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+(?:ip |ipv6 )?access-class \S+ in\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! Create an access-list that defines the various trusted subnets and/or stations:
+    ip access-list ACL-MGT
+    remark access-class ACL
+    permit ip 192.168.12.0/24 any
+    deny ip any any log It is suggested that all ACLs are commented to help self-document the configuration. The last line in the ACL should read deny ip any any log to record all attempts to reach the management interface from unauthorized stations. Apply the Access-Class to the VTY interface:
+    line vty
+    access-class ACL-MGT in

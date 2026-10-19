@@ -1,0 +1,18 @@
+id: TMA-MYSQL-5.12
+title: Ensure Proper Use Of ALLOW_NONEXISTENT_DEFINER
+description: Its critical to limit users ability to set and effective authorization ID that is used with executing a view or stored program. This grant provides a method to escalate privileges within MySQL views and procedures.
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- authorization
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 5.12 Ensure Proper Use Of ALLOW_NONEXISTENT_DEFINER
+audit:
+  type: manual
+  command: Run SELECT GRANTEE FROM INFORMATION_SCHEMA.USER_PRIVILEGES WHERE PRIVILEGE_TYPE = 'ALLOW_NONEXISTENT_DEFINER'; Ensure only administrative users are returned in the result set.
+remediation:
+  type: iac_patch
+  command: REVOKE ALLOW_NONEXISTENT_DEFINER ON *.* FROM '<user>'@'<host>'; for each non-administrative grantee.

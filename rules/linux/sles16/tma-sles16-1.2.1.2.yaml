@@ -1,0 +1,20 @@
+id: TMA-SLES16-1.2.1.2
+title: Ensure gpgcheck is configured
+description: The gpgcheck option, found in the main section of the /etc/zypp/zypp.conf and individual /etc/zypp/repos.d/*.repo files determines if an RPM package's signature is checked prior to its installation.
+target: linux
+os_family:
+- sles-16
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 16 Benchmark v1.0.0 - 1.2.1.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''grep -Pi -- ''"''"''^\h*gpgcheck\h*=\h*(0|false|no|off)\b''"''"'' /etc/zypp/zypp.conf'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; o=$(bash -c ''grep -Pris -- ''"''"''^\h*gpgcheck\h*=\h*(0|[2-9]|[1-9][0-9]+|false|no|off)\b''"''"'' /etc/zypp/repos.d/'' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit /etc/zypp/zypp.conf and set gpgcheck=on: Example # sed -i ''s/^gpgcheck\s*=\s*.*/gpgcheck=on/'' /etc/zypp/zypp.conf Edit any failing files in /etc/zypp/repos.d/* and set all instances starting with gpgcheck to on. Example: # find /etc/zypp/repos.d/ -name "*.repo" -exec echo "Checking:" {} \; -exec sed -i ''s/^gpgcheck\s*=\s*.*/gpgcheck=on/'' {} \; Note: true,yes, or 1 is also acceptable.'

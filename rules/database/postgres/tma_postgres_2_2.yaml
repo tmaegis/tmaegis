@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-2.2
+title: Ensure extension directory has appropriate ownership and permissions
+description: The extension directory is the location of the PostgreSQL extensions. Extensions are storage engines or user defined functions (UDFs). Reads SHAREDIR from the pg_config view (superuser) and requires <sharedir>/extension to be drwxr-xr-x root:root. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- filesystem
+- permissions
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 2.2 Ensure extension directory has appropriate ownership and permissions
+audit:
+  type: command
+  command: sd=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT setting FROM pg_config WHERE name = 'SHAREDIR'" 2>/dev/null) || exit 1; [ -n "$sd" ] || exit 1; s=$(stat -c '%a %U %G' "$sd/extension" 2>/dev/null) || exit 1; [ "$s" = "755 root root" ] && echo compliant || echo "$s"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chown root:root <sharedir>/extension && chmod 0755 <sharedir>/extension (sharedir from pg_config --sharedir). If the permissions needed correcting, verify that no extension files in that directory were modified.

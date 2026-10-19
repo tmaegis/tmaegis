@@ -1,0 +1,20 @@
+id: TMA-WIN10-19.7.8.4
+title: Ensure 'Turn off all Windows spotlight features' is set to 'Enabled'
+description: 'This policy setting determines whether the all Windows Spotlight features are turned on/off (together). The recommended state for this setting is: Enabled. Note: Per Microsoft TechNet, this policy setting only applies to Windows 10 Enterprise and Windows 10 Education editions.'
+target: windows
+os_family:
+- windows-10
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 19.7.8.4
+audit:
+  type: registry
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\Software\Policies\Microsoft\Windows\CloudContent'') -Name ''DisableWindowsSpotlightFeatures'' -ErrorAction SilentlyContinue).''DisableWindowsSpotlightFeatures''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':DisableWindowsSpotlightFeatures='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure through Group Policy (User Configuration): User Configuration\Policies\Administrative Templates\Windows Components\Cloud Content\Turn off all Windows spotlight features'

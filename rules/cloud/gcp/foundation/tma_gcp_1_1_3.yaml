@@ -1,0 +1,18 @@
+id: TMA-GCP-1.1.3
+title: Ensure Folders Are Structured By Environment And Sensitivity
+description: Ensure that GCP Resource Manager folders are structured primarily by environment (for example, production, non-production, sandbox) and sensitivity (for example, security, logging, shared services, regulated workloads), rather than mirroring the corporate org chart. Folders should group projects that share similar security requirements and controls so that appropriate Organization Policies, IAM policies, and other guardrails can be applied consistently at the folder level. A clear folder structure based on environment and sensitivity makes it easier to apply consistent guardrails and centralized security controls to projects that have similar risk profiles and compliance needs. Folders enable hierarchical policy inheritance where stricter controls can be applied to production folders while development folders can have more relaxed policies for experimentation. Poorly defined or ad-hoc...
+target: gcp
+level: 2
+severity: medium
+tags:
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 1.1.3 Ensure Folders Are Structured By Environment And Sensitivity
+audit:
+  type: manual
+  command: 'From Google Cloud Admin Console 1. Navigate to Google Cloud Console at https://console.cloud.google.com 2. Select your organization from the organization dropdown at the top 3. Go to IAM & Admin → Manage resources to view the organization hierarchy 4. Review the folder structure: - Click on your organization to expand the folder tree - Note all top-level folders and their sub-folders - Document the folder hierarchy (organization → folders → sub-folders → projects) 5. Evaluate folder structure alignment: - Review top-level and key folders to determine whether they are clearly aligned to: - Environment (for example, production, non-production, sandbox). - Sensitivity/function (for example, security, logging, shared services, regulated). - Note any OUs whose purpose is unclear or that appear to be organized mainly by department or owner rather than environment/sensitivity. 6. For each environment/sensitivity folder, select a sample of projects and verify that their primary workloads
+    match the folder''s stated purpose. - Note any accounts that mix production and non-production workloads in the same OU when separate OUs are defined. - Note any accounts that place highly sensitive or r...'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Admin Console 1. Work with security, platform, and application teams to agree on a small set of top-level OUs such as: - Security / Management - Shared Services / Infrastructure - Prod - Non-Prod (dev, test, staging) - You may also define dedicated OUs for highly regulated workloads. 2. Create Folder Structure in GCP - Navigate to Google Cloud Console at https://console.cloud.google.com - Select your organization from the organization dropdown - Go to IAM & Admin → Manage resources - Click CREATE FOLDER at the top - For each top-level folder in your design: o Enter Folder name (e.g., "Production") o Select Organization as the parent o Click CREATE - For sub-folders (e.g., "Regulated" under "Production"): o Click CREATE FOLDER o Enter Folder name (e.g., "Regulated") o Select the parent folder (e.g., "Production") o Click CREATE - Repeat until the complete folder structure is created 3. Export or list all existing projects and their current folders. Create a simple
+    mapping from each project to its target folder based on environment and sensitivity. 4. Move Projects to Environment/Sensitivity-Based Folders - Navigate to IAM & Admin → Manage resources - Start with...'

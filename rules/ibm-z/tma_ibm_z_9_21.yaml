@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-9.21
+title: Ensure that ability to switch into superuser mode is controlled
+description: When a user switches into superuser mode (for example, by issuing the su command in the shell) they operate with an effective UID of 0. That is, they are as privileged as if they were assigned UID(0) in their OMVS segment. Granting access to BPX.SUPERUSER should be viewed to be as sensitive as explicitly assigning UID(0). Erroneous access to BPX.SUPERUSER can result in complete compromise of the system.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.21 Ensure that ability to switch into superuser mode is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering the BPX.SUPERUSER resource Request reports generated using ... (full steps: CIS section 9.21)'
+remediation:
+  type: iac_patch
+  command: 'To activate the FACILITY class use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for the FACILITY class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST the FACILITY class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To create a fully-qualified profile use the RACF RDEFINE command: RDEFINE FACILITY BPX.SUPERUSER + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''PERMISSION TO USE THE SU COMMAND TO OBTAIN SUPERUSER AUTHORITY'') PERMIT BPX.SUPERUSER CLASS(FACILITY) + ACCESS(READ) ID(SYSPROG) SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER FACILITY BPX.SUPERUSER + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access
+    checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated ... (see CIS section 9.21)'

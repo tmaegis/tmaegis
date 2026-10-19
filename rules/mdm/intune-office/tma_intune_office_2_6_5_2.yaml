@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.6.5.2
+title: Ensure 'Disable Slide Update' is set to 'Enabled'
+description: 'This policy setting controls whether users can link slides in a presentation with their counterparts in a PowerPoint Slide Library. PowerPoint users can share and reuse slide content by storing individual slide files in a centrally located Slide Library on a server running Office SharePoint Server. Using the Slide Update feature, users can associate a slide in a presentation on a user''s computer with the original slide that resides in the Slide Library on the server. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) disableslideupdate that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 2
+severity: low
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.6.5.2 Ensure 'Disable Slide Update' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\powerpoint\slide libraries'') -Name ''disableslideupdate'' -ErrorAction SilentlyContinue).''disableslideupdate''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':disableslideupdate='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft PowerPoint 2016\Miscellaneous\Disable Slide Update'

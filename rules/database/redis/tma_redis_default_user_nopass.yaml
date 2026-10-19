@@ -1,0 +1,21 @@
+id: TMA-REDIS-DEFAULT-USER-NOPASS
+title: Ensure the default ACL user is not configured with nopass
+description: '''user default ... nopass'' explicitly allows password-less access with the default user''s permissions. Checks /etc/redis/redis.conf (SKIP when it does not exist; RHEL uses /etc/redis.conf).'
+target: redis
+level: 1
+severity: critical
+tags:
+- redis
+- database
+- authentication
+reference: CIS Redis Benchmark - Authentication / ACL default user (verify section number for your release)
+audit:
+  type: file_regex
+  file_path: /etc/redis/redis.conf
+  pattern: (?m)^[ \t]*user[ \t]+default[ \t][^\n]*\bnopass\b
+  must_not_match: true
+  requires_file:
+  - /etc/redis/redis.conf
+remediation:
+  type: iac_patch
+  command: Replace nopass with '><secret>' (or turn the user off with 'user default off') in redis.conf / the aclfile and restart, or ACL SETUSER default resetpass ><secret> followed by ACL SAVE

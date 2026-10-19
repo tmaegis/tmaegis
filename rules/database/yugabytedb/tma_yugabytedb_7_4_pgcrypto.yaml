@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-7.4
+title: Ensure the pgcrypto extension is installed and configured correctly
+description: YugabyteDB must implement cryptographic mechanisms to prevent unauthorized disclosure or modification of organization-defined information at rest (to include, at a minimum, PII and classified information) on organization-defined information system components.
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- encryption
+reference: CIS YugabyteDB Benchmark v2.0.0 - 7.4 Ensure the pgcrypto extension is installed and configured correctly
+audit:
+  type: manual
+  command: Run SELECT * FROM pg_available_extensions WHERE name = 'pgcrypto'; and, in each database holding sensitive data, SELECT * FROM pg_extension WHERE extname = 'pgcrypto'; If data requires column encryption and pgcrypto is not installed or used, this is a finding; also confirm disk/filesystem encryption where policy requires it.
+remediation:
+  type: iac_patch
+  command: 'The pgcrypto extension is included with the YugabyteDB ''contrib'' package. Although included, it needs to be created in the database. As the database administrator, run the following: yugabyte=# CREATE EXTENSION pgcrypto; Verify pgcrypto is installed: yugabyte=# SELECT * FROM pg_available_extensions WHERE name=''pgcrypto'';'

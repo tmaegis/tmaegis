@@ -1,0 +1,23 @@
+id: TMA-CISCO-IOSXR-2.1.4.1
+title: Authentication (IS-IS)
+description: Enable authentication for ISIS packets and to specify the set of keys that can be used on an interface. This is part of the ISIS authentication setup. Passes when IS-IS is not configured; otherwise requires both 'lsp-password' and an interface 'hello-password'. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 2
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 2.1.4.1 Authentication
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^l \t\n]|l(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^\-\n]|-(?:$|[^p\n]|p(?:$|[^a\n]|a(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^w\n]|w(?:$|[^o\n]|o(?:$|[^r\n]|r(?:$|[^d\n]|d(?:$|[^ \n])))))))))))))[^\n]*\n)*[ \t]*router isis [^\n]*(?:\n(?:[ \t]*(?:$|[^l \t\n]|l(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^\-\n]|-(?:$|[^p\n]|p(?:$|[^a\n]|a(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^w\n]|w(?:$|[^o\n]|o(?:$|[^r\n]|r(?:$|[^d\n]|d(?:$|[^ \n])))))))))))))[^\n]*))*\n?\z)|(?:\A(?:[ \t]*(?:$|[^h \t\n]|h(?:$|[^e\n]|e(?:$|[^l\n]|l(?:$|[^l\n]|l(?:$|[^o\n]|o(?:$|[^\-\n]|-(?:$|[^p\n]|p(?:$|[^a\n]|a(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^w\n]|w(?:$|[^o\n]|o(?:$|[^r\n]|r(?:$|[^d\n]|d(?:$|[^ \n])))))))))))))))[^\n]*\n)*[ \t]*router isis [^\n]*(?:\n(?:[ \t]*(?:$|[^h \t\n]|h(?:$|[^e\n]|e(?:$|[^l\n]|l(?:$|[^l\n]|l(?:$|[^o\n]|o(?:$|[^\-\n]|-(?:$|[^p\n]|p(?:$|[^a\n]|a(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^w\n]|w(?:$|[^o\n]|o(?:$|[^r\n]|r(?:$|[^d\n]|d(?:$|[^ \n])))))))))))))))[^\n]*))*\n?\z)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure the Interface with the RIPv2 key chain.
+    router isis {process_id}
+    lsp-password keychain {key_chain_name}
+    interface {interface}
+    hello-password keychain {key_chain_name}

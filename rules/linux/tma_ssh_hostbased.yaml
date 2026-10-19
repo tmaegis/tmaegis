@@ -1,0 +1,27 @@
+id: TMA-LNX-SSH-HOSTBASED
+title: Ensure SSH HostbasedAuthentication is disabled
+description: Hardens the SSH daemon directive HostbasedAuthentication.
+target: linux
+os_family:
+- ubuntu-22.04
+- ubuntu-24.04
+- rocky-9
+level: 1
+severity: medium
+tags:
+- ssh
+- server
+reference: CIS Linux Benchmark - Services / SSH Server Configuration (verify section number for your distro release)
+audit:
+  type: command
+  command: sshd -T 2>/dev/null | grep -i '^hostbasedauthentication '
+  expected_output: hostbasedauthentication no
+remediation:
+  type: file_line
+  file_path: /etc/ssh/sshd_config
+  match_regex: (?mi)^\s*#?\s*HostbasedAuthentication\b.*$
+  replace_line: HostbasedAuthentication no
+  verify_cmd: sshd -t -f {file}
+  backup_files:
+  - /etc/ssh/sshd_config
+  insert_at: top

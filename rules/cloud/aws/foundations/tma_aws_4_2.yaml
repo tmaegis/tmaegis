@@ -1,0 +1,17 @@
+id: TMA-AWS-4.2
+title: Ensure CloudTrail log file validation is enabled
+description: CloudTrail log file validation creates a digitally signed digest file containing a hash of each log that CloudTrail writes to S3. These digest files can be used to determine whether a log file was changed, deleted, or remained unchanged after CloudTrail delivered the log. It is recommended that file validation be enabled for all CloudTrails. Enabling log file validation will provide additional integrity checks for CloudTrail logs.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- logging
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 4.2 Ensure CloudTrail log file validation is enabled
+audit:
+  type: manual
+  command: 'Perform the following on each trail to determine if log file validation is enabled: From Console: 1. Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/cloudtrail. 2. Click on Trails in the left navigation pane. 3. For every trail: - Click on a trail via the link in the Name column. - Under the General details section, ensure Log file validation is set to Enabled. From Command Line: List all trails: aws cloudtrail describe-trails Ensure LogFileValidationEnabled is set to true for each trail.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to enable log file validation on a given trail: From Console: 1. Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/cloudtrail. 2. Click on Trails in the left navigation pane. 3. Click on the target trail. 4. Within the General details section, click edit. 5. Under Advanced settings, check the enable box under Log file validation. 6. Click Save changes. From Command Line: Enable log file validation on a trail: aws cloudtrail update-trail --name <trail_name> --enable-log-file-validation Note that periodic validation of logs using these digests can be carried out by running the following command: aws cloudtrail validate-logs --trail-arn <trail_arn> --start-time <start_time> --end-time <end_time>'

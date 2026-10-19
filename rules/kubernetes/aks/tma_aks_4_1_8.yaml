@@ -1,0 +1,17 @@
+id: TMA-AKS-4.1.8
+title: Minimize access to create persistent volumes
+description: Permission to create persistent storage in AKS is granted only where it is required. In AKS, this includes direct creation of PersistentVolume objects and, more commonly, the ability to trigger dynamic provisioning through PersistentVolumeClaim and StorageClass use, because AKS storage classes and CSI drivers can create the underlying Azure Disk, Azure File share, or other backed storage on demand. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.8 Minimize access to create persistent volumes
+audit:
+  type: manual
+  command: Review AKS RBAC to identify any users, groups, or service accounts that can create PersistentVolume, PersistentVolumeClaim, or StorageClass resources. In AKS, this review should include PersistentVolumeClaim and StorageClass permissions because persistent storage is commonly provisioned dynamically through CSI drivers rather than by manually creating PersistentVolume objects.
+remediation:
+  type: iac_patch
+  command: Remove persistent-storage creation rights from any user, group, or service account that does not require them, and replace broad assignments with the lowest-privilege role and narrowest scope possible. Limit direct PersistentVolume and StorageClass administration to approved administrators, and allow workloads to use only the PersistentVolumeClaim access they need for approved storage classes. After changes are made, verify that required applications can still provision storage through the intended AKS CSI driver path. Where possible, remove create access to PersistentVolume objects in the cluster.

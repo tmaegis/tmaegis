@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.25
+title: Ensure that cgroup usage is confirmed
+description: Containers should run in the default Docker cgroup unless a specific, controlled parent cgroup is intended. Flags containers with a non-empty HostConfig.CgroupParent for review. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: low
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.25 Ensure that cgroup usage is confirmed
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} [{{.HostConfig.CgroupParent}}]' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '$2!="[]" {print $1" "$2}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Run containers without --cgroup-parent unless a specific, reviewed cgroup is required.

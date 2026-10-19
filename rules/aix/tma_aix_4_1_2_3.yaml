@@ -1,0 +1,18 @@
+id: TMA-AIX-4.1.2.3
+title: Ensure Home directory write access is restricted to owner
+description: 'Home directories must be writeable only by the owner. This recommendation audits (or removes) any write permission given via traditional file mode permissions (using chmod). Neither should a home directory have any permissions managed (whether permit or deny) via ACL''s. HOME directories with group or world write access enable malicious users to add files or directories, or even remove them if the directory ''T'' (SVTX) bit is not also set. Audit: HOME directories of uid >= 200 accounts must not be group or world writable (ACLs are not evaluated).'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.2.3 Ensure Home directory write access is restricted to owner
+audit:
+  type: command
+  command: 'command -v lsuser >/dev/null 2>&1 || exit 1; out=$( { lsuser -R files -a id home ALL | while read name ids homes rest; do uid=${ids#id=}; home=${homes#home=}; [ "$uid" -ge 200 ] 2>/dev/null || continue; [ "$home" = /dev/null ] && continue; [ "$home" = / ] && continue; if [ ! -d "$home" ]; then echo "$home does not exist ($name)"; continue; fi; ls -ld "$home/" | awk ''substr($1,6,1)=="w" || substr($1,9,1)=="w" {print "group/world writable: " $NF}''; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For all local accounts with UID >= 200: Remove write permission from home directories that have group or world write access: #!/usr/bin/ksh -e # home_mode_acl: 4.8.1.3 # Provided to CIS by AIXTools # Copyright AIXTools, 2022 typeset -i UIDCK=$1 typeset -i ret=0 if test $UIDCK == 0; then UIDCK=200 fi lsuser -R files -a id home account_locked ALL | while read name ids homes locks rest; do uid_check=$(echo ${ids} | cut -f2 -d =) if [[ ${uid_check} -ge ${UIDCK} ]]; then home=$(echo ${homes} | cut -f2 -d =) locked=$(echo ${locks} | cut -f2 -d =) if [[ ${home} == "/dev/null" || ${locked} == "true" ]]; then continue elif [[ ! -d ${home} ]]; then /usr/bin/printf "%-32s does not exist; locking account named [%s]\n" ${home} ${name} chuser -R files account_locked=true $name else [[ ${home} != "/" && ${home} != "/dev/null" ]] perl -e ''$f=$ARGV[0]; $m=(stat $f)[2];\ exit (($m & 022) + 1) if ($m & 0200000000);\ exit($m & 022);'' $home # exit($m&022 +1) if ($m & 0200000000) else exit ($m &022);
+    '' $home ret=$? [[ $ret == 0 ]] && continue if (( $ret & 022 )); then printf "%s: had group or world write mode\n" $home chmod og-w ${home} fi if (($ret & 1)); then printf "%s ... (see CIS section 4.1.2.3)'

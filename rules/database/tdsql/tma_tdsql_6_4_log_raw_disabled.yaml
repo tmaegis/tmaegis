@@ -1,0 +1,18 @@
+id: TMA-TDSQL-6.4
+title: Ensure `log_raw` Is Disabled
+description: The log_raw parameter controls whether passwords are recorded in cleartext in the logs. When enabled, passwords in statements such as CHANGE MASTER, CREATE USER, and GRANT are written to the logs in cleartext. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5).
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- logging
+- credentials
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 6.4 Ensure `log_raw` Is Disabled
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT @@global.log_raw" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Ensure log_raw = OFF in the [mysqld] section of my.cnf / the parameter template (SET GLOBAL log_raw = OFF).

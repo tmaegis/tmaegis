@@ -1,0 +1,28 @@
+id: TMA-FORTIGATE-4.5.2
+title: Block applications running on non-default ports
+description: Ensure FortiGate Application Control blocks applications running on non-default ports. PASS requires an application control list with enforce-default-app-port enable. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: medium
+tags:
+- fortigate
+- threat-prevention
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.5.2 Block applications running on non-default ports
+audit:
+  type: config_regex
+  pattern: (?m)^config application list\n(?:[ \t]+[^\n]*\n)*?[ \t]+set enforce-default-app-port enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config application list
+        edit "<profile>"
+            set enforce-default-app-port enable
+        next
+    end
+    # CIS guidance:
+    GUI:
+    1. Go to "Security Profiles" > "Application Control".
+    2. Select relevant App Control profile. Enable "Block applications detected on non-default ports" option. On CLI:
+    config application list
+        edit <profile name>
+            set enforce-default-app-port enable

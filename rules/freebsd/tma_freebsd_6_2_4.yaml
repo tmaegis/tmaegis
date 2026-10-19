@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.4
+title: Ensure no duplicate UIDs exist
+description: 'Although the adduser or pw program will not let you create a duplicate User ID (UID), an administrator can manually edit the /etc/passwd file and change the UID field. Users must be assigned unique UIDs for accountability and to ensure appropriate access protections. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.4 Ensure no duplicate UIDs exist
+audit:
+  type: command
+  command: 'command -v cut >/dev/null 2>&1 || exit 1; out=$( { cut -d: -f3 /etc/passwd | sort -n | uniq -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the audit script's results, establish unique UIDs and review all files owned by the shared UIDs to determine which UID they are supposed to belong to.

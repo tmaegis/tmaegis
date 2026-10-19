@@ -1,0 +1,35 @@
+id: TMA-OCI-5.1.1
+title: Ensure no Object Storage buckets are publicly visible.
+description: A bucket is a logical container for storing objects. It is associated with a single compartment that has policies that determine what action a user can perform on a bucket and on all the objects in the bucket. By Default a newly created bucket is private. It is recommended that no bucket be publicly accessible. Removing unfettered reading of objects in a bucket reduces an organization's exposure to data loss. Every bucket must have public-access-type NoPublicAccess. Covers every subscribed region and every accessible compartment. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: critical
+tags:
+- oci
+- storage
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 5.1.1 Ensure no Object Storage buckets are publicly visible.
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    cs=$(oci iam compartment list --compartment-id "$t" --compartment-id-in-subtree true --access-level ACCESSIBLE --all --query 'data[?"lifecycle-state"==`"ACTIVE"`].id' --raw-output 2>/dev/null) || exit 1
+    comps="$t $(printf '%s\n' "$cs" | grep -o 'ocid1\.compartment\.[^"]*')"
+    rs=$(oci iam region-subscription list --tenancy-id "$t" --query 'data[?status==`"READY"`]."region-name"' --raw-output 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$rs" | grep -o '"[a-z0-9-]*"' | tr -d '"')
+    [ -n "$regions" ] || exit 1
+    for r in $regions; do
+      for c in $comps; do
+        bs=$(oci os bucket list --compartment-id "$c" --region "$r" --all --query 'data[].name' --raw-output 2>/dev/null) || exit 1
+        for b in $(printf '%s\n' "$bs" | sed -n 's/^[[:space:]]*"\([^"]*\)",\{0,1\}[[:space:]]*$/\1/p'); do
+          a=$(oci os bucket get --bucket-name "$b" --region "$r" --query 'data."public-access-type"' --raw-output 2>/dev/null) || exit 1
+          [ "$a" = NoPublicAccess ] || { echo "public ($a): $r $b"; bad=1; }
+        done
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: oci os bucket update --bucket-name <bucket> --public-access-type NoPublicAccess for each listed bucket; use pre-authenticated requests for controlled sharing.

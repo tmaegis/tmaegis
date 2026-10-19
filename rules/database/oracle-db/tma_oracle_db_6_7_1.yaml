@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-6.7.1
+title: Ensure Custom Java Privileges Are Revoked from Unauthorized 'GRANTEE'
+description: Oracle supports Java embedded in the database. Privileges exist for this Java, which are maintained in separate privilege tables.
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.7.1 Ensure Custom Java Privileges Are Revoked from Unauthorized 'GRANTEE'
+audit:
+  type: manual
+  command: 'Run: SELECT CON_ID_TO_CON_NAME(J.CON_ID), J.* FROM CDB_JAVA_POLICY J WHERE DBMS_UTILITY.GET_HASH_VALUE((KIND||GRANTEE||TYPE_SCHEMA||TYPE_NAME||NAME||ACTION||ENABLED), 2, 2010304050) NOT IN (<the benchmark''s list of hash values for Oracle-supplied Java policies>); Every row is a custom Java permission; any granted to an unauthorized grantee is a fail.'
+remediation:
+  type: iac_patch
+  command: 'To remediate this recommendation, execute the following SQL statement. begin DBMS_JAVA.disable_permission(<number>); DBMS_JAVA.delete_permission(<number>); end; Note: Custom Java Privileges can be revoked via the SEQ(uence) number.'

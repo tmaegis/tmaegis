@@ -1,0 +1,24 @@
+id: TMA-ROS1-4.1.1.1
+title: Ensure auditd is installed
+description: auditd is the userspace component to the Linux Auditing System. It's responsible for writing audit records to the disk The audit requires the auditd and audispd-plugins packages. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.1.1 Ensure auditd is installed
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v dpkg-query >/dev/null 2>&1 || exit 1
+    bad=0
+    for p in auditd audispd-plugins; do s=$(dpkg-query -W -f='${Status}' "$p" 2>/dev/null); case "$s" in *' installed') ;; *) echo "$p is not installed"; bad=1 ;; esac; done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to Install auditd # apt install auditd audispd-plugins'

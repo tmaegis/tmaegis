@@ -1,0 +1,19 @@
+id: TMA-IIS-7.11
+title: Ensure AES 256/256 Cipher Suite is Enabled
+description: 'AES 256/256 is the most recent and mature cipher suite for protecting the confidentiality and integrity of HTTP traffic. Enabling AES 256/256 is recommended. Note: AES 256/256 is enabled by default starting with Server 2012 and 2012 R2. SCHANNEL\Ciphers\AES 256/256 must exist with Enabled=1 (read via the .NET registry API). PowerShell 5.1; reads the registry (run elevated).'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- tls
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 7.11 Ensure AES 256/256 Cipher Suite is Enabled
+audit:
+  type: registry
+  command: $c = 'SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers'; function Get-Cipher($n) { $k = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("$c\$n"); $v = $null; if ($k) { $v = $k.GetValue('Enabled'); $k.Close() }; $v }; $v = Get-Cipher 'AES 256/256'; if ($null -ne $v -and [long]$v -eq 1) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: ([Microsoft.Win32.Registry]::LocalMachine.CreateSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\AES 256/256')).SetValue('Enabled', 1, 'DWord'), then reboot.

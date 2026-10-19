@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.32.1
+title: Ensure 'Disable Smart Document's use of manifests' is set to 'Enabled'
+description: 'This policy setting controls whether Office applications can load an XML expansion pack manifest file with a Smart Document. An XML expansion pack is the group of files that constitutes a Smart Document in Excel and Word. Packaging of one or more components provides the logic needed for a Smart Document using an XML expansion pack. These components can include any type of file, including XML schemas, Extensible Stylesheet Language Transforms (XSLTs), dynamic-link libraries (DLLs), and image files, as well as additional XML files, HTML files, Word files, Excel files, and text files. The key component to building an XML expansion pack is creating an XML expansion pack manifest file. ... Audit: reads the registry value(s) neverloadmanifests that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.32.1 Ensure 'Disable Smart Document's use of manifests' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\common\smart tag'') -Name ''neverloadmanifests'' -ErrorAction SilentlyContinue).''neverloadmanifests''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':neverloadmanifests='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Office 2016\Smart Documents (Word, Excel)\Disable Smart Document''s Use of Manifests'

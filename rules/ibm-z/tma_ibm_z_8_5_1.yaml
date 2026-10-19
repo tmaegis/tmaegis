@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.5.1
+title: Ensure that access to the data sets used by JES2 is controlled
+description: The JES2 System data sets are a common repository for all jobs submitted to the system and the associated printout and configuration of the JES2 environment. Initialization data sets can contain NJE and RJE signon passwords and need to be protected unintended access. Allowing READ access to the SPOOL data set would allow an unauthorized user to access any data that resides on spool compromising the confidentiality of customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.5.1 Ensure that access to the data sets used by JES2 is controlled
+audit:
+  type: manual
+  command: 'JES2 system data sets include: JES2 initialization parameters JES2 checkpoint data sets JES2 SPOOL data sets Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entry covering JES2 system data sets Request reports generated using IRRDBU00 output that will allow you to: Verify that JES2 system data sets are secured by RACF profiles in the DATASET class that: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of FAILURES(READ) ID(*) is not used to grant ... (full steps: CIS section 8.5.1)'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<jes-dataset>'' GENERIC + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''JES2 SYSTEM DATA SET'') PERMIT ''<jes-dataset>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''<jes-dataset>'' GENERIC + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''<jes-dataset>'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF
+    RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

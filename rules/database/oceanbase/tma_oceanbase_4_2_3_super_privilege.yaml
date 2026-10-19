@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-4.2.3
+title: Ensure 'SUPER' is Not Granted to Non-Administrative Users
+description: The SUPER privilege determines whether a user can perform certain powerful administrative functions, including terminating user sessions via the KILL command, modifying global MySQL variables using SET GLOBAL, and executing various commands related to replication and logging. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when no non-root grantee holds SUPER.
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- privileges
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.2.3 Ensure 'SUPER' is Not Granted to Non-Administrative Users
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT COUNT(*) FROM information_schema.user_privileges WHERE GRANTEE NOT LIKE '''root''%' AND PRIVILEGE_TYPE = 'SUPER'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: REVOKE SUPER ON *.* FROM '<user>';

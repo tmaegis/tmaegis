@@ -1,0 +1,17 @@
+id: TMA-TDSQL-12.6
+title: Ensure Temporary System Account Passwords Are Cleaned Up
+description: TDSQL creates temporary system accounts during certain management operations (such as privilege migration and DCN synchronization). After the operation completes, temporary accounts should be cleaned up. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5).
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- authentication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 12.6 Ensure Temporary System Account Passwords Are Cleaned Up
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT COUNT(*) FROM mysql.user WHERE User LIKE '%tmp%' OR User LIKE '%temp%'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: DROP USER IF EXISTS '<temporary account>'@'<host>'; (e.g. 'tdsqlsys_auth_tmp'@'%') and add periodic temporary-account cleanup to inspections.

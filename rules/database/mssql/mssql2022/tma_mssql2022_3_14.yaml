@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-3.14
+title: Ensure 'Control Server' permission is not granted
+description: The Control Server permission is a highly privileged server-level permission in SQL Server database engine. Moreover, even though this permission is not as powerful as SYSADMIN role, it has almost most of the permissions of SYSADMIN role. Also, database logins granted control server permission can easily elevate to SYSADMIN role through different exploit techniques which is a serious security problem. This will greatly reduce attack surface, as accounts that get compromised by attackers with Control Server permission can escalate to SYSADMIN role. So, attackers can’t break into the database system with highly privileged accounts. Revoking control server permission will prevent privilege elevation attacks.
+target: mssql
+level: 1
+severity: high
+tags:
+- access-control
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 3.14 Ensure 'Control Server' permission is not granted
+audit:
+  type: manual
+  command: 'Execute this SQL query to list all SQL Server logins with Control Server permission: SELECT sys.server_permissions.type, sys.server_permissions.permission_name, sys.server_permissions.state, sys.server_permissions.state_desc, granteeserverprincipal.name AS grantee_principal_name, granteeserverprincipal.type_desc AS grantee_principal_type_desc, grantorserverprinicipal.name AS grantor_name, CASE WHEN sys.server_permissions.state = N''W'' THEN N''GRANT'' ELSE sys.server_permissions.state_desc END + N'' '' + sys.server_permissions.permission_name COLLATE SQL_Latin1_General_CP1_CI_AS + N'' TO '' + QUOTENAME(granteeserverprincipal.name) AS permissionstatement FROM sys.server_principals AS granteeserverprincipal INNER JOIN sys.server_permissions ON sys.server_permissions.grantee_principal_id = granteeserverprincipal.principal_id INNER JOIN sys.server_principals AS grantorserverprinicipal ON grantorserverprinicipal.principal_id = sys.server_permissions.grantor_principal_id WHERE sys.server_permissions.permission_name=''CONTROL
+    SERVER'' AND granteeserverprincipal.name <> ''##MS_PolicySigningCertificate##'';'
+remediation:
+  type: iac_patch
+  command: 'Remove any un-allowed SQL Server accounts which are granted Control Server using this query: use [master] GO REVOKE CONTROL SERVER FROM <login_name>'

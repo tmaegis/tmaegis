@@ -1,0 +1,32 @@
+id: TMA-ALIBABA-1.6
+title: Ensure access keys are rotated every 90 days or less
+description: An access key consists of an access key ID and a secret, which are used to sign programmatic requests that you make to Alibaba Cloud. RAM users need their own access keys to make programmatic calls to Alibaba Cloud from the Alibaba Cloud SDKs, CLIs, or direct HTTP/HTTPS calls using the APIs for individual Alibaba ... Access keys might be compromised by leaving them in codes, configuration files, on premise and cloud storages, and then stolen by attackers. No Active access key of any RAM user may have a CreateDate older than 90 days. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- ram
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 1.6 Ensure access keys are rotated every 90 days or less
+audit:
+  type: command
+  command: |-
+    cutoff=$(date -u -d '90 days ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-90d +%Y-%m-%dT%H:%M:%S 2>/dev/null) || exit 1
+    out=$(aliyun ram ListUsers --MaxItems 1000 2>/dev/null) || exit 1
+    users=$(printf '%s\n' "$out" | sed -n 's/.*"UserName"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    bad=0
+    for u in $users; do
+      ks=$(aliyun ram ListAccessKeys --UserName "$u" 2>/dev/null) || exit 1
+      old=$(printf '%s\n' "$ks" | awk -v c="$cutoff" '
+    /\{/ { st = ""; cd = "" }
+    /"Status"/ { st = $0 }
+    /"CreateDate"/ { cd = $0; sub(/^[^:]*:[[:space:]]*"/, "", cd); sub(/".*/, "", cd) }
+    /\}/ { if (st ~ /Active/ && cd != "" && cd < c) n++; st = ""; cd = "" }
+    END { print n + 0 }')
+      [ "$old" -eq 0 ] || { echo "access key older than 90 days: $u"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For each listed user create a new key (aliyun ram CreateAccessKey --UserName <u>), move applications to it, then disable and delete the old key (aliyun ram UpdateAccessKey --Status Inactive / DeleteAccessKey).

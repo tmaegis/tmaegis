@@ -1,0 +1,27 @@
+id: TMA-BIND-9.3
+title: Configure a Logging Syslog Channel
+description: The syslog option of the logging configuration allows specification of the syslog facility to send log events. A syslog channel should be configured with the value of daemon or other appropriate syslog facility. The default and general categories should be included and the severity level should be info or lower. The audit requires a logging channel with a syslog destination. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- operations
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 9.3 Configure a Logging Syslog Channel
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    printf '%s\n' "$flat" | grep -Eq 'channel "?[^ ]+"? \{[^}]*[{; ]syslog( "?[a-z0-9]+"?)?;' && echo compliant || echo 'no logging syslog channel'
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: 'Configure a syslog channel to capture at least the default and general categories of log events. For external authoritative name servers, the category lame-servers may be redirect to null, so that it is not logged. Using lame name servers is common for the domains used for SPAM and may overload the log with information that is not very useful. logging { . . . // Syslog channel default_syslog { syslog daemon; # send to syslog''s daemon facility severity info; # only send priority info and higher }; category default { default_syslog; }; category general { default_syslog; }; // Too many lame servers, especially from SPAM category lame-servers { null; };'

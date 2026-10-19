@@ -1,0 +1,17 @@
+id: TMA-ARISTA-EOS-1.1.1.1
+title: Ensure the Management VRF Exists
+description: 'Ensure that the mgmt vrf exists and is assigned to the interface that connects to the management network for out of band access. The switch has a dedicated management interface that should be assigned to this vrf. A Management VRF (Virtual Routing and Forwarding) is a dedicated, isolated routing instance on a network device used exclusively for out-of-band management traffic. It separates administrator access (like SSH, SNMP, and Syslog) from production data traffic. CIS marks all EOS controls Manual; automated here: requires a ''vrf instance'' and a Management interface placed in a VRF. Audited against the output of ''show running-config'' (not ''show running-config all'').'
+target: arista-eos
+level: 1
+severity: medium
+tags:
+- arista-eos
+- network
+- management-plane
+reference: CIS Arista EOS Benchmark v1.0.0 - 1.1.1.1 Ensure the Management VRF Exists
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^vrf instance \S+.*^interface Management\d[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+vrf \S+)
+remediation:
+  type: iac_patch
+  command: Creat a vrf, assign it to the management interface and create a static route to the rest of the network. The vrf instance should have a meaningful name and description indicating its purpose. vrf instance mgmt description Management VRF ! interface Management1 vrf mgmt ip route vrf mgmt 0/0 {Gateway Address} no ip routing vrf mgmt

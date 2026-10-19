@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-5.4.4
+title: Use HTTPS with valid TLS certificates for externally exposed workloads
+description: Protect externally exposed AKS applications by ensuring client connections use HTTPS with a valid TLS certificate instead of plaintext HTTP at the cluster entry point. That protection is typically applied at the ingress or gateway layer, where external web traffic is accepted and routed to backend services. Using TLS at that layer reduces the risk of exposing application traffic, credentials, session data, or other sensitive content in transit. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 2
+severity: medium
+tags:
+- aks-automatic
+- managed-services
+- network
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 5.4.4 Use HTTPS with valid TLS certificates for externally exposed workloads
+audit:
+  type: manual
+  command: It is important to review this at the Ingress or Gateway layer, and at any public LoadBalancer Service that exposes web traffic directly, since those components are the primary enforcement points for external HTTP and TLS termination. The purpose of the review is to confirm that public application entry points are not exposing client traffic over plaintext HTTP and that every externally published hostname is protected by a certificate based HTTPS or TLS listener.
+remediation:
+  type: iac_patch
+  command: Remediate by ensuring every externally exposed AKS web entry point is published through an Ingress or Gateway listener configured for HTTPS/TLS, with a valid certificate bound to the public hostname. If a public LoadBalancer Service exposes a web application directly, configure TLS in the application or place the service behind an approved TLS terminating entry point. HTTPS protection is typically implemented at the Layer 7 ingress or gateway layer, where client traffic is accepted and TLS is terminated before traffic is forwarded to backend services. The remediation objective is to eliminate plaintext HTTP exposure for public application endpoints and standardize certificate based TLS for all external web traffic. Use the managed Application Routing Gateway API path provided by AKS Automatic unless the approved architecture requires another supported ingress implementation. 1.

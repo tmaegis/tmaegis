@@ -1,0 +1,75 @@
+id: TMA-UBUNTU2204-4.1.2
+title: Ensure ufw service is configured
+description: 'The service, ufw.service, manages UFW. This service is responsible for applying and maintaining firewall rules, controlling which network traffic is allowed in and out of the system. Note: • When running ufw enable or starting ufw.service, ufw will flush its chains. This is required so ufw can maintain a consistent state, but it may drop existing connections, eg ssh. ufw does support adding rules before enabling the firewall. • Once ufw is ''enabled'', ufw will not flush the chains when adding or removing rules (but will when modifying a rule or changing the default policy) • By default ufw will'
+target: linux
+os_family:
+- ubuntu-22.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 22.04 LTS Benchmark v3.0.0 - 4.1.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled ufw.service'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- enabled || { echo step1: missing enabled; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active ufw.service'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- active || { echo step2: missing active; return 1; }; command -v ufw >/dev/null 2>&1 || { echo "step3: ufw not installed"; return 1; }; o=$(bash -c ''ufw status'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Status: active'' || { echo step3: missing ''Status: active''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    tma_listen() { # $1 = 4|6 ; prints "proto port" for non-loopback listeners
+      ss -$1tuln 2>/dev/null | awk 'NR>1{p=($1 ~ /^udp/)?"udp":"tcp"; a=$5; sub(/.*:/,"",$5); if (a ~ /^(127\.|\[?::1\]?:)/) next; if ($5 ~ /^[0-9]+$/) print p, $5}' | sort -u; }
+    tma_ipt_save() { b=$1; command -v "${b}-save" >/dev/null 2>&1 || return 0
+      if [ "$b" = iptables ]; then v=v4; s=iptables; else v=v6; s=ip6tables; fi
+      if [ -d /etc/iptables ]; then f=/etc/iptables/rules.$v; elif [ -d /etc/sysconfig ]; then f=/etc/sysconfig/$s; else return 0; fi
+      tma_bak "$f"; "${b}-save" > "$f"; }
+    tma_ipt_loop() { b=$1; command -v "$b" >/dev/null 2>&1 || tma_pkg_install iptables
+      $b -C INPUT -i lo -j ACCEPT 2>/dev/null || $b -I INPUT 1 -i lo -j ACCEPT
+      $b -C OUTPUT -o lo -j ACCEPT 2>/dev/null || $b -I OUTPUT 1 -o lo -j ACCEPT
+      if [ "$b" = iptables ]; then src=127.0.0.0/8; else src=::1; fi
+      $b -C INPUT -s $src -j DROP 2>/dev/null || $b -A INPUT -s $src -j DROP; }
+    tma_ipt_ports() { b=$1; if [ "$b" = iptables ]; then v=4; else v=6; fi
+      tma_listen $v | while read -r pr po; do
+        $b -C INPUT -p "$pr" --dport "$po" -m state --state NEW -j ACCEPT 2>/dev/null || $b -A INPUT -p "$pr" --dport "$po" -m state --state NEW -j ACCEPT
+      done; }
+    tma_ipt_policy() { b=$1; tma_ipt_loop $b
+      $b -C INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || $b -I INPUT 2 -m state --state ESTABLISHED,RELATED -j ACCEPT
+      for p in $(tma_ssh_ports); do $b -C INPUT -p tcp --dport "$p" -m state --state NEW -j ACCEPT 2>/dev/null || $b -A INPUT -p tcp --dport "$p" -m state --state NEW -j ACCEPT; done
+      tma_ipt_ports $b
+      if [ "$b" = ip6tables ]; then $b -C INPUT -p ipv6-icmp -j ACCEPT 2>/dev/null || $b -A INPUT -p ipv6-icmp -j ACCEPT
+        $b -C OUTPUT -p ipv6-icmp -j ACCEPT 2>/dev/null || $b -A OUTPUT -p ipv6-icmp -j ACCEPT; fi
+      for pr in tcp udp icmp; do [ "$b" = ip6tables ] && [ $pr = icmp ] && continue
+        $b -C OUTPUT -p $pr -m state --state NEW,ESTABLISHED -j ACCEPT 2>/dev/null || $b -A OUTPUT -p $pr -m state --state NEW,ESTABLISHED -j ACCEPT; done
+      $b -P INPUT DROP; $b -P OUTPUT DROP; $b -P FORWARD DROP; }
+    tma_has_pkg ufw || tma_pkg_install ufw
+    for p in $(tma_ssh_ports); do ufw allow "$p/tcp" >/dev/null; done
+    systemctl unmask ufw.service >/dev/null 2>&1
+    systemctl enable ufw.service >/dev/null 2>&1
+    ufw --force enable
+    systemctl start ufw.service 2>/dev/null; true
+  guidance: "Run the following command to unmask the ufw.service: # systemctl unmask ufw.service Run the following command to enable and start the ufw.service: # systemctl --now enable ufw.service active Run the following command to enable ufw: # ufw enable"

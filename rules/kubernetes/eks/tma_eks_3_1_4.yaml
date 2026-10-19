@@ -1,0 +1,48 @@
+id: TMA-EKS-3.1.4
+title: Ensure that the kubelet configuration file ownership is set to root:root
+description: Ensure that if the kubelet refers to a configuration file with the --config argument, that file is owned by root:root. Runs on each worker node (config path from the kubelet --config argument).
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- worker-node
+- kubelet
+- file-permissions
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.1.4 Ensure that the kubelet configuration file ownership is set to root:root
+audit:
+  type: command
+  command: |-
+    set -f
+    psarg() { ps -eo args 2>/dev/null | grep -E "^([^ ]*/)?$1( |\$)" | head -n 1 | awk -v k="--$2" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    p0=$(psarg kubelet config)
+    f=""; for x in ${p0:-} /etc/kubernetes/kubelet/config.json; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    o=$(stat -Lc %U:%G "$f") || exit 1
+    if [ "$o" = "root:root" ]; then echo compliant; else echo "noncompliant: $f $o"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/kubelet/config.json
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    set -f
+    psarg() { ps -eo args 2>/dev/null | grep -E "^([^ ]*/)?$1( |\$)" | head -n 1 | awk -v k="--$2" '{for(i=1;i<=NF;i++){if($i==k&&i<NF)v=$(i+1); else if(index($i,k"=")==1)v=substr($i,length(k)+2)}} END{if(v!="")print v}'; }
+    p0=$(psarg kubelet config)
+    f=""; for x in ${p0:-} /etc/kubernetes/kubelet/config.json; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    chown root:root "$f"
+  guidance: "Run the following command (using the config file location identified in the Audit step) chown root:root /etc/kubernetes/kubelet/config.json"

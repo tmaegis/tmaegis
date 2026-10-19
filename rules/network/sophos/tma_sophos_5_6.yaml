@@ -1,0 +1,24 @@
+id: TMA-SOPHOS-5.6
+title: Ensure Email protection is configured with appropriate protection policies
+description: Create one or more Email protection policy to handle email routing and protect domains and mail servers. You can configure SMTP/S, POP/S, and IMAP/S policies with SPAM and malware checks, data protection, and Email encryption. Reviewed in the Sophos Firewall web admin console (SFOS has no plain-text configuration export to audit offline).
+target: sophos
+level: 2
+severity: medium
+tags:
+- sophos
+- threat-prevention
+reference: CIS Sophos Firewall v22 Benchmark v1.0.0 - 5.6 Ensure Email protection is configured with appropriate protection policies
+audit:
+  type: manual
+  command: 'Navigate to ''Protect > Email > General settings''. Verify that appropriate ''SMTP deployment mode'' is used. Note that ''legacy mode'' is not compatible with Zero-day protection for Email. Navigate to ''SMTP settings''. Verify that ''Reject based on IP reputation''. Sophos Firewall checks the sender''s IP reputation before the spam checks specified in the SMTP policy. Verify that ''SMTP DoS settings'' is Enable. Sophos Firewall protects the network from SMTP denial-of-service attacks. Navigate to ''SMTP TLS configuration''. Verify that ''Disable legacy TLS protocols'' is Enable. (Full steps: CIS 5.6.)'
+remediation:
+  type: iac_patch
+  command: |-
+    Navigate to 'Protect > Email > General settings'. Set the appropriate 'SMTP deployment mode' to 'MTA mode' when possible. 'legacy mode' is not compatible with Zero-day protection for Email and reduce the security effectiveness.
+    Navigate to 'SMTP settings'. Set 'Reject based on IP reputation' to Enable. Sophos Firewall checks the sender's IP reputation before the spam checks specified in the SMTP policy. Set 'SMTP DoS settings' to Enable. Sophos Firewall protects the network from SMTP denial-of-service attacks.
+    Navigate to 'SMTP TLS configuration'. Set 'Disable legacy TLS protocols' to Enable. To overcome TLS vulnerabilities, it is recommended to turn off legacy TLS protocols.
+    Navigate to 'POP and IMAP TLS configuration'. Set 'Disable legacy TLS protocols' to Enable.
+    Navigate to 'Malware protection'. Set 'Primary antivirus engine' to 'Sophos'. If 'Avira' is selected Sophos Firewall will turn off Zero-day protection in SMTP policies with single antivirus scan.
+    Navigate to 'DKIM verification'. Set 'DKIM verification' to 'ON' and 'DKIM verification failed', 'Invalid DKIM signature', 'No DKIM signature found' are set to 'Quarantine' or 'Reject'. With DKIM the firewall validates the source domain name and message integrity through cryptographic authentication, preventing email spoofing. DKIM verification is applied to inbound emails. Note that Sophos Firewall quarantines DKIM-signed emails that use RSA SHA-1 or have key length less than 1024 or more than 2048 bits.
+    Navigate to 'Protect > Email > Relay settings > Host based relay'. Remove 'ANY' from the 'allow relay from hosts/networks'. Adding 'ANY' will result in an open relay, allowing anyone on the internet to send emails through Sophos Firewall. Set only the specified host or enable authenticated relay.
+    (see the CIS PDF for the remaining steps)

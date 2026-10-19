@@ -1,0 +1,32 @@
+id: TMA-OCI-2.2
+title: Ensure no security lists allow ingress from 0.0.0.0/0 to port 3389
+description: Security lists provide stateful and stateless filtering of ingress and egress network traffic to OCI resources on a subnet level. It is recommended that no security group allows unrestricted ingress access to port 3389. Removing unfettered connectivity to remote console services, such as Remote Desktop Protocol (RDP), reduces a server's exposure to risk. Flags security lists with an ingress rule from 0.0.0.0/0 covering port 3389 (TCP/UDP with that port or no port range, or all protocols). Covers every subscribed region and every accessible compartment. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: high
+tags:
+- oci
+- network
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 2.2 Ensure no security lists allow ingress from 0.0.0.0/0 to port 3389
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    cs=$(oci iam compartment list --compartment-id "$t" --compartment-id-in-subtree true --access-level ACCESSIBLE --all --query 'data[?"lifecycle-state"==`"ACTIVE"`].id' --raw-output 2>/dev/null) || exit 1
+    comps="$t $(printf '%s\n' "$cs" | grep -o 'ocid1\.compartment\.[^"]*')"
+    rs=$(oci iam region-subscription list --tenancy-id "$t" --query 'data[?status==`"READY"`]."region-name"' --raw-output 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$rs" | grep -o '"[a-z0-9-]*"' | tr -d '"')
+    [ -n "$regions" ] || exit 1
+    for r in $regions; do
+      for c in $comps; do
+        out=$(oci network security-list list --compartment-id "$c" --region "$r" --all --query 'data[?length("ingress-security-rules"[?(source==`"0.0.0.0/0"`) && (protocol==`"all"` || (protocol==`"6"` && ("tcp-options"."destination-port-range"==`null` || ("tcp-options"."destination-port-range".min<=`3389` && "tcp-options"."destination-port-range".max>=`3389`))) || (protocol==`"17"` && ("udp-options"."destination-port-range"==`null` || ("udp-options"."destination-port-range".min<=`3389` && "udp-options"."destination-port-range".max>=`3389`))))]) > `0`]."display-name"' --raw-output 2>/dev/null) || exit 1
+        printf '%s\n' "$out" | grep -q '"' && { printf '%s\n' "$out" | grep '"' | sed "s|^|$r |"; bad=1; }
+      done
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Edit the listed security lists (oci network security-list update --security-list-id <ocid> --ingress-security-rules file://rules.json) so no ingress rule from 0.0.0.0/0 covers port 3389; use the OCI Bastion service for administration.

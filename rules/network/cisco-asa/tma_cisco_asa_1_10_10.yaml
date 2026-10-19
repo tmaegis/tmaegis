@@ -1,0 +1,25 @@
+id: TMA-CISCO-ASA-1.10.10
+title: Ensure email logging is configured for critical to emergency
+description: Enables logs to be sent to an email recipient for critical to emergency logs' severity levels. In some cases, the notifications of the Syslog server or the NMS system can be delayed by the time taken to process the logs and build the reports. Some system's events require an immediate intervention of the administrator and it in this case, the logs ... Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- logging
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.10.10 Ensure email logging is configured for critical to emergency
+audit:
+  type: config_regex
+  pattern: (?m)^logging mail (?:[2-7]|critical|errors|warnings|notifications|informational|debugging)\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Run the following to enable email logging for logs with severity level from critical and above (critical, alert and emergency)
+    logging mail critical
+    - Step 2: Obtain from the mail server administrator to create an firewall email account <firewall_email_account> and run the following to enable the account as email source address in the firewall
+    logging from-address <firewall_email_account>
+    - Step 3: Acquire the firewall administrator email account <firewall_admin_email> and run the following for the security appliance to send logs to its administrator email account
+    logging recipient-address <firewall_admin_email>
+    - Step 4: Obtain from the mail server administrator the mail server IP address <mail_server_ip> and run the following to configure it in the firewall
+    smtp-server <mail_server_ip>

@@ -1,0 +1,25 @@
+id: TMA-ARUBA-CX-3.3.7
+title: Multicast Boundary ACL
+description: A multicast boundary ACL (Access Control List) is a configuration mechanism that filters multicast traffic at specified interfaces to control the routing of multicast packets. This feature works on Point-to-Point links, including ROP/L3 LAG or Point-to-Point SVI, and can manage both multicast data and control packets, such as IGMP joins and PIM join/prune messages. The ACL rules can match multicast group entries (*,G) and use subnet masks to define address ranges, supporting IP, IGMP, and PIM protocols.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- routing
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.3.7 Multicast Boundary ACL
+audit:
+  type: manual
+  command: Where multicast routing runs, review 'show run' and confirm multicast boundary ACLs ('ip multicast boundary access-list <acl>') are applied on interfaces at administrative-scope boundaries.
+remediation:
+  type: iac_patch
+  command: |-
+    The boundary ACL example shown below creates a boundary where group address in
+    239.0.0.0/8 is denied and all other group addresses in 224.0.0.0/4 are permitted. Since the source address is any, it matches (*,G) traffic. The boundary will be applied in both in and outbound directions.
+    access-list ip bound
+        10 deny any any 239.0.0.0/255.0.0.0
+        20 permit any any 224.0.0.0/240.0.0.0
+    interface lag 1
+        ip address 40.1.1.1/24
+        ip pim-sparse enable
+        ip multicast boundary access-list bound

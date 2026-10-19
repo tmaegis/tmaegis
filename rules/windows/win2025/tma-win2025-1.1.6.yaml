@@ -1,0 +1,21 @@
+id: TMA-WIN2025-1.1.6
+title: Ensure 'Relax minimum password length limits' is set to 'Enabled'
+description: 'This policy setting determines whether the minimum password length setting can be increased beyond the legacy limit of 14 characters. For more information please see the following Microsoft Security Blog. The recommended state for this setting is: Enabled. Note: This setting only affects local accounts on the computer. Domain accounts are only affected by settings on the Domain Controllers, because that is where domain accounts are stored.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 1.1.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SAM'' -Name ''RelaxMinimumPasswordLengthLimits'' -ErrorAction SilentlyContinue).''RelaxMinimumPasswordLengthLimits''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RelaxMinimumPasswordLengthLimits='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SAM')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SAM' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SAM' -Name 'RelaxMinimumPasswordLengthLimits' -Value 1 -PropertyType DWord -Force | Out-Null

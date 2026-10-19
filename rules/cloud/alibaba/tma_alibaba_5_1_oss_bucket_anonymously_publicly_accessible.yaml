@@ -1,0 +1,26 @@
+id: TMA-ALIBABA-5.1
+title: Ensure that OSS bucket is not anonymously or publicly accessible
+description: A bucket is a container used to store objects in Object Storage Service (OSS). All objects in OSS are stored in buckets. It is recommended that the access policy on OSS bucket does not allows anonymous and/or public access. Allowing anonymous and/or public access grants permissions to anyone to access bucket content. Such access might not be desired if you are storing any sensitive data. Every bucket ACL reported by aliyun oss stat must be private (bucket policies granting anonymous access are not evaluated). Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- oss
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 5.1 Ensure that OSS bucket is not anonymously or publicly accessible
+audit:
+  type: command
+  command: |-
+    out=$(aliyun oss ls -s 2>/dev/null) || exit 1
+    bs=$(printf '%s\n' "$out" | grep -o 'oss://[^[:space:]]*' | sed 's#^oss://##; s#/$##')
+    bad=0
+    for b in $bs; do
+      st=$(aliyun oss stat "oss://$b" 2>/dev/null) || exit 1
+      acl=$(printf '%s\n' "$st" | sed -n 's/^[[:space:]]*ACL[[:space:]]*:[[:space:]]*\([^[:space:]]*\).*/\1/p' | head -n 1)
+      [ "$acl" = private ] || { echo "ACL $acl: $b"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: aliyun oss set-acl oss://<bucket> private -b for each listed bucket, remove anonymous (*) grants from bucket policies and enable OSS Block Public Access.

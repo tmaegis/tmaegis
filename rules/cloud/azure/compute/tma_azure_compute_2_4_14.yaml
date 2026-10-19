@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.4.14
+title: Ensure configuration is routed through the virtual network integration
+description: By default, configuration traffic for function app deployment slots goes directly over the public route. Container image pulls and content sharing can be routed through the virtual network integration. This recommendation applies to function apps using the Premium or Dedicated (App Service) plans, which support deployment slots and virtual networking. This recommendation should be applied after integrating a function app deployment slot with a virtual network. Route container image pulls and content sharing through a virtual network integration for increased security and control.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- compute
+- network
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.4.14 Ensure configuration is routed through the virtual network integration
+audit:
+  type: manual
+  command: 'Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to list deployment slots: az functionapp deployment slot list --resource-group <resource-group-name> -- name <function-app-name> For each deployment slot, ensure that vnetImagePullEnabled and vnetContentShareEnabled are set to true. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: f380edf5-de79-4862-bd57-ee407d8bd8b6 - Name: ''Function app slots should enable configuration routing to Azure Virtual Network'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to route container image pulls and content sharing through the virtual network integration: az resource update --resource-group <resource-group-name> --name <function- app-name>/slots/<deployment-slot-name> --resource-type "Microsoft.Web/sites" --set properties.vnetImagePullEnabled=true --set properties.vnetContentShareEnabled=true'

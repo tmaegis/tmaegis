@@ -1,0 +1,24 @@
+id: TMA-CISCO-FTD-1.6.1
+title: Set Database Retention Policies
+description: 'The various databases within Firepower are set to maximum values of events rather than time periods, with an overall maximum count. These values vary by model (see the "defaults" section in this recommendation). These database retention values often need adjustment, to prevent one database (often the Connection Database from filling up prematurely, while other databases (such as the Intrusion or Malware Databases) remain empty or nearly so. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-ftd
+level: 1
+severity: medium
+tags:
+- cisco-ftd
+- network
+- hardening
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 1.6.1 Set Database Retention Policies
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. System > Configuration > Database Verify that the settings are appropriate to your environment and event volumes'
+remediation:
+  type: iac_patch
+  command: |-
+    ! System > Configuration > Database These values are often set to values that don't reflect day-to-day working environments for many organizations. In many environments, these settings can be adjusted down as these event volumes are usually lower:
+    - Health Event Database
+    - Audit Event Database
+    - White List Violation History Database
+    - Remediation Status Event Database If no VPN is configured (such as in a FirePower Services installation) then that database is not needed at all. Similarly, if a feature is not licensed (for instance the Malware license, which uses the Malware and File databases), those databases can be reduced or zero'd out (note that the minimum value for the Malware Events Database is 10,000, even in the absence of a license) In a storage constrained setting (such as when using the Virtual FMC), these settings can often also be considered for reduction:
+    - Intrusion Event Database
+    ! ... see the benchmark for the full procedure

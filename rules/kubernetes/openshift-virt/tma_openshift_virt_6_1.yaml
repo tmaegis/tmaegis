@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-6.1
+title: Disable nested virtualization
+description: Enabling nested virtualization in OpenShift Virtualization allows virtual machines to run within a hypervisor that is itself running on top of an existing operating system. This setup, known as nested virtualization, enables the VMs to access the full range of virtualization features provided by the underlying host, including access to the virtualization stack. In this case, Openshift Virtualization uses nested virtualization to provide its VMs with access to the entire virtualization stack, allowing them to take advantage of advanced virtualization capabilities such as live migration, resource pooling, and cloning. ... The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 6.1 Disable nested virtualization
+audit:
+  type: manual
+  command: 'To check the state of nested virtualization on nodes running on Intel CPUs: $ cat /sys/module/kvm_intel/parameters/nested Disabled is denoted by 0 , and enable is denoted with 1 . If you’re using AMD CPUs, replace kvm_intel with kvm_amd .'
+remediation:
+  type: iac_patch
+  command: Add the appropriate kernel arguments to the MachineConfigPools of the workers nodes and reboot them. See https://docs.redhat.com/en/documentation/openshift_container_platform/4.18/html/instal lation _configuration/installing - customizing#installation - special - config - kargs_installing - customizing

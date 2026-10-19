@@ -1,0 +1,16 @@
+id: TMA-KUBERNETES-4.2.7
+title: Ensure that the --hostname-override argument is not set
+description: Do not override node hostnames. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 1
+severity: low
+tags:
+- kubernetes
+- worker-node
+reference: CIS Kubernetes Benchmark v2.1.0 - 4.2.7 Ensure that the --hostname-override argument is not set
+audit:
+  type: manual
+  command: 'Run the following command on each node: ps -ef | grep kubelet Verify that --hostname-override argument does not exist. Note This setting is not configurable via the Kubelet config file.'
+remediation:
+  type: iac_patch
+  command: 'Edit the kubelet service file /etc/systemd/system/kubelet.service.d/10-kubeadm.conf on each worker node and remove the --hostname-override argument from the KUBELET_SYSTEM_PODS_ARGS variable. Based on your system, restart the kubelet service. For example: systemctl daemon-reload systemctl restart kubelet.service'

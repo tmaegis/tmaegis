@@ -1,0 +1,18 @@
+id: TMA-DB2-3.1.11
+title: Secure the Communication Buffer Exit Library (COMM_EXIT_LIST)
+description: A communication exit library is a dynamically loaded library that vendor applications use to examine communication buffers. The COMM_EXIT_LIST parameter specifies the list of communication buffer exist libraries. The permissions on the libraries should be secured so that users other than the instance owner do not have write privileges. Passes when COMM_EXIT_LIST is unset; otherwise no file under security32/security64 plugin/commexit (DB2PATH, default ~/sqllib) may be group- or world-writable. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance's configuration.
+target: db2
+level: 1
+severity: high
+tags:
+- db2
+- database
+- filesystem
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.1.11 Secure the Communication Buffer Exit Library (COMM_EXIT_LIST)
+audit:
+  type: command
+  command: 'out=$(db2 get dbm cfg 2>/dev/null) || exit 1; l=$(printf ''%s\n'' "$out" | sed -n ''s/.*(COMM_EXIT_LIST) *= *//p'' | sed ''s/[[:space:]]*$//''); [ -n "$l" ] || { echo compliant; exit 0; }; b="${DB2PATH:-$HOME/sqllib}"; w=$(find "$b/security32/plugin/commexit" "$b/security64/plugin/commexit" -type f \( -perm -020 -o -perm -002 \) -print 2>/dev/null); [ -z "$w" ] && echo compliant || echo "noncompliant: writable exit libraries: $w"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To change permissions of a file on Linux: chmod 755 <file> To change permissions of a file on Windows: 1. Right-click on the file 2. Choose properties 3. Select the Security tab 4. Grant the Full Control authority to all Db2 administrator accounts 5. Grant only read and execute privileges to all other accounts (revoke any other privileges)'

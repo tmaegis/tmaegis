@@ -1,0 +1,19 @@
+id: TMA-SOPHOS-4.4
+title: Ensure Synchronized Security Heartbeat is enforced on Firewall Rules
+description: Security Heartbeat enables Sophos Firewall and endpoints managed by Sophos Endpoint Protection to communicate through Sophos Central and exchange information on the endpoints' security status, the so-called health status. Sophos Firewall administrators as well as Sophos Central administrators are able to define policies for network access based on the endpoints' health status. Endpoints with security incidents can be immediately isolated thus preventing threats to spread across the network. Reviewed in the Sophos Firewall web admin console (SFOS has no plain-text configuration export to audit offline).
+target: sophos
+level: 2
+severity: medium
+tags:
+- sophos
+- high-availability
+reference: CIS Sophos Firewall v22 Benchmark v1.0.0 - 4.4 Ensure Synchronized Security Heartbeat is enforced on Firewall Rules
+audit:
+  type: manual
+  command: 'Navigate to ''System > Sophos Central ''. Verify that ''Security Heartbeat'' is turned ''ON''. Check that Sophos firewall is registered to Sophos Central, configured to receive Heartbeat from the Sophos Endpoints. Navigate to ''Protect > Rules and Policies > Firewall rules''. Filter ''Rule type >'' ''Network'' and ''User'', filter ''source zone > LAN'' and ''DMZ''. Verify on the configured firewall rule ''Configure Synchronized Security Heartbeat'' and check that ''Minimum source HB permitted'' is set to ''Green'' or ''Yellow''. (Full steps: CIS 4.4.)'
+remediation:
+  type: iac_patch
+  command: |-
+    Navigate to 'System > Sophos Central > Register   . Register Sophos Firewall to Sophos Central, set 'Security Heartbeat' to 'ON'.
+    Navigate to 'Protect > Rules and Policies'. Filter 'Rule type > Network' and 'User', filter 'source zone > LAN' and 'DMZ'.
+    Navigate to configured firewall rule with 'Configure Synchronized Security Heartbeat'. Set 'Minimum source HB permitted' to 'Green' or 'Yellow'. If the rule is configured to allow Egress traffic with Sophos Endpoints are connecting resources on 'WAN' zone, set 'Minimum source HB permitted' to either 'Green' or 'Yellow' for tighter security control. If the rule is configured to allow traffic between 'LAN' to 'DMZ' zones with communication between Sophos protected Endpoints and Server, configure additional control with setting both 'Minimum source HB permitted' and 'Minimum destination HB permitted' to either 'Green' or 'Yellow'.

@@ -1,0 +1,18 @@
+id: TMA-SUPPLY-CHAIN-PR-TARGET-CHECKOUT
+title: Ensure pull_request_target workflows do not check out or run untrusted pull request code
+description: pull_request_target runs in the context of the base repository with a write-scoped GITHUB_TOKEN and access to secrets. Checking out the PR head (github.event.pull_request.head.sha/ref, github.head_ref, refs/pull/*) and building it lets any fork author execute code with those privileges ('pwn request'). The audit flags workflow files that use pull_request_target and reference the PR head anywhere; review flagged files manually.
+target: supply-chain
+level: 1
+severity: critical
+tags:
+- supply-chain
+- build-pipeline
+- github-actions
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Build Pipelines - isolate untrusted code from pipeline secrets (verify section number for your release)
+audit:
+  type: command
+  command: "top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1\ncd \"$top\" || exit 1\nwf=$(git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml' 2>/dev/null) || exit 1\nbad=$(printf '%s\\n' \"$wf\" | while IFS= read -r f; do\n  [ -n \"$f\" ] || continue\n  if grep -qE '^[^#]*pull_request_target' \"$f\" &&\n     grep -qE '^[^#]*(github\\.event\\.pull_request\\.head\\.(sha|ref|repo)|github\\.event\\.pull_request\\.merge_commit_sha|github\\.head_ref|refs/pull/)' \"$f\"; then\n    echo \"$f\"\n  fi\ndone)\nif [ -z \"$bad\" ]; then echo compliant; else echo \"pull_request_target workflows that reference the untrusted PR head:\"; printf '%s\\n' \"$bad\"; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Switch the workflow to the pull_request trigger (no secrets, read-only token), or split it: build untrusted code under pull_request and upload artifacts, then process them in a separate workflow_run job that never executes PR code. If pull_request_target is unavoidable, do not check out the head ref and set permissions: read-all.'

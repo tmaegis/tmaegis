@@ -1,0 +1,20 @@
+id: TMA-INTUNE-DEFENDER-2.16
+title: 'Ensure ''ASR: Block execution of potentially obfuscated scripts'' is set to ''Audit'' or higher'
+description: 'This rule detects suspicious properties within an obfuscated script. The recommended state for this setting is: Audit. Configuring this setting to Block also conforms to the benchmark. Audit: reads the Intune PolicyManager ASR rules value (via the WinningProvider GUID) and requires the rule entry 5beb7efe-fd9a-4556-801d-275e5ffc04cc=1 or 5beb7efe-fd9a-4556-801d-275e5ffc04cc=2 (Block, or Audit for the "Audit or higher" wording).'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.16 Ensure ''ASR: Block execution of potentially obfuscated scripts'' is set to ''Audit'' or higher'
+audit:
+  type: registry
+  shell: powershell
+  command: '$p = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Defender'' -Name ''AttackSurfaceReductionRules_WinningProvider'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules_WinningProvider''; if (-not $p) { ''non-compliant: no ASR WinningProvider'' } else { $p = ([string]$p).Trim(''{}''); $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\'' + $p + ''\default\Device\Defender''; if (-not (Test-Path $k)) { $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\{'' + $p + ''}\default\Device\Defender'' }; $v = (Get-ItemProperty -Path $k -Name ''AttackSurfaceReductionRules'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules''; $have = @(([string]$v) -split ''\|'' | ForEach-Object { $_.Trim().ToLower() }); $want = @(''5beb7efe-fd9a-4556-801d-275e5ffc04cc=1'',''5beb7efe-fd9a-4556-801d-275e5ffc04cc=2''); if (@($want | Where-Object { $have -contains $_ }).Count -gt
+    0) { ''compliant'' } else { ''non-compliant: '' + $v } }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Audit or Block. Defender\Block execution of potentially obfuscated scripts

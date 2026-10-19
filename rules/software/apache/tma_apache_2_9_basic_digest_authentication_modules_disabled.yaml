@@ -1,0 +1,23 @@
+id: TMA-APACHE-2.9
+title: Ensure the Basic and Digest Authentication Modules are Disabled
+description: The Apache mod_auth_basic and mod_auth_digest modules support HTTP Basic Authentication and HTTP Digest Authentication respectively. The two authentication protocols are used to restrict access to users who provide a valid user name and password. Counts loaded modules matching auth_basic_module or auth_digest_module; expects 0. Uses the module list from apachectl -M (apache2ctl/httpd; needs root).
+target: apache
+level: 1
+severity: low
+tags:
+- apache
+- modules
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 2.9 Ensure the Basic and Digest Authentication Modules are Disabled
+audit:
+  type: command
+  shell: bash
+  command: b=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 1; m=$("$b" ${APACHE_CONF:+-f "$APACHE_CONF"} -M 2>/dev/null) || exit 1; printf '%s\n' "$m" | grep -Eic 'auth_(basic|digest)_module' || true
+  expected_output: '0'
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Comment out LoadModule auth_basic_module / auth_digest_module (a2dismod -f auth_basic auth_digest) and use a stronger authentication method. Then run apachectl configtest and reload Apache.

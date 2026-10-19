@@ -1,0 +1,17 @@
+id: TMA-M365-CONNECTION-ALLOW-LIST
+title: Ensure the connection filter IP allow list is empty
+description: 'Mail from IPs on the connection filter allow list skips spam filtering, so a compromised or shared IP becomes a phishing channel. Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- mail-flow
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange Online Protection / Connection filter IP allow list (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $p = Get-HostedConnectionFilterPolicy -Identity Default -ErrorAction Stop; @($p.IPAllowList | Where-Object { $_ }).Count'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-HostedConnectionFilterPolicy -Identity Default -IPAllowList @{} (use mail flow rules or Tenant Allow/Block List entries for justified exceptions).

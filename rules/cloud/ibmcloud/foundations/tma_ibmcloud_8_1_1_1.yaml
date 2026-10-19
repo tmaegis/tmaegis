@@ -1,0 +1,19 @@
+id: TMA-IBMCLOUD-8.1.1.1
+title: Ensure IBM Key Protect has automated rotation for customer managed keys enabled
+description: IBM® Key Protect for IBM Cloud® allows you to rotate your root key (CRK) which is the key material created within the KMS Hardware Security Module (HSM) when you created the root key using KP APIs. This CRK is used to encrypt the Data Encryption Key (DEK) that is used to encrypt your data. By encrypting the DEK (wDEK), wDEK can be stored with the data. It is a best practice to rotate your CRK (that is, to create a new version of the key) on a regular basis. Regular rotations reduce what is known as the "cryptoperiod" of the key and can also be used in specific cases such as personnel turnover, process malfunctions, or the detection of a security issue. You can set a rotation interval on the CRK or manually rotate the CRK based on your organization policy. When it's time to rotate the key based on the rotation interval that you specify, Key Protect automatically creates a new root key...
+target: ibmcloud
+level: 2
+severity: medium
+tags:
+- cloud
+- crypto
+- ibmcloud
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 8.1.1.1 Ensure IBM Key Protect has automated rotation for customer managed keys enabled
+audit:
+  type: manual
+  command: 'Using Console: 1. Log in to the IBM Cloud® console. 2. Go to Menu, Resource List to view a list of your resources. 3. From your IBM Cloud resource list, click on Security select your provisioned instance of Key Protect. 4. On the left-hand panel, click on Policies and view the rotation policy enabled for the instance 5. If the rotation policy is not enabled, you can view rotation policy set per key by clicking keys on the left-hand panel 6. From the list of keys displayed, you can click on overflow menu (three dots) at the end of the key to view the rotation policy for the key Using API: You can view automatic rotation policy using GET call to the following endpoint. https://<region>.kms.cloud.ibm.com/api/v2/keys/{id}/policies API: For a high-level view, you can browse the rotation policies that are associated with a key by making a GET call to the following endpoint. https://<region>.kms.cloud.ibm.com/api/v2/keys/<key_ID>/policies 1. Retrieve your service and authentication
+    credentials. 2. Retrieve the rotation policy for a specified key by running the following cURL command. $ curl -X GET \ "https://<region>.kms.cloud.ibm.com/api/v2/keys/<key_ID>/policies" \ -H "authorization:...'
+remediation:
+  type: iac_patch
+  command: 'Using Console: 1. Log in to the IBM Cloud console. 2. Go to Menu, Resource List to view a list of your resources. 3. From your IBM Cloud resource list, select your provisioned instance of Key Protect. 4. On the application details page, use the Keys table to browse the keys in your service. If you have many keys, you can narrow your search by using the search bars to only search for enabled keys (since other kinds of keys cannot be rotated), keys in a particular key ring, and keys with a particular alias. 5. Once the key has been found, click the overflow menu (three dots) to open a list of options for the key that you want to rotate. 6. From the options menu, click Rotate to open the Rotation side panel. 7. If your rotation policy is Enabled, you can edit this policy by changing the number of months selected. This will set the 30-day interval for your root key. If a key is set to be rotated every 2 months, for example, it will be rotated every 60 days, regardless of the number
+    of days in a particular month. If your rotation policy is Disabled, and the key was created at a time when your instance had a rotation policy, a rotation interval number can be seen. This is the rotation...'

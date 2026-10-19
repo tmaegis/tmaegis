@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-4.12.1
+title: Ensure LLDP is Disabled if not Required
+description: 'LLDP should be disabled when not required. The Link Layer Discovery Protocol (LLDP) is a vendor-neutral and widely supported standard used for network devices to advertise information about their capabilities, identity, software and management details to other network devices on the LAN. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- routing
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.12.1 Ensure LLDP is Disabled if not Required
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options as to the type of device, deployment scenario and where LLDP will be used in the network, it is not possible to provide Automated Scoring of this recommendation. To check whether LLDP is enabled, use the following command from the [edit protocols] configuration hierarchy: [edit protocols] user@host#show lldp | display set | match "interface|disable" The command should return all Routing Instances or Logical Systems where LLDP has been enabled globally for all interfaces by returning one or more lines ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To turn off LLDP globally for all interfaces, issue the following command from the configuration hierarchy:
+    set protocols lldp disable Sending of LLDPDUs will be disabled, while any LLDP related configuration will be retained (but ignored). Alternatively, you may wish to disable LLDP on a per-interface basis by issuing the following command from the configuration hierarchy: To disable LLDP for a specific interface, leaving LLDP enabled for all others:
+    set protocols lldp interface <interface name> disable Or to disable LLDP for all interfaces and allow only for specific ports:
+    delete protocols lldp interface all
+    set protocols lldp interface <interface name> This procedure should be repeated for all Routing Instances/Logical Systems where LLDP is configured but not required.

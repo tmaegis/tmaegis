@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-6.1
+title: Ensure that the SQL Server component to SharePoint is set to listen on non-default ports, with the defaults (UDP 1434 and TCP 1433) disabled
+description: The default instance of SQL Server listens for client requests on TCP 1433. By default, client computers that connect to SQL Server first connect by using TCP 1433. If this communication is unsuccessful, the client computers query the SQL Server Resolution Service that is listening on UDP 1434 to determine the port on which the database instance is listening. Manual review.
+target: sharepoint
+level: 1
+severity: low
+tags:
+- sharepoint
+- sql
+- network
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 6.1 Ensure that the SQL Server component to SharePoint is set to listen on non-default ports, with the defaults (UDP 1434 and TCP 1433) disabled
+audit:
+  type: manual
+  command: On the SQL Server used by SharePoint open SQL Server Configuration Manager > SQL Server Network Configuration > Protocols for <instance> > TCP/IP > IP Addresses. Verify a non-default static TCP port is used (not 1433, no dynamic port) and that UDP 1434 / TCP 1433 are blocked (SQL Browser disabled or firewalled).
+remediation:
+  type: iac_patch
+  command: Set a non-default static TCP port for each IP (clear TCP Dynamic Ports), restart SQL Server, block TCP 1433/UDP 1434 in the firewall and configure a SQL client alias on the SharePoint servers.

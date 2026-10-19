@@ -1,0 +1,19 @@
+id: TMA-PGSQL-NO-TRUST-AUTH
+title: Ensure pg_hba.conf does not use 'trust' or 'password' authentication
+description: trust allows login without any credential and password sends the password in clear text. The CIS PostgreSQL 18 Benchmark covers pg_hba.conf only through the manual checks 5.3/5.4; this rule automates that part by reading pg_hba_file_rules (superuser). Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: critical
+tags:
+- postgres
+- database
+- authentication
+- pg_hba
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 5.3 / 5.4 Ensure login via "local" UNIX Domain Socket / "host" TCP/IP Socket is configured correctly
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT count(*) FROM pg_hba_file_rules WHERE auth_method IN ('trust','password')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Replace trust/password entries in pg_hba.conf with scram-sha-256 (or peer for local administrative sockets), then SELECT pg_reload_conf();

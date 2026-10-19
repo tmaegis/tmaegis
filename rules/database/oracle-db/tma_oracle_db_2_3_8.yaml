@@ -1,0 +1,29 @@
+id: TMA-ORACLE-DB-2.3.8
+title: Ensure 'SEC_MAX_FAILED_LOGIN_ATTEMPTS' Is Set To '3' Or Less
+description: 'The SEC_MAX_FAILED_LOGIN_ATTEMPTS parameter determines how many failed login attempts are allowed before Oracle closes the login connection. Counts non-compliant GV$SYSTEM_PARAMETER rows across instances and containers; 0 is required. Default: 3 Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- parameters
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.3.8 Ensure 'SEC_MAX_FAILED_LOGIN_ATTEMPTS' Is Set To '3' Or Less
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from gv$system_parameter v
+    where upper(v.name) = 'SEC_MAX_FAILED_LOGIN_ATTEMPTS'
+    and to_number(decode(v.value, '1', 1, '2', 2, '3', 3, 9999)) > 3;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'To remediate this setting, execute the following SQL statement and restart the instance. ALTER SYSTEM SET SEC_MAX_FAILED_LOGIN_ATTEMPTS = 3 SCOPE = SPFILE; Note: This parameter is not modifiable at the PDB level. You must modify this parameter at the CDB level.'

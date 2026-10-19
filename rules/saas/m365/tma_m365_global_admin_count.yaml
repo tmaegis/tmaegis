@@ -1,0 +1,17 @@
+id: TMA-M365-GLOBAL-ADMIN-COUNT
+title: Ensure between two and four Global Administrators are designated
+description: 'At least two Global Administrators avoid lock-out; more than four widens the attack surface. Counts active members of the Global Administrator role. Requires an already-connected Microsoft Graph session: Install-Module Microsoft.Graph; Connect-MgGraph -Scopes Policy.Read.All,Directory.Read.All,RoleManagement.Read.Directory (read-only scopes). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- identity
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Microsoft 365 admin center / Global administrators count (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-MgContext -ErrorAction SilentlyContinue) -or -not (Get-MgContext)) { throw ''Not connected: run Connect-MgGraph first'' }; $r = Get-MgDirectoryRole -Filter "roleTemplateId eq ''62e90394-69f5-4237-9190-012177145e10''" -ErrorAction Stop; if (-not $r) { throw ''Global Administrator role not found'' }; $n = @(Get-MgDirectoryRoleMember -DirectoryRoleId $r.Id -All -ErrorAction Stop).Count; if ($n -ge 2 -and $n -le 4) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Microsoft 365 admin center > Roles > Global Administrator: keep 2-4 dedicated cloud-only admin accounts (including break-glass accounts); assign least-privileged roles to everyone else, preferably via PIM.'

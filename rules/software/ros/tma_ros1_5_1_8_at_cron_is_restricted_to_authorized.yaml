@@ -1,0 +1,25 @@
+id: TMA-ROS1-5.1.8
+title: Ensure at/cron is restricted to authorized users
+description: Configure /etc/cron.allow and /etc/at.allow to allow specific users to use these services. If /etc/cron.allow or /etc/at.allow do not exist, then /etc/at.deny and /etc/cron.deny are checked. Any user not specifically defined in those files is allowed to use at and cron. By removing the files, only users in /etc/cron.allow and /etc/at.allow are allowed to use at and cron. The audit requires /etc/cron.deny and /etc/at.deny to be absent and /etc/cron.allow and /etc/at.allow root:root with no group write/execute and no other permissions. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.1.8 Ensure at/cron is restricted to authorized users
+audit:
+  type: command
+  shell: bash
+  command: |-
+    bad=0
+    for f in /etc/cron.deny /etc/at.deny; do [ -e "$f" ] && { echo "$f exists"; bad=1; }; done
+    for f in /etc/cron.allow /etc/at.allow; do [ -e "$f" ] || { echo "$f missing"; bad=1; continue; }
+      set -- $(stat -Lc '%a %u %g' "$f"); [ $(( 8#$1 & 037 )) -eq 0 ] && [ "$2" = 0 ] && [ "$3" = 0 ] || { echo "$f mode $1 uid $2 gid $3"; bad=1; }; done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to remove /etc/cron.deny and /etc/at.deny and create and set permissions and ownership for /etc/cron.allow and /etc/at.allow : # rm /etc/cron.deny # rm /etc/at.deny # touch /etc/cron.allow # touch /etc/at.allow # chmod o-rwx /etc/cron.allow # chmod g-wx /etc/cron.allow # chmod o-rwx /etc/at.allow # chmod g-wx /etc/at.allow # chown root:root /etc/cron.allow # chown root:root /etc/at.allow'

@@ -1,0 +1,65 @@
+id: TMA-APACHE-7.4
+title: Ensure the TLSv1.0 and TLSv1.1 Protocols are Disabled
+description: The TLSv1.0 and TLSv1.1 protocols should be disabled via the SSLProtocol directive. The TLSv1.0 protocol is vulnerable to information disclosure and both protocols lack support for modern cryptographic algorithms including authenticated encryption. The only SSL/TLS protocols that should be allowed is TLSv1.2 along with the newer TLSv1.3 protocol. The effective SSLProtocol (last one at server level and in each virtual host) must resolve to TLSv1.2 and/or TLSv1.3 only (e.g. SSLProtocol +TLSv1.2 +TLSv1.3, or all -SSLv3 -TLSv1 -TLSv1.1), and at least one must exist. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: apache
+level: 1
+severity: high
+tags:
+- apache
+- tls
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 7.4 Ensure the TLSv1.0 and TLSv1.1 Protocols are Disabled
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; eff(){ printf '%s\n' "$cfg" | awk -v k="$1" '{l=tolower($0)} l~/^<virtualhost/{vh=1; next} l~/^<\/virtualhost>/{if(v!="") print v; v=""; vh=0; next} tolower($1)==tolower(k){if(vh)
+    v=$0; else g=$0} END{if(g!="") print g}'; }; eff SSLProtocol | awk 'tolower($1)=="sslprotocol"{n++; delete s; for(i=2;i<=NF;i++){t=$i; p=substr(t,1,1); if(p=="+"||p=="-") t=substr(t,2); else delete s; t=tolower(t); if(t=="all"){split("sslv3 tlsv1 tlsv1.1 tlsv1.2 tlsv1.3",z," "); for(j in z) if(p=="-") delete s[z[j]]; else s[z[j]]=1} else if(p=="-") delete s[t]; else s[t]=1} k=0; for(x in s){k++; if(x!="tlsv1.2" && x!="tlsv1.3") bad=1} if(k==0) bad=1} END{print (n>0&&!bad)?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi
+    [ -r "$c" ] || exit 0
+    R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c")
+    ctl=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 0
+    tma_mod() { command -v a2enmod >/dev/null 2>&1 && a2enmod "$1" >/dev/null 2>&1; true; }
+    tma_test() { "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -t >/dev/null 2>&1; }
+    tma_reload() { systemctl reload apache2 2>/dev/null || systemctl reload httpd 2>/dev/null || "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -k graceful >/dev/null 2>&1; true; }
+    tma_audit() (
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; eff(){ printf '%s\n' "$cfg" | awk -v k="$1" '{l=tolower($0)} l~/^<virtualhost/{vh=1; next} l~/^<\/virtualhost>/{if(v!="") print v; v=""; vh=0; next} tolower($1)==tolower(k){if(vh) v=$0; else g=$0} END{if(g!="") print g}'; }; eff SSLProtocol | awk 'tolower($1)=="sslprotocol"{n++; delete s; for(i=2;i<=NF;i++){t=$i; p=substr(t,1,1); if(p=="+"||p=="-") t=substr(t,2); else delete s; t=tolower(t); if(t=="all"){split("sslv3 tlsv1 tlsv1.1 tlsv1.2 tlsv1.3",z," "); for(j in z) if(p=="-") delete s[z[j]]; else s[z[j]]=1} else if(p=="-") delete s[t]; else s[t]=1} k=0; for(x in s){k++; if(x!="tlsv1.2" && x!="tlsv1.3") bad=1} if(k==0) bad=1} END{print (n>0&&!bad)?"compliant":"noncompliant"}'
+    )
+    [ "$(tma_audit 2>/dev/null | tail -n 1)" = 'compliant' ] && exit 0
+    bk=$(mktemp -d) || exit 1
+    cp -p "$c" "$bk/main"
+    tma_mod ssl
+    for f in $(find -L "$R" /etc/httpd/conf.d "$(dirname "$c")" -name '*.conf' 2>/dev/null | sort -u); do
+      [ -w "$f" ] && grep -Eiq '^[[:space:]]*(SSLProtocol)[[:space:]]' "$f" || continue
+      mkdir -p "$bk/files$(dirname "$f")"; cp -p "$f" "$bk/files$f"
+      sed -i -E 's/^([[:space:]]*(SSLProtocol)[[:space:]])/#\1/I' "$f"
+    done
+    cat >> "$c" <<'TMAEOF'
+    SSLProtocol -all +TLSv1.2 +TLSv1.3
+    TMAEOF
+    if ! tma_test; then
+      cp -p "$bk/main" "$c"; [ -d "$bk/files" ] && (cd "$bk/files" && find . -type f | while read -r f; do cp -p "$f" "/${f#./}"; done)
+      echo "configtest failed, change rolled back" >&2; exit 1
+    fi
+    rm -rf "$bk"; tma_reload
+  guidance: "Set SSLProtocol +TLSv1.2 +TLSv1.3 (or +TLSv1.2) at server level and in every TLS virtual host. Then run apachectl configtest and reload Apache."

@@ -1,0 +1,17 @@
+id: TMA-VMWARE-2.2
+title: Host must have all software updates installed
+description: 'Applying updates in a timely manner according to the severity of issues contributes greatly to the resilience of an environment. When applying updates, it is recommended to update vCenter Server first, if an update is available, and then proceed with updating ESXi. This sequence ensures that the management layer is updated before updating the ESXi hosts. Manual review: the check needs vCenter/PowerCLI, firmware or guest access, or an organization-specific value.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 2.2 Host must have all software updates installed
+audit:
+  type: manual
+  command: 'Verify that the patches are up to date. The following PowerCLI snippet will provide a list of all installed patches: Foreach ($VMHost in Get-VMHost ) { $EsxCli = Get-EsxCli -VMHost $VMHost -V2 $EsxCli.software.vib.list.invoke() | Select-Object @{N="VMHost";E={$VMHost}},* } You may also manage updates via VMware Lifecycle Manager located under Menu, Lifecycle Manager.'
+remediation:
+  type: iac_patch
+  command: Use VMware Lifecycle Manager to update and upgrade hosts when ESXi is managed through VMware vCenter. For standalone hosts use esxcli or API-driven methods for applying updates. Employ a process to keep ESXi hosts up to date with patches in accordance with industry standards and internal guidelines. Leverage the VMware Lifecycle Manager to test and apply patches as they become available.

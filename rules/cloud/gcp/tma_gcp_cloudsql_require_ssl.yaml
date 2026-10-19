@@ -1,0 +1,19 @@
+id: TMA-GCP-CLOUDSQL-REQUIRE-SSL
+title: Ensure Cloud SQL instances require all incoming connections to use SSL
+description: Without enforced TLS, database credentials and data can cross the network unencrypted. Every instance must have requireSsl true or sslMode ENCRYPTED_ONLY / TRUSTED_CLIENT_CERTIFICATE_REQUIRED. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: high
+tags:
+- gcp
+- database
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Cloud SQL - require SSL/TLS for incoming connections (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud sql instances list --format=''value(name,settings.ipConfiguration.requireSsl,settings.ipConfiguration.sslMode)'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''NF && $2 != "True" && $3 != "ENCRYPTED_ONLY" && $3 != "TRUSTED_CLIENT_CERTIFICATE_REQUIRED" { n++; print "SSL not required: " $1 } END { if (!n) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: gcloud sql instances patch <instance> --ssl-mode=ENCRYPTED_ONLY (or TRUSTED_CLIENT_CERTIFICATE_REQUIRED). Update clients to connect with TLS or via the Cloud SQL Auth Proxy first.

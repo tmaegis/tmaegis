@@ -1,0 +1,17 @@
+id: TMA-BIND-1.2
+title: Do Not Install a Multi-Use System
+description: 'Default server configurations often expose a wide variety of services unnecessarily increasing the risk to the system. Just because a server can perform many services doesn''t mean it is wise to do so. The number of services and daemons executing on the ISC BIND DNS server should be limited to those necessary, with the DNS service being the only primary function of the server. Manual review: the check needs remote queries, architecture knowledge or site policy.'
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- architecture
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 1.2 Do Not Install a Multi-Use System
+audit:
+  type: manual
+  command: 'Leverage the package or services manager for your OS to list enabled services and review to ensure each service is necessary and has a documented business need. On Red Hat systems, the following commands will produce the list of current services enabled. The systemctl command lists any systemd based services, which are common on current Linux systems while chkconfig will list any older traditional SysV based services. # systemctl -t service --state enabled list-unit-files # chkconfig --list | grep '':on'''
+remediation:
+  type: iac_patch
+  command: 'Disable all unnecessary services or move necessary primary services other than DNS to another server. Leverage the package or services manager for your OS to uninstall or disable unneeded services. On Red Hat systems, the following commands may be used to uninstall a package or disable a service: # yum erase <package name> # systemctl disable <service name>'

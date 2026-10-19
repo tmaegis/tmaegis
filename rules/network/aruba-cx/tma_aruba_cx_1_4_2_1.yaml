@@ -1,0 +1,26 @@
+id: TMA-ARUBA-CX-1.4.2.1
+title: SNMP V3
+description: SNMPv3, offers support for different users, authentication, and strong encryption. AOS- CX supports stronger authentication protocols (SHA224, SHA256, SHA384, and SHA 512) and privacy protocols (AES192 and AES256). PASS requires an SNMPv3 user with SHA authentication and snmp-server snmpv3-only. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 2
+severity: medium
+tags:
+- aruba-cx
+- snmp
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.4.2.1 SNMP V3
+audit:
+  type: config_regex
+  pattern: (?m)(?:^snmpv3 user \S+ auth sha\b(?s:.*?)^snmp-server snmpv3-only[ \t]*$|^snmp-server snmpv3-only[ \t]*$(?s:.*?)^snmpv3 user \S+ auth sha\b)
+remediation:
+  type: iac_patch
+  command: |-
+    snmpv3 user <user> auth sha auth-pass plaintext <auth> priv aes priv-pass plaintext <priv>
+    snmp-server snmpv3-only
+    snmp-server vrf mgmt
+    # CIS guidance:
+    To create an SNMPv3 user using SHA for authentication and DES for privacy
+    snmpv3 user <myUser> auth sha auth-pass plaintext
+    <myAuthPswrd> priv des priv-pass plaintext <myPrivPswrd Disable support for SNMPv1 and SNMPv2c and only accept SNMPv3 messages using the following command -
+    snmp-server snmpv3-only
+    To enable SNMP on the required VRF -
+    snmp-server vrf <vrf-name>

@@ -1,0 +1,19 @@
+id: TMA-AZURE-DB-6.11
+title: Ensure server parameter 'ssl_min_protocol_version' is set to 'TLSv1.2' or higher for PostgreSQL server
+description: 'Note: It is not possible to set the minimal TLS version on PostgreSQL flexible server to lower than 1.2. Incoming connections which try to encrypt the traffic using TLS 1.0 and TLS 1.1 are denied. Setting ''ssl_min_protocol_version'' to ''TLSv1.2'' or higher reduces TLS protocol vulnerabilities by preventing the use of significantly outdated versions of TLS. The Secure Sockets Layer (SSL) protocol encrypts network traffic transiting between server and client. Using only the most recent versions of SSL protocols (TLS version 1.2 and higher) eliminates susceptibility to known exploited vulnerabilities of outdated versions of TLS. If TLS 1.2 does not provide additional granular configuration options for supported cipher suites, there''s a chance that default ciphers which employ Cipher Block Chaining (CBC) mode may be enabled which would introduce Padding Oracle types of vulnerabilities. TLS...'
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- database
+- tls
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 6.11 Ensure server parameter 'ssl_min_protocol_version' is set to 'TLSv1.2' or higher for PostgreSQL server
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Login to Azure Portal using https://portal.azure.com. 2. Go to Azure Database for PostgreSQL servers. 3. For each server, under Settings, click Server parameters. 4. In the filter box, type ssl_min_protocol_version. 5. Ensure ssl_min_protocol_version is set to TLSV1.2 or higher. 6. Repeat steps 1-5 for each server. Audit from Azure CLI Run the following command to list PostgreSQL flexible servers: az postgres flexible-server list For each server, run the following command to get the ssl_min_protocol_version parameter value: az postgres flexible-server parameter show --resource-group <resource-group> --server-name <server> --name ssl_min_protocol_version --query value Ensure "TLSv1.2" or higher is returned. Audit from PowerShell Run the following command to list PostgreSQL flexible servers: Get-AzPostgreSqlFlexibleServer For each server, run the following command to get the ssl_min_protocol_version parameter value: Get-AzPostgreSqlFlexibleServerConfiguration
+    -ResourceGroupName <resource- group> -ServerName <server> -Name ssl_min_protocol_version | Select -p Value Ensure TLSv1.2 or higher is returned. Audit From Azure Policy If referencing a digital copy...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Login to Azure Portal using https://portal.azure.com. 2. Go to Azure Database for PostgreSQL servers. 3. For each server, under Settings, click Server parameters. 4. In the filter box, type ssl_min_protocol_version. 5. Set ssl_min_protocol_version to TLSV1.2 or higher. 6. Select Save. 7. Repeat steps 1-6 for each server requiring remediation. Remediate from Azure CLI For each server requiring remediation, run the following command to set ssl_min_protocol_version to TLSv1.2 or higher: az postgres flexible-server parameter set --resource-group <resource-group> - -server-name <server> --name ssl_min_protocol_version --value TLSv1.2 Remediate from PowerShell For each server requiring remediation, run the following command to set ssl_min_protocol_version to TLSv1.2 or higher: Update-AzPostgreSqlFlexibleServerConfiguration -ResourceGroupName <resource- group> -ServerName <server> -Name ssl_min_protocol_version -Value TLSv1.2'

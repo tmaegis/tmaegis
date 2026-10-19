@@ -1,0 +1,22 @@
+id: TMA-CISCO-ASA-1.4.2.1
+title: Ensure 'TACACS+/RADIUS' is configured correctly
+description: 'Specifies the AAA server-group and each individual server using the TACACS+ or RADIUS protocol. Authentication, authorization and accounting (AAA) scheme provide an authoritative source for managing and monitoring access for devices. Many protocols are supported for the communication between the systems and the AAA servers: http-form, kerberos, ldap, ... Audited against the output of ''show running-config'' (run ''terminal pager 0'' first; ''more system:running-config'' also works and shows unmasked secrets).'
+target: cisco-asa
+level: 2
+severity: high
+tags:
+- cisco-asa
+- network
+- aaa
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.4.2.1 Ensure 'TACACS+/RADIUS' is configured correctly
+audit:
+  type: config_regex
+  pattern: (?m)^aaa-server \S+ protocol (?:tacacs\+|radius)(?:\s|$)
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the enterprise standard protocol (protocol_name) for authentication (TACACS+ or RADIUS)
+    - Step 2: Run the following to configure the AAA server-group for the required protocol
+    aaa-server <server-group_name> protocol <protocol_name>
+    - Step 3: Run the following to configure the AAA server:
+    aaa-server <server-group_name> (<interface_name>) host <aaa-server_ip> <shared_key> server-group_name: the above server-group configured interface_name: the network interface from which the AAA server will be accessed aaa-server_ip: the IP address of the AAA server shared_key: the TACACS+ or RADIUS shared key

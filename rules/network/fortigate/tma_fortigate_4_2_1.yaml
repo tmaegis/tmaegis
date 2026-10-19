@@ -1,0 +1,28 @@
+id: TMA-FORTIGATE-4.2.1
+title: Ensure Antivirus Definition Push Updates are Configured
+description: Ensure FortiGate is configured to accept antivirus definition push updates. PASS requires the FortiGuard update schedule enabled with frequency automatic. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: high
+tags:
+- fortigate
+- threat-prevention
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.2.1 Ensure Antivirus Definition Push Updates are Configured
+audit:
+  type: config_regex
+  pattern: (?m)^config system autoupdate schedule\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set frequency automatic[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set frequency automatic[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config system autoupdate schedule
+        set status enable
+        set frequency automatic
+    end
+    # CIS guidance:
+    On GUI:
+    1. Access the FortiGate administrative web access page and go to System > FortiGuard.
+    2. Under "FortiGuard Updates" ensure that the "Scheduled updates" is set to "Automatic". On CLI:
+    config system autoupdate schedule
+        set status enable
+        set frequency automatic
+    end

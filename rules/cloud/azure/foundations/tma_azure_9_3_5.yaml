@@ -1,0 +1,18 @@
+id: TMA-AZURE-9.3.5
+title: Ensure 'Allow trusted Microsoft services to access this resource' is Enabled for Storage Account Access
+description: 'NOTE: This recommendation assumes that the Public network access parameter is set to Enabled from selected virtual networks and IP addresses. Please ensure the prerequisite recommendation has been implemented before proceeding: - Ensure Default Network Access Rule for Storage Accounts is Set to Deny If the Allow trusted Microsoft services to access this resource exception is enabled, the following services are granted access to the storage account: - Azure Backup, - Azure Data Box, - Azure DevTest Labs, - Azure Event Grid, - Azure Event Hubs, - Azure File Sync, - Azure HDInsight, - Azure Import/Export, - Azure Monitor, - Azure Networking Services, and - Azure Site Recovery (when registered in the subscription). NOTE: If none of the services listed in the Description are in use in your environment, you may wish to make an exception to this recommendation and disable ''Allow trusted Micr...'
+target: azure
+level: 2
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 9.3.5 Ensure 'Allow trusted Microsoft services to access this resource' is Enabled for Storage Account Access
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage Accounts. 2. For each storage account, under Security + networking, click Networking. 3. Under the Public access tab, look for the Resource settings: Virtual networks, IP Addresses, and exceptions heading, then click the View button. 4. In the Resource Access settings pane, review the Exceptions header and ensure that Allow trusted Microsoft services to access this resource is checked. Audit from Azure CLI Ensure bypass contains AzureServices az storage account list --query ''[*].networkRuleSet'' Audit from PowerShell Connect-AzAccount Set-AzContext -Subscription <subscription ID> Get-AzStorageAccountNetworkRuleset -ResourceGroupName <resource group> -Name <storage account name> |Select-Object Bypass If the response from the above command is None, the storage account configuration is out of compliance with this check. If the response is AzureServices, the storage account configuration is in compliance with this check. Audit from Azure
+    Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this UR...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage Accounts. 2. For each storage account, under Security + networking, click Networking. 3. Under the Public access tab, look for the Resource settings: Virtual networks, IP Addresses, and exceptions heading, then click the View button. 4. In the Resource Access settings pane, go to the Exceptions header and check the box next to Allow trusted Microsoft services to access this resource. 5. Click Save. Remediate from Azure CLI Use the below command to update bypass to Azure services. az storage account update --name <StorageAccountName> --resource-group <resourceGroupName> --bypass AzureServices'

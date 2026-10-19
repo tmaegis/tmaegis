@@ -1,0 +1,25 @@
+id: TMA-ARUBA-CX-3.5
+title: Dynamic ARP Inspection
+description: Dynamic ARP Inspection (DAI) is a security feature available in AOS-CX switches that validates ARP packets on the network to prevent ARP spoofing and ARP-based man-in- the-middle attacks. It verifies ARP requests and responses against trusted sources, such as DHCP snooping and static ARP entries.
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- threat-prevention
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.5 Dynamic ARP Inspection
+audit:
+  type: manual
+  command: Run 'show arp inspection vlan' and 'show arp inspection statistics'. Dynamic ARP inspection must be enabled on user VLANs, with only uplinks/infrastructure ports trusted ('arp inspection trust').
+remediation:
+  type: iac_patch
+  command: |-
+    Following command enables Dynamic ARP inspection on the current VLAN, which means that ARP packets received from untrusted interfaces are discarded if they have an Invalid IP-to-MAC address binding -
+    vlan <vlan-id>
+    arp inspection
+    Configures the interface as a trusted. All interfaces are untrusted by default -
+    interface <interface-id>
+    arp inspection trust
+    Dynamic ARP Inspection is enforced using DHCP Snooping binding and Static IP Binding. Refer to the DHCP Snooping section for the DHCP snooping configuration. To enable the Static IP Binding use the below configuration -
+    vlan <vlan-id>
+    arp ipv4 <IPV4_ADDR> mac <MAC_ADDR>

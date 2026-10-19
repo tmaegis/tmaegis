@@ -1,0 +1,21 @@
+id: TMA-WIN2025-17.9.5
+title: Ensure 'Audit System Integrity' is set to 'Success and Failure'
+description: 'This subcategory reports on violations of integrity of the security subsystem. Events for this subcategory include: • 4612: Internal resources allocated for the queuing of audit messages have been exhausted, leading to the loss of some audits. • 4615: Invalid use of LPC port. • 4618: A monitored security event pattern has occurred. • 4816: RPC detected an integrity violation while decrypting an incoming message. • 5038: Code integrity determined that the image hash of a file is not valid. The file could be corrupt due to unauthorized modification or the invalid hash could indicate a potential '
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 17.9.5
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9212-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9212-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

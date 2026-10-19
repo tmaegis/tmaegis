@@ -1,0 +1,18 @@
+id: TMA-ARISTA-EOS-2.6.3
+title: Remove cryptographically weak algorithms
+description: Outdated and insecure ciphers and algorithms should not be used. An attacker can possibly break the encryption of transported data if weak ciphers and algorithms are used to access sensitive data. Fails if 'management ssh' does not restrict ciphers or lists a weak cipher, MAC or key-exchange method. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 2
+severity: medium
+tags:
+- arista-eos
+- network
+- hardening
+reference: CIS Arista EOS Benchmark v1.0.0 - 2.6.3 Remove cryptographically weak algorithms
+audit:
+  type: config_regex
+  pattern: (?m)(?:^management ssh[^\n]*\n(?:[ \t]+(?:$|[^c \t\n]|c(?:$|[^i\n]|i(?:$|[^p\n]|p(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^ \n])))))))[^\n]*\n)*(?:[^ \t]|\z))|(?:^management ssh[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+(?:cipher|key-exchange|mac) [^\n]*(?:-cbc\b|3des|arcfour|hmac-md5|hmac-sha1\b|diffie-hellman-group1-sha1|group-exchange-sha1))
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: management ssh cipher aes128-ctr aes256-ctr key-exchange diffie-hellman-group14-sha256 mac hmac-sha2-256

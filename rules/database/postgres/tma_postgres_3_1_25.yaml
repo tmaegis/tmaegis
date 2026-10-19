@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.25
+title: Ensure 'log_statement' is set correctly
+description: 'The log_statement setting specifies the types of SQL statements that are logged. Valid values are: ; none (off) ; ddl ; mod ; all (all statements) It is recommended this be set to ddl unless otherwise directed by your organization''s logging policy. Fails only when log_statement is none; choose ddl, mod or all per policy. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.'
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- logging
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.25 Ensure 'log_statement' is set correctly
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN current_setting('log_statement') <> 'none' THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET log_statement = 'ddl'" -c "SELECT pg_reload_conf()"

@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-6.1.2
+title: Ensure that the STARTED resource class is used to assign user IDs to CSSMTP started tasks
+description: Started procedures have system generated job statements that do not contain the user, group, or password statements. To enable the started procedure to access the same protected resources that users and groups access, started procedures must have an associated user ID. If a user ID is not associated with the started procedure, the started procedure will not have access to the resources.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 6.1.2 Ensure that the STARTED resource class is used to assign user IDs to CSSMTP started tasks
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that STARTED appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that STARTED appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that STARTED appears. Request the following DSMON report: FUNCTION SYSTEM RACSPT Verify that the CSSMTP started task(s) appear in the FROM PROFILES IN THE STARTED CLASS: section and not the FROM THE STARTED PROCEDURES TABLE (ICHRIN03): section.'
+remediation:
+  type: iac_patch
+  command: 'To activate the STARTED class use the RACF SETROPTS command: SETROPTS CLASSACT(STARTED) To enable generic profile checking for the STARTED class use the RACF SETROPTS command: SETROPTS GENERIC(STARTED) To RACLIST the STARTED class use the RACF SETROPTS command: SETROPTS RACLIST(STARTED) To create a STARTED profile use the RACF RDEFINE and SETROPTS commands: RDEFINE STARTED CSSMTP.* + UACC(NONE) + DATA(''COMM SERVER SIMPLE MAIL TRANSFER PROTOCOL (CSSMTP)'') + STDATA( + USER(<cssmtp-user>) + GROUP(<cssmtp-group>) + ) SETROPTS REFRESH RACLIST(STARTED)'

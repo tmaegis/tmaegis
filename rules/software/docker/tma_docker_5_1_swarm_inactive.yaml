@@ -1,0 +1,23 @@
+id: TMA-DOCKER-5.1
+title: Ensure swarm mode is not Enabled, if not needed
+description: Swarm mode opens management ports and a raft store; it should be disabled when the host is not part of a swarm. The audit reads Swarm.LocalNodeState from docker info.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+- swarm
+reference: CIS Docker Benchmark v1.9.0 - 5.1 Ensure swarm mode is not Enabled, if not needed
+audit:
+  type: command
+  command: docker info --format '{{.Swarm.LocalNodeState}}'
+  expected_output: inactive
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'If swarm mode is not needed, leave it with ''docker swarm leave'' (managers: --force) after migrating services.'

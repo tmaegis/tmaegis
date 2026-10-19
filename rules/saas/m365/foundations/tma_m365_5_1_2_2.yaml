@@ -1,0 +1,16 @@
+id: TMA-M365-5.1.2.2
+title: Ensure users cannot register applications
+description: This setting controls whether standard users can register applications in the Microsoft Entra ID directory. When enabled, any user can create app registrations, which function as identity objects for applications. Allowing standard users to create app registrations expands the tenant's attack surface. A compromised account or malicious insider could create a rogue app registration to establish a persistent OAuth client, facilitate token theft, or impersonate a legitimate application. Restricting app registration to privileged roles ensures that new application identities in the directory are subject to administrative review and approval before they can be granted permissions to organizational resources.
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.1.2.2 Ensure users cannot register applications
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Users and select Users settings. 3. Verify that Users can register applications is set to No. To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.Read.All" 2. Run the following command: (Get-MgPolicyAuthorizationPolicy).DefaultUserRolePermissions | fl AllowedToCreateApps 3. Verify the returned value is False.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Users and select Users settings. 3. Set Users can register applications to No. 4. Click Save. To remediate using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.ReadWrite.Authorization" 2. Run the following commands: $param = @{ AllowedToCreateApps = $false } Update-MgPolicyAuthorizationPolicy -DefaultUserRolePermissions $param'

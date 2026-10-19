@@ -1,0 +1,17 @@
+id: TMA-TDSQL-1.1
+title: Ensure the TDSQL Database Is Placed on a Non-System Partition
+description: TDSQL database instance data (including MySQL data files, binary logs, and transaction logs) should be stored on a dedicated, non-system partition. In TDSQL, the data directory and log directory paths can be configured per host via the ZooKeeper set_hostdir node. Uses TDSQL_DATA (default /data/tdsql/data) for the instance data directory; passes when it is not on the /, /var or /usr filesystem.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- storage
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.1 Ensure the TDSQL Database Is Placed on a Non-System Partition
+audit:
+  type: command
+  command: d=${TDSQL_DATA:-/data/tdsql/data}; [ -d "$d" ] || exit 1; m=$(findmnt -n -o TARGET -T "$d" 2>/dev/null) || exit 1; case "$m" in /|/var|/usr) echo "on $m";; *) echo compliant;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a dedicated partition/volume for TDSQL data (e.g. mounted at /data/tdsql with nodev), migrate the data directory to it during a maintenance window and add it to /etc/fstab.

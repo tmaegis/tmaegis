@@ -1,0 +1,42 @@
+id: TMA-DEBIAN10-3.1.7
+title: Ensure TIPC is disabled
+description: The Transparent Inter-Process Communication (TIPC) protocol is designed to provide communication between cluster nodes.
+target: linux
+os_family:
+- debian-10
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 10 Benchmark v2.0.0 ARCHIVE - 3.1.7
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\" l_output3=\"\" l_dl=\"\" # Unset output variables\n   l_mname=\"tipc\" # set module name\n   l_mtype=\"net\" # set module type\n   l_searchloc=\"/lib/modprobe.d/*.conf /usr/local/lib/modprobe.d/*.conf /run/modprobe.d/*.conf /etc/modprobe.d/*.conf\"\n   l_mpath=\"/lib/modules/**/kernel/$l_mtype\"\n   l_mpname=\"$(tr '\"'\"'-'\"'\"' '\"'\"'_'\"'\"' <<< \"$l_mname\")\"\n   l_mndir=\"$(tr '\"'\"'-'\"'\"' '\"'\"'/'\"'\"' <<< \"$l_mname\")\"\n\n   module_loadable_chk()\n   {\n      # Check if the module is currently loadable\n      l_loadable=\"$(modprobe -n -v \"$l_mname\")\"\n      [ \"$(wc -l <<< \"$l_loadable\")\" -gt \"1\" ] && l_loadable=\"$(grep -P -- \"(^\\h*install|\\b$l_mname)\\b\" <<< \"$l_loadable\")\"\n      if grep -Pq -- '\"'\"'^\\h*install \\/bin\\/(true|false)'\"'\"' <<< \"$l_loadable\"; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is not loadable: \\\"$l_loadable\\\
+    \"\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is loadable: \\\"$l_loadable\\\"\"\n      fi\n   }\n   module_loaded_chk()\n   {\n      # Check if the module is currently loaded\n      if ! lsmod | grep \"$l_mname\" > /dev/null 2>&1; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is not loaded\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is loaded\"\n      fi\n   }\n   module_deny_chk()\n   {\n      # Check if the module is deny listed\n      l_dl=\"y\"\n      if modprobe --showconfig | grep -Pq -- '\"'\"'^\\h*blacklist\\h+'\"'\"'\"$l_mpname\"'\"'\"'\\b'\"'\"'; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is deny listed in: \\\"$(grep -Pls -- \"^\\h*blacklist\\h+$l_mname\\b\" $l_searchloc)\\\"\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is not deny listed\"\n      fi\n   }\n   # Check if the module exists on the system\n   for l_mdir in $l_mpath; do\n\
+    \      if [ -d \"$l_mdir/$l_mndir\" ] && [ -n \"$(ls -A $l_mdir/$l_mndir)\" ]; then\n         l_output3=\"$l_output3\\n  - \\\"$l_mdir\\\"\"\n         [ \"$l_dl\" != \"y\" ] && module_deny_chk\n         if [ \"$l_mdir\" = \"/lib/modules/$(uname -r)/kernel/$l_mtype\" ]; then\n            module_loadable_chk\n            module_loaded_chk\n         fi\n      else\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" doesn'\"'\"'t exist in \\\"$l_mdir\\\"\"\n      fi\n   done\n   # Report results. If no failures output in l_output2, we pass\n   [ -n \"$l_output3\" ] && echo -e \"\\n\\n -- INFO --\\n - module: \\\"$l_mname\\\" exists in:$l_output3\"\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\\n\"\n      [ -n \"$l_output\" ] && echo -e \"\\n- Correctly set:\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep\
+    \ -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=tipc
+    mkdir -p /etc/modprobe.d
+    f=/etc/modprobe.d/60-$m.conf
+    printf 'install %s /bin/false\nblacklist %s\n' "$m" "$m" > "$f"
+    modprobe -r "$m" 2>/dev/null; rmmod "$m" 2>/dev/null; true
+  guidance: "Run the following script to disable the tipc module: If the module is available in the running kernel: • Create a file with install tipc /bin/false in the /etc/modprobe.d/ directory • Create a file with blacklist tipc in the /etc/modprobe.d/ directory • Unload tipc from the kernel If available in ANY installed kernel: • Create a file with blacklist tipc in the /etc/modprobe.d/ directory If the kernel module is not available on the system or pre-compiled into the kernel: • No remediation is necessary #!/usr/bin/env bash { l_mname=\"tipc\" # set module name l_mtype=\"net\" # set module type l_mpath=\"/lib/modules/**/kernel/$l_mtype\" l_mpname=\"$(tr '-' '_' <<< \"$l_mname\")\" l_mndir=\"$(tr '-' '/' <<< …"

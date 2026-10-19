@@ -1,0 +1,30 @@
+id: TMA-ORACLE-DB-2.3.12
+title: Ensure 'REMOTE_LOGIN_PASSWORDFILE' Is Set To 'NONE'
+description: 'The remote_login_passwordfile setting specifies whether or not Oracle checks for a password file during login and how many databases can use the password file. The setting should have a value of NONE or in the event you are running DR/Data Guard, EXCLUSIVE is an allowable value. Counts non-compliant GV$SYSTEM_PARAMETER rows across instances and containers; 0 is required. With a valid standby archive destination (Data Guard) the benchmark requires EXCLUSIVE instead of NONE. Default: EXCLUSIVE Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- parameters
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.3.12 Ensure 'REMOTE_LOGIN_PASSWORDFILE' Is Set To 'NONE'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from gv$system_parameter v
+    where upper(v.name) = 'REMOTE_LOGIN_PASSWORDFILE'
+    and (((select count(*) from v$archive_dest where status = 'VALID' and target = 'STANDBY') = 0 and upper(v.value) != 'NONE')
+      or ((select count(*) from v$archive_dest where status = 'VALID' and target = 'STANDBY') > 0 and upper(v.value) != 'EXCLUSIVE'));
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: To remediate this setting, execute the following SQL statement and restart the instance. ALTER SYSTEM SET REMOTE_LOGIN_PASSWORDFILE = 'NONE' SCOPE = SPFILE;

@@ -1,0 +1,16 @@
+id: TMA-IBM-I-5.3.5
+title: IBM i NetServer Shares
+description: This policy setting defines the network file shares available to authenticated users. Allowing an IBM i NetServer File Shares allows authenticated users to access Server Message Block (SMB) file shares on the system.
+target: ibm-i
+level: 1
+severity: medium
+tags:
+- ibm-i
+- network
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 5.3.5 IBM i NetServer Shares
+audit:
+  type: manual
+  command: On a command line, type STRSQL and press Enter Copy or type the following SQL statement to the terminal and press Enter. SELECT SHARE, SHARE_TYPE, TEXT, ENCRYPTION, CAST(PATH_NAME AS VARCHAR(500)) AS PATH_NAME, PERMISSION, MAX_CONN, CUR_CONN FROM QSYS2/SHARE_INFO WHERE SHARE_TYPE = 'FILE' Pay careful attention to ensure that no share allows access to the root (path /) Next run the following SQL SELECT AUTL, USER_NAME, OBJ_AUTH FROM QSYS2/AUTL_USERS WHERE AUTL = 'QPWFSERVER' AND USER_NAME = '*PUBLIC' Ensure that the *PUBLIC authority to the QPWFSERVER authorization list is set to *EXCLUDE
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration, do the following: Type ADDLIBLE NETSRVCMD Type GO NETS Select option 4 to remove the root (/) file share if detected'

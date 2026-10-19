@@ -1,0 +1,20 @@
+id: TMA-OL9-5.4.2.3
+title: Ensure group root is the only GID 0 group
+description: Groups are defined in /etc/group, each identified by a group ID (GID). GID 0 is reserved for the root group, the privileged group associated with the superuser.
+target: linux
+os_family:
+- ol-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 9 Benchmark v3.0.0 - 5.4.2.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v awk >/dev/null 2>&1 || { echo "step1: awk not installed"; return 1; }; o=$(bash -c ''awk -F: ''"''"''($3 == 0) { print $1 }''"''"'' /etc/group'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Only root should be returned.'' || { echo step1: missing ''Only root should be returned.''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to reassign any group other than root that has GID 0 to an unused GID: # groupmod -g <NEW_GID> <groupname> Example: # groupmod -g 200 legacyadmins If the root group''s GID is not 0, run the following command to reset it: # groupmod -g 0 root'

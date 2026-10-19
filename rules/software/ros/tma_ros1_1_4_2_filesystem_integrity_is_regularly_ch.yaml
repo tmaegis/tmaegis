@@ -1,0 +1,24 @@
+id: TMA-ROS1-1.4.2
+title: Ensure filesystem integrity is regularly checked
+description: Periodic checking of the filesystem integrity is needed to detect changes to the filesystem. The audit requires an enabled and active aidecheck.timer or a cron job (root crontab, /etc/crontab, /etc/cron.*) that runs aide. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.4.2 Ensure filesystem integrity is regularly checked
+audit:
+  type: command
+  shell: bash
+  command: |-
+    e=$(systemctl is-enabled aidecheck.timer 2>/dev/null)
+    [ "$e" = enabled ] && systemctl is-active --quiet aidecheck.timer && { echo compliant; exit 0; }
+    c=$( (crontab -u root -l 2>/dev/null; cat /etc/crontab /etc/cron.d/* 2>/dev/null; ls /etc/cron.daily /etc/cron.weekly 2>/dev/null) | grep -E '(^|[^#].*)\baide' )
+    [ -n "$c" ] && echo compliant || echo 'no aidecheck.timer or aide cron job'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands: # cp ./config/aidecheck.service /etc/systemd/system/aidecheck.service # cp ./config/aidecheck.timer /etc/systemd/system/aidecheck.timer # chmod 0644 /etc/systemd/system/aidecheck.* # systemctl reenable aidecheck.timer # systemctl restart aidecheck.timer # systemctl daemon-reload OR Run the following command: # crontab -u root -e Add the following line to the crontab: 0 5 * * * /usr/bin/aide.wrapper --config /etc/aide/aide.conf --check'

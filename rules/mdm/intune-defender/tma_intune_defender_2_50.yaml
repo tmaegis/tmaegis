@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.50
+title: Ensure 'Remediation action for Severe threats' is set to 'Quarantine or Remove'
+description: 'This policy setting configures which automatic remediation action Microsoft Defender Antivirus will take for each threat alert level detection. The recommended state for this setting is: Quarantine. Moves files to quarantine. Configuring this setting to Remove. Removes files from system. also conforms to the benchmark. Audit: value 5 under ...\Windows Defender\Threats\ThreatSeverityDefaultAction must be 2 (Quarantine) or 3 (Remove).'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.50 Ensure 'Remediation action for Severe threats' is set to 'Quarantine or Remove'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Threats\ThreatSeverityDefaultAction'' -Name ''5'' -ErrorAction SilentlyContinue).''5''; if (-not ($null -ne $v -and @(''2'',''3'') -contains [string]$v)) { $bad += ''5='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 1.10 Reporting 1.10.1 Ensure 'Configure Watson events' is set to 'Disabled' (Automated)   1.11 Scan 1.12 Security Intelligence Updates 1.13 Threats CIS Benchmark Recommendation Set Correctly Yes No 1.14 Ensure 'Turn off routine remediation' is set to 'Disabled' (Automated)   2 Defender 2.1 Ensure 'Allow Archive Scanning' is set to 'Allowed' (Automated)   2.2 Ensure 'Allow Behavior Monitoring' is set to 'Allowed' (Automated)   2.3 Ensure 'Allow Cloud Protection' is set to 'Allowed' (Automated)   2.4 Ensure 'Allow Email Scanning' is set to 'Allowed' (Automated)   2.5 Ensure 'Allow Full Scan Removable Drive Scanning' is set to 'Allowed' (Automated)   2.6 Ensure 'Allow On Access Protection' is set to 'Allow' (Automated)   2.7 Ensure 'Allow Realtime Monitoring' is set to ...

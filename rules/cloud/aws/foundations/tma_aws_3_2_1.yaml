@@ -1,0 +1,19 @@
+id: TMA-AWS-3.2.1
+title: Ensure that encryption-at-rest is enabled for RDS instances
+description: Amazon RDS encrypted DB instances use the industry-standard AES-256 encryption algorithm to encrypt your data on the server that hosts your Amazon RDS DB instances. After your data is encrypted, Amazon RDS handles the authentication of access and the decryption of your data transparently, with minimal impact on performance. Databases are likely to hold sensitive and critical data; therefore, it is highly recommended to implement encryption to protect your data from unauthorized access or disclosure. With RDS encryption enabled, the data stored on the instance's underlying storage, the automated backups, read replicas, and snapshots are all encrypted.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- encryption
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 3.2.1 Ensure that encryption-at-rest is enabled for RDS instances
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the AWS Management Console and open the RDS dashboard at https://console.aws.amazon.com/rds/. 2. In the navigation pane, under RDS dashboard, click Databases. 3. Select the RDS instance that you want to examine. 4. Click Instance Name to see details, then select the Configuration tab. 5. Under Configuration Details, in the Primary Storage pane, search for the Encryption Enabled status. 6. If the current status is set to Disabled, encryption is not enabled for the selected RDS database instance. 7. Repeat steps 2 to 6 to verify the encryption status of other RDS instances in the same region. 8. Change the region from the top of the navigation bar, and repeat the audit steps for other regions. From Command Line: 1. Run the describe-db-instances command to list all the RDS database instance names available in the selected AWS region. The output will return each database instance identifier (name): aws rds describe-db-instances --region --query ''DBInstances[*].[DBInstanceIdentifier,StorageEncrypted]''
+    --output table 2. Run the describe-db-instances command again, using an RDS instance identifier returned from step 1, to determine if the selected database ins...'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Login to the AWS Management Console and open the RDS dashboard at https://console.aws.amazon.com/rds/. 2. In the left navigation panel, click on Databases. 3. Select the Database instance that needs to be encrypted. 4. Click the Actions button placed at the top right and select Take Snapshot. 5. On the Take Snapshot page, enter the name of the database for which you want to take a snapshot in the Snapshot Name field and click on Take Snapshot. 6. Select the newly created snapshot, click the Action button placed at the top right, and select Copy snapshot from the Action menu. 7. On the Make Copy of DB Snapshot page, perform the following: - In the New DB Snapshot Identifier field, enter a name for the new snapshot. - Check Copy Tags. The new snapshot must have the same tags as the source snapshot. - Select Yes from the Enable Encryption dropdown list to enable encryption. You can choose to use the AWS default encryption key or a custom key from the Master Key
+    dropdown list. 8. Click Copy Snapshot to create an encrypted copy of the selected instance''s snapshot. 9. Select the new Snapshot Encrypted Copy and click the Action button located at the top right. Then, se...'

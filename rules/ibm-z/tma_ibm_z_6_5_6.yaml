@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-6.5.6
+title: Ensure access to TCP/IP SAF resources is controlled
+description: The Communication Server access authorization is used to protect TCP/IP resources such as stack, network, port, and other SERVAUTH resources. These resources provide additional security checks for TCP/IP users. Failure to properly secure these TCP/IP resources could lead to unauthorized user access resulting in the compromise of some system services and possible compromise of data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- network
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 6.5.6 Ensure access to TCP/IP SAF resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that SERVAUTH appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that SERVAUTH appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that SERVAUTH appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The SERVAUTH entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify the following ... (full steps: CIS section 6.5.6)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(SERVAUTH) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(SERVAUTH) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(SERVAUTH) To create catch-all profiles use the RACF RDEFINE command: RDEFINE SERVAUTH EZA.** + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''CATCH-ALL PROFILE'') RDEFINE SERVAUTH EZB.** + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''CATCH-ALL PROFILE'') RDEFINE SERVAUTH EZB.INITSTACK.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''ACCESS TCP/IP STACK BEFORE AT-TLS POLICIES HAVE BEEN INSTALLED'') RDEFINE SERVAUTH EZB.FTP.*.*.ACCESS.HFS + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''ACCESS UNIX ENVIRONMENT VIA FTP'') RDEFINE SERVAUTH EZB.FTP.*.*.ACCESS.JES + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''ACCESS FTP JES MODE'') RDEFINE SERVAUTH IST.** + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''CATCH-ALL PROFILE'') SETROPTS REFRESH
+    RACLIST(SERVAUTH) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER SERVAUTH <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING ... (see CIS section 6.5.6)'

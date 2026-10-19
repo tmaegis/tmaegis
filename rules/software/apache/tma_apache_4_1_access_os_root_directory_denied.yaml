@@ -1,0 +1,65 @@
+id: TMA-APACHE-4.1
+title: Ensure Access to OS Root Directory Is Denied By Default
+description: The Apache Directory directive allows for directory specific configuration of access controls and many other features and options. One important usage is to create a default deny policy that does not allow access to operating system directories and files, except for those specifically allowed. This is done by denying access to the OS root directory. The <Directory /> block must contain a single "Require all denied" and no Allow/Deny (or the legacy Order deny,allow + Deny from all with no Allow/Require). Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file.
+target: apache
+level: 1
+severity: high
+tags:
+- apache
+- access-control
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 4.1 Ensure Access to OS Root Directory Is Denied By Default
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk '{l=tolower($0); $0=l} /^<directory[[:space:]]/{dd++; if(dd==1){x=$2; gsub(/[">]/,"",x); r=(x=="/"); if(r) f=1}; next} /^<\/directory>/{dd--;
+    if(dd==0) r=0; next} r && $1=="require"{nr++; if($0~/^require[[:space:]]+all[[:space:]]+denied/) rd++} r && $1=="allow"{al++} r && $1=="deny"{dn++; if($0~/from[[:space:]]+all/) dfa=1} r && $1=="order"{no++; if($0~/deny,[[:space:]]*allow/) oda=1} END{print (f && ((nr==1&&rd==1&&al==0&&dn==0) || (no==1&&oda&&dfa&&al==0&&nr==0)))?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi
+    [ -r "$c" ] || exit 0
+    R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c")
+    ctl=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 0
+    tma_mod() { command -v a2enmod >/dev/null 2>&1 && a2enmod "$1" >/dev/null 2>&1; true; }
+    tma_test() { "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -t >/dev/null 2>&1; }
+    tma_reload() { systemctl reload apache2 2>/dev/null || systemctl reload httpd 2>/dev/null || "$ctl" ${APACHE_CONF:+-f "$APACHE_CONF"} -k graceful >/dev/null 2>&1; true; }
+    tma_audit() (
+    c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk '{l=tolower($0); $0=l} /^<directory[[:space:]]/{dd++; if(dd==1){x=$2; gsub(/[">]/,"",x); r=(x=="/"); if(r) f=1}; next} /^<\/directory>/{dd--; if(dd==0) r=0; next} r && $1=="require"{nr++; if($0~/^require[[:space:]]+all[[:space:]]+denied/) rd++} r && $1=="allow"{al++} r && $1=="deny"{dn++; if($0~/from[[:space:]]+all/) dfa=1} r && $1=="order"{no++; if($0~/deny,[[:space:]]*allow/) oda=1} END{print (f && ((nr==1&&rd==1&&al==0&&dn==0) || (no==1&&oda&&dfa&&al==0&&nr==0)))?"compliant":"noncompliant"}'
+    )
+    [ "$(tma_audit 2>/dev/null | tail -n 1)" = 'compliant' ] && exit 0
+    bk=$(mktemp -d) || exit 1; cp -p "$c" "$bk/main"; done_=0
+    for f in $(grep -rlEi '^[[:space:]]*<Directory[[:space:]]+"?/"?>' "$R" "$c" 2>/dev/null | sort -u); do
+      mkdir -p "$bk/files$(dirname "$f")"; cp -p "$f" "$bk/files$f"
+      awk -v k=Require -v v='all denied' '{l=tolower($0)} l ~ /^[[:space:]]*<directory[[:space:]]+"?[/]"?>/ {inb=1; p=0; print; next}
+        inb && l ~ /^[[:space:]]*<[/]directory>/ { if(!p) print "    " k " " v; inb=0; print; next }
+        inb && tolower($1)==tolower(k) { if(!p) print "    " k " " v; p=1; next } {print}' "$bk/files$f" > "$f.tma.new" && cat "$f.tma.new" > "$f"; rm -f "$f.tma.new"; done_=1
+    done
+    [ "$done_" = 1 ] || printf '<Directory />
+        %s %s
+    </Directory>
+    ' Require 'all denied' >> "$c"
+    if ! tma_test; then
+      cp -p "$bk/main" "$c"; [ -d "$bk/files" ] && (cd "$bk/files" && find . -type f | while read -r f; do cp -p "$f" "/${f#./}"; done)
+      echo "configtest failed, change rolled back" >&2; exit 1
+    fi
+    rm -rf "$bk"; tma_reload
+  guidance: "In the main configuration: <Directory /> ... Require all denied ... </Directory> (remove Allow/Deny/other Require lines). Then run apachectl configtest and reload Apache."

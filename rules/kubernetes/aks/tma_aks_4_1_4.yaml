@@ -1,0 +1,17 @@
+id: TMA-AKS-4.1.4
+title: Minimize access to create pods
+description: The ability to create pods in a namespace can provide a number of opportunities for privilege escalation, such as assigning privileged service accounts to these pods or mounting hostPaths with access to sensitive data (unless Pod Security Policies are implemented to restrict this access) This verifies that permission to create or run pods in AKS is granted only to identities with a documented operational need. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.4 Minimize access to create pods
+audit:
+  type: manual
+  command: Review AKS authorization to determine whether access is controlled through Azure RBAC for Kubernetes Authorization, Kubernetes RBAC, or both, then identify the users, groups, and service accounts that can create pods. Validate whether each assignment is required for each role, with particular attention to service accounts and namespace write access, because Microsoft notes that the ability to run pods as a service account can be used to gain that service account’s API access level.
+remediation:
+  type: iac_patch
+  command: The following steps help reduce pod-creation access to the minimum required in AKS • Identify all Azure RBAC assignments and Kubernetes RBAC bindings that allow pod creation in AKS, including namespace-scoped and cluster-scoped access. • Remove pod-creation rights from any user, group, or service account that does not have a documented operational need. • Replace broad permissions with the lowest-privilege role and narrowest scope necessary, preferably at the namespace level rather than cluster-wide. • Ensure workloads use dedicated service accounts with only the permissions required for that application or controller. • Revalidate access after changes to confirm required workloads still run and that unnecessary pod-creation rights have been removed.

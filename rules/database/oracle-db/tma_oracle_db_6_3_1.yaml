@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-6.3.1
+title: Ensure 'CDB_SCHEMA_PRIVS' Does Not Have Unauthorized Privileges
+description: In Oracle 23ai, the new Schema Privileges provide fine-grained control over which users can create objects in a particular schema without requiring extensive system privileges such as CREATE ANY TABLE. This improves security by allowing administrators to specifically grant CREATE, ALTER, DROP and SELECT privileges at the schema level instead of granting global access.
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.3.1 Ensure 'CDB_SCHEMA_PRIVS' Does Not Have Unauthorized Privileges
+audit:
+  type: manual
+  command: SELECT CON_ID_TO_CON_NAME(c.con_id) AS containername, c.* FROM CDB_SCHEMA_PRIVS c; Review the results for any unauthorized privileges. If any unauthorized privileges exist, this is a fail.
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, revoke privileges that are no longer required by executing the following SQL statement. REVOKE <SCHEMA_PRIVILEGE> ON SCHEMA <USERNAME> FROM <GRANTEE>;

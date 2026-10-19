@@ -1,0 +1,25 @@
+id: TMA-ROS1-6.1.8
+title: Ensure permissions on /etc/group- are configured
+description: The /etc/group- file contains a backup list of all the valid groups defined in the system. The audit requires /etc/group- owned by root, group root, mode 0644 or more restrictive. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.1.8 Ensure permissions on /etc/group- are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    [ -e /etc/group- ] || { echo '/etc/group- not found'; exit 1; }
+    set -- $(stat -Lc '%a %u %g' /etc/group-) || exit 1
+    m=$((8#$1)); [ $((m & ~8#0644)) -eq 0 ] || { echo "/etc/group- mode $1 exceeds 0644"; exit 1; }
+    [ "$2" = 0 ] || { echo "/etc/group- uid $2"; exit 1; }
+    case " 0 " in *" $3 "*) echo compliant ;; *) echo "/etc/group- gid $3" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set permissions on /etc/group- : # chown root:root /etc/group- # chmod u-x,go-wx /etc/group-'

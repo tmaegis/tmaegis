@@ -1,0 +1,18 @@
+id: TMA-MCP-6.3
+title: Ensure outbound proxy and DNS controls are applied for resource fetchers
+description: All outbound network access from MCP server processes is forced through a configured egress proxy. DNS resolution is restricted to approved internal resolvers, and FQDN allowlists are enforced for all resource-retrieval operations. Direct outbound connections to arbitrary IP addresses, or to external hostnames not on the approved FQDN list, are blocked. All outbound connection attempts, including blocked ones, are logged as security events. An MCP server that fetches resources can be induced to connect to internal services or attacker-controlled hosts through SSRF, a malicious resource URI, or DNS rebinding. Forcing egress through a proxy with an FQDN allowlist and restricting DNS to approved resolvers bounds where the server can connect and provides a logging chokepoint. This is only effective if direct, non-proxied egress is actually blocked, not merely if a proxy is available. A te...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 6.3 Ensure outbound proxy and DNS controls are applied for resource fetchers
+audit:
+  type: manual
+  command: 'Confirm outbound connections are forced through the egress proxy and that a direct connection bypassing the proxy is blocked, then confirm DNS resolution uses approved resolvers. Set PROXY to the approved egress proxy and TEST_DEST to a destination that is reachable through that proxy and is not on any host-local allowlist, then run the following command. The command reaches the destination through the proxy as a positive control, then attempts the same destination directly with no proxy. It reports egress enforced only when the proxy path works and the direct path fails: PROXY="<EGRESS_PROXY_URL>" TEST_DEST="<REACHABLE_TEST_DESTINATION>" curl -sS -o /dev/null --max-time 8 --proxy "$PROXY" "$TEST_DEST" >/dev/null 2>&1; via_proxy_rc=$? curl -sS -o /dev/null --max-time 8 --proxy "" "$TEST_DEST" >/dev/null 2>&1; direct_rc=$? if [ "$direct_rc" -eq 0 ]; then echo "FAIL: direct outbound (proxy bypassed) reached the destination, egress is not locked down" elif [ "$via_proxy_rc" -eq
+    0 ]; then echo "PASS: direct outbound blocked and the approved proxy path reached the destination" else echo "REVIEW: neither the proxy path nor the direct path reached the destination, egress control unveri...'
+remediation:
+  type: iac_patch
+  command: Configure the MCP server's network environment so all outbound access routes through the egress proxy and direct egress is blocked at the network or host-firewall layer, restrict DNS resolution to approved internal resolvers, and define an FQDN allowlist of permitted outbound destinations enforced at the proxy. These are network and host configuration changes, and the exact mechanism (proxy environment, firewall egress rules, resolver configuration) is environment-specific. The audit attributes a blocked direct attempt only when the proxy path succeeds, so the deployment must have both a working approved proxy path to a known test destination and a blocked direct path for the audit to be conclusive. On a systemd-resolved host, set the approved upstream resolvers in the resolver configuration rather than in /etc/resolv.conf, which carries only the local stub. Log all outbound attempts, including blocked ones, as security events.

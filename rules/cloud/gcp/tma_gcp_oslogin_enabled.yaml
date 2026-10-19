@@ -1,0 +1,19 @@
+id: TMA-GCP-OSLOGIN-ENABLED
+title: Ensure OS Login is enabled for the project
+description: OS Login ties SSH access to IAM identities (with 2FA support) instead of unmanaged metadata SSH keys. Project metadata must contain enable-oslogin=TRUE. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: medium
+tags:
+- gcp
+- compute
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Virtual Machines - OS Login enabled (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud compute project-info describe --flatten=''commonInstanceMetadata.items[]'' --format=''value(commonInstanceMetadata.items.key,commonInstanceMetadata.items.value)'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''$1 == "enable-oslogin" && tolower($2) == "true" { ok = 1 } END { if (ok) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: gcloud compute project-info add-metadata --metadata enable-oslogin=TRUE, and make sure no instance overrides it with enable-oslogin=FALSE. Enforce with constraints/compute.requireOsLogin.

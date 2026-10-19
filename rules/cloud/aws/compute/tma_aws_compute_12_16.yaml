@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-12.16
+title: Ensure AWS Lambda Function URLs are configured to use AWS IAM authentication
+description: AWS Lambda Function URLs provide dedicated HTTPS endpoints for Lambda functions. The AuthType setting determines how requests are authenticated. When AuthType is configured as NONE, requests can be accepted without AWS IAM authentication, potentially exposing the function to unauthenticated internet access if the associated resource policy permits public invocation. Publicly accessible Lambda Function URLs can increase the attack surface and may be abused for unauthorized access, denial-of-service activity, data exfiltration, command-and-control infrastructure, or other malicious purposes. Configuring Lambda Function URLs to use AWS_IAM ensures that requests are authenticated and authorized through AWS Identity and Access Management before the function is invoked. Lambda Function URLs configured with AuthType = NONE create internet-reachable HTTPS endpoints that do not require AWS IAM...
+target: aws
+level: 1
+severity: high
+tags:
+- auth
+- aws
+- cloud
+- compute
+- iam
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.16 Ensure AWS Lambda Function URLs are configured to use AWS IAM authentication
+audit:
+  type: manual
+  command: 'Identify Lambda Function URLs where: aws lambda list-function-url-configs Review the value of: "AuthType": "NONE" Any Lambda Function URL configured with AuthType other than AWS_IAM should be considered a finding.'
+remediation:
+  type: iac_patch
+  command: 'Update the Lambda Function URL configuration: aws lambda update-function-url-config --function-name <function-name> --auth-type AWS_IAM'

@@ -1,0 +1,20 @@
+id: TMA-CISCO-IOSXR-1.5.8
+title: Require 'aes 128' as minimum for 'snmp-server user' when using SNMPv3
+description: Specify the use of a minimum of 128-bit AES algorithm for encryption when using SNMPv3. SNMPv3 provides much improved security over previous versions by offering options for Authentication and Encryption of messages. When configuring a user for SNMPv3 you have the option of using a range of encryption schemes, or no encryption at all, to protect ... Fails if any SNMPv3 user is configured without 'priv aes <bits>'. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 2
+severity: medium
+tags:
+- cisco-iosxr
+- network
+- snmp
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.5.8 Require 'aes 128' as minimum for 'snmp-server user' when using SNMPv3
+audit:
+  type: config_regex
+  pattern: (?m)^snmp-server user \S+ \S+ v3 (?:(?:[^a \t\n][^ \t\n]*|a(?:|[^e \t\n][^ \t\n]*|e(?:|[^s \t\n][^ \t\n]*|s(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^a \t\n][^ \t\n]*|a(?:|[^e \t\n][^ \t\n]*|e(?:|[^s \t\n][^ \t\n]*|s(?:[^ \t\n][^ \t\n]*)))))?$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! For each SNMPv3 user created on your router add privacy options by issuing the following command.
+    snmp-server user {snmp_user_name} {snmp_group_name} v3 auth sha {snmp_auth_password} priv aes 128 {snmp_priv_password} ipv4 {snmp_access-list}

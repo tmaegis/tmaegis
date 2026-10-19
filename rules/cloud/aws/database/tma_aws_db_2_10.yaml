@@ -1,0 +1,20 @@
+id: TMA-AWS-DB-2.10
+title: Ensure Database has IAM Auth is Enabled
+description: AuroraDB clusters should be configured to leverage AWS IAM authentication for database connections. This ensures that users authenticate using temporary IAM-based tokens rather than static long-lived passwords. Enabling IAM authentication for AuroraDB centralizes and strengthens access control by integrating database authentication with broader AWS IAM identity management. This approach eliminates the risks associated with hard-coded credentials, reduces administrative overhead for password rotation, and allows precise access management using IAM identities and policies.
+target: aws
+level: 2
+severity: low
+tags:
+- auth
+- aws
+- cloud
+- database
+- iam
+reference: CIS AWS Database Services Benchmark v2.0.0 - 2.10 Ensure Database has IAM Auth is Enabled
+audit:
+  type: manual
+  command: '1. List AuroraDB clusters and check IAM authentication status: aws rds describe-db-clusters \ --query "DBClusters[*].{DBClusterIdentifier:DBClusterIdentifier,IAMDatabaseAuthentica tionEnabled:IAMDatabaseAuthenticationEnabled}" \ --output table 2. List database users enabled for IAM authentication (Aurora MySQL): - For MySQL, connect to the cluster and run below command to ensure that required database users exist for IAM token logins. SELECT user, plugin FROM mysql.user WHERE plugin=''AWSAuthenticationPlugin''; - For Postgres, connect to the cluster and run below command to verify that necessary users are granted the rds_iam role. SELECT r.rolname FROM pg_roles AS r JOIN pg_auth_members AS m ON r.oid = m.member JOIN pg_roles AS g ON m.roleid = g.oid WHERE g.rolname = ''rds_iam''; The cluster must have IAM database authentication enabled and users intended for IAM authentication must exist in the database engine with appropriate privileges.'
+remediation:
+  type: iac_patch
+  command: '1. Enable IAM Database Authentication on the Aurora Cluster - Use the AWS CLI to enable IAM authentication for an existing Aurora cluster: aws rds modify-db-cluster \ --db-cluster-identifier <your-cluster-name> \ --enable-iam-database-authentication \ --apply-immediately 2. Create Local Database Users Configured for IAM Authentication - For Aurora MySQL: Connect to the database and create or alter users as follows: CREATE USER ''jane_doe'' IDENTIFIED WITH AWSAuthenticationPlugin as ''RDS''; or ALTER USER ''jane_doe'' IDENTIFIED WITH AWSAuthenticationPlugin as ''RDS''; - For Aurora PostgreSQL: Grant the rds_iam role to eligible users: GRANT rds_iam TO jane_doe; 3. Grant Necessary Privileges to the Database Users - Assign required permissions and roles to the users within your DB engine via standard SQL GRANT commands. 4. Ensure IAM Users/Roles Have Required AWS Permissions - The IAM principal that connects needs the following AWS permission in their policy: { "Version":"2012-10-17",
+    "Statement": [ { "Effect": "Allow", "Action": [ "rds-db:connect" ], "Resource": [ "arn:aws:rds-db:region:account- id:dbuser:DbClusterResourceId/db-user-name" ] } ] } - region is the AWS Region for the DB clus...'

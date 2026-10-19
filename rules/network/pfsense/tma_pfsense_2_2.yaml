@@ -1,0 +1,23 @@
+id: TMA-PFSENSE-2.2
+title: Ensure LDAP or RADIUS server configured
+description: Configured the LDAP Servers or Radius server for central authentication. PASS requires at least one LDAP or RADIUS authentication server. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: high
+tags:
+- pfsense
+- authentication
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 2.2 Ensure LDAP or RADIUS server configured
+audit:
+  type: config_regex
+  pattern: <authserver>(?:[^<]|<[^/<]|</[^a<]|</a[^u<]|</au[^t<]|</aut[^h<]|</auth[^s<]|</auths[^e<]|</authse[^r<]|</authser[^v<]|</authserv[^e<]|</authserve[^r<]|</authserver[^><])*?<type>(?:ldap|radius)</type>
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: System > User Manager > Authentication Servers > Add: Type LDAP or RADIUS, fill in the server details, Save; then select it under System > User Manager > Settings.
+    # CIS guidance:
+    In the GUI:
+    -
+    Navigate to System > User Manager.
+    - CLIck the Authentication Servers at the top.
+    - Configure "Authentication Servers" Setting

@@ -1,0 +1,32 @@
+id: TMA-FORTIGATE-2.4.7
+title: Ensure default Admin ports are changed
+description: FortiGate admin ports listen on the common ports of 80 and 443. This is default behavior. While interface access is controlled by configuring network interfaces, the FortiGate still listens on the admin ports that have been configured, which can also cause a conflict should 80 or 443 be needed as part of additional configuration later on. FAILs if admin-port is still 80 or admin-sport is still 443 (admin-https-redirect must also be disabled when port 80 is changed). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- authentication
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.4.7 Ensure default Admin ports are changed
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set admin-(?:port 80|sport 443)[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set admin-https-redirect disable
+        set admin-port 8082
+        set admin-sport 4343
+    end
+    # CIS guidance:
+    config system global
+        set admin-https-redirect disable
+        set admin-port 8082 **(or any other uncommon port)**
+        set admin-server-cert "self-sign"
+        set admin-sport 4343 **(or any other uncommon port)**
+    end
+    OR From Web GUI:
+    1. System > Settings
+    2. Change the ports/settings under 'Administration Settings' section. NOTE: https redirection must be turned off as well as changing port 80. This is due to the nature of how browser port redirection works. The browser will be redirected from port 80 to port 443 or whichever 'admin-sport' is configured, meaning that it will still listen on port 80 even when the port has been reconfigured.

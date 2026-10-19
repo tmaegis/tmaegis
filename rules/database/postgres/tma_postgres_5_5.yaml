@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-5.5
+title: Ensure per-account connection limits are used
+description: Limiting concurrent connections to a PostgreSQL server can be used to reduce the risk of Denial of Service (DoS) attacks. Counts login roles with an unlimited (-1) connection limit. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- authentication
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 5.5 Ensure per-account connection limits are used
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT count(*) FROM pg_roles WHERE rolname !~ '^pg_' AND rolcanlogin AND rolconnlimit = -1" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: ALTER ROLE <dbuser> CONNECTION LIMIT <reasonable concurrent connection count>; for every login role reported (SELECT rolname FROM pg_roles WHERE rolcanlogin AND rolconnlimit = -1).

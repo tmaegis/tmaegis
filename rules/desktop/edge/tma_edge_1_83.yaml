@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.83
+title: Ensure 'Control use of the Headless Mode' is set to 'Disabled'
+description: "This policy setting controls whether users can launch Microsoft Edge in headless mode. A headless browser is a browser that is not configured with a Graphical User Interface (GUI) and is executed via command-line or using network communication. The recommended state for this setting is: Disabled. Rationale: Although this feature can be very useful to developers, an attacker could programmatically scrape website content and install malicious scripts on devices running the browser\u2019s headless interface. Audit reads the Group Policy registry value and prints 'compliant', 'unset' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge:HeadlessModeEnabled (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it."
+target: edge
+level: 2
+severity: medium
+tags:
+- edge
+- browser
+- cis-l2
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.83 Ensure 'Control use of the Headless Mode' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''HeadlessModeEnabled'' -ErrorAction SilentlyContinue).''HeadlessModeEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'HeadlessModeEnabled' -Value 0 -PropertyType DWord -Force | Out-Null

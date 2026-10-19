@@ -1,0 +1,17 @@
+id: TMA-EKS-4.1.1
+title: Ensure that the cluster-admin role is only used where required
+description: Verify that cluster-wide administrative access in Amazon EKS is granted only to identities with a documented need for full cluster administration. In EKS, this review should cover access entries associated with AmazonEKSClusterAdminPolicy, legacy aws-auth and Kubernetes group mappings that lead to ClusterRoleBinding assignments, and any service accounts bound to cluster-wide administrative permissions. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: critical
+tags:
+- eks
+- policies
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.1.1 Ensure that the cluster-admin role is only used where required
+audit:
+  type: manual
+  command: This audit reviews Kubernetes ClusterRoleBinding objects in the Amazon EKS cluster to identify principals that are directly granted the cluster-admin ClusterRole. It lists each matching binding and its associated users, groups, or service accounts so the reviewer can verify whether full cluster-wide administrative access is justified.
+remediation:
+  type: iac_patch
+  command: Review each ClusterRoleBinding identified by the audit that grants the Kubernetes cluster-admin ClusterRole, and determine whether the listed user, group, or service account still requires full cluster-wide administrative access. In Amazon EKS, this review should also account for access granted through EKS access entries and access policies, because AWS recommends access entries as the preferred way to grant Kubernetes API access. Where responsibilities are limited to a namespace, workload, or operational function, replace cluster-wide administration with a narrower authorization model. • Review each principal returned by the audit and confirm whether full cluster-wide administrative access is still justified for that identity.

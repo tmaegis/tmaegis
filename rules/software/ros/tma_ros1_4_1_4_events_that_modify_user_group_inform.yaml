@@ -1,0 +1,29 @@
+id: TMA-ROS1-4.1.4
+title: Ensure events that modify user/group information are collected
+description: Record events affecting the group , passwd (user IDs), shadow and gshadow (passwords) or /etc/security/opasswd (old passwords, based on remember parameter in the PAM configuration) files. The parameters in this section will watch the files to see if they have been opened for write or have had attribute changes (e.g. The audit inspects the loaded rules (auditctl -l). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.4 Ensure events that modify user/group information are collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)identity( |$)' | grep -Fq -- '-w /etc/group ' || { echo 'missing watch: -w /etc/group -k identity'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)identity( |$)' | grep -Fq -- '-w /etc/passwd ' || { echo 'missing watch: -w /etc/passwd -k identity'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)identity( |$)' | grep -Fq -- '-w /etc/gshadow ' || { echo 'missing watch: -w /etc/gshadow -k identity'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)identity( |$)' | grep -Fq -- '-w /etc/shadow ' || { echo 'missing watch: -w /etc/shadow -k identity'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)identity( |$)' | grep -Fq -- '-w /etc/security/opasswd ' || { echo 'missing watch: -w /etc/security/opasswd -k identity'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/identity.rules and add the following lines: -w /etc/group -p wa -k identity -w /etc/passwd -p wa -k identity -w /etc/gshadow -p wa -k identity -w /etc/shadow -p wa -k identity -w /etc/security/opasswd -p wa -k identity'

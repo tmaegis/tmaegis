@@ -1,0 +1,17 @@
+id: TMA-M365-SMTP-AUTH-DISABLED
+title: Ensure SMTP AUTH client submission is disabled organization-wide
+description: 'SMTP AUTH uses basic authentication and bypasses MFA; it should be disabled tenant-wide and enabled only per mailbox where unavoidable. Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- authentication
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange Online / SMTP AUTH (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $t = Get-TransportConfig -ErrorAction Stop; if ($t.SmtpClientAuthenticationDisabled -eq $true) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-TransportConfig -SmtpClientAuthenticationDisabled $true (re-enable for individual devices with Set-CASMailbox <mbx> -SmtpClientAuthenticationDisabled $false).

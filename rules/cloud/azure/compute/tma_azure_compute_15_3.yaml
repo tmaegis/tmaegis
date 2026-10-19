@@ -1,0 +1,19 @@
+id: TMA-AZURE-COMPUTE-15.3
+title: Ensure local authentication methods for accounts are disabled
+description: This recommendation disables local authentication and ensures that a centralized identity provider is used. Identity and Authentication silos with stale or persistent keys and tokens can increase vulnerability and risk by preventing detection mechanisms from capturing anomalous activity and may not produce an auditable trail of evidence that can be used for pattern detection and forensic investigation. Centralized Identity providers such as Microsoft Entra ID are strongly preferred for all identity, authentication, authorization, and accountability (IAAA) systems and activities.
+target: azure
+level: 1
+severity: medium
+tags:
+- auth
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 15.3 Ensure local authentication methods for accounts are disabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Login to Azure portal https://portal.azure.com 2. Navigate to Batch Accounts For each Batch Account shown: 1. Click to open the Batch Account name 2. Under the Settings section, click on Authentication modes 3. In the main window, click the Authentication Mode drop-down list, and review which options are checked. Expected Output: Only Microsoft Entra ID should be checked. Audit from Azure CLI Check Local Authentication Status for Batch Accounts az batch account list \ --query "[].{name:name, resourceGroup:resourceGroup, authModes:allowedAuthenticationModes}" Expected Output: - SHOULD contain "AAD" (Microsoft Entra ID) - Should NOT contain "SharedKey" or other entries Audit from PowerShell List Authentication Methods for All Batch Accounts using script: Get-AzBatchAccount | ForEach-Object { $authModes = (Get-AzBatchAccount -Name $_.AccountName -ResourceGroupName $_.ResourceGroupName).AllowedAuthenticationModes [PSCustomObject]@{ AccountName = $_.AccountName
+    ResourceGroup = $_.ResourceGroupName AuthenticationModes = $authModes -join ", " } } Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Login to Azure portal https://portal.azure.com 2. Navigate to Batch Accounts For each Batch Account shown: 1. Click to open the Batch Account name 2. Under the Settings section, click on Authentication modes 3. In the main window, click the Authentication Mode drop-down list 4. Check the box for Microsoft Entra ID (or other centralized IdP) 5. (If checked) Uncheck the box for Shared Key 6. (If checked) Uncheck the box for Task Authentication Token 7. Click Save'

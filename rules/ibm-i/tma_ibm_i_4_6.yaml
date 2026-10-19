@@ -1,0 +1,16 @@
+id: TMA-IBM-I-4.6
+title: Default Passwords
+description: A profile has a default password when the profile's password matches the user profile name. A change was made in 7.5 so that the default for the password on CRTUSRPRF is *NONE. When you create new user profiles, consider assigning a unique, non-trivial password instead of using a default password. Default passwords provide an opportunity for someone to enter your system anonymously. Default passwords are easy to guess. Additionally, accounts with default passwords are often used for shared (non-unique) accounts.
+target: ibm-i
+level: 1
+severity: critical
+tags:
+- ibm-i
+- password-policy
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 4.6 Default Passwords
+audit:
+  type: manual
+  command: On a command line, type STRSQL and press Enter Enter the following SQL statement and press Enter. SELECT ALL USER_NAME, STATUS, DFTPWD, PWDEXP FROM QSYS2/USER_INFO T01 WHERE DFTPWD = 'YES'
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration, change the password of all user profiles with default passwords to a non-trivial password and set the password to expire. CHGUSRPRF USRPRF(<xxxxxx>) PASSWORD(<xxxxxx>) PWDEXP(*YES) Additionally, the command ANZDFTPWD ACTION (*DISABLE) should be added to a job schedule entry to periodically scan for and *DISABLE any profiles with *DEFAULT passwords, and system value QPWDRULES should contain the parameters *ALLCRTCHG and *LMTPRFNAME to prevent the creation of profiles with *DEFAULT passwords.

@@ -1,0 +1,22 @@
+id: TMA-CISCO-NXOS-SNMP-NO-DEFAULT-COMMUNITY
+title: Ensure SNMP community strings 'public' and 'private' are not used
+description: Default SNMP community strings are well known and give access to device data. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- snmp
+reference: CIS Cisco NX-OS Benchmark - Management Plane / SNMP (verify section number for your release)
+audit:
+  type: config_regex
+  pattern: (?mi)^snmp-server community (?:public|private)(?:\s|$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+     no snmp-server community public
+     no snmp-server community private
+    end

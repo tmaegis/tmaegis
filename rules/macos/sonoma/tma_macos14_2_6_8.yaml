@@ -1,0 +1,52 @@
+id: TMA-MACOS14-2.6.8
+title: Ensure an Administrator Password Is Required to Access System-Wide Preferences
+description: System Preferences controls system and user settings on a macOS Computer. System Preferences allows the user to tailor their experience on the computer as well as allowing the System Administrator to configure global security settings. Some of the settings should only be altered by the person responsible for the computer. By requiring a password to unlock system-wide System Preferences, the risk of a user changing configurations that affect the entire system is mitigated and requires an admin user to re-authenticate to make changes.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- access-control
+- auth
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.6.8 Ensure an Administrator Password Is Required to Access System-Wide Preferences
+audit:
+  type: command
+  command: "[ -x /usr/bin/security ] || exit 1\nauthDBs=(\"system.preferences\" \"system.preferences.energysaver\" \"system.preferences.network\" \"system.preferences.printing\" \"system.preferences.sharing\" \"system.preferences.softwareupdate\" \"system.preferences.startupdisk\" \"system.preferences.timemachine\")\nresult=\"1\"\nfor section in \"${authDBs[@]}\"; do\n  if [[ $(/usr/bin/security -q authorizationdb read \"$section\" | /usr/bin/xmllint -xpath 'name(//*[contains(text(), \"shared\")]/following-sibling::*[1])' -) != \"false\" ]]; then\n    result=\"0\"\n  fi\n  if [[ $(/usr/bin/security -q authorizationdb read \"$section\" | /usr/bin/xmllint -xpath '//*[contains(text(), \"group\")]/following-sibling::*[1]/text()' -) != \"admin\" ]]; then\n    result=\"0\"\n  fi\n  if [[ $(/usr/bin/security -q authorizationdb read \"$section\" | /usr/bin/xmllint -xpath 'name(//*[contains(text(), \"authenticate-user\")]/following-sibling::*[1])' -) != \"true\" ]]; then\n    result=\"0\"\n  fi\n\
+    \  if [[ $(/usr/bin/security -q authorizationdb read \"$section\" | /usr/bin/xmllint -xpath 'name(//*[contains(text(), \"session-owner\")]/following-sibling::*[1])' -) != \"false\" ]]; then\n    result=\"0\"\n  fi\ndone\necho \"$result\""
+  expected_output: '1'
+  shell: bash
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    PB=/usr/libexec/PlistBuddy
+    for section in system.preferences system.preferences.energysaver system.preferences.network system.preferences.printing system.preferences.sharing system.preferences.softwareupdate system.preferences.startupdisk system.preferences.timemachine; do
+      p=$(/usr/bin/mktemp /tmp/tma-auth.XXXXXX) || exit 1
+      if /usr/bin/security -q authorizationdb read "$section" > "$p" 2>/dev/null; then
+        /bin/cp "$p" "$TMA_BK/$section.$TMA_TS.plist"
+        $PB -c "Set :shared false" "$p" 2>/dev/null || $PB -c "Add :shared bool false" "$p"
+        $PB -c "Set :group admin" "$p" 2>/dev/null || $PB -c "Add :group string admin" "$p"
+        $PB -c "Set :authenticate-user true" "$p" 2>/dev/null || $PB -c "Add :authenticate-user bool true" "$p"
+        $PB -c "Set :session-owner false" "$p" 2>/dev/null || $PB -c "Add :session-owner bool false" "$p"
+        /usr/bin/security -q authorizationdb write "$section" < "$p"
+      fi
+      /bin/rm -f "$p"
+    done
+  guidance: "Graphical Method: Perform the following steps to verify that an administrator password is required to access system-wide preferences: 1. Open System Settings 2. Select Privacy & Security 3. Select Advanced 4. Set Require an administrator password to access system-wide settings to enabled Terminal Method: The authorizationdb settings cannot be written to directly, so the plist must be exported out to a temporary file. Changes can be made to the temporary plist, then imported back into the authorizationdb settings. Run the following commands to enable that an administrator password is required to access system-wide preferences: % authDBs=(\"system.preferences\" \"system.preferences.energysaver\" \"system.preferences.network\" \"system.preferences.printing\" \"system.preferences.sharing\" \"system.preferences.softwareupdate\" \"system.preferences.startupdisk\" \"system.preferences.timemachine\") for section in ${authDBs[@]}; do /usr/bin/security -q authorizationdb read \"$section\" > \"/tmp/$section.plist\" class_key_value=$(usr/libexec/PlistBuddy -c \"Print :class\" \"/tmp/$section.plist\" 2>&1) if [[ \"$class_key_value\" == *\"Does Not Exist\"* ]]; then /usr/libexec/PlistBuddy -c \"Add :class string user\" \"/..."

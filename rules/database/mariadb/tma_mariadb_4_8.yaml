@@ -1,0 +1,39 @@
+id: TMA-MARIADB-4.8
+title: Ensure 'sql_mode' Contains 'STRICT_ALL_TABLES'
+description: 'When data changing statements are made (i.e., INSERT, UPDATE), MariaDB can handle invalid or missing values differently depending on whether strict SQL mode is enabled. When strict SQL mode is enabled, data may not be truncated or otherwise "adjusted" to make the data changing statement work. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 2
+severity: low
+tags:
+- mariadb
+- database
+- configuration
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 4.8 Ensure 'sql_mode' Contains 'STRICT_ALL_TABLES'
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF(FIND_IN_SET('STRICT_ALL_TABLES', @@global.sql_mode) > 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v mysql >/dev/null 2>&1 || exit 0
+    cur=$(mysql -NBe "SELECT @@global.sql_mode") || exit 1
+    case ",$cur," in *,STRICT_ALL_TABLES,*) exit 0;; esac
+    new=${cur:+$cur,}STRICT_ALL_TABLES
+    mysql -NBe "SET GLOBAL sql_mode = '$new'" || exit 1
+    dir=; for x in /etc/mysql/mysql.conf.d /etc/mysql/mariadb.conf.d /etc/mysql/conf.d /etc/my.cnf.d; do [ -d "$x" ] && { dir=$x; break; }; done
+    [ -n "$dir" ] && printf '[mysqld]\nsql_mode=%s\n' "$new" > "$dir/99-tmaegis-sql_mode.cnf"; true
+  guidance: "Add STRICT_ALL_TABLES to sql_mode under [mariadbd] (e.g. sql_mode=STRICT_ALL_TABLES,ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION) after testing applications, then restart or SET GLOBAL sql_mode."

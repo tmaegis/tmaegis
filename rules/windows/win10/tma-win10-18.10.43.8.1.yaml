@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.43.8.1
+title: Ensure 'Convert warn verdict to block' is set to 'Enabled'
+description: 'This policy setting controls whether Microsoft Defender Antivirus network protection will display a warning, or block network traffic. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-10
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.43.8.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\NIS'' -Name ''EnableConvertWarnToBlock'' -ErrorAction SilentlyContinue).''EnableConvertWarnToBlock''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableConvertWarnToBlock='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\NIS')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\NIS' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\NIS' -Name 'EnableConvertWarnToBlock' -Value 1 -PropertyType DWord -Force | Out-Null

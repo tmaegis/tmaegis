@@ -1,0 +1,64 @@
+id: TMA-FREEBSD-1.1.2.1.2
+title: Ensure nosuid option set on /tmp partition
+description: 'The nosuid mount option specifies that the filesystem cannot contain setuid files. WARNING This option is worthless if a publicly available suid or sgid wrapper is installed on your system. It is set automatically when the user does not have super-user privileges. Since the /tmp filesystem is only intended for temporary file storage, set this option to ensure that users cannot create setuid files in /tmp. Audit: when /tmp is a separate mount, its options (mount -p) must include nosuid; no separate mount is compliant (see the partition recommendation).'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- permissions
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.1.2.1.2 Ensure nosuid option set on /tmp partition
+audit:
+  type: command
+  command: 'command -v mount >/dev/null 2>&1 || exit 1; o=$(mount -p | awk ''$2=="/tmp" {print $4}''); if [ -z "$o" ]; then echo compliant; else case ",$o," in *,nosuid,*) echo compliant;; *) echo "/tmp options: $o";; esac; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    p=/tmp; o=nosuid
+    set -- $(mount -p | awk -v p="$p" '$2==p {print $1, $3, $4}')
+    [ $# -ge 3 ] || exit 0
+    dev=$1; fst=$2; opts=$3
+    case ",$opts," in *,$o,*) exit 0;; esac
+    if [ "$fst" = zfs ]; then
+      zfs set setuid=off "$dev"
+    else
+      if awk -v p="$p" '$0 !~ /^#/ && $2==p {f=1} END {exit !f}' /etc/fstab 2>/dev/null; then
+        tma_bk /etc/fstab
+        awk -v p="$p" -v o="$o" '$0 !~ /^#/ && $2==p { n=split($4,a,","); f=0; for(i=1;i<=n;i++) if(a[i]==o) f=1; if(!f) $4=$4","o; print $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6; next } {print}' /etc/fstab > /etc/fstab.tma.$$ &&
+          [ -s /etc/fstab.tma.$$ ] && cat /etc/fstab.tma.$$ > /etc/fstab
+        rm -f /etc/fstab.tma.$$
+      fi
+      mount -u -o "$o" "$p"
+    fi
+  guidance: "- IF - a separate partition exists for /tmp without the type tmpfs. Edit the /etc/fstab file and add nosuid to the fourth field (mounting options) for the /tmp partition. Example: <device> /tmp <fstype> rw,nosuid,noexec 0 0 Run the following command to remount /tmp with the configured options: # mount -u -o nosuid /tmp"

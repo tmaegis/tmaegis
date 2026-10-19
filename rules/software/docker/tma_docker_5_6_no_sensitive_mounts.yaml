@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.6
+title: Ensure sensitive host system directories are not mounted on containers
+description: Mounting host system directories (/, /boot, /dev, /etc, /lib, /proc, /sys, /usr) lets a container read or change the host. Flags those directories mounted in any mode, and anything below them mounted read-write. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.6 Ensure sensitive host system directories are not mounted on containers
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{range .Mounts}} {{.Source}}|{{.RW}}{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '{for(i=2;i<=NF;i++){split($i,a,"|"); if(a[1] ~ /^\/(boot|dev|etc|lib|proc|sys|usr)?$/ || (a[2]=="true" && a[1] ~ /^\/(boot|dev|etc|lib|proc|sys|usr)\//)) print $1" "a[1]}}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Redeploy the container without bind mounts of sensitive host directories; if a file is truly needed, mount only that file read-only (-v /etc/foo:/etc/foo:ro).

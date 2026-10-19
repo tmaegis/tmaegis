@@ -1,0 +1,18 @@
+id: TMA-MARIADB-2.7
+title: Lock Out Accounts if Not Currently in Use
+description: If users with accounts will not be using their account for some time, to reduce the risk of attacks or inappropriate account usage or if suspicions exist that an account might be under attack, disabling the account will secure it and once it's ready to resume use it can easily be re-enabled.
+target: mariadb
+level: 2
+severity: medium
+tags:
+- mariadb
+- database
+- authentication
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 2.7 Lock Out Accounts if Not Currently in Use
+audit:
+  type: manual
+  command: 'Review lock status: SELECT CONCAT(user, ''@'', host, '' => '', JSON_DETAILED(priv)) FROM mysql.global_priv; Accounts not in use and reserved accounts must show account_locked:true.'
+remediation:
+  type: iac_patch
+  command: ALTER USER '<user>'@'<host>' ACCOUNT LOCK; for each unused account (ACCOUNT UNLOCK when needed again).

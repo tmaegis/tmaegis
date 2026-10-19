@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.4.2
+title: Ensure 'IMAP4' Windows services are 'Disabled'
+description: Internet Message Access Protocol version 4 (IMAP4) is an email protocol for sending and receiving email between a client and server. Unlike POP3 it can synchronize email and folders between the client and server. On Exchange Server 2019 with the Mailbox role installed, it is set to manual startup by default. Prints the number of IMAP4 services (MSExchangeImap4, MSExchangeIMAP4BE) whose StartType is not Disabled (expected 0). Uses Get-Service only; fails if the services are not present. Run on each Mailbox server.
+target: exchange
+level: 1
+severity: medium
+tags:
+- exchange
+- services
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.4.2 Ensure 'IMAP4' Windows services are 'Disabled'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; $bad = @(Get-Service -Name MSExchangeImap4, MSExchangeIMAP4BE -ErrorAction Stop | Where-Object { "$($_.StartType)" -ne 'Disabled' }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Stop-Service MSExchangeImap4, MSExchangeIMAP4BE; Get-Service MSExchangeImap4, MSExchangeIMAP4BE | Set-Service -StartupType Disabled

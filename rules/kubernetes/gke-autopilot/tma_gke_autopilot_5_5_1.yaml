@@ -1,0 +1,17 @@
+id: TMA-GKE-AUTOPILOT-5.5.1
+title: Use Google Groups to centrally manage Kubernetes RBAC access for GKE clusters
+description: Use Google Groups for RBAC to centrally manage Kubernetes RBAC access for GKE Autopilot clusters. Cluster administrators should assign Kubernetes RoleBinding and ClusterRoleBinding permissions to approved Google Groups rather than directly binding access to individual user email addresses. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 2
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.5.1 Use Google Groups to centrally manage Kubernetes RBAC access for GKE clusters
+audit:
+  type: manual
+  command: Review the GKE Autopilot cluster and verify that Google Groups for RBAC is enabled and configured with the required security group. Google Groups for RBAC lets Kubernetes RBAC permissions be assigned to Google Groups managed in Google Workspace or Cloud Identity, rather than binding access directly to individual user email addresses.
+remediation:
+  type: iac_patch
+  command: 'Enable Google Groups for RBAC when the audit shows that authenticatorGroupsConfig.enabled is not true, or when securityGroup is missing or incorrect. The required security group must be named gke-security-groups@DOMAIN, and approved access groups should be nested under that security group before they are referenced in Kubernetes RBAC bindings. gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --security-group=gke-security-groups@$DOMAIN After Google Groups for RBAC is enabled, update Kubernetes RoleBinding and ClusterRoleBinding objects to reference approved Google Groups as kind: Group subjects. Replace direct User bindings with group based bindings where practical, while preserving required ServiceAccount bindings for workloads, controllers, and automation.'

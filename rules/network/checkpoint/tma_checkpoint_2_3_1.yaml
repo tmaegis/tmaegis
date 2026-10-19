@@ -1,0 +1,27 @@
+id: TMA-CHECKPOINT-2.3.1
+title: Ensure NTP is enabled and IP address is set for Primary and Secondary NTP server
+description: These settings enable the use of primary and secondary NTP servers to provide redundancy in case of a failure involving the primary NTP server. PASS requires NTP active on with a primary and a secondary server. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: medium
+tags:
+- checkpoint
+- time
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 2.3.1 Ensure NTP is enabled and IP address is set for Primary and Secondary NTP server
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set ntp active on[ \t]*$(?s:.*?)^set ntp server primary \S+(?s:.*?)^set ntp server secondary \S+|^set ntp active on[ \t]*$(?s:.*?)^set ntp server secondary \S+(?s:.*?)^set ntp server primary \S+|^set ntp server primary \S+(?s:.*?)^set ntp active on[ \t]*$(?s:.*?)^set ntp server secondary \S+|^set ntp server primary \S+(?s:.*?)^set ntp server secondary \S+(?s:.*?)^set ntp active on[ \t]*$|^set ntp server secondary \S+(?s:.*?)^set ntp active on[ \t]*$(?s:.*?)^set ntp server primary \S+|^set ntp server secondary \S+(?s:.*?)^set ntp server primary \S+(?s:.*?)^set ntp active on[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    set ntp active on
+    set ntp server primary <ntp1> version 3
+    set ntp server secondary <ntp2> version 3
+    save config
+    # CIS guidance:
+    Run the following command to enable the NTP and configure the Primary & Secondary NTP server. CLI:
+    set ntp active on
+    set ntp server primary ntpserver.time.com version 3
+    set ntp server primary 10.22.13.33 version 3
+    GUI:
+    System Management > Time > Set Time and Date > Checked Set Time and Date automatically using Network Time Protocol (NTP) and configured the Primary NTP Server and Secondary NTP server

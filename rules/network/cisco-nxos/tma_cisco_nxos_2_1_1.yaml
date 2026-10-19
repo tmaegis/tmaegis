@@ -1,0 +1,19 @@
+id: TMA-CISCO-NXOS-2.1.1
+title: Configure Control Plane Policing
+description: 'Control Plane Policing is used to create a set of policies governing specific traffic. Normally this limits the volume and type of traffic that can be directed to the IP addresses on the device, as this traffic normally must be handled in process mode by the switch CPU. You must configure control plane class maps for control plane policies. You can classify traffic by matching packets based on existing ACLs. The permit and deny ACL keywords are ignored in the matching. CIS marks this Manual; automated: requires a ''service-policy input'' under ''control-plane''. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 2.1.1 Configure Control Plane Policing
+audit:
+  type: config_regex
+  pattern: (?m)^control-plane[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+service-policy input \S+
+remediation:
+  type: iac_patch
+  command: |-
+    ! Normally the "strict" Control Plane Policing Policy is recommended. If additional protections are required for a specific situation, then this policy can be copied - the copy can then be modified and applied. As noted in the command's response, applying a COPP Policy may disrupt other control traffic.
+    copp profile strict This operation can cause disruption of control traffic. Proceed (y/n)? [no] y

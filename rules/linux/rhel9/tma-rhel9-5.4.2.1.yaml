@@ -1,0 +1,20 @@
+id: TMA-RHEL9-5.4.2.1
+title: Ensure root is the only UID 0 account
+description: 'On a Linux system, the user ID (UID) 0 is the superuser identity: the kernel grants any account assigned UID 0 complete, unrestricted control of the host, regardless of the account''s name. The root account holds UID 0 by default.'
+target: linux
+os_family:
+- rhel-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 9 Benchmark v3.0.0 - 5.4.2.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v awk >/dev/null 2>&1 || { echo "step1: awk not installed"; return 1; }; o=$(bash -c ''awk -F: ''"''"''($3 == 0) { print $1 }''"''"'' /etc/passwd'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Only root should be returned.'' || { echo step1: missing ''Only root should be returned.''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: '1. Run the following command to reassign any account other than root that has UID 0 to a new, unused UID (and update ownership of that account''s files): # usermod -u <NEW_UID> <username> Example: # usermod -u 1234 bsmith 2. If the root account''s UID is not 0, run the following command to reset it: # usermod -u 0 root'

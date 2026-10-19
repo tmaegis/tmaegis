@@ -1,0 +1,21 @@
+id: TMA-WIN2022-17.6.2
+title: Ensure 'Audit File Share' is set to 'Success and Failure'
+description: 'This policy setting allows you to audit attempts to access a shared folder. The recommended state for this setting is: Success and Failure. Note: There are no system access control lists (SACLs) for shared folders. If this policy setting is enabled, access to all shared folders on the system is audited.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 17.6.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9224-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9224-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.10
+title: Ensure number of characters changed in new password is configured
+description: 'The mindiff option sets the number of characters in a password that must not be present in the old password. Use of a complex password helps to increase the time and resources required to compromise the password. Password complexity, or strength, is a measure of the effectiveness of a password in resisting attempts at guessing and brute-force attacks. Audit: reads `lssec -f /etc/security/user -s default -a mindiff`.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.10 Ensure number of characters changed in new password is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a mindiff 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*mindiff=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 6 ]; then echo compliant; else echo "mindiff=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a mindiff=6

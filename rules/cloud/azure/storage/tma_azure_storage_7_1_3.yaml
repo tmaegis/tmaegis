@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-7.1.3
+title: Ensure 'Public Endpoint Access' for File Shares is restricted to selected virtual networks (Microsoft.FileShares)
+description: 'Note: This recommendation applies to NFS file shares created with the Microsoft.FileShares provider. An NFS file share is reachable over its public endpoint only when that endpoint is restricted to specific virtual network subnets (service endpoints). Restricting public network access to selected virtual networks ensures the share accepts traffic only from approved subnets rather than from all networks, narrowing the network attack surface. Disabling the public endpoint entirely and using private endpoints are stronger, follow- on controls. A file share whose public endpoint is not constrained to specific virtual networks is exposed to a broader network range than necessary, increasing the risk of unauthorized access and network-based attack. Restricting access to defined virtual-network subnets ensures only traffic from approved networks can reach the share over the public endpoint.'
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- network
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 7.1.3 Ensure 'Public Endpoint Access' for File Shares is restricted to selected virtual networks (Microsoft.FileShares)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to audit. 3. Under the share''s Settings, select Networking. 4. Confirm Public network access is set to Enabled from selected virtual networks with at least one virtual network/subnet listed, or to Disabled. If Public network access is enabled with no virtual networks listed, the file share is non-compliant. 5. Repeat for each Microsoft.FileShares NFS file share. Audit from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share, run the following command: az fileshare show --resource-group <resource-group> --name <file-share-name> --query "{publicNetworkAccess:publicNetworkAccess, allowedSubnets:allowedSubnets}" A compliant share returns publicNetworkAccess of Disabled, or publicNetworkAccess of Enabled with a non-empty allowedSubnets list. A share with publicNetworkAccess Enabled and an empty allowedSubnets
+    is non-compliant. Audit from PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share, run the following command: Ge...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to remediate. 3. Under the share''s Settings, select Networking. 4. Set Public network access to Enabled from selected virtual networks, then add the virtual networks and subnets allowed to reach the share. 5. Select Save. 6. Repeat for each file share requiring remediation. Remediate from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share requiring remediation, run: az fileshare update --resource-group <resource-group> --name <file-share- name> --allowed-subnets <subnet-resource-id> Remediate from PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share requiring remediation, run: Update-AzFileShare -ResourceName <file-share-name> -ResourceGroupName <resource-group> -AllowedSubnet <subnet-resource-id>'

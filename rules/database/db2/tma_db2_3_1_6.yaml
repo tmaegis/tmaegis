@@ -1,0 +1,18 @@
+id: TMA-DB2-3.1.6
+title: Set Maximum Connection Limits (MAX_CONNECTIONS and MAX_COORDAGENTS)
+description: The MAX_CONNECTIONS parameter indicates the maximum number of client connections allowed per member. It is recommended that this parameter be set without the AUTOMATIC setting. The AUTOMATIC setting means for the value to grow unconstrained, and a value of -1 means to use the same value as MAX_COORDAGENTS. The MAX_COORDAGENTS parameter equals the maximum number of agents needed to perform ... Neither MAX_COORDAGENTS nor MAX_CONNECTIONS may be AUTOMATIC. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance's configuration.
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- availability
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.1.6 Set Maximum Connection Limits (MAX_CONNECTIONS and MAX_COORDAGENTS)
+audit:
+  type: command
+  command: 'out=$(db2 get dbm cfg 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''{ if (match($0, /\([A-Z0-9_]+\) *=/)) { k = substr($0, RSTART + 1, RLENGTH); sub(/\).*/, "", k); v = $0; sub(/^[^=]*=/, "", v); gsub(/[ \t]/, "", v); c[k] = v } } END { if (("MAX_CONNECTIONS" in c) && index(c["MAX_CONNECTIONS"], "AUTOMATIC") == 0 && index(c["MAX_COORDAGENTS"], "AUTOMATIC") == 0) print "compliant"; else print "noncompliant: " "MAX_CONNECTIONS=" c["MAX_CONNECTIONS"] " MAX_COORDAGENTS=" c["MAX_COORDAGENTS"] }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: The default value for MAX_COORDAGENTS is AUTOMATIC(200). Allowable range is 1 to 64,000. The recommended value is 200, without the AUTOMATIC setting. The value of 200 is used as an example and is dependent on workload as discussed in the Description. The default value for MAX_CONNECTIONS is set to AUTOMATIC(-1). Allowable range is 1 to 64,000, or -1 for matching the value of MAX_COORDAGENTS. The recommended value is -1 without AUTOMATIC. It is also acceptable to have a value for MAX_CONNECTIONS that is greater than MAX_COORDAGENTS, such as 300, in order to turn on the Concentrator feature. Generally, both MAX_COORDAGENTS and MAX_CONNECTIONS should be configured within the same statement, otherwise the error SQL6112N may be encountered. The following command will set the MAX_COORDAGENTS to 200, as well as set the MAX_CONNECTIONS to -1. 1. Attach to the Db2 instance db2 => attach to ...

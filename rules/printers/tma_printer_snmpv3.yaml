@@ -1,0 +1,17 @@
+id: TMA-PRINTER-SNMPV3
+title: Ensure SNMP is SNMPv3 only with authentication and privacy (or disabled)
+description: SNMPv1/v2c community strings (public/private by default) are sent in clear text and often allow configuration writes, including resetting the admin password on some models. SNMPv3 authPriv protects management traffic.
+target: printer
+level: 1
+severity: high
+tags:
+- printer
+- snmp
+- network-management
+reference: CIS Multi-Function Device Benchmark v1.0.0 - SNMP configuration (verify section number for your release)
+audit:
+  type: manual
+  command: 'In the Embedded Web Server (EWS: browse to https://<printer-ip>/ and sign in as administrator; HP: Security / Networking tabs, Xerox: Properties > Security / Connectivity, Ricoh: Device Management > Configuration, Canon: Settings/Registration > Network Settings / Security Settings) > Networking > SNMP (Xerox: Connectivity > Setup > SNMP; Ricoh: Configuration > SNMPv3): SNMPv1/v2c disabled (or read-only with a non-default community if a monitoring tool cannot do v3), SNMPv3 enabled with security level authPriv using SHA (SHA-256 if available) and AES; no default ''public''/''private'' community strings; write access restricted to the management station.'
+remediation:
+  type: iac_patch
+  command: 'EWS: disable SNMPv1/v2c, enable SNMPv3, create a user with SHA authentication and AES privacy, update fleet management/monitoring tools to use SNMPv3 credentials.'

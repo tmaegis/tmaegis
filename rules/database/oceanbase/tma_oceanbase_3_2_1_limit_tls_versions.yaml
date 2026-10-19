@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-3.2.1
+title: Limit Accepted Transport Layer Security (TLS) Versions
+description: OceanBase supports multiple protocols of TLS. The higher the version the stronger the security and/or better the performance. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when sql_protocol_min_tls_version is TLSv1.2 or TLSv1.3 on every OBServer (unset/none, TLSv1 or TLSv1.1 fail).
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- tls
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 3.2.1 Limit Accepted Transport Layer Security (TLS) Versions
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN COUNT(*) > 0 AND SUM(CASE WHEN value IN ('TLSv1.2', 'TLSv1.3') THEN 0 ELSE 1 END) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM oceanbase.GV\$OB_PARAMETERS WHERE name = 'sql_protocol_min_tls_version'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET sql_protocol_min_tls_version = 'TLSv1.2';

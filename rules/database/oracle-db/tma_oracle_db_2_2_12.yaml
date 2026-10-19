@@ -1,0 +1,20 @@
+id: TMA-ORACLE-DB-2.2.12
+title: Ensure 'SSL_CERT_REVOCATION' Is Set To 'REQUIRED'
+description: 'The SSL_CERT_REVOCATION parameter in Oracle''s sqlnet.ora file specifies whether the system should check the revocation status of SSL certificates during authentication. This check ensures that invalid, revoked, or compromised certificates cannot be used to establish secure connections. The last uncommented setting in sqlnet.ora must equal REQUIRED (case-insensitive, spaces ignored). Oracle 23ai only; not part of the CIS Oracle 19c v2.0.0 benchmark. Default: none Reads the file from $TNS_ADMIN, or $ORACLE_HOME/network/admin when TNS_ADMIN is unset (Linux/UNIX hosts); fails when neither directory exists.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- network
+- encryption
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.2.12 Ensure 'SSL_CERT_REVOCATION' Is Set To 'REQUIRED'
+audit:
+  type: command
+  command: 'd="${TNS_ADMIN:-${ORACLE_HOME:?ORACLE_HOME not set}/network/admin}"; [ -d "$d" ] || { echo "missing $d"; exit 1; }; f="$d/sqlnet.ora"; [ -f "$f" ] || { echo "noncompliant: $f not found"; exit 0; }; v=$(grep -Ei ''^[[:space:]]*(SQLNET\.)?SSL_CERT_REVOCATION[[:space:]]*='' "$f" | tail -n 1 | sed ''s/^[^=]*=//'' | tr -d '' \t\r'' | tr ''[:lower:]'' ''[:upper:]''); [ "$v" = "REQUIRED" ] && echo compliant || echo "noncompliant: ${v:-not set}"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, set SSL_CERT_REVOCATION to required. SQLNET.SSL_CERT_REVOCATION=REQUIRED

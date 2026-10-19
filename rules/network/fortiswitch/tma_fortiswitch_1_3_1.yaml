@@ -1,0 +1,29 @@
+id: TMA-FORTISWITCH-1.3.1
+title: Ensure 'Password Policy' is enabled
+description: It is important to use secure and complex passwords for preventing unauthorized access to the FortiSwitch device. PASS requires the password policy enabled, applied to admin-password and minimum-length 14 or more (the CIS remediation value). Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: high
+tags:
+- fortiswitch
+- authentication
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.3.1 Ensure 'Password Policy' is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^config system password-policy\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[
+    \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set minimum-length (?:1[4-9]|[2-9]\d|1[01]\d|12[0-8])[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set apply-to [^\n]*\badmin-password\b[^\n]*[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config system password-policy
+        set status enable
+        set apply-to admin-password ipsec-preshared-key
+        set minimum-length 14
+    end
+    # CIS guidance:
+    Can be modified from CLI. From CLI, do the following:
+    config system password-policy
+        set status enable
+        set apply-to admin-password ipsec-preshared-key
+        set minimum-length 14
+    end

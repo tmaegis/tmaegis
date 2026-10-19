@@ -1,0 +1,24 @@
+id: TMA-APACHE-5.9
+title: Ensure Old HTTP Protocol Versions Are Disallowed
+description: The Apache modules mod_rewrite or mod_security can be used to disallow old and invalid HTTP protocols versions. The HTTP version 1.1 RFC is dated June 1999 and has been supported by Apache since version 1.2. It should no longer be necessary to allow ancient versions of HTTP such as 1.0 and prior. The global server context must have RewriteEngine On, a RewriteCond %{THE_REQUEST} !(HTTP/1\.1|HTTP/2\.0)$ condition and a RewriteRule with the [F] flag, and every <VirtualHost> must contain RewriteEngine On and RewriteOptions Inherit. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file.
+target: apache
+level: 1
+severity: medium
+tags:
+- apache
+- features
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 5.9 Ensure Old HTTP Protocol Versions Are Disallowed
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk '{l=tolower($0)} l~/^<virtualhost/{vh=1; nv++; ve=0; vi=0; next} l~/^<\/virtualhost>/{vh=0; if(!(ve&&vi)) bad=1; next} !vh && l~/^rewriteengine[[:space:]]+on/{ge=1}
+    !vh && l~/^rewritecond[[:space:]]+%\{the_request\}[[:space:]]+!/ && l~/http\/1/{gc=1} !vh && l~/^rewriterule[[:space:]]/ && l~/\[([a-z,=]*,)?f(,[a-z,=]*)?\]/{gr=1} vh && l~/^rewriteengine[[:space:]]+on/{ve=1} vh && l~/^rewriteoptions[[:space:]]+.*inherit/{vi=1} END{print (ge&&gc&&gr&&!bad)?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: 'Load mod_rewrite and add globally: RewriteEngine On / RewriteCond %{THE_REQUEST} !(HTTP/1\.1|HTTP/2\.0)$ / RewriteRule .* - [F]; add RewriteEngine On and RewriteOptions Inherit to every <VirtualHost>. Then run apachectl configtest and reload Apache.'

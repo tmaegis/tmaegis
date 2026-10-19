@@ -1,0 +1,19 @@
+id: TMA-MCP-4.1.4
+title: Ensure Sampling consent and redaction controls are implemented where Sampling is in use
+description: The host requires an explicit user decision before any server-initiated sampling request is forwarded to the model. Redaction filters remove personally identifiable information, secrets, and other sensitive data from context before it is included in a sampling payload, and the host records that the redaction check ran. Server-initiated sampling is rate-limited. Each sampling event is logged with the requesting server identity, a request identifier, the request type, the user's decision and its source, and the redaction result, without logging raw sensitive prompts. Under the 2026-07-28 revision, the Sampling feature is deprecated. It is a client capability, advertised per request in _meta.io.modelcontextprotocol/clientCapabilities, and delivered through a Multi Round-Trip Request rather than the standalone sampling/createMessage method used before this revision. These controls apply t...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.1.4 Ensure Sampling consent and redaction controls are implemented where Sampling is in use
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_4_1_4"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 4.1.4"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: These are host and server configuration settings, with no portable command. Configure the host to require an explicit user decision before forwarding a server-initiated sampling request to the model. Apply a redaction filter that removes API keys, passwords, and common PII formats from context before it is sent, and record that the redaction check ran. Rate-limit server-initiated sampling. Log every sampling event with the server identity, a request or correlation identifier, the request type, the user's decision and its source, and the redaction result, without logging raw sensitive prompts. Because sampling is deprecated under the 2026-07-28 revision, plan migration to direct LLM- provider integration, and until that migration completes keep these controls in force wherever sampling remains enabled.

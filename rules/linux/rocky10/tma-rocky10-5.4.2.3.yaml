@@ -1,0 +1,20 @@
+id: TMA-ROCKY10-5.4.2.3
+title: Ensure group root is the only GID 0 group
+description: The groupmod command can be used to specify which group the root group belongs to. This affects permissions of files that are group owned by the root group.
+target: linux
+os_family:
+- rocky-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 10 Benchmark v1.0.0 - 5.4.2.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v awk >/dev/null 2>&1 || { echo "step1: awk not installed"; return 1; }; o=$(bash -c ''awk -F: ''"''"''$3=="0"{print $1":"$3}''"''"'' /etc/group'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- root:0 || { echo step1: missing root:0; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set the root group''s GID to 0: # groupmod -g 0 root Remove any groups other than the root group with GID 0 or assign them a new GID if appropriate.'

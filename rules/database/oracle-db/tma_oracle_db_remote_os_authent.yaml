@@ -1,0 +1,47 @@
+id: TMA-ORACLE-REMOTE-OS-AUTHENT
+title: Ensure 'REMOTE_OS_AUTHENT' is set to FALSE
+description: TRUE trusts the client's operating-system user name for OPS$ accounts, which any remote host can spoof. If the parameter no longer exists in the release it is treated as FALSE. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects with 'sqlplus -S / as sysdba' (OS authentication).
+target: oracle-db
+level: 1
+severity: critical
+tags:
+- oracle-db
+- database
+- oracle
+- authentication
+reference: CIS Oracle Database 19c Benchmark v2.0.0 - 2.3.14 Ensure 'REMOTE_OS_AUTHENT' Is Set to 'FALSE' (not in the 23ai v1.1.0 benchmark; the parameter is desupported there)
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on
+    select nvl((select upper(value) from v$parameter where name = 'remote_os_authent'), 'FALSE') from dual;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: 'FALSE'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v sqlplus >/dev/null 2>&1 || exit 0
+    sqlplus -S -L / as sysdba <<'EOF'
+    whenever sqlerror exit failure
+    ALTER SYSTEM SET REMOTE_OS_AUTHENT = FALSE SCOPE = SPFILE;
+    exit
+    EOF
+  guidance: "ALTER SYSTEM SET REMOTE_OS_AUTHENT = FALSE SCOPE = SPFILE; then restart the instance (rolling restart on RAC)"

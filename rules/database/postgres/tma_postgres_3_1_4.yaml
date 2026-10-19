@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-3.1.4
+title: Ensure the log file destination directory is set correctly
+description: The log_directory setting specifies the destination directory for log files when log_destination is stderr or csvlog. It can be specified as relative to the cluster data directory ($PGDATA) or as an absolute path. log_directory should be set according to your organization's logging policy.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- logging
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.4 Ensure the log file destination directory is set correctly
+audit:
+  type: manual
+  command: Run SHOW log_directory; (default log, relative to the data directory) and confirm it is the directory defined by your logging policy. Prefer an absolute path outside PGDATA (e.g. /var/log/postgres) so logs are not copied by pg_basebackup or pgBackRest.
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET log_directory = '/var/log/postgres'; (create it owned by postgres, mode 0700) then SELECT pg_reload_conf();

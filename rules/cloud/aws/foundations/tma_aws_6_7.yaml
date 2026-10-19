@@ -1,0 +1,18 @@
+id: TMA-AWS-6.7
+title: Ensure that the EC2 Metadata Service only allows IMDSv2
+description: When enabling the Metadata Service on AWS EC2 instances, users have the option of using either Instance Metadata Service Version 1 (IMDSv1; a request/response method) or Instance Metadata Service Version 2 (IMDSv2; a session-oriented method). Instance metadata is data about your instance that you can use to configure or manage the running instance. Instance metadata is divided into categories, such as host name, events, and security groups. When enabling the Metadata Service on AWS EC2 instances, users have the option of using either Instance Metadata Service Version 1 (IMDSv1; a request/response method) or Instance Metadata Service Version 2 (IMDSv2; a session-oriented method). With IMDSv2, every request is now protected by session authentication. A session begins and ends a series of requests that software running on an EC2 instance uses to access the locally stored EC2 instance met...
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 6.7 Ensure that the EC2 Metadata Service only allows IMDSv2
+audit:
+  type: manual
+  command: 'From Console: 1. Sign in to the AWS Management Console and navigate to the EC2 dashboard at https://console.aws.amazon.com/ec2/. 2. In the left navigation panel, under the Instances section, choose Instances. 3. Select the EC2 instance that you want to examine. 4. Check the IMDSv2 status, and ensure that it is set to Required. From Command Line: 1. Run the describe-instances command using appropriate filters to list the IDs of all existing EC2 instances currently available in the selected region: aws ec2 describe-instances --region <region> --output table --query "Reservations[*].Instances[*].InstanceId" The command output should return a table with the requested instance IDs. 2. Run the describe-instances command using the instance ID returned in the previous step and apply custom filtering to determine whether the selected instance is using IMDSv2: aws ec2 describe-instances --region <region> --instance-ids <instance- id> --query "Reservations[*].Instances[*].MetadataOptions"
+    --output table 3. Ensure that for all EC2 instances, HttpTokens is set to required and State is set to applied. 4. Repeat steps 2 and 3 to verify the other EC2 instances provisioned within the current reg...'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Sign in to the AWS Management Console and navigate to the EC2 dashboard at https://console.aws.amazon.com/ec2/. 2. In the left navigation panel, under the INSTANCES section, choose Instances. 3. Select the EC2 instance that you want to examine. 4. Choose Actions > Instance Settings > Modify instance metadata options. 5. Set Instance metadata service to Enable. 6. Set IMDSv2 to Required. 7. Repeat steps 1-6 to perform the remediation process for other EC2 instances in all applicable AWS region(s). From Command Line: 1. Run the describe-instances command, applying the appropriate filters to list the IDs of all existing EC2 instances currently available in the selected region: aws ec2 describe-instances --region <region-name> --output table -- query "Reservations[*].Instances[*].InstanceId" 2. The command output should return a table with the requested instance IDs. 3. Run the modify-instance-metadata-options command with an instance ID obtained from the previous
+    step to update the Instance Metadata Version: aws ec2 modify-instance-metadata-options --instance-id <instance-id> -- http-tokens required --region <region-name> 4. Repeat steps 1-3 to perform the remediat...'

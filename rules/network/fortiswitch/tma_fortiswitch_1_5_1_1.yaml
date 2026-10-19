@@ -1,0 +1,73 @@
+id: TMA-FORTISWITCH-1.5.1.1
+title: Ensure only SNMPv3 is enabled
+description: Ensuring that only SNMPv3 service is enabled and SNMPv1, SNMPv2c are disabled. PASS requires the SNMP agent enabled, an empty config system snmp community block and at least one SNMPv3 user. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: high
+tags:
+- fortiswitch
+- snmp
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.5.1.1 Ensure only SNMPv3 is enabled
+audit:
+  type: config_regex
+  pattern: '(?ms)^config system snmp sysinfo\n(?:[ \t]+[^\n]*\n)*?[ \t]+set status enable[ \t]*\n.*?^config system snmp community\nend[ \t]*$.*?^config system snmp user\n[ \t]+edit '
+remediation:
+  type: iac_patch
+  command: |-
+    config system snmp sysinfo
+        set status enable
+    end
+    config system snmp community
+        delete <id>
+    end
+    config system snmp user
+        edit "snmp_v3"
+            set security-level auth-priv
+            set auth-proto sha256
+            set auth-pwd <password>
+            set priv-proto aes256
+            set priv-pwd <password>
+        next
+    end
+    # CIS guidance:
+    To enable SNMP agent in CLI:
+    config system snmp sysinfo
+        set status enable
+    end
+    In GUI, go to System > Config > SNMP > Settings and enable SNMP Agent. To delete SNMPv1/2c communities. In this example, we'll delete community "public" in CLI:
+    First, to identify the community, run
+    config system snmp community
+        show
+        config system snmp community
+            edit 1
+                set name "public"
+                config hosts
+                    edit 1
+                    next
+                end
+            next
+        end
+    This shows that the community public has ID 1
+    config system snmp community
+        delete 1
+    end
+    In the GUI, go to:
+    System > Config > SNMP > Communities, select the community and click on the Delete button. To add SNMPv3 user in CLI:
+    config system snmp user
+        edit "snmp_test"
+            set security-level auth-priv
+            set auth-proto sha256
+            set auth-pwd xxxx
+            set priv-proto aes256
+            set priv_pwd xxxx
+        end
+    In the GUI, go to:
+    1. System > Config > SNMP > Users, under SNMPv3, click on "Add User" button.
+    2. Fill in the "Username" field.
+    3. Assign "SNMP Notify" hosts by clicking on the "+" button.
+    4. Set the "Security Level" to "Authentication and Privacy".
+    5. For "Authentication" choose SHA512 as Authentication Protocol.
+    6. Create a "Password" in the password field.
+    7. For "Privacy", choose AES256 as Encryption Protocol.
+    8. Create a "Password" in the password field.
+    9. Click "Add" to add the new user.

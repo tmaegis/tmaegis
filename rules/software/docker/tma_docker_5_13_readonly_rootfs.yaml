@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.13
+title: Ensure that the container's root filesystem is mounted as read only
+description: A read-only root filesystem stops attackers from modifying the container's binaries and configuration at runtime. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.13 Ensure that the container's root filesystem is mounted as read only
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{.HostConfig.ReadonlyRootfs}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '$2!="true"{print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Redeploy with --read-only (compose: ''read_only: true'') and use volumes or --tmpfs for directories that must be writable.'

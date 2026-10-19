@@ -1,0 +1,22 @@
+id: TMA-AZURE-STORAGE-3.2.3
+title: Ensure backup data in Recovery Services vaults is encrypted using customer-managed keys (CMK)
+description: 'Recovery Services vaults offer two encryption options: Microsoft-managed keys, which provide automatic encryption without user intervention, and customer-managed keys (CMK), which allow organizations to retain full control over their encryption keys for enhanced security and compliance. Using customer-managed keys (CMKs) to encrypt Recovery Services vaults enhances security by granting organizations complete control over their encryption keys.'
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- backup
+- cloud
+- crypto
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.2.3 Ensure backup data in Recovery Services vaults is encrypted using customer-managed keys (CMK)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a Recovery Services vault. 3. Under Settings, click Properties. 4. Under Encryption Settings, click Update. 5. Ensure the box next to Use your own key is checked, and a key URI is displayed under Encryption key. 6. Repeat steps 1-5 for each Recovery Services vault. Audit from Azure CLI Run the following command to list Recovery Services vaults: az backup vault list For each Recovery Services vault, run the following command: az backup vault encryption show --resource-group <resource-group> --name <recovery-services-vault> Ensure that under properties, encryptionAtRestType is set to CustomerManaged, and a key keyUri exists with the value set to a customer-managed key URI. Audit from PowerShell Run the following command to list Recovery Services vaults: Get-AzRecoveryServicesVault Run the following command to get the Recovery Services vault in a resource group with a given name: $vault = Get-AzRecoveryServicesVault
+    -ResourceGroupName <resource-group> - Name <recovery-services-vault> Run the following command to get the encryption setting for the Recovery Services vault: $vault.Properties.EncryptionProp...'
+remediation:
+  type: iac_patch
+  command: 'Note: Once encryption is configured to use a customer-managed key, this setting cannot be reversed. Remediate from Azure Portal 1) Go to Recovery Services vaults. 2) Click the name of a Recovery Services vault. 3) Under Settings, click Properties. 4) Under Encryption Settings, click Update. 5) Check the box next to Use your own key. 6) Under Encryption key, click the radio button next to Enter key URI to provide a known key URI, or click the radio button next to Select from Key Vault to select a key from a Key Vault. 7) If entering a key URI, provide the key URI in the text box under Key URI. 8) If selecting a key from a Key Vault, click select key from Key Vault. a) Select Key vault or Managed HSM. b) Select a key vault or managed HSM. c) Select a key. d) Click Select. 9) Select a managed identity to use for the encryption key. 10) Click Update. 11) Repeat steps 1-10 for each Recovery Services vault. Remediate from Azure CLI For each Recovery Services vault requiring remediation,
+    run the following command to assign a customer-managed encryption key: az backup vault encryption update --resource-group <resource-group> --name <recovery-services-vault> --encryption-key-id <cmk-uri>...'

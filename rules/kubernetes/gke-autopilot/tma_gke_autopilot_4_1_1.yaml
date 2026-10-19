@@ -1,0 +1,17 @@
+id: TMA-GKE-AUTOPILOT-4.1.1
+title: Ensure the cluster-admin ClusterRole is only used when required
+description: The RBAC cluster-admin ClusterRole grants full administrative authority across cluster resources and should be assigned only to approved users, groups, or service accounts with a documented operational need. For GKE Autopilot clusters, the control should focus on limiting RoleBinding and ClusterRoleBinding assignments to cluster-admin, not on removing or modifying the built in ClusterRole itself. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 1
+severity: critical
+tags:
+- gke-autopilot
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 4.1.1 Ensure the cluster-admin ClusterRole is only used when required
+audit:
+  type: manual
+  command: 'Review all Kubernetes RBAC bindings that assign the cluster-admin ClusterRole. This review should include ClusterRoleBinding objects, which grant access across the cluster, and namespaced RoleBinding objects, which can bind the cluster-admin ClusterRole within a specific namespace. List all ClusterRoleBinding subjects bound to cluster-admin: kubectl get clusterrolebindings -o json \ | jq -r '' ["BINDING", "SUBJECT_KIND", "SUBJECT_NAME", "SUBJECT_NAMESPACE"], ( .items[] | select(.roleRef.kind=="ClusterRole" and .roleRef.name=="cluster-admin") | .metadata.name as $binding | ...'
+remediation:
+  type: iac_patch
+  command: For each cluster-admin binding, replace broad access with a least privilege Role or ClusterRole that grants only the required API groups, resources, and verbs. Bind the replacement role to the approved user, group, IAM service account, or Kubernetes ServiceAccount first, validate access, and then remove the unnecessary cluster-admin binding. • Identify all ClusterRoleBinding and RoleBinding objects that assign the cluster-admin ClusterRole, including both cluster wide and namespace level bindings. • Review each bound user, group, IAM service account, or Kubernetes ServiceAccount to confirm whether full administrative access is still required and documented. • Replace cluster-admin access where possible with a least privilege Role or ClusterRole that grants only the required API groups, resources, and verbs.

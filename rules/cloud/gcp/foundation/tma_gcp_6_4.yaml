@@ -1,0 +1,19 @@
+id: TMA-GCP-6.4
+title: Ensure That the Cloud SQL Database Instance Requires All Incoming Connections To Use SSL
+description: It is recommended to enforce all incoming connections to SQL database instance to use SSL. SQL database connections if successfully trapped (MITM); can reveal sensitive data like credentials, database queries, query outputs etc. For security, it is recommended to always use SSL encryption when connecting to your instance. This recommendation is applicable for Postgresql, MySql generation 1, MySql generation 2 and SQL Server 2017 instances.
+target: gcp
+level: 1
+severity: high
+tags:
+- cloud
+- gcp
+- tls
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 6.4 Ensure That the Cloud SQL Database Instance Requires All Incoming Connections To Use SSL
+audit:
+  type: manual
+  command: 'From Google Cloud Console 1.Go to the https://console.cloud.google.com/sql/instances 2.Click the instance name to open its overview 3.Click Connections from the SQL navigation menu 4.Select the Security tab 5.Select one of: - Allow only SSL connections → sets ENCRYPTED_ONLY - Require trusted client certificates → sets TRUSTED_CLIENT_CERTIFICATE_REQUIRED 6.Under Configure SSL server certificates, click Create new certificate 7.Save the setting From Google Cloud CLI 1. Set SSL enforcement mode: gcloud sql instances patch INSTANCE_NAME \ --ssl-mode=SSL_ENFORCEMENT_MODE 2.Where SSL_ENFORCEMENT_MODE is one of: ENCRYPTED_ONLY TRUSTED_CLIENT_CERTIFICATE_REQUIRED 3.Verify current configuration: gcloud sql instances list --format=json Ensure that section settings: ipConfiguration has the parameter sslMode set to ENCRYPTED_ONLY . Additional Recommended Steps if you intend to use the TRUSTED_CLIENT_CERTIFICATE_REQUIRED Mode 1. Create client certificate (private key) gcloud sql ssl client-certs
+    create CERT_NAME \ client-key.pem \ --instance=INSTANCE_NAME 2. Download client public certificate gcloud sql ssl client-certs describe CERT_NAME \ --instance=INSTANCE_NAME \ --format="value(cert)" >...'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Console Mode:ENCRYPTED_ONLY 1. Go to https://console.cloud.google.com/sql/instances. 2. Click on an instance name to see its configuration overview. 3. In the left-side panel, select Connections. 4. In the security section, select SSL mode as Allow only SSL connections. 5. Under Configure SSL server certificates click Create new certificate and save the setting From Google Cloud Console Mode :TRUSTED_CLIENT_CERTIFICATE_REQUIRED 1.Go to https://console.cloud.google.com/sql/instances. 2.Click the instance name to open its overview 3.Click Connections in the left navigation menu 4.Select the Security tab 5.Under SSL mode, select Require trusted client certificates 6.Under Configure SSL server certificates, click Create new certificate 7.Under Configure SSL client certificates, click Create a client certificate for each connecting client 8.Follow the instructions shown to deploy certs to connecting clients, then click Save From Google Cloud CLI Mode: ENCRYPTED_ONLY
+    1.To enforce SSL encryption for an instance run the commands: gcloud sql instances patch INSTANCE_NAME --ssl-mode= ENCRYPTED_ONLY 2.Verify the made changes: gcloud sql instances list --format=json From G...'

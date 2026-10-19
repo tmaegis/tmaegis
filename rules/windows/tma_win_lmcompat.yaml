@@ -1,0 +1,17 @@
+id: TMA-WIN-LMCOMPAT
+title: Ensure LAN Manager authentication level is NTLMv2 only (refuse LM and NTLM)
+description: LmCompatibilityLevel should be 5. Verify no legacy device still uses NTLMv1 before enforcing.
+target: windows
+level: 1
+severity: high
+tags:
+- windows
+- ntlm
+reference: 'CIS Microsoft Windows Server Benchmark - Security Options / Network security: LAN Manager authentication level'
+audit:
+  type: command
+  command: (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa').LmCompatibilityLevel
+  expected_output: '5'
+remediation:
+  type: command
+  command: Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa' -Name LmCompatibilityLevel -Value 5 -Type DWord

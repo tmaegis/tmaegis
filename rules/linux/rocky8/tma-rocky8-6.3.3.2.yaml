@@ -1,0 +1,21 @@
+id: TMA-ROCKY8-6.3.3.2
+title: Ensure actions as another user are always logged
+description: sudo provides users with temporary elevated privileges to perform operations, either as the superuser or another user.
+target: linux
+os_family:
+- rocky-8
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 8 Benchmark v3.0.0 - 6.3.3.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''awk ''"''"''/^ *-a *always,exit/ &&/ -F *arch=b(32|64)/ &&(/ -F *auid!=unset/||/ -F *auid!=-1/||/ -F *auid!=4294967295/) &&(/ -C *euid!=uid/||/ -C *uid!=euid/) &&/ -S *execve/ &&(/ key= *[!-~]* *$/||/ -k *[!-~]* *$/)''"''"'' /etc/audit/rules.d/*.rules'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''-a always,exit -F arch=b64 -C euid!=uid -F auid!=unset -S execve -k user_emulation'' || { echo step1: missing ''-a always,exit -F arch=b64 -C euid!=uid -F auid!=unset -S ex''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''-a always,exit -F arch=b32 -C euid!=uid -F auid!=unset -S execve -k user_emulation'' || { echo step1: missing ''-a always,exit -F arch=b32 -C euid!=uid -F auid!=unset -S ex''; return 1; }; o=$(bash -c ''auditctl -l | awk ''"''"''/^ *-a *always,exit/ &&/ -F *arch=b(32|64)/ &&(/ -F *auid!=unset/||/ -F *auid!=-1/||/ -F *auid!=4294967295/) &&(/ -C *euid!=uid/||/
+    -C *uid!=euid/) &&/ -S *execve/ &&(/ key= *[!-~]* *$/||/ -k *[!-~]* *$/)''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''-a always,exit -F arch=b64 -S execve -C uid!=euid -F auid!=-1 -F key=user_emulation'' || { echo step2: missing ''-a always,exit -F arch=b64 -S execve -C uid!=euid -F auid!=-''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''-a always,exit -F arch=b32 -S execve -C uid!=euid -F auid!=-1 -F key=user_emulation'' || { echo step2: missing ''-a always,exit -F arch=b32 -S execve -C uid!=euid -F auid!=-''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Create audit rules Edit or create a file in the /etc/audit/rules.d/ directory, ending in .rules extension, with the relevant rules to monitor elevated privileges. Example: # printf " -a always,exit -F arch=b64 -C euid!=uid -F auid!=unset -S execve -k user_emulation -a always,exit -F arch=b32 -C euid!=uid -F auid!=unset -S execve -k user_emulation " >> /etc/audit/rules.d/50-user_emulation.rules Load audit rules Merge and load the rules into active configuration: # augenrules --load Check if reboot is required. # if [[ $(auditctl -s | grep "enabled") =~ "2" ]]; then printf "Reboot required to load rules\n"; fi'

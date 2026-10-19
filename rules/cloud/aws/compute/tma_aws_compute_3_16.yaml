@@ -1,0 +1,20 @@
+id: TMA-AWS-COMPUTE-3.16
+title: Ensure ECS Exec sessions have audit logging enabled
+description: 'When ECS Exec is enabled, users with appropriate IAM permissions can open interactive shell sessions to running containers using the aws ecs execute-command CLI. ECS supports three session-logging modes via the cluster''s executeCommandConfiguration.logging property: - NONE — session logging is turned off entirely. - DEFAULT — session output is sent to whatever awslogs driver is configured on the task definition. If the task has no awslogs driver, no log is saved. - OVERRIDE — session output is sent to a dedicated CloudWatch Logs log group, an S3 bucket, or both, specified in logConfiguration. Only OVERRIDE provides a dedicated, organization-controlled audit destination. ECS Exec provides direct shell access to running containers, equivalent to SSH access to a server. Without dedicated session logging, a malicious insider or compromised credential holder can exfiltrate data, modify run...'
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+- logging
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 3.16 Ensure ECS Exec sessions have audit logging enabled
+audit:
+  type: manual
+  command: '1. List all ECS clusters in the region: aws ecs list-clusters --region $AWS_REGION --query ''clusterArns[]'' --output table 2. For each cluster, check whether any service has ECS Exec enabled: aws ecs list-services --cluster <cluster-arn> --region $AWS_REGION --query ''serviceArns[]'' --output table aws ecs describe-services --cluster <cluster-arn> --services <service-arn> -- region $AWS_REGION \ --query ''services[?enableExecuteCommand==`true`].[serviceName]'' --output table If no service has enableExecuteCommand=true, the cluster Passes — skip the remaining steps for that cluster. 3. For any cluster from Step 2 with at least one Exec-enabled service, check the cluster''s session-logging mode: aws ecs describe-clusters --clusters <cluster-arn> --include CONFIGURATIONS - -region $AWS_REGION \ --query ''clusters[].configuration.executeCommandConfiguration.logging'' -- output text - The cluster Passes if the value is OVERRIDE. - The cluster Fails if the value is None, NONE, or
+    DEFAULT (an empty/None result means the cluster was created without an executeCommandConfiguration and behaves like DEFAULT).'
+remediation:
+  type: iac_patch
+  command: '1. Create the destination CloudWatch log group: aws logs create-log-group --log-group-name /ecs/exec-audit-logs --region $AWS_REGION aws logs put-retention-policy --log-group-name /ecs/exec-audit-logs --region $AWS_REGION \ --retention-in-days 365 2. For each cluster that Failed the audit, enable session logging in OVERRIDE mode pointing at the log group from Step 1: aws ecs update-cluster --cluster <cluster-name> --region $AWS_REGION \ --configuration ''{ "executeCommandConfiguration": { "logging": "OVERRIDE", "logConfiguration": { "cloudWatchLogGroupName": "/ecs/exec-audit-logs" } } }'' 3. ECS Exec settings are evaluated at task launch, so force affected services to redeploy: aws ecs update-service --cluster <cluster-name> --service <service-name> -- region $AWS_REGION \ --force-new-deployment 4. Verify the configuration was applied: aws ecs describe-clusters --clusters <cluster-name> --include CONFIGURATIONS --region $AWS_REGION \ --query ''clusters[].configuration.executeCommandConfiguration''
+    --output json'

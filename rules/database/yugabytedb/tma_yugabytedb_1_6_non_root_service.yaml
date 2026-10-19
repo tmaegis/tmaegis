@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-1.6
+title: Ensure the YugabyteDB service is run as a non-root user
+description: Though YugabyteDB database may be run as root, it should run as another non-root user. Passes when every running yb-master / yb-tserver process runs as a non-root account (FAIL when none are running).
+target: yugabytedb
+level: 2
+severity: high
+tags:
+- yugabytedb
+- service-account
+reference: CIS YugabyteDB Benchmark v2.0.0 - 1.6 Ensure the YugabyteDB service is run as a non-root user
+audit:
+  type: command
+  command: out=$(ps -eo user=,comm= 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '$2 == "yb-master" || $2 == "yb-tserver" {n++; if ($1 == "root") r++} END {if (n == 0) print "not running"; else if (r > 0) print "root"; else print "compliant"}'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a dedicated yugabyte user and group, chown the installation and fs_data_dirs to it and start yb-master/yb-tserver as that user (User=yugabyte in the service unit).

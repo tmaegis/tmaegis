@@ -1,0 +1,17 @@
+id: TMA-AIX-4.4.1.7
+title: Ensure secure RPC authentication is enabled
+description: 'To enhance server-client authentication ensure that the secure option is selected for every export. RPC is a protocol used by NFS to communicate requests between hosts. Secure NFS uses encryption (DES or Kerberos) to secure host authentication in RPC transactions. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- network
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.4.1.7 Ensure secure RPC authentication is enabled
+audit:
+  type: command
+  command: command -v lsnfsexp >/dev/null 2>&1 || exit 1; out=$( { lsnfsexp | grep sec= | grep none; lsnfsexp | grep -v sec= ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Use chnfsexp to change/validate this value for all NFS exported filesystems: chnfsexp -d <fs> -S <sec> The available security method options are: sys - UNIX authentication dh - DES authentication none - Use the anonymous ID if it has a value other than -1 krb5 - Kerberos. Authentication only krb5i - Kerberos. Authentication and integrity krb5p - Authentication, integrity, and privacy Once all exported filesystems have been successfully validated or changed, re-export the filesystems and directories to activate the new options: exportfs -a'

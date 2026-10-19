@@ -1,0 +1,26 @@
+id: TMA-GITLAB-1.3.4
+title: Ensure Multi-Factor Authentication (MFA) is required for contributors of new code
+description: Require collaborators from outside the organization to use Multi-Factor Authentication (MFA) in addition to a standard user name and password when authenticating to the source code management platform. By default every user authenticates within the system by password only. If the password of a user is compromised, however, the user account and every repository to which they have access are in danger of data loss, malicious code commits, and data theft. It is therefore recommended that each user has Multi-Factor Authentication enabled. This adds an additional layer of protection to ensure the account remains secure even if the user's password is compromised.
+target: gitlab
+level: 2
+severity: high
+tags:
+- auth
+- devsecops
+- gitlab
+- mfa
+reference: CIS GitLab Benchmark v1.0.1 - 1.3.4 Ensure Multi-Factor Authentication (MFA) is required for contributors of new code
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For your top-level group, enforce that Multi-Factor Authentication is enforced for contributors and is the only way to authenticate, by doing the following: - On the left sidebar, at the bottom, select Admin Area. - Select Settings > General. - Expand Sign-in restrictions: - Select Enforce two-factor authentication to enable this feature.'

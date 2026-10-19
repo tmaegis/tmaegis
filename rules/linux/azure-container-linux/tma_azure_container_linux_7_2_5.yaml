@@ -1,0 +1,18 @@
+id: TMA-AZURE-CONTAINER-LINUX-7.2.5
+title: Ensure no duplicate GIDs exist
+description: 'Although the groupadd program will not let you create a duplicate Group ID (GID), it is possible for an administrator to manually edit the /etc/group file and change the GID field. Audit: Passes when no value of field 3 in /etc/group appears more than once.'
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- accounts
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 7.2.5 Ensure no duplicate GIDs exist
+audit:
+  type: command
+  shell: bash
+  command: 'cut -d: -f3 /etc/group | sort | uniq -d | grep -q . && echo noncompliant || echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique GIDs and review all files owned by the shared GID to determine which group they are supposed to belong to.

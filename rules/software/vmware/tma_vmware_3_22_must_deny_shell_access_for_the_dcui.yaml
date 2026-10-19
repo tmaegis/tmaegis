@@ -1,0 +1,21 @@
+id: TMA-VMWARE-3.22
+title: Host must deny shell access for the dcui account
+description: The dcui account, utilized for process isolation for the Direct Console User Interface (DCUI), possesses shell access which, when deactivated, minimizes the attack surface. This action is a proactive measure to enhance system security. The audit runs esxcli system account list and requires Shell Access false for dcui. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.22 Host must deny shell access for the dcui account
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system account list 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="dcui" {print tolower($NF); exit}')
+    case "$v" in false) echo compliant ;; '') echo 'dcui not listed (or no Shell Access column on this build)'; exit 1 ;; *) echo 'dcui shell access: '"$v" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure the dcui service account to have no shell access using the supported ESXi account-management mechanism for the installed build, and verify that the account cannot establish an interactive shell. Note: It is advised not to manually edit /etc/passwd unless directed by Broadcom support.'

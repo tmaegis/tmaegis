@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.3.5
+title: Ensure 'Enable S/MIME for OWA' is set to 'True'
+description: This policy setting is used to control whether users are allowed to download the Secure/Multipurpose Internet Mail Extensions (S/MIME) control to read and create signed and encrypted messages. Prints the number of OWA virtual directories where SMimeEnabled is not True (expected 0). Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: low
+tags:
+- exchange
+- owa
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.3.5 Ensure 'Enable S/MIME for OWA' is set to 'True'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-OwaVirtualDirectory -ADPropertiesOnly -ErrorAction Stop | Where-Object { $_.SMimeEnabled -ne $true }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-OwaVirtualDirectory '<server>\owa (Default Web Site)' -SMimeEnabled $true

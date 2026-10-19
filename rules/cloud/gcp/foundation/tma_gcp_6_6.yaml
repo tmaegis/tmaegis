@@ -1,0 +1,19 @@
+id: TMA-GCP-6.6
+title: Ensure Cloud SQL Database Instances Have IAM Database Authentication Enabled
+description: It is recommended to enable IAM database authentication for Cloud SQL instances (PostgreSQL and MySQL) to eliminate static password-based authentication and instead use short-lived IAM tokens for database access. IAM database authentication allows applications and users to authenticate to Cloud SQL databases using IAM principals (service accounts, user accounts) instead of traditional database passwords. When enabled, database users can be created that authenticate via IAM, and connections use automatically-generated, short-lived tokens instead of static passwords. This recommendation is applicable to Cloud SQL for PostgreSQL and Cloud SQL for MySQL instances. Cloud SQL for SQL Server does not support IAM database authentication. IAM database authentication eliminates static database passwords by using short-lived IAM tokens for database access. This provides automatic credential rota...
+target: gcp
+level: 1
+severity: medium
+tags:
+- auth
+- cloud
+- gcp
+- iam
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 6.6 Ensure Cloud SQL Database Instances Have IAM Database Authentication Enabled
+audit:
+  type: manual
+  command: 'From Google Cloud CLI 1. List all Cloud SQL instances: gcloud sql instances list 2. For every PostgreSQL instance, verify the IAM authentication flag is enabled: gcloud sql instances describe stormsql --format="json" | jq ''.settings.databaseFlags[] | select(.name=="cloudsql.iam_authentication")'' The command should return: { "name": "cloudsql.iam_authentication", "value": "on" } If the command returns no output, the flag is not set. 3. For every MySQL instance, verify the IAM authentication flag is enabled: gcloud sql instances describe <INSTANCE_NAME> --format="json" | jq ''.settings.databaseFlags[] | select(.name=="cloudsql_iam_authentication")'' The command should return: { "name": "cloudsql_iam_authentication", "value": "on" } If the command returns no output, the flag is not set.'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud CLI 1. For PostgreSQL instances, use the Google Cloud CLI to enable IAM authentication: gcloud sql instances patch <INSTANCE_NAME> \ --database-flags=cloudsql.iam_authentication=on Note: This command will overwrite all database flags previously set. To keep existing flags and add new ones, include the values for all flags to be set on the instance; any flag not specifically included is set to its default value. For flags that do not take a value, specify the flag name followed by an equals sign ("="). For MySQL instances, use the flag cloudsql_iam_authentication=on and follow similar steps. 2. Create Database Users Configured for IAM Authentication** For Cloud SQL PostgreSQL, create IAM-authenticated users using the Google Cloud CLI: For user accounts: gcloud sql users create <user-email> \ --instance=<INSTANCE_NAME> \ --type=CLOUD_IAM_USER For service accounts: gcloud sql users create <service-account-name>@<project-id> \ --instance=<INSTANCE_NAME> \ --type=CLOUD_IAM_SERVICE_ACCOUNT
+    Note: Service account usernames should be specified as <service-account- name>@<project-id> without the .iam.gserviceaccount.com suffix. 3. Grant Necessary Privileges to the Databa...'

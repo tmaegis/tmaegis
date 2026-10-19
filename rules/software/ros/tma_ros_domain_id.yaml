@@ -1,0 +1,26 @@
+id: TMA-ROS-DOMAIN-ID
+title: Ensure ROS 2 nodes use a dedicated, non-default DDS domain ID
+description: 'All ROS 2 systems on a network share DDS domain 0 unless ROS_DOMAIN_ID is set, so unrelated robots and developer laptops cross-talk. A dedicated domain ID (0-101 on Linux) isolates the system; it is not an authentication control and complements SROS2. The audit inspects /proc/<pid>/environ of running processes containing ROS_DISTRO (run as root) and fails if none is found or any process has ROS_DOMAIN_ID unset or 0.'
+target: ros
+level: 2
+severity: low
+tags: [ros, ros2, dds, isolation]
+reference: CIS-style ROS 2 hardening guidance - DDS domain isolation (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: command
+  command: |-
+    found=0; bad=0
+    for e in /proc/[0-9]*/environ; do
+      env=$( (tr '\0' '\n' < "$e") 2>/dev/null ) || continue
+      case "$env" in *ROS_DISTRO=*) ;; *) continue ;; esac
+      found=1
+      pid=${e#/proc/}; pid=${pid%/environ}
+      d=$(printf '%s\n' "$env" | sed -n 's/^ROS_DOMAIN_ID=//p' | head -n 1)
+      case "$d" in ""|0) echo "pid $pid: default DDS domain"; bad=1 ;; *[!0-9]*) echo "pid $pid: invalid ROS_DOMAIN_ID $d"; bad=1 ;; esac
+    done
+    [ "$found" -eq 1 ] || { echo "no running ROS 2 processes found"; exit 1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Pick a site-unique domain ID (e.g. 42) and set ROS_DOMAIN_ID=42 in the launch environment of every node of the system, then restart them.'

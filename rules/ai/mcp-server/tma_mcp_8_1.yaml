@@ -1,0 +1,18 @@
+id: TMA-MCP-8.1
+title: Ensure third-party MCP servers and connectors are vetted and allowlists are enforced
+description: Code review and security assessment are required for every third-party MCP server and connector before it is approved for use. MCP hosts and clients enforce a runtime allowlist so that only approved servers can be connected to. Each allowlist entry is keyed on the server's server.json name together with its approved distribution locator, version, and content digest. A remote server is additionally keyed on its exact approved origin. The server.json name only identifies who may publish under a namespace, not whether the installed instance is the approved build, so it is one component of the key rather than the whole basis of trust. The allowlist covers every distribution channel the deployment installs from, including remote server URLs, not just a single ecosystem. The current MCP Registry package types are npm, pypi, nuget, oci, and mcpb, given as an example rather than a fixed set....
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 8.1 Ensure third-party MCP servers and connectors are vetted and allowlists are enforced
+audit:
+  type: manual
+  command: 'Confirm that a vetting record exists for each third-party server in use, and that the host or client enforces a connection allowlist that refuses any server not on the list. Where the allowlist is file-based, run the following command to list the approved servers for review: ALLOWLIST="<MCP_ALLOWLIST_FILE>" if [ ! -e "$ALLOWLIST" ]; then echo "ERROR: no allowlist file at the configured path, confirm where the host or client enforces the approved-server allowlist (it may live in a policy engine or gateway rather than a file)" exit 0 fi if [ ! -r "$ALLOWLIST" ]; then echo "ERROR: allowlist file present but not readable, re-run with sufficient privilege" exit 0 fi approved=$(grep -vE ''^[[:space:]]*(#|$)'' "$ALLOWLIST") count=$(printf ''%s\n'' "$approved" | grep -c .) if [ "$count" -eq 0 ]; then echo "Approved servers: (none)" echo "REVIEW: allowlist present but lists no approved servers, confirm whether the host is default-deny with nothing yet approved or enforcement is unpopulated"
+    exit 0 fi echo "Approved servers ($count):" printf ''%s\n'' "$approved" echo "REVIEW: confirm each entry has a current vetting record and that the host or client refuses any server not listed, keyed on the...'
+remediation:
+  type: iac_patch
+  command: Establish a vetting workflow of code review and security assessment that completes before a third-party server is added to the allowlist. Configure the host or client to refuse connections to any server not on the allowlist. Key each allowlist entry on the server's server.json name together with the approved locator, version, and content digest, and key a remote server on its exact approved origin as well. Make sure the enforcement point covers every distribution channel the deployment installs from, not only the common package managers. Document each approved server's tool, resource, prompt, and permission surface, and block any expansion or material change pending review. Quarantine or remove any server in use that lacks a completed vetting record. This is host, client, and process configuration, and the exact allowlist mechanism is implementation-specific, so no single portable enforcement command is given.

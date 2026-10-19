@@ -1,0 +1,18 @@
+id: TMA-BOTTLEROCKET-ADMIN-CONTAINER
+title: Ensure the admin host container is disabled when not in use
+description: 'The admin container is privileged and can obtain a root shell on the host (sheltie) and runs an SSH server. It should be enabled only for troubleshooting. The audit runs "apiclient get settings.host-containers.admin.enabled"; run it from the control container (for example via SSM: apiclient exec control ...), since running it inside the admin container proves the container is on and the rule will fail.'
+target: bottlerocket
+level: 1
+severity: high
+tags: [bottlerocket, host-containers, access-control]
+reference: CIS Bottlerocket Benchmark - Host containers / administrative access (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    out=$(apiclient get settings.host-containers.admin.enabled 2>/dev/null) || exit 1
+    v=$(printf '%s' "$out" | tr -d ' \n' | sed -n 's/.*"enabled":\([a-z]*\).*/\1/p')
+    [ "$v" = false ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set in user data: [settings.host-containers.admin] enabled = false, or after troubleshooting run from the control container: apiclient set host-containers.admin.enabled=false.'

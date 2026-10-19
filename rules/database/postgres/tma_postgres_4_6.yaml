@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-4.6
+title: Ensure excessive DML privileges are revoked
+description: DML (insert, update, delete) operations at the table level should be restricted to only authorized users. PostgreSQL manages table-level DML permissions via the GRANT statement.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authorization
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.6 Ensure excessive DML privileges are revoked
+audit:
+  type: manual
+  command: In each database list roles (\du+ *) and tables (\dt *.*), then review grants, e.g. SELECT grantee, table_schema, table_name, privilege_type FROM information_schema.role_table_grants WHERE grantee NOT IN ('postgres','PUBLIC'); Any INSERT/UPDATE/DELETE/TRUNCATE grant a role does not need is a fail.
+remediation:
+  type: iac_patch
+  command: REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON <schema>.<table> FROM <role>; for each excessive grant, keeping only what the role requires.

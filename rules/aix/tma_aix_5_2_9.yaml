@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.9
+title: Ensure minimum password length is configured
+description: 'The minimum password length setting determines the lowers number of characters that make up a password for a user account. There are many different theories about how to determine the best password length for an organization, but perhaps "passphrase" is a better term than "password". The minlen option sets the minimum acceptable size for the new password. Audit: reads `lssec -f /etc/security/user -s default -a minlen`.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.9 Ensure minimum password length is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a minlen 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*minlen=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 14 ]; then echo compliant; else echo "minlen=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a minlen=14

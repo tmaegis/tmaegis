@@ -1,0 +1,23 @@
+id: TMA-CHECKPOINT-1.6
+title: Ensure Warn users before password expiration is set to 7 days
+description: The number of days before the password expires that the user starts getting warned they will have to change it. A user that does not log in will not see the warning. PASS requires expiration-warning-days of 7 or less (and not 0). Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: high
+tags:
+- checkpoint
+- authentication
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 1.6 Ensure Warn users before password expiration is set to 7 days
+audit:
+  type: config_regex
+  pattern: (?m)^set password-controls expiration-warning-days [1-7][ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    set password-controls expiration-warning-days 7
+    save config
+    # CIS guidance:
+    Run the following command to set the expiration-warning-days setting. CLI:
+    set password-controls expiration-warning-days 7
+    GUI:
+    Navigate to User Management > Password Policy > Mandatory Password Changes Set 'Warn users before password expiration' is set to 7 days or less.

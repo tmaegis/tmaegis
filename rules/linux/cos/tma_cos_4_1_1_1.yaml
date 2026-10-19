@@ -1,0 +1,18 @@
+id: TMA-COS-4.1.1.1
+title: Ensure correct container image is set for stackdriver logging agent
+description: 'stackdriver-logging service runs stackdriver container image to export logs to Cloud Logging. Note: This recommendation is not applicable for COS images using Fluent-bit as it isn''t containerized. If the logging agent is not set correctly, the logs cannot be exported to Cloud Logging.'
+target: cos
+level: 2
+severity: low
+tags:
+- container-optimized-os
+- containers
+- cos
+- logging
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 4.1.1.1 Ensure correct container image is set for stackdriver logging agent
+audit:
+  type: manual
+  command: 'Verify LOGGING_AGENT_DOCKER_IMAGE is set to a correct stackdriver container image. Use the following command to verify: # grep LOGGING_AGENT_DOCKER_IMAGE /etc/stackdriver/env_vars LOGGING_AGENT_DOCKER_IMAGE="gcr.io/stackdriver-agents/stackdriver-logging- agent:<version>"'
+remediation:
+  type: iac_patch
+  command: 'Edit the LOGGING_AGENT_DOCKER_IMAGE variable in the /etc/stackdriver/env_vars file to set the correct logging agent. Run the following command to restart stackdriver-logging service : # systemctl restart stackdriver-logging /etc is stateless on Container-Optimized OS. Therefore, /etc cannot be used to make these changes persistent across reboots. The steps mentioned above needs to be performed after every boot.'

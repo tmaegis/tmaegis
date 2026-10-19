@@ -1,0 +1,20 @@
+id: TMA-INTUNE-DEFENDER-2.14
+title: 'Ensure ''ASR: Block executable content from email client and webmail'' is set to ''Block'''
+description: 'This rule blocks email opened within the Microsoft Outlook application, or Outlook.com and other popular webmail providers from propagating the following file types: • Executable files (such as .exe, .dll, or .scr) • Script files (such as a PowerShell .ps1, Visual Basic .vbs, or JavaScript .js file) The recommended state for this setting is: Block. Audit: reads the Intune PolicyManager ASR rules value (via the WinningProvider GUID) and requires the rule entry be9ba2d9-53ea-4cdc-84e5-9b1eeee46550=1 (Block).'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.14 Ensure ''ASR: Block executable content from email client and webmail'' is set to ''Block'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$p = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Defender'' -Name ''AttackSurfaceReductionRules_WinningProvider'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules_WinningProvider''; if (-not $p) { ''non-compliant: no ASR WinningProvider'' } else { $p = ([string]$p).Trim(''{}''); $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\'' + $p + ''\default\Device\Defender''; if (-not (Test-Path $k)) { $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\{'' + $p + ''}\default\Device\Defender'' }; $v = (Get-ItemProperty -Path $k -Name ''AttackSurfaceReductionRules'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules''; $have = @(([string]$v) -split ''\|'' | ForEach-Object { $_.Trim().ToLower() }); $want = @(''be9ba2d9-53ea-4cdc-84e5-9b1eeee46550=1''); if (@($want | Where-Object { $have -contains $_ }).Count -gt 0) { ''compliant'' } else { ''non-compliant:
+    '' + $v } }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Block. Defender\Block executable content from email client and webmail

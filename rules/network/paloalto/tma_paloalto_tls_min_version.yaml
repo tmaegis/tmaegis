@@ -1,0 +1,23 @@
+id: TMA-PALOALTO-TLS-MIN-VERSION
+title: Ensure SSL/TLS service profiles do not allow TLS 1.0 or 1.1
+description: 'SSL/TLS service profiles back the management web UI, GlobalProtect portals/gateways and captive portal. FAILs if any profile sets min-version tls1-0 or tls1-1. Note: a profile left at the default may omit min-version from the export, so also review profiles in the GUI. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'' then ''show config running'' (or ''show'' in configure mode) and save the output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- crypto
+- globalprotect
+reference: CIS Palo Alto Firewall Benchmark - GlobalProtect and Management - SSL/TLS Service Profile (verify section number for your PAN-OS release)
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys (?:"[^"\n]*"|\S+) )?ssl-tls-service-profile (?:"[^"\n]*"|\S+) protocol-settings min-version tls1-[01]\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set shared ssl-tls-service-profile <profile> protocol-settings min-version tls1-2
+    set shared ssl-tls-service-profile <profile> protocol-settings max-version max
+    commit
+    GUI: Device > Certificate Management > SSL/TLS Service Profile > <profile> > Min Version = TLSv1.2.

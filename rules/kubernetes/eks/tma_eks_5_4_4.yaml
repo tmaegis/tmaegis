@@ -1,0 +1,18 @@
+id: TMA-EKS-5.4.4
+title: Use TLS certificates on EKS load balancer listeners for encrypted client connections
+description: Using TLS certificates on EKS load balancer listeners protects client-to-load-balancer traffic in transit by presenting a trusted server certificate and negotiating encrypted HTTPS or TLS connections at the listener. In EKS, this commonly means configuring TLS on an NLB listener for Service resources or specifying certificate ARNs for ALB-based ingress so externally exposed application entry points do not rely on unencrypted HTTP. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- managed-services
+- network
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.4.4 Use TLS certificates on EKS load balancer listeners for encrypted client connections
+audit:
+  type: manual
+  command: Review all EKS Service resources of type LoadBalancer and all Ingress resources that expose client traffic, and verify that client-facing listeners use HTTPS or TLS with a valid certificate. For NLB-backed Service resources, listener encryption is configured with annotations such as aws-load-balancer-ssl-cert and aws-load-balancer-ssl-ports. For ALB-backed ingress, HTTPS listeners require certificate configuration on the ALB path. A TCP listener on port 443 is a different design because it passes encrypted traffic through instead of terminating TLS at the load balancer.
+remediation:
+  type: iac_patch
+  command: Configure every client-facing EKS load balancer listener to use HTTPS or TLS with a valid certificate so client-to-load-balancer traffic is encrypted in transit. For NLB-backed Service resources, add the certificate ARN and encrypted listener ports in the service annotations. For ALB-backed ingress, configure HTTPS listeners and associate the required certificate ARN. If the design requires encryption beyond the load balancer, implement backend TLS separately because listener TLS alone protects only the client-facing connection. • Add a valid certificate to each client-facing NLB or ALB listener that should serve encrypted traffic. • For NLB services, set aws-load-balancer-ssl-cert to the certificate ARN and aws-load-balancer-ssl-ports to the required listener ports. • For ALB ingress, configure HTTPS listeners and associate the required certificate ARN with the listener configuration.

@@ -1,0 +1,18 @@
+id: TMA-AZURE-COMPUTE-2.3.9
+title: Ensure 'Remote debugging' is set to 'Off'
+description: Remote debugging allows a function app to be debugged in real-time directly in the Azure environment. When remote debugging is enabled, it opens a communication channel that could potentially be exploited by unauthorized users if not properly secured. Disabling remote debugging on a function app is primarily about enhancing security. Remote debugging opens a communication channel that can be exploited by attackers. By disabling it, you reduce the number of potential entry points for unauthorized access. If remote debugging is enabled without proper access controls, it can allow unauthorized users to connect to your function app, potentially leading to data breaches or malicious code execution. During a remote debugging session, sensitive information might be exposed. Disabling remote debugging helps ensure that such data remains secure. This minimizes the use of remote access tools to...
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.9 Ensure 'Remote debugging' is set to 'Off'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Debugging, ensure that Remote debugging is set to Off. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the remote debugging setting: az functionapp show --resource-group <resource-group-name> --name <function- app-name> --query siteConfig.remoteDebuggingEnabled Ensure that false is returned. Audit from PowerShell Run the following command to list function apps: Get-AzFunctionApp Run the following command to get the function app in a resource group with a given name: $app = Get-AzFunctionApp -ResourceGroupName <resource-group-name> -Name <function-app-name> Run the following command to get the remote debugging setting: $app.SiteConfig.RemoteDebuggingEnabled Ensure
+    that False is returned. Repeat for each function app. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in A...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Debugging, set Remote debugging to Off. 5. Click Save. 6. Click Continue. 7. Repeat steps 1-6 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to disable remote debugging: az functionapp config set --resource-group <resource-group-name> --name <function-app-name> --remote-debugging-enabled false'

@@ -1,0 +1,17 @@
+id: TMA-TDSQL-1.3
+title: Ensure Interactive Login Is Disabled for TDSQL Service Accounts
+description: The operating system accounts running TDSQL services should have interactive login disabled (shell set to /sbin/nologin or /bin/false). Passes when the tdsql account (and mysql, if present) has /sbin/nologin or /bin/false as its shell; FAILs when no tdsql account exists.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- service-account
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.3 Ensure Interactive Login Is Disabled for TDSQL Service Accounts
+audit:
+  type: command
+  command: 'u=$(getent passwd tdsql) || exit 1; bad=0; for a in tdsql mysql; do s=$(getent passwd "$a" | cut -d: -f7) || continue; case "$s" in /sbin/nologin|/usr/sbin/nologin|/bin/false|/usr/bin/false) ;; *) bad=1;; esac; done; [ $bad -eq 0 ] && echo compliant || echo ''interactive shell'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: usermod -s /sbin/nologin tdsql; usermod -s /sbin/nologin mysql

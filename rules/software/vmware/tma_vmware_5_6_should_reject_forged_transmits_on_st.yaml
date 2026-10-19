@@ -1,0 +1,52 @@
+id: TMA-VMWARE-5.6
+title: Host should reject forged transmits on standard virtual switches and port groups
+description: 'Setting the "Forged transmits" option to "Reject" helps prevent MAC impersonation by comparing the source MAC address from the guest operating system with the effective MAC address of its virtual machine adapter. If there''s a mismatch, the packet is dropped, preventing potential malicious activities through impersonated MAC addresses. The audit runs esxcli network vswitch standard (portgroup) policy security get for every standard vSwitch and port group and requires "Allow Forged Transmits: false". Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- network
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 5.6 Host should reject forged transmits on standard virtual switches and port groups
+audit:
+  type: command
+  command: |-
+    command -v esxcli >/dev/null 2>&1 || exit 1
+    vs=$(esxcli network vswitch standard list 2>/dev/null | sed -n 's/^ *Name: *//p') || exit 1
+    pgs=$(esxcli --formatter=csv network vswitch standard portgroup list 2>/dev/null | awk -F, 'NR==1 {for (i = 1; i <= NF; i++) if ($i == "Name") c = i; next} c {print $c}') || exit 1
+    out=$(for v in $vs; do
+      x=$(esxcli network vswitch standard policy security get -v "$v" 2>/dev/null | sed -n 's/^ *Allow Forged Transmits: *//p' | head -n 1)
+      [ "$x" = false ] || echo "vSwitch $v: Allow Forged Transmits=${x:-unknown}"
+    done
+    printf '%s\n' "$pgs" | while IFS= read -r p; do [ -n "$p" ] || continue
+      x=$(esxcli network vswitch standard portgroup policy security get -p "$p" 2>/dev/null | sed -n 's/^ *Allow Forged Transmits: *//p' | head -n 1)
+      [ "$x" = false ] || echo "portgroup $p: Allow Forged Transmits=${x:-unknown}"
+    done)
+    [ -z "$out" ] && echo compliant || printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    for v in $(esxcli network vswitch standard list 2>/dev/null | sed -n 's/^ *Name: *//p'); do
+      esxcli network vswitch standard policy security set -v "$v" -f false
+    done
+    esxcli --formatter=csv network vswitch standard portgroup list 2>/dev/null | awk -F, 'NR==1 {for (i = 1; i <= NF; i++) if ($i == "Name") c = i; next} c {print $c}' | while IFS= read -r p; do
+      [ -n "$p" ] || continue
+      esxcli network vswitch standard portgroup policy security set -p "$p" -f false
+    done; true
+  guidance: "To set the policy to reject forged transmissions, perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand Networking. 3. Select Virtual switches then click Edit. 4. Click on Security. 5. Set Forged transmits to Reject in the dropdown. 6. Click on OK. Alternately, the following ESXi shell command may be used: # esxcli network vswitch standard policy security set -v vSwitch2 -f false"

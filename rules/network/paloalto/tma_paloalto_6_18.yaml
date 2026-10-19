@@ -1,0 +1,25 @@
+id: TMA-PALOALTO-6.18
+title: Ensure all zones have Zone Protection Profiles that drop specially crafted packets
+description: For all zones, attach a Zone Protection Profile that is configured to drop packets with a spoofed IP address or a mismatched overlapping TCP segment, and packets with malformed, strict source routing, or loose source routing IP options set.
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- firewall-policy
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.18 Ensure all zones have Zone Protection Profiles that drop specially crafted packets
+audit:
+  type: manual
+  command: 'Network > Network Profiles > Zone Protection > Packet Based Attack Protection: confirm Spoofed IP address, Mismatched overlapping TCP segment, Strict Source Routing, Loose Source Routing and Malformed are checked (set ... discard-ip-spoof yes, discard-overlapping-tcp-segment-mismatch yes, discard-strict-source-routing yes, discard-loose-source-routing yes, discard-malformed-option yes) and that all zones use the profile.'
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set network profiles zone-protection-profile ZPP discard-ip-spoof yes
+    set network profiles zone-protection-profile ZPP discard-overlapping-tcp-segment-mismatch yes
+    set network profiles zone-protection-profile ZPP discard-strict-source-routing yes
+    set network profiles zone-protection-profile ZPP discard-loose-source-routing yes
+    set network profiles zone-protection-profile ZPP discard-malformed-option yes
+    commit
+    # CIS guidance:
+    Navigate to Network > Network Profiles > Zone Protection > Zone Protection Profile > Packet Based Attack Protection > TCP/IP Drop. Set Spoofed IP address to be checked. Set Mismatched overlapping TCP segment to be checked. Under IP Option Drop, set Strict Source Routing, Loose Source Routing, and Malformed to all be checked. Additional options may also be set if desired.

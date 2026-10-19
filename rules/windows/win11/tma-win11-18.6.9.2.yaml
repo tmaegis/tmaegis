@@ -1,0 +1,22 @@
+id: TMA-WIN11-18.6.9.2
+title: Ensure 'Turn on Responder (RSPNDR) driver' is set to 'Disabled'
+description: 'This policy setting changes the operational behavior of the Responder network protocol driver. The Responder allows a computer to participate in Link Layer Topology Discovery requests so that it can be discovered and located on the network. It also allows a computer to participate in Quality-of-Service activities such as bandwidth estimation and network health analysis. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-11
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.6.9.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''AllowRspndrOnDomain'' -ErrorAction SilentlyContinue).''AllowRspndrOnDomain''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowRspndrOnDomain='' + $v }; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''AllowRspndrOnPublicNet'' -ErrorAction SilentlyContinue).''AllowRspndrOnPublicNet''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowRspndrOnPublicNet='' + $v }; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''EnableRspndr'' -ErrorAction SilentlyContinue).''EnableRspndr''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''EnableRspndr='' + $v }; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''ProhibitRspndrOnPrivateNet''
+    -ErrorAction SilentlyContinue).''ProhibitRspndrOnPrivateNet''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''ProhibitRspndrOnPrivateNet='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Name 'AllowRspndrOnDomain' -Value 0 -PropertyType DWord -Force | Out-Null; if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Name 'AllowRspndrOnPublicNet' -Value 0 -PropertyType DWord -Force | Out-Null; if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'
+    -Name 'EnableRspndr' -Value 0 -PropertyType DWord -Force | Out-Null; if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Name 'ProhibitRspndrOnPrivateNet' -Value 0 -PropertyType DWord -Force | Out-Null

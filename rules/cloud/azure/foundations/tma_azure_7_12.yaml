@@ -1,0 +1,19 @@
+id: TMA-AZURE-7.12
+title: Ensure the SSL Policy's 'Min protocol version' is Set to 'TLSv1_2' or Higher on Azure Application Gateway
+description: The TLS (Transport Layer Security) protocol secures data in transit using asymmetric encryption. Application gateways use TLS 1.2 for the Min protocol version by default but can also be configured to use TLS 1.3. According to Microsoft, "Starting August 31, 2025, all clients and backend servers interacting with Azure Application Gateway must use Transport Layer Security (TLS) 1.2 or higher, as support for TLS 1.0 and 1.1 will be discontinued." In NIST SP 800-52 Rev. 2, NIST has mandated that servers that support both government-only applications as well as citizen or business-facing applications "shall be configured to use [or negotiate] TLS 1.2 and should be configured to use [or negotiate] TLS 1.3 as well." Further, NIST specifies that "agencies shall support TLS 1.3 by January 1, 2024 [for both government-only and citizen or business-facing applications]." In general, NIST indicate...
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- tls
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 7.12 Ensure the SSL Policy's 'Min protocol version' is Set to 'TLSv1_2' or Higher on Azure Application Gateway
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Application gateways. 2. Click the name of an application gateway. 3. Under Settings, click Listeners. 4. Under SSL Policy, ensure Min protocol version is set to TLSv1_2 or higher. 5. Repeat steps 1-4 for each application gateway. Audit from Azure CLI Run the following command to list application gateways: az network application-gateway list For each application gateway, run the following command to get the SSL policy: az network application-gateway ssl-policy show --resource-group <resource- group> --gateway-name <application-gateway> For each SSL policy, run the following command to get the minProtocolVersion: az network application-gateway ssl-policy predefined show --name <ssl-policy> --query minProtocolVersion The recommended policy names for Azure Application Gateway are: - 20220101S (TLS 1.2 and 1.3), and - 20220101 (TLS 1.2 and 1.3) PQC Compliant Cipher: TLS_256_AES_GCM_SHA348 (with ML-KEM, ML-DSA, SLH- DSA for key establishment algorithms
+    approved by NIST currently)'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Application gateways. 2. Click the name of an application gateway. 3. Under Settings, click Listeners. 4. Under SSL Policy, next to the Selected SSL Policy name, click change. 5. Select an appropriate SSL policy with a Min protocol version of TLSv1_2 or higher. 6. Click Save. 7. Repeat steps 1-6 for each application gateway requiring remediation. Remediate from Azure CLI Run the following command to list available SSL policy options: az network application-gateway ssl-policy list-options Run the following command to list available predefined SSL policies: az network application-gateway ssl-policy predefined list For each application gateway requiring remediation, run the following command to set a predefined SSL policy: az network application-gateway ssl-policy set --resource-group <resource- group> --gateway-name <application-gateway> --name <ssl-policy> --policy-type Predefined Alternatively, run the following command to set a custom SSL
+    policy: az network application-gateway ssl-policy set --resource-group <resource- group> --gateway-name <application-gateway> --policy-type Custom --min- protocol-version <min-protocol-version> --cipher-sui...'

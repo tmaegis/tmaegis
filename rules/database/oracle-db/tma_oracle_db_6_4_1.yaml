@@ -1,0 +1,34 @@
+id: TMA-ORACLE-DB-6.4.1
+title: Ensure 'ALL' Is Revoked On 'Sensitive' Tables
+description: 'Some tables contain critical information such as password hashes, encrypted passwords, etc. No user other than SYS should have table privileges on these tables. Automated as: no non-Oracle-maintained user or role holds any privilege on the listed SYS tables (CDB_LOCAL_ADMINAUTH$, DEFAULT_PWD$, ENC$, HISTGRM$, HIST_HEAD$, LINK$, PDB_SYNC$, SCHEDULER$_CREDENTIAL, USER$, USER_HISTORY$, XS$VERIFIERS). In 19c v2.0.0 this is section 6.3.1. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- privileges
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.4.1 Ensure 'ALL' Is Revoked On 'Sensitive' Tables
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    with nm as (
+      select role as grantee from cdb_roles where oracle_maintained = 'N'
+      union select username from cdb_users where oracle_maintained = 'N'
+    )
+    select count(*) from cdb_tab_privs c
+    where c.owner = 'SYS' and c.table_name in
+      ('CDB_LOCAL_ADMINAUTH$','DEFAULT_PWD$','ENC$','HISTGRM$','HIST_HEAD$','LINK$','PDB_SYNC$','SCHEDULER$_CREDENTIAL','USER$','USER_HISTORY$','XS$VERIFIERS')
+    and c.grantee in (select grantee from nm);
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: To remediate this recommendation, revoke privileges that are no longer required by executing the following SQL statement. REVOKE <privilege> ON <table> <directory_name>;

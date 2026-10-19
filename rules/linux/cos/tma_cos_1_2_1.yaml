@@ -1,0 +1,18 @@
+id: TMA-COS-1.2.1
+title: Ensure dm-verity is enabled
+description: device-mapper-verity (dm-verity) kernel feature feature provides transparent integrity checking of block devices using a cryptographic digest provided by the kernel crypto API. When a dm-verity device is configured, it is expected that the caller has been authenticated in some way (cryptographic signatures, etc). After instantiation, all hashes will be verified on-demand during disk access. If they cannot be verified up to the root node of the tree, the root hash, then the I/O will fail. This should detect tampering with any data on the device and the hash data. The Container-Optimized OS root filesystem is always mounted as read-only. Additionally, its checksum is computed at build time and verified by the kernel on each boot. This mechanism prevents against attackers from "owning" the machine through permanent local changes.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 1.2.1 Ensure dm-verity is enabled
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v zcat >/dev/null 2>&1 || { echo "step1: zcat not installed"; return 1; }; o=$(bash -c ''zcat /proc/config.gz | grep CONFIG_DM_VERITY'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- CONFIG_DM_VERITY=y || { echo step1: missing CONFIG_DM_VERITY=y; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: An OS image update that has the dm-verity enabled kernel is required.

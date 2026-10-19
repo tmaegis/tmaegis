@@ -1,0 +1,33 @@
+id: TMA-KERBEROS-MAX-RENEWABLE-LIFE
+title: Ensure maximum renewable ticket lifetime is 7 days or less
+description: 'Renewable tickets can be refreshed without the password until max_renewable_life expires. The audit parses max_renewable_life in kdc.conf (/etc/krb5kdc/kdc.conf or /var/kerberos/krb5kdc/kdc.conf) and requires it to be set and at most 604800 seconds.'
+target: kerberos
+level: 1
+severity: low
+tags: [kerberos, kdc, tickets]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - Kerberos ticket lifetime (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    f=/etc/krb5kdc/kdc.conf; [ -f "$f" ] || f=/var/kerberos/krb5kdc/kdc.conf
+    [ -f "$f" ] || exit 1
+    awk -v key=max_renewable_life -v lim=604800 '
+    function dur(s,   t, n, c, p, k) {
+      gsub(/[ \t]/, "", s)
+      if (s ~ /^[0-9]+$/) return s + 0
+      if (s ~ /^[0-9]+:[0-9]+(:[0-9]+)?$/) { k = split(s, p, ":"); return p[1]*3600 + p[2]*60 + (k > 2 ? p[3] : 0) }
+      t = 0
+      while (match(s, /^[0-9]+[dhms]/)) {
+        c = substr(s, RLENGTH, 1); n = substr(s, 1, RLENGTH - 1) + 0
+        t += n * (c == "d" ? 86400 : (c == "h" ? 3600 : (c == "m" ? 60 : 1)))
+        s = substr(s, RLENGTH + 1)
+      }
+      return (s == "" ? t : -1)
+    }
+    $0 ~ "^[ \t]*" key "[ \t]*=" { v = $0; sub(/^[^=]*=/, "", v); d = dur(v); found = 1; if (d < 0 || d > lim) bad = 1 }
+    END { if (found && !bad) print "compliant" }' "$f"
+  expected_output: compliant
+  requires_file: [/etc/krb5kdc/kdc.conf, /var/kerberos/krb5kdc/kdc.conf]
+remediation:
+  type: iac_patch
+  command: 'In each realm of kdc.conf set max_renewable_life = 7d 0h 0m 0s, restart krb5kdc, and apply the same limit to krbtgt/<REALM> with kadmin: modprinc -maxrenewlife "7 days" krbtgt/<REALM>.'

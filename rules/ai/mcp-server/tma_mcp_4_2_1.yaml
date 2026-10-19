@@ -1,0 +1,19 @@
+id: TMA-MCP-4.2.1
+title: Ensure filesystem scope is restricted to least privilege and enforced by OS-level controls
+description: Each MCP server process is restricted to the minimum filesystem paths its declared functionality requires, and that restriction is enforced with OS-level access controls such as filesystem ACLs, mandatory access control policies (SELinux or AppArmor), or container bind mounts, which the kernel imposes regardless of server behavior. The intended scope may be expressed through MCP Roots or, under the 2026-07-28 revision where Roots is deprecated, through workspace paths passed as tool parameters or resource URIs, and how scope is expressed does not change the requirement. Whatever the expression mechanism, treat it as an advisory hint and do not rely on it for containment. The OS-level controls are the actual security boundary, and they enforce the same least-privilege scope at the kernel level. Any scope hint conveyed through the protocol, whether MCP Roots or a path passed as a tool p...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.2.1 Ensure filesystem scope is restricted to least privilege and enforced by OS-level controls
+audit:
+  type: manual
+  command: 'Review how the server''s intended filesystem scope is expressed (MCP Roots, or under the 2026-07-28 revision where Roots is deprecated, workspace paths passed as tool parameters or resource URIs) and confirm the approved scope is the minimum the server''s declared functionality requires. Then verify that OS-level controls deny the service account access outside that scope. Run the following command to confirm the service account cannot read a chosen sensitive path outside its approved scope, pointing the probe at a path the remediation denies, for example a file under the sensitive directory or a system secret such as /etc/shadow: SVC_ACCT="<MCP_SERVICE_ACCOUNT>" OUT_OF_SCOPE="<SENSITIVE_PATH_OUTSIDE_SCOPE>" command -v sudo >/dev/null 2>&1 || { echo "ERROR: sudo is required to switch to the service account (cannot verify)"; exit 0; } id "$SVC_ACCT" >/dev/null 2>&1 || { echo "ERROR: service account <MCP_SERVICE_ACCOUNT> not found (cannot verify)"; exit 0; } [ -e "$OUT_OF_SCOPE"
+    ] || { echo "ERROR: probe path <SENSITIVE_PATH_OUTSIDE_SCOPE> not found (choose a sensitive path outside the approved scope)"; exit 0; } sudo -n -u "$SVC_ACCT" true 2>/dev/null || { echo "ERROR: cannot switc...'
+remediation:
+  type: iac_patch
+  command: 'Enforce containment with a control that denies by default. The strongest options are a mandatory access control profile (AppArmor or SELinux) confining the process to its working set, or running the server in a mount namespace or container where only the work directory is bind-mounted in (read-only where writes are not needed) so paths outside it are not visible at all. POSIX ACLs are a useful supplement but are a grant mechanism, not a default-deny boundary. They constrain only the paths you name and do not remove the account''s standard-permission access to everything else. Where ACLs are used as a supplement, restrict the work directory, set a default ACL so newly created files inherit it, and apply targeted denies to known-sensitive directories. Run the following commands to apply the supplementary ACLs: setfacl -R -m u:<MCP_SERVICE_ACCOUNT>:rX <WORK_DIR> setfacl -R -d -m u:<MCP_SERVICE_ACCOUNT>:rX <WORK_DIR> setfacl -R -m u:<MCP_SERVICE_ACCOUNT>:--- <SENSITIVE_DIR> The MAC
+    profile or bind-mount is the boundary, and the ACLs harden within it.'

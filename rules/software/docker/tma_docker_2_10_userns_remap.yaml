@@ -1,0 +1,22 @@
+id: TMA-DOCKER-2.10
+title: Enable user namespace support
+description: User namespace remapping maps root inside containers to an unprivileged host UID, limiting the impact of a container breakout. The audit checks that docker info lists name=userns under SecurityOptions.
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- daemon
+reference: CIS Docker Benchmark v1.9.0 - 2.10 Enable user namespace support
+audit:
+  type: command
+  command: o=$(docker info --format '{{range .SecurityOptions}}{{.}} {{end}}') || exit 1; printf '%s\n' "$o" | grep -q 'name=userns' && echo compliant || echo missing
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Ensure /etc/subuid and /etc/subgid contain a mapping, set "userns-remap": "default" in /etc/docker/daemon.json and restart the Docker daemon (existing images and volumes need to be re-created).'

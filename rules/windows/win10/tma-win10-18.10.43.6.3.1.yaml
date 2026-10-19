@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.43.6.3.1
+title: 'Ensure ''Prevent users and apps from accessing dangerous websites'' is set to ''Enabled: Block'''
+description: 'This policy setting controls Microsoft Defender Exploit Guard network protection. The recommended state for this setting is: Enabled: Block.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.43.6.3.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\windows Defender\Windows Defender Exploit Guard\Network Protection'' -Name ''EnableNetworkProtection'' -ErrorAction SilentlyContinue).''EnableNetworkProtection''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableNetworkProtection='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\windows Defender\Windows Defender Exploit Guard\Network Protection')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\windows Defender\Windows Defender Exploit Guard\Network Protection' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\windows Defender\Windows Defender Exploit Guard\Network Protection' -Name 'EnableNetworkProtection' -Value 1 -PropertyType DWord -Force | Out-Null

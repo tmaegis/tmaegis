@@ -1,0 +1,18 @@
+id: TMA-CHROME-5.2
+title: 'Ensure ''Incognito mode availability'' is set to ''Enabled: Incognito mode disabled'''
+description: 'Specifies whether the user may open pages in Incognito mode in Google Chrome. The possible values are: - Incognito mode available (0 - Same as Disabled)) - Incognito mode disabled (1) - Incognito mode forced (2) The recommended state for this setting is: Enabled: Incognito mode disabled (1) Rationale: Incognito mode in Chrome gives you the choice to browse the internet without your activity being saved to your browser or device. Allowing users to use the browser without any information being saved can hide evidence of malicious behaviors. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:IncognitoModeAvailability (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 5.2 Ensure ''Incognito mode availability'' is set to ''Enabled: Incognito mode disabled'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''IncognitoModeAvailability'' -ErrorAction SilentlyContinue).''IncognitoModeAvailability''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'IncognitoModeAvailability' -Value 1 -PropertyType DWord -Force | Out-Null

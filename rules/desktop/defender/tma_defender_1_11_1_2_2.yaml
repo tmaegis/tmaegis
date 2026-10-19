@@ -1,0 +1,19 @@
+id: TMA-DEFENDER-1.11.1.2.2
+title: 'Ensure ''Configure Remote Encryption Protection Mode'' is set to ''Enabled: Audit'' or higher'
+description: 'This policy setting sets the mode for Remote Encryption Protection in Microsoft Defender Antivirus, which can detect and block attempts to replace local files with encrypted versions from another device. The recommended state for this setting is: Enabled: Audit. Configuring this setting to Enabled: Block also conforms to the benchmark. Rationale: This feature assists with detecting and blocks malicious remote encryption behavior, such as when a threat actor attempts to remotely encrypt files on a victim machine using compromised credentials, network channels, or lateral movement techniques. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Remote Encryption Protection:RemoteEncryptionProtectionConfiguredState (REG_DWORD); compliant when it is 2 or 1. Remediation writes 2 locally;
+  in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.11.1.2.2 Ensure ''Configure Remote Encryption Protection Mode'' is set to ''Enabled: Audit'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Remote Encryption Protection'' -Name ''RemoteEncryptionProtectionConfiguredState'' -ErrorAction SilentlyContinue).''RemoteEncryptionProtectionConfiguredState''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2,1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Remediation\Behavioral Network Blocks\Remote Encryption Protection'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RemoteEncryptionProtectionConfiguredState' -Value 2 -PropertyType DWord -Force | Out-Null

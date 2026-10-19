@@ -1,0 +1,17 @@
+id: TMA-GKE-AUTOPILOT-4.6.2
+title: Rely on Autopilot RuntimeDefault seccomp; custom profiles are unsupported
+description: GKE Autopilot automatically applies the RuntimeDefault seccomp profile to workload Pods, so custom seccomp profile configuration is not required for normal workloads. Custom Localhost seccomp profiles are not supported in Autopilot because GKE manages the nodes, and GKE Sandbox Pods use sandbox isolation as the security boundary instead of Pod specified seccomp rules. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 2
+severity: low
+tags:
+- gke-autopilot
+- policies
+- pod-security
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 4.6.2 Rely on Autopilot RuntimeDefault seccomp; custom profiles are unsupported
+audit:
+  type: manual
+  command: Review workload Pods to confirm that they do not specify unsupported custom seccomp profiles and do not use Unconfined unless there is a documented exception. Missing seccompProfile fields are not a finding in Autopilot because GKE applies the RuntimeDefault seccomp profile automatically. kubectl get pods -A -o json \ | jq -r ' ["NAMESPACE","POD","POD_SECCOMP","CONTAINER","CONTAINER_SECCOMP"], ( .items[] as $pod | ($pod.spec.securityContext.seccompProfile.type // "not-set") as $podSeccomp | $pod.spec.containers[] | [ $pod.metadata.namespace, $pod.metadata.name, $podSeccomp, .name, ...
+remediation:
+  type: iac_patch
+  command: For GKE Autopilot workloads, remove unsupported custom Localhost seccomp profile settings and rely on the automatically applied RuntimeDefault profile. Do not attempt to install or manage custom seccomp profiles on Autopilot nodes because GKE manages the node environment. If a workload specifies Unconfined, validate and document the requirement, then remove the override where possible so the workload uses the Autopilot default seccomp protection. For GKE Sandbox workloads, treat the sandbox as the security boundary because seccomp rules specified in the Pod manifest are ignored.

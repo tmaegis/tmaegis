@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.7
+title: Verify No UID 0 Accounts Exist Other than root
+description: 'Any account with UID 0 has superuser rights on the system. This access must be limited to only the default root role and be made accessible from the system console only. Administrative access granted to an unprivileged account should use an approved mechanism such as RBAC. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: critical
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.7 Verify No UID 0 Accounts Exist Other than root
+audit:
+  type: command
+  command: 'command -v logins >/dev/null 2>&1 || exit 1; out=$( { logins -o | awk -F: ''($2 == 0) { print $1 }'' | grep -vx root ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Disable or delete any other 0 UID entries that are displayed; there should be only one root account. Finer granularity access control for administrative access can be obtained by using the Solaris Role-Based Access Control (RBAC) mechanism. RBAC configurations should be monitored via user_attr(4) to make sure that privileges are managed appropriately.

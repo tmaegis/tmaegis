@@ -1,0 +1,20 @@
+id: TMA-EKS-4.5.2
+title: The default namespace should not be used
+description: Avoid placing application workloads in the default namespace, and instead deploy them into dedicated namespaces that reflect the intended team, application, or environment boundary. In EKS, namespaces are the primary logical partition for organizing workloads and supporting soft multi-tenancy in a shared cluster. Requires kubectl read access; fails when the default namespace holds objects other than the kubernetes Service, kube-root-ca.crt ConfigMap and default ServiceAccount.
+target: eks
+level: 1
+severity: low
+tags:
+- eks
+- policies
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.5.2 The default namespace should not be used
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods,services,configmaps,secrets,serviceaccounts,deployments,statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings -n default -o name) || exit 1
+    bad=$(printf '%s\n' "$out" | grep -v '^$' | sed 's#^\([a-z]*\)\.[^/]*/#\1/#' | grep -Evx 'service/kubernetes|configmap/kube-root-ca\.crt|serviceaccount/default')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Move user workloads out of the default namespace and place them in dedicated namespaces that reflect the intended team, application, or environment boundary. In EKS, namespaces are the core logical partition for soft multi-tenancy, but they only become meaningful administrative boundaries when they are paired with namespace-scoped access, service accounts, quotas, limits, and network policies. Because namespaced objects are created in default when no namespace is specified, remediation should address both existing workloads and the deployment process that created them there. • Create dedicated namespaces for each team, application, or environment that needs its own administrative scope, then redeploy or migrate user workloads from default into those namespaces.

@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-7.4
+title: Ensure WAL archiving is configured and functional
+description: Write Ahead Log (WAL) Archiving, or Log Shipping, is the process of sending transaction log files from the PRIMARY host either to one or more STANDBY hosts or to be archived on a remote storage device for later use, e.g. PITR. There are several utilities that can copy WALs including, but not limited to, cp, scp, sftp, and rynsc. Passes when archive_mode is on/always and archive_command or archive_library is set; also confirm pg_stat_archiver shows successful archiving. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- backup
+- wal
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 7.4 Ensure WAL archiving is configured and functional
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN current_setting('archive_mode') IN ('on','always') AND (current_setting('archive_command') NOT IN ('', '(disabled)') OR current_setting('archive_library') <> '') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set archive_mode = on and archive_command (e.g. 'pgbackrest --stanza=<name> archive-push %p') or archive_library in postgresql.conf, restart PostgreSQL, then confirm archived_count grows and failed_count stays constant in pg_stat_archiver.

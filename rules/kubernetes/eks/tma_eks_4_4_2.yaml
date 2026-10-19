@@ -1,0 +1,17 @@
+id: TMA-EKS-4.4.2
+title: Consider external secret storage
+description: External secret storage for EKS means keeping application secrets outside native Kubernetes Secret objects and retrieving them from a managed service such as AWS Secrets Manager when workloads need them. This approach lets EKS workloads consume secrets through integrations such as the AWS Secrets and Configuration Provider with the Secrets Store CSI Driver, instead of relying only on Kubernetes to store and distribute sensitive values. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.4.2 Consider external secret storage
+audit:
+  type: manual
+  command: Review the EKS cluster’s secrets architecture and verify that required workloads use an external secrets store such as AWS Secrets Manager instead of relying only on native Kubernetes Secret objects. The audit should confirm both the integration path and the workload-level access model, because external secret storage in EKS typically depends on the AWS Secrets and Configuration Provider, the Secrets Store CSI Driver, and Pod-scoped IAM through EKS Pod Identity or IRSA.
+remediation:
+  type: iac_patch
+  command: Move high-value application secrets out of native Kubernetes Secret objects and into an external store such as AWS Secrets Manager. Then update EKS workloads to retrieve those secrets through the AWS Secrets and Configuration Provider with the Secrets Store CSI Driver, using Pod-scoped IAM through EKS Pod Identity or IRSA. This shifts encryption, access control, rotation, and auditing to AWS instead of leaving those functions primarily in cluster-resident Secret objects. • Create the required secrets in AWS Secrets Manager and define workload access with least-privilege IAM policies. • Install and configure the AWS Secrets and Configuration Provider and the Secrets Store CSI Driver for EKS. • Update workload manifests to mount external secrets through a SecretProviderClass instead of reading only native Kubernetes Secret objects.

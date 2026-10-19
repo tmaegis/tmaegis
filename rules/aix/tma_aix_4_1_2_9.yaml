@@ -1,0 +1,17 @@
+id: TMA-AIX-4.1.2.9
+title: Ensure access on /var/spool/cron/atjobs is configured
+description: 'The /var/spool/cron/atjobs directory contains scripts submitted by authorized users using the command at. The /var/spool/cron/atjobs directory contains all of the at jobs for the users on the system. Atjob files present a security problem because they are run using SUID and SGID of the user who submits the job. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.2.9 Ensure access on /var/spool/cron/atjobs is configured
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; [ -d /var/spool/cron/atjobs ] || exit 1; out=$( { find /var/spool/cron/atjobs -type d -prune \( -perm -4 -o -perm -2 -o -perm -1 -o -perm -200000000 \); find /var/spool/cron/atjobs ! -type d -perm -2; trustchk -n /var/spool/cron/atjobs >/dev/null 2>&1 || echo trustchk failed ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Use the following script to apply settings to /var/spool/cron/atjobs: #!/usr/bin/ksh #; remove any extended ACL information echo | aclput /var/spool/cron/atjobs #; remove other access from all chmod -R o= /var/spool/cron/atjobs #; set UID:GID to bin:cron to `/var/spool/cron/atjobs` and correct modes on directory chown bin:cron /var/spool/cron/atjobs #; remove world access on directory and files within directory chmod -R o= /var/spool/cron/atjobs #; add or update entry in TCB trustchk -a /var/spool/cron/atjobs size=VOLATILE >/dev/null 2>&1 || trustchk -u /var/spool/cron/atjobs owner=bin group=cron mode=770'

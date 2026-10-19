@@ -1,0 +1,18 @@
+id: TMA-MARIADB-8.1
+title: Ensure 'require_secure_transport' is Set to 'ON' and 'have_ssl' is Set to 'YES'
+description: 'All network traffic must use SSL/TLS when traveling over untrusted networks. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- tls
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 8.1 Ensure 'require_secure_transport' is Set to 'ON' and 'have_ssl' is Set to 'YES'
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF(@@global.require_secure_transport = 1 AND @@global.have_ssl = 'YES', 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure TLS (ssl_cert, ssl_key, ssl_ca under [mariadbd]) so have_ssl = YES, confirm all clients use TLS, then set require_secure_transport=ON under [mariadbd] and restart (or SET GLOBAL require_secure_transport = ON).

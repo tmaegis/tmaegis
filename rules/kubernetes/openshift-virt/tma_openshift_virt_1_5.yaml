@@ -1,0 +1,24 @@
+id: TMA-OPENSHIFT-VIRT-1.5
+title: Enforce the use of trusted registries using TLS
+description: 'Transport Layer Security (TLS) is a cryptographic protocol used in this context to protect data in transit. Restricting operations to the use of trusted registries ensures the use of approved container images. Audit: Passes when .spec.storageImport.insecureRegistries of the HyperConverged resource is empty. Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 1
+severity: high
+tags:
+- openshift-virt
+- registry
+- tls
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.5 Enforce the use of trusted registries using TLS
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; v=$(oc get hyperconverged kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.spec.storageImport.insecureRegistries}') || exit 1; [ -z "$v" ] && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: 'Do not allow connections to insecure registries from hyperconverged resources. The cluster administrator can remove any insecure registry: $ oc patch hyperconverged kubevirt-hyperconverged - n openshift - cnv --type=''json'' -p=''[ {"op": "remove", "path": "/spec/storageImport/insecureRegistries"}, ]'''

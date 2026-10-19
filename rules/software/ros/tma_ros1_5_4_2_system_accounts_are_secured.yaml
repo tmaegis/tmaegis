@@ -1,0 +1,49 @@
+id: TMA-ROS1-5.4.2
+title: Ensure system accounts are secured
+description: There are a number of accounts provided with most distributions that are used to manage applications and are not intended to provide an interactive shell. The audit requires system accounts (UID below UID_MIN, except root/sync/shutdown/halt) to have a nologin/false shell and a locked password. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.4.2 Ensure system accounts are secured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    min=$(awk '/^\s*UID_MIN/{print $2}' /etc/login.defs); min=${min:-1000}
+    a=$(awk -F: -v m="$min" '($1 !~ /^(root|sync|shutdown|halt)$/ && $1 !~ /^\+/ && $3 < m && $7 !~ /(nologin|false)$/) {print $1}' /etc/passwd)
+    [ -r /etc/shadow ] || exit 1
+    b=$(for u in $(awk -F: -v m="$min" '($1 != "root" && $1 !~ /^\+/ && $3 < m) {print $1}' /etc/passwd); do awk -F: -v u="$u" '$1 == u && $2 !~ /^[!*]/ {print u}' /etc/shadow; done)
+    [ -z "$a$b" ] && echo compliant || { [ -n "$a" ] && echo "system accounts with a login shell: $(printf '%s ' $a)"; [ -n "$b" ] && echo "unlocked system accounts: $(printf '%s ' $b)"; }
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    vs=$(awk -F/ '/^\// && $NF != "nologin"' /etc/shells)
+    is_valid() { printf '%s\n' "$vs" | grep -qxF -- "$1"; }
+    min=$(awk '/^[[:space:]]*UID_MIN/{print $2}' /etc/login.defs 2>/dev/null); min=${min:-1000}
+    nl=$(command -v nologin || echo /sbin/nologin)
+    while IFS=: read -r u p uid gid c h sh; do
+      case "$u" in root|sync|shutdown|halt|+*|-*) continue;; esac
+      [ "$uid" -lt "$min" ] 2>/dev/null || continue
+      is_valid "$sh" && usermod -s "$nl" "$u"
+    done < /etc/passwd
+    true
+  guidance: "Run the commands appropriate for your distribution: Set the shell for any accounts returned by the audit to nologin: # usermod -s $(which nologin) <user> Lock any non root accounts returned by the audit: # usermod -L <user> The following command will set all system accounts to a non login shell: awk -F: '($1!=\"root\" && $1!=\"sync\" && $1!=\"shutdown\" && $1!=\"halt\" && $1!~/^\\+/ && $3<'\"$(awk '/^\\s*UID_MIN/{print $2}' /etc/login.defs)\"' && $7!=\"'\"$(which nologin)\"'\" && $7!=\"/bin/false\") {print $1}' /etc/passwd | while read -r user; do usermod -s \"$(which nologin)\" \"$user\""

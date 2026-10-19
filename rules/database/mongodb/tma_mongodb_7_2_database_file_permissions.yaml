@@ -1,0 +1,37 @@
+id: TMA-MONGODB-7.2
+title: Ensure appropriate database file permissions are set
+description: MongoDB database files need to be protected using file permissions. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). storage.dbPath (default /var/lib/mongodb) must be 770 or stricter, with no access for other users.
+target: mongodb
+level: 1
+severity: high
+tags:
+- mongodb
+- permissions
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 7.2 Ensure appropriate database file permissions are set
+audit:
+  type: command
+  command: '[ -r /etc/mongod.conf ] || exit 1; d=$(awk ''/^[[:space:]]*dbPath:/ {v=$2; gsub(/["\047]/, "", v); print v}'' /etc/mongod.conf); d=${d:-/var/lib/mongodb}; p=$(stat -c %a "$d" 2>/dev/null) || exit 1; if [ $((0$p & 007)) -eq 0 ]; then echo compliant; else echo "mode $p"; fi'
+  expected_output: compliant
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -r /etc/mongod.conf ] || exit 0
+    d=$(awk '/^[[:space:]]*dbPath:/ {v=$2; gsub(/["\047]/, "", v); print v}' /etc/mongod.conf); d=${d:-/var/lib/mongodb}
+    [ -d "$d" ] || exit 0
+    id mongodb >/dev/null 2>&1 && chown mongodb:mongodb "$d"; chmod 770 "$d"
+  guidance: "chmod 770 <dbPath> and chown mongodb:mongodb <dbPath> (default /var/lib/mongodb)."

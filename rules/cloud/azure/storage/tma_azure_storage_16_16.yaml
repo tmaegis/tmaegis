@@ -1,0 +1,18 @@
+id: TMA-AZURE-STORAGE-16.16
+title: Ensure Redundancy is set to a geo-redundant option on critical Azure Storage Accounts
+description: Geo-redundant storage replicates a storage account's data to a secondary Azure region hundreds of miles away, so the data survives a region-wide outage. Azure offers four geo-redundant SKUs - GRS, read-access GRS (RA-GRS), geo-zone-redundant storage (GZRS), and read-access GZRS (RA-GZRS) - all of which replicate across regions; the read-access variants additionally allow the secondary copy to be read. This recommendation ensures critical storage accounts use a geo-redundant SKU. A regional outage can make a non-geo-redundant (LRS or ZRS) account and its data unavailable. A geo-redundant SKU keeps a copy in a separate region, supporting disaster recovery and business continuity. Note that with the non-read-access variants (GRS, GZRS) the secondary copy is not readable until a failover; account failover is customer-initiated; and replication is asynchronous, so a failover has a recovery...
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.16 Ensure Redundancy is set to a geo-redundant option on critical Azure Storage Accounts
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Data management, select Redundancy. 3. Confirm Redundancy is a geo-redundant option: Geo-redundant storage (GRS), Read-access geo-redundant storage (RA-GRS), Geo-zone- redundant storage (GZRS), or Read-access geo-zone-redundant storage (RA-GZRS). Audit from Azure CLI For each storage account, verify the SKU is a geo-redundant SKU: az storage account show \ --name <storage-account> \ --resource-group <resource-group> \ --query "sku.name" \ --output tsv Compliant values are Standard_GRS, Standard_RAGRS, Standard_GZRS, or Standard_RAGZRS. Standard_LRS and Standard_ZRS are non-compliant for accounts in scope. (Premium accounts support only LRS/ZRS and cannot use a geo-redundant SKU - see Impact.) Audit from PowerShell (Get-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account>).Sku.Name Compliant if it returns Standard_GRS, Standard_RAGRS, Standard_GZRS, or Standard_RAGZRS.
+    Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Po...'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Data management, select Redundancy. 3. From the Redundancy drop-down, select a geo-redundant option (GRS, RA- GRS, GZRS, or RA-GZRS). 4. Select Save. Remediate from Azure CLI az storage account update --resource-group <resource-group> --name <storage- account> --sku <Standard_GRS|Standard_RAGRS|Standard_GZRS|Standard_RAGZRS> Remediate from PowerShell Set-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account> -SkuName "<Standard_GRS|Standard_RAGRS|Standard_GZRS|Standard_RAGZRS>"

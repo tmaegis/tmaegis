@@ -1,0 +1,17 @@
+id: TMA-GITLAB-2.2.2
+title: Ensure build worker environments and commands are passed and not pulled
+description: A worker’s environment can be passed (for example, a pod in a Kubernetes cluster in which an environment variable is passed to it). It also can be pulled, like a virtual machine that is installing a package. Ensure that the environment and commands are passed to the workers and not pulled from it. Passing an environment means additional configuration happens in the build time phase and not in run time. It will also pass locally and not remotely. Passing a worker environment, instead of pulling it from an outer source, reduces the possibility for an attacker to gain access and potentially pull malicious code into it. By passing locally and not pulling from remote, there is also less chance of an attack based on the remote connection, such as a man-in-the-middle or malicious scripts that can run from remote. This therefore prevents possible infection of the build worker.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 2.2.2 Ensure build worker environments and commands are passed and not pulled
+audit:
+  type: manual
+  command: 'For each build worker, ensure its environment and commands are passed and not pulled. 1. Review .gitlab-ci.yml and Runner Configurations: Check your project''s .gitlab-ci.yml file and any associated Runner configurations to ensure that all necessary environment variables, commands, and configurations are explicitly defined and passed to the Runner. This involves reviewing the job definitions to confirm they do not rely on external sources for configuration at runtime. 2. Examine Runner Execution Environment: Verify that the execution environment of the Runner (whether it''s a Docker container, a Kubernetes pod, or a virtual machine) receives its configuration from the .gitlab-ci.yml file or the GitLab project settings directly, without pulling from external sources during the job execution. 3. Check for External Dependencies: Ensure that any external dependencies, such as third-party libraries or tools, are explicitly defined and version-controlled within the project repository
+    or through secure, trusted registries. Avoid configurations that allow the Runner to dynamically fetch or update these dependencies during the build process without strict version controls.'
+remediation:
+  type: iac_patch
+  command: 'For each build worker, pass its environment and commands to it instead of pulling it. 1. Update .gitlab-ci.yml: Amend your .gitlab-ci.yml file to include all necessary environment variables and configurations directly within the file or through secure, project-level settings in GitLab. Avoid dynamic fetching of configurations from external sources during runtime. 2. Secure Runner Environment: Configure your GitLab Runner environments (Docker, Kubernetes, VMs, etc.) to use pre-defined images and configurations that do not require pulling additional settings or scripts during execution. Use trusted, version-controlled base images and scripts. 3. Utilize Secure Variables and Templates: Leverage GitLab''s features for secure variables and include templates for common configurations to ensure that environment settings and commands are passed securely and consistently across all projects.'

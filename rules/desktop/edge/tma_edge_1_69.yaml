@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.69
+title: 'Ensure ''Block tracking of users'' web-browsing activity'' is set to ''Enabled: Balanced (Blocks harmful trackers and trackers from sites user has not visited; content and ads will be less personalized)'' or higher'
+description: 'This policy setting controls whether websites may track user''s web-browsing activity. The recommended state for this setting is: Enabled: Balanced (Blocks harmful trackers and trackers from sites user has not visited; content and ads will be less personalized). Rationale: Allowing websites to track user web-browsing activity allows for sites to gather information which could be potentially harmful and used to target users and businesses. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:TrackingPrevention (REG_DWORD); compliant when it is 2 or 3. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: low
+tags:
+- edge
+- browser
+- cis-l1
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.69 Ensure ''Block tracking of users'' web-browsing activity'' is set to ''Enabled: Balanced (Blocks harmful trackers and trackers from sites user has not visited; content and ads will be less personalized)'' or higher'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''TrackingPrevention'' -ErrorAction SilentlyContinue).''TrackingPrevention''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2,3) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'TrackingPrevention' -Value 2 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,19 @@
+id: TMA-IIS-4.6
+title: Ensure 'HTTP Trace Method' is disabled
+description: The HTTP TRACE method returns the contents of client HTTP requests in the entity- body of the TRACE response. Attackers could leverage this behavior to access sensitive information, such as authentication data or cookies, contained in the HTTP headers of the request. One such way to mitigate this is by using the <verbs> element of the <requestFiltering> collection. A server-level request filtering verb rule must deny TRACE (allowed=false). PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.6 Ensure 'HTTP Trace Method' is disabled
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $t = @(Get-WebConfiguration -Filter 'system.webServer/security/requestFiltering/verbs/add' -PSPath 'MACHINE/WEBROOT/APPHOST' | Where-Object { $_.verb -eq 'TRACE' -and $_.allowed -eq $false }); if ($t.Count -gt 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Add-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/requestFiltering/verbs -Name . -Value @{verb='TRACE';allowed='False'}

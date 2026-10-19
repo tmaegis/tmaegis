@@ -1,0 +1,39 @@
+id: TMA-MONGODB-7.1
+title: Ensure appropriate key file permissions are set
+description: In the Shared Cluster, the certificate or keyfile is utilized for authentications. Implementing proper file permissions on the certificate or keyfile will prevent unauthorized access to it. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). Every keyFile, PEMKeyFile, certificateKeyFile and clusterFile referenced in the config must be mode 600 or stricter (a referenced file that cannot be read also fails).
+target: mongodb
+level: 1
+severity: high
+tags:
+- mongodb
+- permissions
+- tls
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 7.1 Ensure appropriate key file permissions are set
+audit:
+  type: command
+  command: '[ -r /etc/mongod.conf ] || exit 1; bad=0; for f in $(awk ''/^[[:space:]]*(keyFile|PEMKeyFile|certificateKeyFile|clusterFile):/ {v=$2; gsub(/["\047]/, "", v); print v}'' /etc/mongod.conf); do p=$(stat -c %a "$f" 2>/dev/null) || { bad=1; continue; }; [ $((0$p & 077)) -eq 0 ] || bad=1; done; [ $bad -eq 0 ] && echo compliant || echo noncompliant'
+  expected_output: compliant
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -r /etc/mongod.conf ] || exit 0
+    for f in $(awk '/^[[:space:]]*(keyFile|PEMKeyFile|certificateKeyFile|clusterFile):/ {v=$2; gsub(/["\047]/, "", v); print v}' /etc/mongod.conf); do
+      [ -f "$f" ] || continue
+      id mongodb >/dev/null 2>&1 && chown mongodb:mongodb "$f"; chmod 600 "$f"
+    done; true
+  guidance: "chmod 600 <keyfile/PEM key> and chown mongodb:mongodb <keyfile/PEM key> for every key file referenced in /etc/mongod.conf."

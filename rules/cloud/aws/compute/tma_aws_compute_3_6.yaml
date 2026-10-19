@@ -1,0 +1,18 @@
+id: TMA-AWS-COMPUTE-3.6
+title: Ensure secrets are not passed as container environment variables in Amazon ECS task definitions
+description: 'Ensure that sensitive secrets, such as AWS_ACCESS_KEY_ID, are not passed as environment variables in Amazon ECS task definitions. Use more secure methods, such as secrets management services like AWS Secrets Manager or AWS Systems Manager Parameter Store, to inject these credentials into containers. Note: This recommendation assumes that only the latest active revision of a task definition is in use. If older revisions are in use, apply the audit and remediation procedures to those revisions as needed. Passing secrets as environment variables exposes them to potential compromise, as they can be easily accessed by any process running within the container or by unauthorized users. This practice can lead to the unintended leakage of sensitive information.'
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+- containers
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 3.6 Ensure secrets are not passed as container environment variables in Amazon ECS task definitions
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. Click JSON. 6. For each element under containerDefinitions, ensure that the environment parameter does not contain AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or ECS_ENGINE_AUTH_DATA. 7. Repeat steps 1-6 for each task definition. From Command Line: Run the following command to list task definitions: aws ecs list-task-definitions For the latest revision of a task definition, run the following command: aws ecs describe-task-definition --task-definition <task-definition-arn> -- query ''taskDefinition.containerDefinitions[*].environment[*].name'' Ensure that the command does not contain AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or ECS_ENGINE_AUTH_DATA. Repeat for each task definition.'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. Click Create new revision. 6. Click Create new revision with JSON. 7. For each element under containerDefinitions, in the environment parameter, remove any objects with a name matching AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or ECS_ENGINE_AUTH_DATA. 8. Click Create. 9. Repeat steps 1-8 for each task definition requiring remediation. Note: When a task definition is updated, running tasks launched from the previous task definition remain unchanged. Updating a running task requires redeploying it with the new task definition.'

@@ -1,0 +1,40 @@
+id: TMA-FORTIGATE-2.1.4
+title: Ensure correct system time is configured through NTP
+description: You can either manually set the FortiOS system time, or configure the device to automatically keep its system time correct by synchronizing with a Network Time Protocol (NTP) server. These settings enable the use of primary and secondary NTP servers to provide redundancy in case of a failure involving the primary NTP server. PASS requires set ntpsync enable in config system ntp; confirm synchronisation with 'diag sys ntp status'. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- time
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.1.4 Ensure correct system time is configured through NTP
+audit:
+  type: config_regex
+  pattern: (?m)^config system ntp\n(?:[ \t]+[^\n]*\n)*?[ \t]+set ntpsync enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system ntp
+        set ntpsync enable
+        set type custom
+        config ntpserver
+            edit 1
+                set server "pool.ntp.org"
+            next
+            edit 2
+                set server "1.1.1.1"
+            next
+        end
+    end
+    # CIS guidance:
+    You can only customize NTP setting using CLI. In this example, we'll assign pool.ntp.org as primary NTP server and 1.1.1.1 as secondary NTP server.
+    config system ntp
+        set type custom
+        config ntpserver
+            edit 1
+                set server pool.ntp.org
+            next
+            edit 2
+                set server 1.1.1.1
+            end
+        end

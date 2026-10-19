@@ -1,0 +1,23 @@
+id: TMA-CISCO-ASA-3.2
+title: Ensure intrusion prevention is enabled for untrusted interfaces
+description: Enables the intrusion prevention with the IP audit feature on untrusted interfaces. The intrusion prevention is an additional feature for which the security appliance audits the traffic in order to identify vulnerability exploits. This is achieved because specific signatures are matched in the traffic. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 3.2 Ensure intrusion prevention is enabled for untrusted interfaces
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^ip audit name \S+ attack action [^\n]*\b(?:drop|reset)\b.*^ip audit interface \S+ \S+)|(?s:^ip audit interface \S+ \S+.*^ip audit name \S+ attack action [^\n]*\b(?:drop|reset)\b)
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the Enterprise standard action <prevention_action> to be performed when an attack signature is matched. It is to be chosen between 'drop' (The packet is dropped) and 'reset' (The packet is dropped and the connection closed)
+    - Step 2: Run the following to enable the audit policy against the attack signatures with the Enterprise standard action
+    ip audit name <audit_name> attack action alarm <prevention_action>
+    - Step 3: Identify the untrusted interface <interface_name>
+    - Step 4: Run the following to enable the intrusion prevention on the untrusted interface
+    ip audit interface <interface_name> <audit_name>

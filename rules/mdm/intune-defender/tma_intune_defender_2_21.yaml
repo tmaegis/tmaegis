@@ -1,0 +1,20 @@
+id: TMA-INTUNE-DEFENDER-2.21
+title: 'Ensure ''ASR: Block persistence through WMI event subscription'' is set to ''Block'''
+description: 'This rule prevents malware from abusing WMI to attain persistence on a device. Note: If CcmExec.exe (SCCM Agent) is detected on the device, the ASR rule is classified as "not applicable" in Defender for Endpoint settings in the Microsoft Defender portal. The recommended state for this setting is: Block. Audit: reads the Intune PolicyManager ASR rules value (via the WinningProvider GUID) and requires the rule entry e6db77e5-3df2-4cf1-b95a-636979351e5b=1 (Block).'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.21 Ensure ''ASR: Block persistence through WMI event subscription'' is set to ''Block'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$p = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\current\device\Defender'' -Name ''AttackSurfaceReductionRules_WinningProvider'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules_WinningProvider''; if (-not $p) { ''non-compliant: no ASR WinningProvider'' } else { $p = ([string]$p).Trim(''{}''); $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\'' + $p + ''\default\Device\Defender''; if (-not (Test-Path $k)) { $k = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\PolicyManager\Providers\{'' + $p + ''}\default\Device\Defender'' }; $v = (Get-ItemProperty -Path $k -Name ''AttackSurfaceReductionRules'' -ErrorAction SilentlyContinue).''AttackSurfaceReductionRules''; $have = @(([string]$v) -split ''\|'' | ForEach-Object { $_.Trim().ToLower() }); $want = @(''e6db77e5-3df2-4cf1-b95a-636979351e5b=1''); if (@($want | Where-Object { $have -contains $_ }).Count -gt 0) { ''compliant'' } else { ''non-compliant:
+    '' + $v } }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Block. Defender\Block persistence through WMI event subscription

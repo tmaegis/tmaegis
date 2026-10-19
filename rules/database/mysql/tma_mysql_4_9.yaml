@@ -1,0 +1,18 @@
+id: TMA-MYSQL-4.9
+title: Use MySQL TDE for At-Rest Data Encryption
+description: 'Transparent Data Encryption (TDE) at-rest encryption protects your critical data by enabling data-at-rest encryption in the database. It protects the privacy of your information, prevents data breaches and helps meet regulatory requirements. Fails when any of audit_log_encryption (Enterprise only), binlog_encryption, innodb_redo_log_encrypt, innodb_undo_log_encrypt or table_encryption_privilege_check is OFF/NONE, or any InnoDB tablespace is unencrypted. Backup encryption is not checked. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- encryption
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 4.9 Use MySQL TDE for At-Rest Data Encryption
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF((SELECT COUNT(*) FROM performance_schema.global_variables WHERE VARIABLE_NAME IN ('audit_log_encryption','binlog_encryption','innodb_redo_log_encrypt','innodb_undo_log_encrypt','table_encryption_privilege_check') AND VARIABLE_VALUE IN ('OFF','NONE')) = 0 AND (SELECT COUNT(*) FROM information_schema.INNODB_TABLESPACES WHERE NAME NOT IN ('innodb_temporary','sys/sys_config') AND ENCRYPTION = 'N') = 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Load a keyring component, then SET PERSIST table_encryption_privilege_check=ON, binlog_encryption=ON, innodb_redo_log_encrypt=ON, innodb_undo_log_encrypt=ON; set default_table_encryption=ON; ALTER TABLESPACE mysql ENCRYPTION='Y'; ALTER TABLE <t> ENCRYPTION='Y' (locks the table); encrypt audit logs and backups as well.

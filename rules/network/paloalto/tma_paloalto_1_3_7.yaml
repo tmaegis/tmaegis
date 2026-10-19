@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-1.3.7
+title: Ensure 'Required Password Change Period' is less than or equal to 90 days
+description: 'This defines how long a user can use a password before it expires. PASS requires password-change expiration-period between 1 and 90 days. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- authentication
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.3.7 Ensure 'Required Password Change Period' is less than or equal to 90 days
+audit:
+  type: config_regex
+  pattern: (?m)^set mgt-config password-complexity password-change expiration-period (?:[1-9]|[1-8]\d|90)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set mgt-config password-complexity password-change expiration-period 90
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Management > Minimum Password Complexity. Set Required Password Change Period (days) to less than or equal to 90

@@ -1,0 +1,20 @@
+id: TMA-APACHE-12.3
+title: Ensure Apache AppArmor Profile is in Enforce Mode
+description: 'AppArmor profiles may be in one of three modes: disabled, complain or enforce. In the complain mode, any violations of the access controls are logged but the restrictions are not enforced. Also, once a profile mode has been changed, it is recommended to restart the Apache server, otherwise the currently running process may not be confined by the policy. aa-status must list running apache2 processes only under "processes are in enforce mode" (none unconfined or in complain mode); fails when Apache is not running. Not applicable without /etc/apparmor.d.'
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- apparmor
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 12.3 Ensure Apache AppArmor Profile is in Enforce Mode
+audit:
+  type: command
+  shell: bash
+  command: out=$(aa-status 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '/processes are in enforce mode/{s="e"; next} /processes are (in complain|unconfined|in kill|in prompt)/{s="x"; next} /profiles are/{s=""; next} /apache2|httpd/{if(s=="e") e=1; if(s=="x") bad=1} END{print (e&&!bad)?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apparmor.d
+remediation:
+  type: iac_patch
+  command: aa-enforce /usr/sbin/apache2 (after tuning the profile in complain mode), then restart Apache.

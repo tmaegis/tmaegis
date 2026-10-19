@@ -1,0 +1,17 @@
+id: TMA-AWS-COMPUTE-12.14
+title: Ensure Lambda recursive invocation detection is enabled
+description: Lambda functions triggered by event sources such as S3 or SQS can create recursive invocation loops when they write back to the same resource that triggers them. AWS Lambda supports recursive loop detection at the account level which automatically stops recursive invocations after approximately 16 loops. This feature should remain enabled and be supplemented with reserved concurrency limits on functions with recursive risk. A recursive invocation loop can scale Lambda to maximum concurrency within minutes, resulting in runaway costs (potentially tens of thousands of dollars) and denial of service to other Lambda workloads in the account. Recursive loop detection provides an automatic circuit breaker, while reserved concurrency limits provide a per-function safeguard against unbounded scaling.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.14 Ensure Lambda recursive invocation detection is enabled
+audit:
+  type: manual
+  command: '1. List all Lambda functions in the region: aws lambda list-functions --region $AWS_REGION --query ''Functions[].FunctionName'' --output table 2. For each function, check whether recursive loop detection is enabled (the account-level default is Terminate): aws lambda get-function-recursion-config --function-name <function-name> -- region $AWS_REGION \ --query ''RecursiveLoop'' --output text The function Fails if the returned value is Allow (detection disabled). The Passing value is Terminate.'
+remediation:
+  type: iac_patch
+  command: '1. For each function that Failed the audit, re-enable recursive loop detection: aws lambda put-function-recursion-config --function-name <function-name> -- region $AWS_REGION \ --recursive-loop Terminate 2. Verify by repeating audit step 2 on the function.'

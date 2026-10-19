@@ -1,0 +1,30 @@
+id: TMA-BIND-6.2
+title: Hide Nameserver ID
+description: The server-id option provides a server identifier that will be returned in response to an NSID query. An NSID query is described in RFC-5001, and is a method to identify servers in an environment where there are multiple DNS servers sharing the same IP address. The audit requires server-id to be unset (default none) or none, so id.server/NSID queries return nothing. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- information-disclosure
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 6.2 Hide Nameserver ID
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    s=$(printf '%s\n' "$opts" | grep -Eo '[{; ]server-id [^;]*;')
+    case "$s" in ''|*' none;'|*'"none";') ;; *) echo "server-id disclosed: $s"; exit 1 ;; esac
+    printf '%s\n' "$opts" | grep -Eq '[{; ]hostname "[^"]+";' && ! printf '%s\n' "$opts" | grep -Eq '[{; ]hostname "?none"?;' && { echo 'hostname statement discloses a name'; exit 1; }
+    echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: To explicitly disable NSID support, add or modify the server-id option in the global BIND options with a value of none as shown below. server-id none;

@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-9.31
+title: Ensure that file systems are mounted Read Only wherever possible
+description: Some zFS file systems contain data that is not expected to change. For example, a file system may be dedicated to containing the binary executables of a specific application. You generally do not expect this data to change until the next time you apply service. Mounting a file system in read-only mode protects against accidental or malicious changes to the data within.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.31 Ensure that file systems are mounted Read Only wherever possible
+audit:
+  type: manual
+  command: 'Mounting a file system in read-only mode protects against accidental or malicious changes to the data within. Audit Procedure The UNIX shell command named df displays a list of the currently mounted file systems, by mount point (UNIX directory path) and data set name. Using the verbose option, yields additional information, including the mount mode. Issue the following shell command: df -v The mount mode will be displayed as Read Only or Read/Write. Verify that zFS file systems containing data that is not expected to change are mounted as Read Only.'
+remediation:
+  type: iac_patch
+  command: For each Read/Write-mounted file system in which you don't expect data to change, plan to remount it in Read Only mode as application availability allows, and update the BPXPRMxx member of SYS1.PARMLIB to make the change effective at the next IPL.

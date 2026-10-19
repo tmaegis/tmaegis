@@ -1,0 +1,18 @@
+id: TMA-COS-6.2.5
+title: Ensure root is the only UID 0 account
+description: Any account with UID 0 has superuser privileges on the system. This access must be limited to only the default root account and only from the system console. Administrative access must be through an unprivileged account using an approved mechanism as noted in Item 5.6 Ensure access to the su command is restricted.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 6.2.5 Ensure root is the only UID 0 account
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v awk >/dev/null 2>&1 || { echo "step1: awk not installed"; return 1; }; o=$(bash -c ''awk -F: ''"''"''($3 == 0) { print $1 }''"''"'' /etc/passwd'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- root || { echo step1: missing root; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove any users other than root with UID 0 or assign them a new UID if appropriate.

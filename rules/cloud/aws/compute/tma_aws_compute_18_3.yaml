@@ -1,0 +1,17 @@
+id: TMA-AWS-COMPUTE-18.3
+title: Ensure ECR repositories use immutable image tags
+description: ECR repositories can be configured with either MUTABLE (default) or IMMUTABLE image tag mutability. When set to MUTABLE, an image tag can be overwritten by pushing a new image with the same tag. When set to IMMUTABLE, once a tag is assigned to an image, it cannot be reassigned to a different image. Mutable image tags allow an attacker who gains push access to a repository (via compromised CI/CD credentials or overly permissive repository policies) to replace a legitimate image with a malicious one using the same tag (e.g., "latest", "v2.1.0"). When services pull the image by tag, they deploy the attacker's payload. Immutable tags ensure that a tagged image cannot be replaced, providing supply chain integrity guarantees.
+target: aws
+level: 1
+severity: low
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 18.3 Ensure ECR repositories use immutable image tags
+audit:
+  type: manual
+  command: '1. List all ECR repositories in the region: aws ecr describe-repositories --region $AWS_REGION \ --query ''repositories[].repositoryName'' --output table 2. For each repository returned above, check its image tag mutability setting: aws ecr describe-repositories --repository-names <repo-name> --region $AWS_REGION \ --query ''repositories[].imageTagMutability'' --output text - The repository Fails if the returned value is MUTABLE. The Passing value is IMMUTABLE.'
+remediation:
+  type: iac_patch
+  command: 'For each repository that Failed the audit, set image tag immutability: aws ecr put-image-tag-mutability --repository-name <repo-name> --region $AWS_REGION \ --image-tag-mutability IMMUTABLE'

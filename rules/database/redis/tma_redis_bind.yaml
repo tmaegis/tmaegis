@@ -1,0 +1,20 @@
+id: TMA-REDIS-BIND
+title: Ensure Redis binds only to specific interfaces
+description: Without a bind directive, or with 0.0.0.0 / * / ::*, Redis listens on every interface. Compliant when a bind line exists and lists no wildcard address. Checks /etc/redis/redis.conf (SKIP when it does not exist; RHEL uses /etc/redis.conf).
+target: redis
+level: 1
+severity: high
+tags:
+- redis
+- database
+- network
+reference: CIS Redis Benchmark - Network Security / Bind Address (verify section number for your release)
+audit:
+  type: command
+  command: 'f=/etc/redis/redis.conf; [ -r "$f" ] || exit 1; awk ''$1 == "bind" {b = 1; for (i = 2; i <= NF; i++) if ($i ~ /^-?(0\.0\.0\.0|\*|::|::\*|::0)$/) w = 1} END {print (b && !w) ? "compliant" : "noncompliant"}'' "$f"'
+  expected_output: compliant
+  requires_file:
+  - /etc/redis/redis.conf
+remediation:
+  type: iac_patch
+  command: Set 'bind 127.0.0.1 -::1' plus only the private addresses clients use in redis.conf and restart Redis

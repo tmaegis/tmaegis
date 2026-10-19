@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-6.9
+title: Ensure the TLSv1.0 and TLSv1.1 Protocols are Disabled
+description: Transport Layer Security (TLS), and its predecessor Secure Sockets Layer (SSL) are cryptographic protocols which can be used to encrypt data sent between client and server. Passes for TLSv1.2 or TLSv1.3 (preferred). Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- tls
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 6.9 Ensure the TLSv1.0 and TLSv1.1 Protocols are Disabled
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SELECT CASE WHEN current_setting('ssl_min_protocol_version') IN ('TLSv1.2','TLSv1.3') THEN 'compliant' ELSE 'noncompliant' END" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET ssl_min_protocol_version = 'TLSv1.3'" -c "SELECT pg_reload_conf()"

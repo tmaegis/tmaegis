@@ -1,0 +1,24 @@
+id: TMA-CISCO-ASA-1.6.3
+title: Ensure 'RSA key pair' is greater than or equal to 2048 bits
+description: Generates an RSA key pair used by SSH protocol of at least 2048 bits. Secure Shell (SSH) is a secure remote-login protocol. The ASA allows SSH connections to the ASA for management purposes and supports the SSH DES and 3DES ciphers. SSH uses a key-exchange method based on Rivest-Shamir-Adleman (RSA) public-key. Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: cisco-asa
+level: 2
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.6.3 Ensure 'RSA key pair' is greater than or equal to 2048 bits
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. - Step 1: Run the following to determine whether the RSA key modulus size is equal or greater than 2048 bits. hostname#sh crypto key mypubkey rsa | i _Modulus_Size_.bits.._[2-9][0-9][0-9][0-9] Ths is an example of output where the key pair modulus size is 2048 bits: Asa# sh crypto key mypubkey rsa | i _Modulus_Size_.bits.._[2-9][0-9][0-9][0-9] Modulus Size (bits): 2048 - Step 2: If this output is not displayed, either there is no key configured, either the available modulus size is less than 2048 bits. The system is not compliant.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the enterprise standard RSA key size greater or equal than 2048 bits
+    - Step 2: If the audit procedure revealed existing non-compliant key pairs, run the following to remove them:
+    crypto key zeroize rsa
+    - Step 3: Run the following to generate compliant RSA key pair:
+    crypto key generate rsa modulus <enterprise_RSA_key_size>
+    - Step 4: Run the following to save the RSA keys to persistent Flash memory
+    write memory

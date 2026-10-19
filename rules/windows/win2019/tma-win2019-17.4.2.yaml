@@ -1,0 +1,20 @@
+id: TMA-WIN2019-17.4.2
+title: Ensure 'Audit Directory Service Changes' is set to include 'Success' (DC only)
+description: This subcategory reports changes to objects in Active Directory Domain Services (AD DS). The types of changes that are reported are create, modify, move, and undelete operations that are performed on an object. DS Change auditing, where appropriate, indicates the old and new values of the changed properties of the objects that were changed. Only objects with SACLs cause audit events to be generated, and only when they are accessed in a manner that matches their SACL. Some objects and properties do not cause audit events to be generated due to settings on the object class in the schema. This su
+target: windows
+os_family:
+- windows-server-2019-dc
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 17.4.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce923c-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce923c-69ae-11d9-bed3-505054503030}' /success:enable

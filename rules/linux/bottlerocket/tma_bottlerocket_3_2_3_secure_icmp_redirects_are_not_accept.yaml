@@ -1,0 +1,41 @@
+id: TMA-BOTTLEROCKET-3.2.3
+title: Ensure secure ICMP redirects are not accepted
+description: Secure ICMP redirects are the same as ICMP redirects, except they come from gateways listed on the default gateway list. It is assumed that these gateways are known to your system, and that they are likely to be secure. The audit reads the running values from /proc/sys. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 2
+severity: low
+tags:
+- bottlerocket
+- network
+reference: CIS Bottlerocket Benchmark v1.0.0 - 3.2.3 Ensure secure ICMP redirects are not accepted
+audit:
+  type: command
+  command: |-
+    bad=0
+    chk() { f=/proc/sys/$(printf %s "$1" | tr . /); v=$(cat "$f" 2>/dev/null) || { echo "$1: not readable"; bad=1; return; }; [ "$v" = "$2" ] || { echo "$1 = $v (expected $2)"; bad=1; }; }
+    chk net.ipv4.conf.all.secure_redirects 0
+    chk net.ipv4.conf.default.secure_redirects 0
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    apiclient apply <<EOF
+    [settings.kernel.sysctl]
+    "net.ipv4.conf.all.secure_redirects" = "0"
+    "net.ipv4.conf.default.secure_redirects" = "0"
+    EOF
+  guidance: "Run the following command to set the active kernel parameters and persist the settings: # apiclient apply <<EOF [settings.kernel.sysctl] \"net.ipv4.conf.all.secure_redirects\" = \"0\" \"net.ipv4.conf.default.secure_redirects\" = \"0\" EOF Run the following command to flush the routing cache: # sysctl -w net.ipv4.route.flush=1"

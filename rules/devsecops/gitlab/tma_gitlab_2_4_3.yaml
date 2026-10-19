@@ -1,0 +1,16 @@
+id: TMA-GITLAB-2.4.3
+title: Ensure dependencies are validated before being used
+description: Validate every dependency of the pipeline before use. To ensure that a dependency used in a pipeline is trusted and has not been infected by malicious actor (for example, the codecov incident), validate dependencies before using them. This can be accomplished by comparing the checksum of the dependency to its checksum in a trusted source. If a difference arises, this is a sign that an unknown actor has interfered and may have added malevolent code. If this dependency is used, it will infect the environment, which could end in a massive breach and leave the organization exposed to data leaks, etc.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 2.4.3 Ensure dependencies are validated before being used
+audit:
+  type: manual
+  command: 'For every dependency used in every pipeline, ensure it has been validated. - On the left sidebar, select Code > Repository. - Check if a .gitlab-ci.yml file is at the root of your repository - Verify the following job is included in your .gitlab-ci.yml file: include: - template: Jobs/Dependency-Scanning.gitlab-ci.yml - Go to Build > Pipelines and confirm that the latest pipeline completed successfully.'
+remediation:
+  type: iac_patch
+  command: 'For every dependency used in every pipeline, validate each one. - On the left sidebar, select Code > Repository. - Check if a .gitlab-ci.yml file is at the root of your repository - Include the following job is included in your .gitlab-ci.yml file: include: - template: Jobs/Dependency-Scanning.gitlab-ci.yml - Go to Build > Pipelines and confirm that the latest pipeline completed successfully. In the pipeline, dependency scanning runs and the vulnerabilities are detected automatically. - Go to Secure > Vulnerability report. - Select each of the vulnerabilities by selecting the checkbox in each row. - Review the recommended solution for each vulnerability and investigate further if needed. - From the Set status dropdown list select the relevant option and select Change status.'

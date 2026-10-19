@@ -1,0 +1,48 @@
+id: TMA-COS-6.2.8
+title: Ensure users' home directories permissions are 750 or more restrictive
+description: While the system administrator can establish secure permissions for users' home directories, the users can easily override these. Group or world-writable user home directories may enable malicious users to steal or modify other users' data or to gain another user's system privileges.
+target: cos
+level: 2
+severity: low
+tags:
+- access-control
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 6.2.8 Ensure users' home directories permissions are 750 or more restrictive
+audit:
+  type: manual
+  command: 'Run the following script and verify no results are returned: #!/bin/bash grep -E -v ''^(system-halt|sync|system-shutdown)'' /etc/passwd | awk -F: ''($7 != "''"$(which nologin)"''" && $7 != "/bin/false") { print $1 " " $6 }'' | while read user dir; do if [ ! -d "$dir" ]; then echo "The home directory ($dir) of user $user does not exist." else dirperm=$(ls -ld $dir | cut -f1 -d" ") if [ $(echo $dirperm | cut -c6) != "-" ]; then echo "Group Write permission set on the home directory ($dir) of user $user" fi if [ $(echo $dirperm | cut -c8) != "-" ]; then echo "Other Read permission set on the home directory ($dir) of user $user" fi if [ $(echo $dirperm | cut -c9) != "-" ]; then echo "Other Write permission set on the home directory ($dir) of user $user" fi if [ $(echo $dirperm | cut -c10) != "-" ]; then echo "Other Execute permission set on the home directory ($dir) of user $user" fi fi done'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    vs=$(awk -F/ '/^\// && $NF != "nologin"' /etc/shells)
+    # "user home" for interactive users whose home is a plain user directory
+    tma_homes() { while IFS=: read -r u p uid gid c h sh; do
+      case "$u" in +*|-*) continue;; esac
+      printf '%s\n' "$vs" | grep -qxF -- "$sh" || continue
+      case "$h" in /|""|/bin*|/sbin*|/usr*|/etc*|/proc*|/sys*|/dev*|/boot*|/run*|/var/run*) continue;; esac
+      echo "$u $h"; done < /etc/passwd; }
+    tma_homes | while read -r u h; do
+      if [ ! -d "$h" ]; then
+        case "$h" in /home/*|/root) ;; *) continue;; esac
+        mkdir -p "$h" && chown "$u:$(id -gn "$u")" "$h" && chmod 0750 "$h"
+        continue
+      fi
+      [ "$(stat -Lc %U "$h")" = "$u" ] || chown "$u" "$h"
+      mo=$(stat -Lc %a "$h"); chmod "$(printf '%o' $((8#$mo & ~8#027 & 8#7777)))" "$h"
+    done
+    true
+  guidance: "Making global modifications to user home directories without alerting the user community can result in unexpected outages and unhappy users. Therefore, it is recommended that a monitoring policy be established to report user file permissions and determine the action to be taken in accordance with site policy."

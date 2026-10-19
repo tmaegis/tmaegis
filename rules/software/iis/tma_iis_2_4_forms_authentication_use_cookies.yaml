@@ -1,0 +1,19 @@
+id: TMA-IIS-2.4
+title: Ensure 'forms authentication' is set to use cookies
+description: Forms Authentication can be configured to maintain the site visitor's session identifier in either a URI or cookie. It is recommended that Forms Authentication be set to use cookies. Wherever forms authentication is used, forms cookieless must be UseCookies. Compliant when forms authentication is not used. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- authentication
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 2.4 Ensure 'forms authentication' is set to use cookies
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $a = Get-WebConfiguration -Filter 'system.web/authentication' -PSPath $_; $f = Get-WebConfiguration -Filter 'system.web/authentication/forms' -PSPath $_; [string]$a.mode -eq 'Forms' -and ([string]$f.cookieless -ne 'UseCookies') }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST/<site>' -Filter system.web/authentication/forms -Name cookieless -Value UseCookies

@@ -1,0 +1,17 @@
+id: TMA-AIX-4.2.6
+title: Ensure legacy remote daemon support is not available
+description: 'Ensure that software that supports passwordless and/or clear-text password connections is disabled. Examples include daemons such as: rlogind, rshd and talkd. Remote services that either send or receive usernames and passwords in clear text and should not be used. Audit: every file and directory of bos.net.tcp.rcmd_server / bos.net.tcp.rcmd must have mode 000 (or the filesets are absent).'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- services
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.2.6 Ensure legacy remote daemon support is not available
+audit:
+  type: command
+  command: command -v lslpp >/dev/null 2>&1 || exit 1; out=$( { for fs in bos.net.tcp.rcmd_server bos.net.tcp.rcmd; do lslpp -L $fs >/dev/null 2>&1 || continue; lslpp -f $fs | grep -E "^ +/" | while read fn rest; do [ -L "$fn" ] && continue; if [ -d "$fn" ]; then ls -led "$fn" | grep -Ev "^d---------- "; elif [ -f "$fn" ]; then ls -led "$fn" | grep -Ev "^----------- "; fi; done; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Use the following script to disable the files in these packages: Note: In this script, disable means chmod 0 ...; Remove any ACL; and update any entries in the TCB rather then remove entries. for fileset in bos.net.tcp.rcmd_server bos.net.tcp.rcmd do lslpp -L ${fileset} >/dev/null 2>&1 if [[ $? -eq 0 ]] then lslpp -f ${fileset} | /usr/bin/egrep "^ +\/" | while read command rest do # aclput will also do a classic chmod on the standard file mode bits /usr/bin/aclput </dev/null ${command} /usr/sbin/chtcb off ${command} # if in the TSD as a privileged command - make sure accessauths attribute is cleare lssecattr -c ${command} && setsecattr -c accessauths= ${command} # ignore errors, if any, when the file is not already in the TSD # Note: trustchk does not (always) update the attribute ''accessauths''. Ignore this if it occurs trustchk -u ${command} mode accessauths done # update the kernal security tables setkst fi done'

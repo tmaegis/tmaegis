@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.10.1
+title: 'Ensure ''Configure monitoring for incoming and outgoing file and program activity'' is set to ''Enabled: bi-directional (full on access)'''
+description: 'This policy setting configures monitoring for incoming and outgoing files, without having to turn off monitoring entirely. This setting only applies to NTFS volumes. For any other file system types, full monitoring of file and program activity will be present on those volumes. The recommended state for this setting is: Enabled: bi-directional (full on access). Rationale: When running an antivirus solution such as Microsoft Defender Antivirus, it is important to ensure that it is configured to monitor in real-time for suspicious activity. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection:RealtimeScanDirection (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.10.1 Ensure ''Configure monitoring for incoming and outgoing file and program activity'' is set to ''Enabled: bi-directional (full on access)'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection'' -Name ''RealtimeScanDirection'' -ErrorAction SilentlyContinue).''RealtimeScanDirection''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RealtimeScanDirection' -Value 0 -PropertyType DWord -Force | Out-Null

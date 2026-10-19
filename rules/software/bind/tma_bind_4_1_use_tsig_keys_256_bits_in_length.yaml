@@ -1,0 +1,29 @@
+id: TMA-BIND-4.1
+title: Use TSIG Keys 256 Bits in Length
+description: The TSIG secret keys used by the name server should be generated from a good source of entropy and should be at least 256 bits in length. The audit extracts every key secret from the effective configuration and requires a base64 length of at least 44 characters (256-bit key). The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- tsig
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 4.1 Use TSIG Keys 256 Bits in Length
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    sec=$(printf '%s\n' "$flat" | grep -Eo 'secret "[^"]*"' | sed 's/^secret "//; s/"$//')
+    bad=$(printf '%s\n' "$sec" | awk 'length($0) > 0 && length($0) < 44 {n++} END {print n + 0}')
+    [ "$bad" -eq 0 ] && echo compliant || echo "$bad TSIG secret(s) shorter than 256 bits (44 base64 characters)"
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: 'For remediation, replace any keys which are too short with a securely generated key with a length of 256 or 512. The tsig-keygen command below can be used to generate a key. # tsig-keygen -a sha256 ns1-ns4.example.net > ns1-ns4.example.net.key # cat ns1-ns4.example.net.key key "ns1-ns4.example.net" { algorithm hmac-sha256; secret "ezoZopbE4Q73HShuFYlf3FRvLWjtNXI5fd0TeQAYOug="; }; Ensure the key file has the appropriate file permissions, and include the file in the named configuration file.'

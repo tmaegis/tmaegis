@@ -1,0 +1,20 @@
+id: TMA-WIN2025-18.9.26.5
+title: 'Ensure ''Password Settings: Password Length'' is set to ''Enabled: 15 or more'' (MS only)'
+description: 'This policy setting configures the Windows LAPS Password Settings policy for password length. The recommended state for this setting is: Enabled: 15 or more. Note: Organizations that utilize third-party commercial software to manage unique & complex local Administrator passwords on domain members may opt to disregard these LAPS recommendations. Note #2: Windows LAPS does not support standalone computers - they must be joined to an Active Directory domain or Entra ID (formerly Azure Active Directory).'
+target: windows
+os_family:
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.9.26.5
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS'' -Name ''PasswordLength'' -ErrorAction SilentlyContinue).''PasswordLength''; if (-not ($null -ne $v -and @(15) -contains [int64]$v)) { $bad += ''PasswordLength='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Name 'PasswordLength' -Value 15 -PropertyType DWord -Force | Out-Null

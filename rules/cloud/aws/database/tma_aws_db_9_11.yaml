@@ -1,0 +1,18 @@
+id: TMA-AWS-DB-9.11
+title: Ensure Neptune DB instances are deployed across multiple Availability Zones (AZs)
+description: Deploying Amazon Neptune across multiple Availability Zones means configuring the database cluster nodes (primary and replicas) to be distributed in different AZs within the same AWS region. This multi-AZ deployment improves fault tolerance and availability by mitigating risks associated with failure or degradation in a single Availability Zone. If the primary node or an AZ becomes unavailable, Neptune can automatically fail over to a replica in a different AZ, minimizing downtime and data unavailability. Distributing Neptune DBs across multiple AZs protects the database from localized infrastructure failures, such as power outages, networking disruptions, or hardware faults in a single AZ.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 9.11 Ensure Neptune DB instances are deployed across multiple Availability Zones (AZs)
+audit:
+  type: manual
+  command: 'List Multi-AZ status for all Neptune DB clusters aws neptune describe-db-clusters \ --query "DBClusters[*].{DBClusterIdentifier:DBClusterIdentifier,Engine:Engine,MultiAZ :MultiAZ}" - MultiAZ: true ⇒ Multi-AZ is enabled (compliant). - MultiAZ: false ⇒ Multi-AZ is not enabled (non-compliant).'
+remediation:
+  type: iac_patch
+  command: 'Enable Multi-AZ on Neptune DB clusters by adding a reader replica in a different Availability Zone. 1. Sign in to the AWS Management Console where the Aurora database cluster you are auditing resides. 2. Navigate to the Neptune Dashboard. - You can find this under the Database category. 3. Select the DB cluster where you want to create the reader instance. 4. Choose Actions, and then choose Add reader. 5. Configure the replica DB instance On the Create replica DB instance page, specify the following options: - DB instance class: Choose a DB instance class that matches or aligns with your primary instance (e.g., db.r5.large). This defines the processing and memory requirements for the Neptune replica. - Availability zone: Specify a different Availability Zone than the primary DB instance. This is critical for Multi-AZ deployment. The list shows only AZs that are mapped by the DB subnet group for the cluster. - Encryption: Enable or disable encryption (recommended: enable if primary
+    has encryption enabled). - Read replica source: Choose the identifier of the primary instance to create the Neptune replica for. - DB instance identifier: Enter a unique name for the instance in your r...'

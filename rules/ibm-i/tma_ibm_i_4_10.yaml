@@ -1,0 +1,16 @@
+id: TMA-IBM-I-4.10
+title: IBM Supplied User Profiles
+description: This section contains information about the IBM-supplied user profiles that are shipped with the system and Licensed Program Products. These profiles are used as object owners for various system functions. Some system functions also run under specific IBM-supplied user profiles. You must change the password for the QSECOFR profile after you install your system. This password is the same for every IBM i system and poses a security exposure until it is changed. However, do not change any other values for IBM-supplied user profiles.
+target: ibm-i
+level: 1
+severity: medium
+tags:
+- ibm-i
+- accounts
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 4.10 IBM Supplied User Profiles
+audit:
+  type: manual
+  command: 'Changes to IBM Supplied Profiles On a command line, type STRSQL and press Enter Copy or type the following SQL statement to the terminal and press Enter. SELECT AUTHORIZATION_NAME, NO_PASSWORD_INDICATOR, STATUS, USER_CLASS_NAME, INITIAL_PROGRAM_NAME, LIMIT_CAPABILITIES, SPECIAL_AUTHORITIES FROM QSYS2/USER_INFO WHERE AUTHORIZATION_NAME LIKE ''Q%'' AND NO_PASSWORD_INDICATOR = ''NO'' OR AUTHORIZATION_NAME LIKE ''Q%'' AND STATUS = ''*DISABLED'' OR AUTHORIZATION_NAME LIKE ''Q%'' AND USER_CLASS_NAME <> ''*USER'' OR AUTHORIZATION_NAME LIKE ''Q%'' AND INITIAL_PROGRAM_NAME <> ... (full steps: CIS section 4.10)'
+remediation:
+  type: iac_patch
+  command: 'Change any IBM-Supplied user profile found in the audit that are different from the defaults or values different from the list in the referenced table https://www.ibm.com/docs/en/i/7.5?topic=sup-supplied-user-profiles CHGUSRPRF USRPRF(<xxxxxx>) <parameter>(<xxxxxx>) Change any User Profile that is a group member of an IBM-Supplied user profile found in the audit to remove the IBM-Supplied user profile from its Group (GRPPRF) and/or Supplemental Group (SUPGRPPRF) parameters. CHGUSRPRF USRPRF(<xxxxxx>) GRPPRF(<xxxxxx>) SUPGRPPRF(<xxxxxx>) Note: Many of the IBM-supplied user profiles cannot be specified on CHGUSRPRF. If there are IBM supplied user profiles that don''t match the documented default values, they can be reset using the Reset Profile Attributes (QSYRESPA) API.'

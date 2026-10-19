@@ -1,0 +1,21 @@
+id: TMA-AZL2-1.1.2.1.1
+title: Ensure /tmp is a separate partition
+description: 'The /tmp directory is a world-writable directory used for temporary storage by all users and some applications. - IF - an entry for /tmp exists in /etc/fstab it will take precedence over entries in systemd default unit file. Note: In an environment where the main system is diskless and connected to iSCSI, entries in /etc/fstab may not take precedence. /tmp can be configured to use tmpfs. tmpfs puts everything into the kernel internal caches. It grows and shrinks to accommodate the files it contains and is able to swap unneeded pages out to swap space. It has maximum size limits which can be ad'
+target: linux
+os_family:
+- azurelinux-2
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS AKS Optimized Azure Linux 2 Benchmark v1.1.0 - 1.1.2.1.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /tmp >/dev/null 2>&1; then echo compliant; else echo /tmp' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'First ensure that systemd is correctly configured to ensure that /tmp will be mounted at boot time. # systemctl unmask tmp.mount For specific configuration requirements of the /tmp mount for your environment, modify /etc/fstab. Example of using tmpfs with specific mount options: tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0 Note: the size=2G is an example of setting a specific size for tmpfs. Example of using a volume or disk with specific mount options. The source location of the volume or disk will vary depending on your environment: <device> /tmp <fstype> defaults,nodev,nosuid,noexec 0 0'

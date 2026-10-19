@@ -1,0 +1,25 @@
+id: TMA-GITHUB-1.1.16
+title: Ensure force push code to branches is denied
+description: 'The "Force Push" option allows users with "Push" permissions to force their changes directly to the branch without a pull request, and thus should be disabled. The "Force Push" option allows users to override the existing code with their own code. This can lead to both intentional and unintentional data loss, as well as data infection with malicious code. Checks the default branch: force pushes are blocked. Satisfied by classic branch protection or an active ruleset (rules/branches). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 1
+severity: high
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.16 Ensure force push code to branches is denied
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    p=$(gh api "repos/$R/branches/$B/protection" --jq '.allow_force_pushes.enabled == false' 2>/dev/null) || p=false
+    s=$(gh api "repos/$R/rules/branches/$B" --jq 'any(.[]; .type == "non_fast_forward")' 2>/dev/null) || s=false
+    [ "$p" = true ] || [ "$s" = true ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Settings > Branches (or Rules > Rulesets) for the default branch: leave Allow force pushes unchecked (ruleset: Block force pushes).'

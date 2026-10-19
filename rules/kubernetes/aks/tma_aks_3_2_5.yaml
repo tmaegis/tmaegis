@@ -1,0 +1,26 @@
+id: TMA-AKS-3.2.5
+title: Ensure that the --make-iptables-util-chains argument is set to true
+description: The --make-iptables-util-chains setting ensures the kubelet creates the iptables utility hint chain used by other components to identify the node’s iptables configuration. This is important because it helps maintain predictable networking behavior on the worker node and supports components that rely on that hint to determine how iptables is configured on the host. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access. A missing makeIPTablesUtilChains means the default (true).
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- worker-node
+- kubelet
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 3.2.5 Ensure that the --make-iptables-util-chains argument is set to true
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { ! printf '%s' "$c" | grep -Eq '"makeIPTablesUtilChains":false'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediation note: In AKS, makeIPTablesUtilChains should be set to true. A blank result from a file or process-argument check is not automatically a finding, because Kubernetes defaults this setting to true and the value may not be written explicitly on the node. If the effective kubelet value is actually false, remediation should begin by validating the effective running configuration and then, if needed, use a Kubernetes-native node customization method rather than relying on ad hoc edits to individual worker nodes. • Verify the effective kubelet value first. Check the running kubelet configuration and confirm whether makeIPTablesUtilChains is actually true or false, because a blank file or process result may simply mean the kubelet is using its built-in default of true.'

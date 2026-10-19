@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.9.25.6
+title: 'Ensure ''Password Settings: Password Age (Days)'' is set to ''Enabled: 30 or fewer'''
+description: 'This policy setting configures the Windows LAPS Password Settings policy for password age. Because attackers can crack passwords, the more frequently the password is changed the less opportunity an attacker has to use a cracked password. The recommended state for this setting is: Enabled: 30 or fewer. Note: Organizations that utilize third-party commercial software to manage unique & complex local Administrator passwords on domain members may opt to disregard these LAPS recommendations. Note #2: Windows LAPS does not support standalone computers - they must be joined to an Active Directory dom'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.9.25.6
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS'' -Name ''PasswordAgeDays'' -ErrorAction SilentlyContinue).''PasswordAgeDays''; if (-not ($null -ne $v -and @(30) -contains [int64]$v)) { $bad += ''PasswordAgeDays='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Name 'PasswordAgeDays' -Value 30 -PropertyType DWord -Force | Out-Null

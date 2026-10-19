@@ -1,0 +1,19 @@
+id: TMA-DOCKER-3.21
+title: Ensure that the /etc/sysconfig/docker file permissions are set to 644 or more restrictively
+description: /etc/sysconfig/docker (daemon start-up options) must have mode 644 or more restrictive. The audit flags any existing candidate path (/etc/sysconfig/docker) with permission bits outside 644; not applicable when none exists.
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.21 Ensure that the /etc/sysconfig/docker file permissions are set to 644 or more restrictively
+audit:
+  type: command
+  command: for f in /etc/sysconfig/docker; do [ -e "$f" ] || continue; out=$(find "$f" -maxdepth 0 -perm /7133) || exit 1; [ -z "$out" ] || { echo "$f"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/sysconfig/docker
+remediation:
+  type: command
+  command: for f in /etc/sysconfig/docker; do if [ -e "$f" ]; then chmod 644 "$f" || exit 1; fi; done

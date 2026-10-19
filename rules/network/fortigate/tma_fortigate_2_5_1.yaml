@@ -1,0 +1,52 @@
+id: TMA-FORTIGATE-2.5.1
+title: Ensure High Availability configuration is enabled
+description: Ensure that FortiGate devices are configured for High Availability (HA). PASS requires config system ha set mode a-p or a-a. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: medium
+tags:
+- fortigate
+- high-availability
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.5.1 Ensure High Availability configuration is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^config system ha\n(?:[ \t]+[^\n]*\n)*?[ \t]+set mode (?:a-p|a-a)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system ha
+        set mode a-p
+        set group-name "FGT-HA"
+        set password <password>
+        set hbdev "port10" 50
+    end
+    # CIS guidance:
+    In GUI:
+    1.
+    Navigate to "System" and then "HA"
+    2. Ensure "Mode" is set to proper setting "Active-Active" or "Active-Passive"
+    3. Review Configuration settings:
+    - "Cluster Name" must match on devices
+    - "Password" Must match on devices
+    - "Heartbeat Interfaces" need to be defined on devices
+    4. Click "OK" to save changes and exit In CLI:
+    config system ha
+        set mode a-p
+    ###(Active-Passive)
+    set group-name "FGT-HA"           ###(Set cluster name)
+    set password *******
+    ###(Set password)
+    set hbdev port10 50
+    ###(Set Heartbeat Interface and priority)
+    end
+    To review configuration in CLI:
+    config system ha
+        show
+        config system ha
+            set group-name "FGT-HA"
+            set mode a-p
+            set password ENC
+    enrwD467hJmO6j6YW/l6FEOa1YNVYdo8Z5mCcTDEKUFpOVXcNYnPBmQDGX//ViXk6TkwNH0il5aJr /fZY25lq+husndQHZVWp2LIlXmCv/n81U43nkZUWaIKvqkellGFbhv0/IHoOLzQPCsVcBbyrsgopr YMvh6w7F06+nRriBtMNQxpOV5V+e388EcwsOOMsXBZOw==
+    set hbdev "port10" 50
+    set override disable
+    end

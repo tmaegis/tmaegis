@@ -1,0 +1,17 @@
+id: TMA-PRINTER-MGMT-ACCESS-CONTROL
+title: Ensure management and print access is restricted to authorised networks
+description: An IP access control list (or management VLAN) limits who can reach the EWS, SNMP and raw print ports, reducing exposure to network attacks and to accidental Internet exposure.
+target: printer
+level: 2
+severity: medium
+tags:
+- printer
+- network
+- access-control
+reference: CIS Multi-Function Device Benchmark v1.0.0 - Restrict network access to the device (verify section number for your release)
+audit:
+  type: manual
+  command: 'In the Embedded Web Server (EWS: browse to https://<printer-ip>/ and sign in as administrator; HP: Security / Networking tabs, Xerox: Properties > Security / Connectivity, Ricoh: Device Management > Configuration, Canon: Settings/Registration > Network Settings / Security Settings) > Networking > Access Control List / IP Filter (Xerox: Connectivity > IP Filtering; Ricoh: Access Control): only the print server(s), management stations and user subnets are allowed, management (EWS/SNMP) limited to the admin subnet; the device is not reachable from the Internet (no NAT/port-forward, verify in external attack-surface scans); direct-to-device printing is limited if a print server is used.'
+remediation:
+  type: iac_patch
+  command: 'EWS: configure the IP access control list / IP filter to allow only print servers and admin subnets for management; place printers in a dedicated VLAN with firewall rules; remove any Internet exposure.'

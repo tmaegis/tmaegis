@@ -1,0 +1,20 @@
+id: TMA-DOCKER-5.2
+title: Ensure that, if applicable, an AppArmor Profile is enabled
+description: AppArmor confines container processes; with AppArmor active on the host every container should run under a profile (docker-default or a custom one). Applies only where AppArmor is enabled (requires /sys/kernel/security/apparmor). Flags containers with an empty or unconfined AppArmorProfile. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+- apparmor
+reference: CIS Docker Benchmark v1.9.0 - 5.2 Ensure that, if applicable, an AppArmor Profile is enabled
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{.AppArmorProfile}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk 'NF<2 || $2=="unconfined" {print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /sys/kernel/security/apparmor
+remediation:
+  type: iac_patch
+  command: Run containers with --security-opt apparmor=docker-default (or a custom profile loaded with apparmor_parser) and never apparmor=unconfined.

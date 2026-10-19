@@ -1,0 +1,17 @@
+id: TMA-M365-7.2.8
+title: Ensure external sharing is restricted by security group
+description: External sharing of content can be restricted to specific security groups. This setting is global, applies to sharing in both SharePoint and OneDrive and cannot be set at the site level in SharePoint. Without restricting external sharing to designated security groups, any user in the organization can share SharePoint or OneDrive content with external recipients. A compromised or insider-threat account can exfiltrate sensitive data by sharing files externally without additional authorization controls. Limiting external sharing to members of specific Entra ID security groups ensures that only reviewed and authorized users have this capability, reducing the attack surface for data exfiltration through sharing.
+target: m365
+level: 2
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 7.2.8 Ensure external sharing is restricted by security group
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to SharePoint admin center https://admin.microsoft.com/sharepoint 2. Expand Policies > Sharing. 3. Locate the External sharing section. 4. If the SharePoint slider is set to Only people in your organization, this recommendation is compliant. 5. Otherwise, scroll to and expand More external sharing settings. 6. Verify the following: o Allow only users in specific security groups to share externally is checked o Manage security groups contains at least one security group. To audit using PowerShell: 1. Connect to SharePoint Online using Connect-SPOService. 2. Run the following PowerShell command: Get-SPOTenant | fl SharingCapability, WhoCanShareAuthenticatedGuestAllowList 3. Verify the output using the following logic: o If SharingCapability is Disabled, the recommendation is compliant regardless of the value of WhoCanShareAuthenticatedGuestAllowList. o Otherwise, verify that WhoCanShareAuthenticatedGuestAllowList contains at least one security
+    group GUID. If the value is empty or $null, the recommendation is not compliant.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to SharePoint admin center https://admin.microsoft.com/sharepoint 2. Expand Policies > Sharing. 3. Scroll to and expand More external sharing settings. 4. Set the following: o Check Allow only users in specific security groups to share externally o Click Manage security groups, then add at least one security group authorized for external sharing. To remediate using PowerShell: 1. Connect to SharePoint Online using Connect-SPOService. 2. Run the following command, replacing <GroupObjectId> with the GUID of the security group to be authorized for external sharing: Set-SPOTenant -WhoCanShareAuthenticatedGuestAllowList "<GroupObjectId>" Note: To authorize multiple security groups, provide a comma-delimited list of Object IDs: "<GroupObjectId1>","<GroupObjectId2>". Note: Users in the designated security groups must also be permitted to invite guests in Microsoft Entra. Verify this at Identity > External Identities > External collaboration settings.'

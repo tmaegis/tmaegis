@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.6
+title: Ensure 'Do not automatically sign replies' is set to 'Disabled'
+description: 'This policy setting specifies whether replies will be automatically (digitally) signed. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) nosignonreply that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.6 Ensure 'Do not automatically sign replies' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''nosignonreply'' -ErrorAction SilentlyContinue).''nosignonreply''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':nosignonreply='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Outlook 2016\Security\Do not automatically sign replies'

@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-4.3.1
+title: Ensure OSPF authentication is set to MD5
+description: OSPF Neighbors should be authenticated. Where it is deployed, OSPF routing is vital for normal operation of an organization's network infrastructure. Correct route information is required for routers to correctly direct traffic through the network. Passes when OSPF is not configured; otherwise requires MD5 authentication on OSPF interfaces. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 4.3.1 Ensure OSPF authentication is set to MD5
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^p\n]|p(?:$|[^r\n]|r(?:$|[^o\n]|o(?:$|[^t\n]|t(?:$|[^o\n]|o(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^l\n]|l(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^f\n]|f(?:$|[^ \n])))))))))))))))))))[^\n]*|[ \t]*set protocols ospf (?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*)))))?)\n)*[ \t]*set protocols ospf (?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*)))))?(?:\n(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^p\n]|p(?:$|[^r\n]|r(?:$|[^o\n]|o(?:$|[^t\n]|t(?:$|[^o\n]|o(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^l\n]|l(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^p\n]|p(?:$|[^f\n]|f(?:$|[^
+    \n])))))))))))))))))))[^\n]*|[ \t]*set protocols ospf (?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*))))[ \t]+)*(?:(?:[^m \t\n][^ \t\n]*|m(?:|[^d \t\n][^ \t\n]*|d(?:|[^5 \t\n][^ \t\n]*|5(?:[^ \t\n][^ \t\n]*)))))?)))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To configure MD5 based authentication, first configure the authentication type at the hierarchy (this step is not required on all versions of JUNOS):
+    set protocols ospf area <area number> authentication-type md5 The key must then be configured for any interfaces in the area
+    set protocols ospf area <area number> interface <interface number> authentication md5 <key number> <key> The parameter needs to be the same across all routers in the area and is there to provide a method for transitioning from old to new keys.

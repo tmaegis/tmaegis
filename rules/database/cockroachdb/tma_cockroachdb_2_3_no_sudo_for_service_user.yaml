@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-2.3
+title: Do Not Grant Sudo Privileges to the CockroachDB Process User
+description: CockroachDB should run under a dedicated, non-root operating system account that has only the permissions required to read and write CockroachDB's data, log, and certificate directories. This dedicated service user (commonly cockroach) must not be granted sudo privileges or be included in any privileged system groups (such as wheel, sudo, or adm). The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when every cockroach start process runs as a non-root user that is not in the sudo, wheel, admin or root groups. Also review /etc/sudoers and /etc/sudoers.d for entries naming the cockroach user.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- service-account
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 2.3 Do Not Grant Sudo Privileges to the CockroachDB Process User
+audit:
+  type: command
+  command: out=$(ps -eo user=,args= | grep '[c]ockroach start') || exit 1; bad=0; for u in $(printf '%s\n' "$out" | awk '{print $1}' | sort -u); do [ "$u" = root ] && bad=1; if id -nG "$u" 2>/dev/null | tr ' ' '\n' | grep -qxE 'sudo|wheel|admin|root'; then bad=1; fi; done; [ $bad -eq 0 ] && echo compliant || echo privileged
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Run CockroachDB as a dedicated non-privileged 'cockroach' user (User=cockroach in the unit), remove it from sudo/wheel groups (gpasswd -d cockroach wheel) and delete any sudoers entries for it.

@@ -1,0 +1,18 @@
+id: TMA-GCP-2.3
+title: Ensure That Sinks Are Configured for All Log Entries
+description: It is recommended to create a sink that will export copies of all the log entries. This can help aggregate logs from multiple projects and export them to a Security Information and Event Management (SIEM). Log entries are held in Cloud Logging. To aggregate logs, export them to a SIEM. To keep them longer, it is recommended to set up a log sink. Exporting involves writing a filter that selects the log entries to export, and choosing a destination in Cloud Storage, BigQuery, or Cloud Pub/Sub. The filter and destination are held in an object called a sink. To ensure all log entries are exported to sinks, ensure that there is no filter configured for a sink. Sinks can be created in projects, organizations, folders, and billing accounts.
+target: gcp
+level: 1
+severity: medium
+tags:
+- cloud
+- gcp
+- logging
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 2.3 Ensure That Sinks Are Configured for All Log Entries
+audit:
+  type: manual
+  command: 'From Google Cloud Console 1. Go to Logs Router by visiting https://console.cloud.google.com/logs/router. 2. For every sink, click the 3-dot button for Menu options and select View sink details. 3. Ensure there is at least one sink with an empty Inclusion filter. 4. Additionally, ensure that the resource configured as Destination exists. From Google Cloud CLI 1. Ensure that a sink with an empty filter exists. List the sinks for the project, folder or organization. If sinks are configured at a folder or organization level, they do not need to be configured for each project: gcloud logging sinks list --folder=FOLDER_ID | --organization=ORGANIZATION_ID | --project=PROJECT_ID The output should list at least one sink with an empty filter. 2. Additionally, ensure that the resource configured as Destination exists. See https://cloud.google.com/sdk/gcloud/reference/beta/logging/sinks/list for more information.'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Console 1. Go to Logs Router by visiting https://console.cloud.google.com/logs/router. 2. Click on the arrow symbol with CREATE SINK text. 3. Fill out the fields for Sink details. 4. Choose Cloud Logging bucket in the Select sink destination drop down menu. 5. Choose a log bucket in the next drop down menu. 6. If an inclusion filter is not provided for this sink, all ingested logs will be routed to the destination provided above. This may result in higher than expected resource usage. 7. Click Create Sink. For more information, see https://cloud.google.com/logging/docs/export/configure_export_v2#dest-create. From Google Cloud CLI To create a sink to export all log entries in a Google Cloud Storage bucket: gcloud logging sinks create <sink-name> storage.googleapis.com/DESTINATION_BUCKET_NAME Sinks can be created for a folder or organization, which will include all projects. gcloud logging sinks create <sink-name> storage.googleapis.com/DESTINATION_BUCKET_NAME
+    --include-children -- folder=FOLDER_ID | --organization=ORGANIZATION_ID Note: 1. A sink created by the command-line above will export logs in storage buckets. However, sinks can be configured to export logs...'

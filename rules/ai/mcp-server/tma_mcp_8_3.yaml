@@ -1,0 +1,19 @@
+id: TMA-MCP-8.3
+title: Ensure third-party MCP server artifacts are served exclusively from an internal private mirror
+description: Enterprises permitting third-party MCP servers maintain an internal private mirror of all approved server artifacts, where each server's provenance has been vetted and its cryptographic hashes verified against official publisher records. Production MCP hosts install packaged servers only from this internal mirror across every installable channel the deployment uses, which may be a self-hosted package mirror and an internal container registry. The current MCP Registry package types are npm, pypi, nuget, oci, and mcpb, named as examples rather than a set every deployment must have. A remote MCP server is a live endpoint URL rather than a mirrorable artifact, so its equivalent control is to approve its exact origin and route access through an approved enterprise egress gateway or private connector, not to mirror it. An internal MCP registry implementing the MCP Registry OpenAPI interface...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 8.3 Ensure third-party MCP server artifacts are served exclusively from an internal private mirror
+audit:
+  type: manual
+  command: 'Confirm that the package managers on production hosts point to the internal mirror. This block requires bash. Run the following command with the internal mirror host set to check each configured source: MIRROR="<INTERNAL_MIRROR_HOST>" if [ -z "$MIRROR" ]; then echo "ERROR: no internal mirror host configured to compare against, set the mirror host first" exit 0 fi host_of() { u=$(printf ''%s'' "$1" | tr -d ''\r'' | sed ''s/\xc2\xa0//g'') u="${u#*://}" u="${u%%/*}" u="${u#*@}" u="${u%%\?*}" u="${u%%:*}" printf ''%s'' "$u" | tr ''A-Z'' ''a-z'' } present=0; bad=0 check() { name="$1"; src="$2" case "$src" in "") return ;; esac present=$((present+1)) h=$(host_of "$src") if [ "$h" = "$MIRROR" ]; then echo "$name source $src resolves to host $h, the internal mirror" else echo "$name source $src resolves to host $h, not the internal mirror $MIRROR"; bad=$((bad+1)) fi } check_multi() { name="$1"; vals="$2" oldifs=$IFS IFS='' '' for one in $vals; do case "$one" in *://*) IFS=$oldifs; check
+    "$name" "$one"; IFS='' '' ;; esac done IFS=$oldifs } if command -v npm >/dev/null 2>&1; then check "npm registry" "$(npm config get registry 2>/dev/null)" scoped=$(npm config list 2>/dev/null | sed -nE ''s/^[[:space:]]*(...'
+remediation:
+  type: iac_patch
+  command: 'Establish an internal artifact mirror (for example a self-hosted registry such as Artifactory or Nexus, an internal container registry, and an internal MCP registry) holding only vetted, hash-verified artifacts, and configure production host package managers and container runtimes to use only those internal sources. Run the following command to point npm and pip at the internal mirror: npm config set registry https://<INTERNAL_REGISTRY> pip config set global.index-url https://<INTERNAL_PYPI> Remove or repoint any npm scoped registry (@scope:registry=) and any pip extra-index-url or find-links entry that resolves to a source other than the internal mirror, including their environment overrides (PIP_EXTRA_INDEX_URL, PIP_FIND_LINKS), so that no configured source bypasses the mirror. Configure the container runtime and any mcpb install path to pull only from the internal registry. Configure network egress controls on production hosts to block direct access to the public sources for
+    every channel in use, scoped to those registry endpoints rather than a blanket deny.'

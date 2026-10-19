@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-4.3
+title: Ensure excessive function privileges are revoked
+description: 'In certain situations, to provide the required functionality, YugabyteDB needs to execute internal logic (stored procedures, functions, triggers, etc.) and/or external code modules with elevated privileges. However, if the privileges required for execution are at a higher level than the privileges assigned to organizational users invoking the functionality applications/programs, those users are indirectly provided ... Assessed manually here: the benchmark check is environment-specific and cannot be evaluated reliably by a single command.'
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- privileges
+reference: CIS YugabyteDB Benchmark v2.0.0 - 4.3 Ensure excessive function privileges are revoked
+audit:
+  type: manual
+  command: Run SELECT nspname, proname, prosecdef, rolname, proconfig FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid JOIN pg_authid a ON a.oid = p.proowner WHERE prosecdef OR NOT proconfig IS NULL; Every SECURITY DEFINER function (prosecdef = t) must be justified, owned by an appropriate role and have a fixed search_path; unjustified ones are a finding.
+remediation:
+  type: iac_patch
+  command: 'Where possible, revoke SECURITY DEFINER on YugabyteDB functions. To change a SECURITY DEFINER function to SECURITY INVOKER, run the following YSQL: # whoami root # sudo su - yugabyte # ysqlsh -c "ALTER FUNCTION [functionname] SECURITY INVOKER;" If it is not possible to revoke SECURITY DEFINER, ensure the function can be executed by only the accounts that absolutely need such functionality: yugabyte=# SELECT proname, proacl FROM pg_proc WHERE ...'

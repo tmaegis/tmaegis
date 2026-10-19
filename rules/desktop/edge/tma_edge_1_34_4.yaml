@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.34.4
+title: Ensure 'Force Microsoft Defender SmartScreen checks on downloads from trusted sources' is set to 'Enabled'
+description: 'This policy setting controls whether Microsoft Defender SmartScreen can check if downloads have been retrieved from a trusted source. The recommended state for this setting is: Enabled. Rationale: Windows Defender SmartScreen can verify that downloads are from a trusted source can greatly reduce the chances of a user downloading an infected package to their machine. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:SmartScreenForTrustedDownloadsEnabled (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: high
+tags:
+- edge
+- browser
+- cis-l1
+reference: CIS Microsoft Edge Benchmark v5.0.0 - 1.34.4 Ensure 'Force Microsoft Defender SmartScreen checks on downloads from trusted sources' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''SmartScreenForTrustedDownloadsEnabled'' -ErrorAction SilentlyContinue).''SmartScreenForTrustedDownloadsEnabled''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'SmartScreenForTrustedDownloadsEnabled' -Value 1 -PropertyType DWord -Force | Out-Null

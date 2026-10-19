@@ -1,0 +1,77 @@
+id: TMA-ROS1-5.2.19
+title: Ensure SSH warning banner is configured
+description: The Banner parameter specifies a file whose contents must be sent to the remote user before authentication is permitted. By default, no banner is displayed. The audit requires a Banner (the benchmark uses /etc/issue.net). The audit reads the effective sshd configuration (sshd -T, root). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.2.19 Ensure SSH warning banner is configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v sshd >/dev/null 2>&1 || exit 1
+    out=$(sshd -T -C user=root -C host="$(hostname)" -C addr="$(hostname -I 2>/dev/null | cut -d' ' -f1)" 2>/dev/null) || out=$(sshd -T 2>/dev/null) || exit 1
+    b=$(printf '%s\n' "$out" | awk 'tolower($1)=="banner"{print $2; exit}')
+    [ -n "$b" ] && [ "$b" != none ] && echo compliant || echo 'no SSH Banner'
+  expected_output: compliant
+  requires_file:
+  - /etc/ssh/sshd_config
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # tma_sshd_apply "Name value" ... : replace every existing setting, put ours first, validate, reload.
+    tma_sshd_apply() {
+      c=/etc/ssh/sshd_config
+      [ -f "$c" ] || { echo "sshd_config not present, nothing to do"; return 0; }
+      files="$c $(ls /etc/ssh/sshd_config.d/*.conf 2>/dev/null)"
+      sv=$(mktemp -d)
+      for f in $files; do tma_bak "$f"; cp -a "$f" "$sv/$(echo "$f" | tr / _)"; done
+      for kv in "$@"; do
+        n=${kv%% *}
+        for f in $files; do
+          [ -L "$f" ] && continue
+          sed -i -E "s/^([[:space:]]*$n[[:space:]=].*)$/# tmaegis: \1/I" "$f"
+        done
+      done
+      tmp=$(mktemp); : > "$tmp"
+      for kv in "$@"; do printf '%s\n' "$kv" >> "$tmp"; done
+      cat "$c" >> "$tmp"; cat "$tmp" > "$c"; rm -f "$tmp"
+      if command -v sshd >/dev/null 2>&1 && ! sshd -t 2>/dev/null; then
+        echo "sshd -t failed, restoring" >&2
+        for f in $files; do cat "$sv/$(echo "$f" | tr / _)" > "$f"; done
+        rm -rf "$sv"; return 1
+      fi
+      rm -rf "$sv"
+      for u in sshd ssh; do systemctl reload "$u" 2>/dev/null && break; done
+      return 0
+    }
+
+    if [ ! -s /etc/issue.net ] || grep -Eqi '(\\[vrms])|(ubuntu|debian|centos|rhel|red hat|fedora|rocky|alma|amazon|suse|oracle)' /etc/issue.net; then
+      tma_bak /etc/issue.net
+      printf 'Authorized users only. All activity may be monitored and reported.\n' > /etc/issue.net
+    fi
+
+    tma_sshd_apply 'Banner /etc/issue.net'
+  guidance: "Edit the /etc/ssh/sshd_config file to set the parameter as follows: Banner /etc/issue.net"

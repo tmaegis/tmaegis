@@ -1,0 +1,21 @@
+id: TMA-WIN2019-17.5.1
+title: Ensure 'Audit Account Lockout' is set to include 'Failure'
+description: 'This subcategory reports when a user''s account is locked out as a result of too many failed logon attempts. Events for this subcategory include: • 4625: An account failed to log on. The recommended state for this setting is to include: Failure.'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 17.5.1
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9217-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Failure'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9217-69ae-11d9-bed3-505054503030}' /failure:enable

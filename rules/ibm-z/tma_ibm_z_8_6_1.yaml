@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-8.6.1
+title: Ensure that access to JES2 output devices is controlled
+description: Profiles in the WRITER resource class can control what devices and destination a job can access. Most WRITER checks are made when the SYSOUT is selected to be printed. If the owner does not have access to the device (as defined by the WRITER resource class profile) then the output is not processed (and remains on SPOOL).
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.6.1 Ensure that access to JES2 output devices is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that WRITER appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that WRITER appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the WRITER entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify That all profiles in the WRITER class: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of FAILURES(READ) ID(*) is not used to grant access'
+remediation:
+  type: iac_patch
+  command: 'To activate the WRITER class use the RACF SETROPTS command: SETROPTS CLASSACT(WRITER) To enable generic profile checking for the WRITER class use the RACF SETROPTS command: SETROPTS GENERIC(WRITER) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER WRITER <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

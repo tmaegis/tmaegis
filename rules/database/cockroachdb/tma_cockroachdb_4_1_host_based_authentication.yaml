@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-4.1
+title: Restrict Access Using Host-Based Authentication
+description: CockroachDB uses a host-based authentication (HBA) configuration to control which SQL connection attempts are allowed to proceed and which authentication methods they may use, based on the originating IP address and the SQL user. HBA rules are expressed in a PostgreSQL-compatible DSL and stored in the server.host_based_authentication.configuration cluster setting;
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- authentication
+- network
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 4.1 Restrict Access Using Host-Based Authentication
+audit:
+  type: manual
+  command: Run SHOW CLUSTER SETTING server.host_based_authentication.configuration; Rules must list only approved IP addresses/CIDRs for each user and end with a rule that rejects everything else (e.g. host all all all reject). An empty value (the default, equivalent to host all all all cert-password) or broad 0.0.0.0/0 rules is a finding.
+remediation:
+  type: iac_patch
+  command: '1. Define explicit whitelisted origins Construct an HBA configuration that lists only authorized IP ranges or hosts. For example: SET CLUSTER SETTING server.host_based_authentication.configuration = '' TYPE DATABASE USER ADDRESS METHOD host all jump_user 203.0.113.10/32 password host all app_user 198.51.100.0/24 password host all all all reject '';'

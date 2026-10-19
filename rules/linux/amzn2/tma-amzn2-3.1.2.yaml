@@ -1,0 +1,56 @@
+id: TMA-AMZN2-3.1.2
+title: Ensure wireless interfaces are not available
+description: Wireless networking is used when wired networks are unavailable.
+target: linux
+os_family:
+- amzn-2
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Amazon Linux 2 Benchmark v4.0.0 - 3.1.2
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   module_chk()\n   {\n      # Check how module will be loaded\n      l_loadable=\"$(modprobe -n -v \"$l_mname\")\"\n      if grep -Pq -- '\"'\"'^\\h*install \\/bin\\/(true|false)'\"'\"' <<< \"$l_loadable\"; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is not loadable: \\\"$l_loadable\\\"\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is loadable: \\\"$l_loadable\\\"\"\n      fi\n      # Check is the module currently loaded\n      if ! lsmod | grep \"$l_mname\" > /dev/null 2>&1; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is not loaded\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is loaded\"\n      fi\n      # Check if the module is deny listed\n      if modprobe --showconfig | grep -Pq -- \"^\\h*blacklist\\h+$l_mname\\b\"; then\n         l_output=\"$l_output\\n - module: \\\"$l_mname\\\" is deny\
+    \ listed in: \\\"$(grep -Pl -- \"^\\h*blacklist\\h+$l_mname\\b\" /etc/modprobe.d/*)\\\"\"\n      else\n         l_output2=\"$l_output2\\n - module: \\\"$l_mname\\\" is not deny listed\"\n      fi\n   }\n   if [ -n \"$(find /sys/class/net/*/ -type d -name wireless)\" ]; then\n      l_dname=$(for driverdir in $(find /sys/class/net/*/ -type d -name wireless | xargs -0 dirname); do basename \"$(readlink -f \"$driverdir\"/device/driver/module)\";done | sort -u)\n      for l_mname in $l_dname; do\n         module_chk\n      done\n   fi\n   # Report results. If no failures output in l_output2, we pass\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\"\n      if [ -z \"$l_output\" ]; then\n         echo -e \"\\n - System has no wireless NICs installed\"\n      else\n         echo -e \"\\n$l_output\\n\"\n      fi\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\\n\"\n      [ -n \"$l_output\" ] && echo\
+    \ -e \"\\n- Correctly set:\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    mods=$(for w in /sys/class/net/*/wireless; do [ -d "$w" ] || continue
+      mp=$(readlink -f "$(dirname "$w")/device/driver/module" 2>/dev/null); [ -e "$mp" ] && basename "$mp"; done | sort -u)
+    mkdir -p /etc/modprobe.d
+    for mn in $mods; do
+      printf 'install %s /bin/false\nblacklist %s\n' "$mn" "$mn" > "/etc/modprobe.d/60-tmaegis-$mn.conf"
+      modprobe -r "$mn" 2>/dev/null; rmmod "$mn" 2>/dev/null
+    done
+    command -v nmcli >/dev/null 2>&1 && nmcli radio all off 2>/dev/null
+    true
+  guidance: "Run the following script to disable any wireless interfaces: #!/usr/bin/env bash { module_fix() { if ! modprobe -n -v \"$l_mname\" | grep -P -- '^\\h*install \\/bin\\/(true|false)'; then echo -e \" - setting module: \\\"$l_mname\\\" to be un-loadable\" echo -e \"install $l_mname /bin/false\" >> /etc/modprobe.d/\"$l_mname\".conf fi if lsmod | grep \"$l_mname\" > /dev/null 2>&1; then echo -e \" - unloading module \\\"$l_mname\\\"\" modprobe -r \"$l_mname\" fi if ! grep -Pq -- \"^\\h*blacklist\\h+$l_mname\\b\" /etc/modprobe.d/*; then echo -e \" - deny listing \\\"$l_mname\\\"\" echo -e \"blacklist $l_mname\" >> /etc/modprobe.d/\"$l_mname\".conf fi } if [ -n \"$(find /sys/class/net/*/ -type d -name wireless)\" ]; then l_dname=$(for driv…"

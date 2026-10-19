@@ -1,0 +1,22 @@
+id: TMA-CISCO-IOSXR-2.1.2.1
+title: Authentication (OSPF)
+description: Enable Open Shortest Path First (OSPF) Message Digest 5 (MD5) authentication. This is part of the OSPF authentication setup. Passes when OSPF is not configured. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 2
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 2.1.2.1 Authentication
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^km\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^c\n]|c(?:$|[^h\n]|h(?:$|[^a\n]|a(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^ \n]))))))))|m(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^a\n]|a(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^t\n])))))))))))))))))))))))))))))[^\n]*\n)*[ \t]*router ospf [^\n]*(?:\n(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^km\n]|k(?:$|[^e\n]|e(?:$|[^y\n]|y(?:$|[^c\n]|c(?:$|[^h\n]|h(?:$|[^a\n]|a(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^ \n]))))))))|m(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^a\n]|a(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^\-\n]|-(?:$|[^d\n]|d(?:$|[^i\n]|i(?:$|[^g\n]|g(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^t\n])))))))))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure the appropriate interface(s) for Message Digest authentication
+    router ospf {process_id}
+    address-family ipv4
+    area 0 authentication keychain {key_chain_name}

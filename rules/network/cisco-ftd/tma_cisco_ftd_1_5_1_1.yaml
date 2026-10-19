@@ -1,0 +1,38 @@
+id: TMA-CISCO-FTD-1.5.1.1
+title: Run Scheduled Nmap Scans
+description: 'Internal subnets should be scanned periodically to discover new hosts and services, also to identify when services or hosts are retired. Running Nmap scans can help detect unauthorized devices or services that may have been added to your network without prior knowledge. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-ftd
+level: 2
+severity: medium
+tags:
+- cisco-ftd
+- network
+- hardening
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 1.5.1.1 Run Scheduled Nmap Scans
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. To verify the configuration of the scans: - Navigate to Policies > Network Discovery > Actions > Scanners - Verify that an Nmap Scanner is defined - Navigate to Policies > Network Discovery > Actions > Scanners > Targets - Verify that a "Scan Target" exists - Edit the target, ensure that all reachable internal subnets are fully represented. - In the "Ports" field, ensure that the port range is 1-65535.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Navigate to Policies > Network Discovery > Actions > Scanners
+    - Choose "Add Nmap Instance"
+    - Give your scanner a meaningful name
+    - The scan defaults are generally reasonable, but can be adjusted in any way that optimizes the scan duration and impact for your environment. The important thing is that the scan occurs.
+    - Press Save
+    - Navigate to Policies > Network Discovery > Actions > Scanners > Targets
+    - Choose "Create Scan Target"
+    - Give the target a meaningful name
+    - In the IP Range, add all target subnets. Be sure to limit this scope such that the scan will complete in a reasonable time.
+    - In the "Ports" field, the default port range is 1-1024. This is a good default for an initial scan, but should be expanded to include all ports once you have a better gauge of the scan times and impacts.
+    - After the first test scans are complete, this field should be changed to 1-65535. However this is not a good range for the initial scan(s).
+    - Under System > Tools > Scheduling
+    - Select "Add Task"
+    - Choose "Nmap Scan"
+    - Give the Nmap Scan a meaningful name
+    - Choose "Recurring"
+    - Repeat every "1" days
+    - Run during production hours, the goal being to discover all servers and workstations, not just the ones on the network during off hours
+    - For the Target, choose the one that is defined above
+    - For the "Remediation", choose the Nmap Scanner instance that is defined above
+    - Press "Save"

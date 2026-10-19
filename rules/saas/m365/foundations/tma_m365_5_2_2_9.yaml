@@ -1,0 +1,19 @@
+id: TMA-M365-5.2.2.9
+title: Ensure a managed device is required for authentication
+description: 'Conditional Access (CA) can be configured to enforce access based on the device''s compliance status or whether it is Entra hybrid joined. Collectively this allows CA to classify devices as managed or unmanaged, providing more granular control over authentication policies. When using Require device to be marked as compliant, the device must pass checks configured in compliance policies defined within Microsoft Intune. Before these checks can be applied, the device must first be enrolled in Intune MDM. By selecting Require Microsoft Entra hybrid joined device this means the device must first be synchronized from an on-premises Active Directory to qualify for authentication. When configured to the recommended state below only one condition needs to be met for the user to authenticate from the device. This functions as an "OR" operator. The recommended state for authentication is: - Requi...'
+target: m365
+level: 1
+severity: high
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.9 Ensure a managed device is required for authentication
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify All users is included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify All resources (formerly ''All cloud apps'') is selected. o Verify that only documented resource exclusions exist and that they are reviewed annually. o Under Grant verify that Require device to be marked as compliant is checked. o Under Grant verify that no other controls are checked except, optionally, Require Microsoft Entra hybrid joined device. o Verify Require one of the selected controls is selected. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph
+    API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. Filter to policies where GrantControls.BuiltInControls contains compliantDevice or domainJoinedDevi...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users. o Under Target resources include All resources (formerly ''All cloud apps''). ▪ Under Exclude exclude any break-glass accounts. o Under Grant select Grant access. o Select the checkbox Require device to be marked as compliant. o Optionally, also select Require Microsoft Entra hybrid joined device if the organization uses hybrid joined devices. o Choose Require one of the selected controls. o Click Select at the bottom. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On. Note: Guest user accounts, if collaborating with the
+    organization, should be considered when testing this policy.'

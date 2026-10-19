@@ -1,0 +1,28 @@
+id: TMA-CHECKPOINT-1.4
+title: Ensure Check for Password Reuse is selected and History Length is set to 12 or more
+description: Check for reuse of passwords. When a user's password is changed, the new password is checked against the recent passwords for the user. An identical password is not allowed. The number of passwords kept in the record is set by History length. Does not apply to SNMP passwords. Enables or disables password history checking and password history recording, for all users. PASS requires history-checking on and history-length of 12 or more. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: high
+tags:
+- checkpoint
+- authentication
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 1.4 Ensure Check for Password Reuse is selected and History Length is set to 12 or more
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set password-controls history-checking on[ \t]*$(?s:.*?)^set password-controls history-length (?:1[2-9]|[2-9]\d|[1-9]\d\d+)[ \t]*$|^set password-controls history-length (?:1[2-9]|[2-9]\d|[1-9]\d\d+)[ \t]*$(?s:.*?)^set password-controls history-checking on[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    set password-controls history-checking on
+    set password-controls history-length 12
+    save config
+    # CIS guidance:
+    Run the following command to set tie history-checking setting. CLI:
+    set password-controls history-checking on
+    set password-controls history-length 12
+    GUI:
+    Navigate to User Management > Password Policy > Password History:
+    checked the 'Check for Password Reuse' setting.
+    Navigate to User Management > Password Policy > Password History:
+    Set 'History Length' is set to 12 or more.

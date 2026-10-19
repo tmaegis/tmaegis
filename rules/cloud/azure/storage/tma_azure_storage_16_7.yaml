@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-16.7
+title: Ensure Soft Delete is Enabled for Azure Containers and Blob Storage
+description: The Azure Storage blobs contain data like ePHI or Financial, which can be secret or personal. Data that is erroneously modified or deleted by an application or other storage account user will cause data loss or unavailability. It is recommended that both Azure Containers with attached Blob Storage and standalone containers with Blob Storage be made recoverable by enabling the soft delete configuration. This is to save and recover data when blobs or blob snapshots are deleted. Containers and Blob Storage data can be incorrectly deleted. An attacker/malicious user may do this deliberately in order to cause disruption. Deleting an Azure Storage blob causes immediate data loss. Enabling this configuration for Azure storage ensures that even if blobs/data were deleted from the storage account, Blobs/data objects are recoverable for a particular time which is set in the "Retention policies,...
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- containers
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.7 Ensure Soft Delete is Enabled for Azure Containers and Blob Storage
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Data management, select Data protection. 3. Verify Enable soft delete for blobs is checked and Days to retain deleted blobs is at least 7. 4. Verify Enable soft delete for containers is checked and Days to retain deleted containers is at least 7. Audit from Azure CLI For each storage account, run the following and verify both deleteRetentionPolicy (blobs) and containerDeleteRetentionPolicy (containers) report enabled as true with days of 7 or greater: az storage account blob-service-properties show \ --account-name <storage-account> \ --resource-group <resource-group> \ --query "{blobSoftDelete:deleteRetentionPolicy, containerSoftDelete:containerDeleteRetentionPolicy}" An empty/null policy, enabled: false, or days less than 7 for either blobs or containers is non-compliant. Audit from PowerShell For each storage account, retrieve the blob service properties and verify both retention policies:
+    $props = Get-AzStorageBlobServiceProperty -ResourceGroupName <resource-group> -StorageAccountName <storage-account> $props.DeleteRetentionPolicy $props.ContainerDeleteRetentionPolicy Each policy should rep...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Data management, select Data protection. 3. Check Enable soft delete for blobs and set Days to retain deleted blobs to at least 7. 4. Check Enable soft delete for containers and set Days to retain deleted containers to at least 7. 5. Select Save. Remediate from Azure CLI Enable both blob and container soft delete with a retention of at least 7 days: az storage account blob-service-properties update \ --account-name <storage-account> \ --resource-group <resource-group> \ --enable-delete-retention true \ --delete-retention-days <days (>= 7)> \ --enable-container-delete-retention true \ --container-delete-retention-days <days (>= 7)> Remediate from PowerShell Enable-AzStorageBlobDeleteRetentionPolicy -ResourceGroupName <resource-group> -StorageAccountName <storage-account> -RetentionDays <days (>= 7)> Enable-AzStorageContainerDeleteRetentionPolicy -ResourceGroupName <resource- group> -StorageAccountName
+    <storage-account> -RetentionDays <days (>= 7)>'

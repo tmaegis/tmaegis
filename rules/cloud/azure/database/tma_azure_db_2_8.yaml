@@ -1,0 +1,19 @@
+id: TMA-AZURE-DB-2.8
+title: Ensure that Azure Cache for Redis is Using Customer- Managed Keys
+description: Customer Managed Keys allow you more granular control over the encryption of your information. Customer Managed Keys increase security of your disk encryption by offering features like custom managed expiration dates, allowing you to set your own key lifecycle.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+- database
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 2.8 Ensure that Azure Cache for Redis is Using Customer- Managed Keys
+audit:
+  type: manual
+  command: 'Audit From Azure Portal 1. Select your Redis Cache. 2. In the left column select Encryption. 3. View the keys listed, and determine if the checkbox for ''Customer Managed Key'' is selected. Audit From Powershell 1. Run the following command to determine if your Azure Cache for Redis is using a Customer Managed Key. Get-AzRedisEnterpriseCache -ResourceGroupName "<resourcegroupname>" -Name "<azurecacheforredisname" | Select-Object -ExpandProperty EnableCustomerManagedKey 2. If the command returns true, you are using a customer managed key. Audit From Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 09aa11bb-87ec-409f-bf0b-49b7c1561a87 - Name: ''Azure Cache for Redis Enterprise should use customer-managed keys for encrypting
+    disk data'''
+remediation:
+  type: iac_patch
+  command: Remediate From Azure Portal 1. Select your Redis Cache. 2. In the left column select Encryption. 3. Select the checkbox to enable Customer Managed keys. 4. Select Add to assign a user managed identity with permissions to access your Azure key vault. 5. Select your subscription and Azure Key vault that contains your customer managed key. Ensure this is in the same region as your Azure Cache for Redis. 6. Select your customer managed key. 7. Click Save. Remediate From Powershell 1. In Azure Key Vault find the full URL for a key you have created. Then run the following command with the information for your environment. Update-AzRedisEnterpriseCache -ClusterName "<yourclustername>" =ResourceGroupName "<yourresourcegroupname>" - CustomerManagedKeyEncryptionKeyUrl "<thekeyinazurekeyvaultURL>"

@@ -1,0 +1,17 @@
+id: TMA-GKE-AUTOPILOT-4.6.3
+title: Require hardened security contexts for all workload Pods and containers
+description: Require hardened security contexts for GKE Autopilot workload Pods and containers. Security contexts should define workload level and container level controls that reduce privilege, limit host exposure, and enforce safer runtime behavior. The benchmark marks this recommendation Manual.
+target: gke-autopilot
+level: 2
+severity: low
+tags:
+- gke-autopilot
+- policies
+- pod-security
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 4.6.3 Require hardened security contexts for all workload Pods and containers
+audit:
+  type: manual
+  command: Review workload Pods and controller templates to confirm hardened security contexts are explicitly defined at the Pod and container level. Focus the audit on workload namespaces and verify settings such as runAsNonRoot=true, allowPrivilegeEscalation=false, privileged=false, dropped Linux capabilities where practical, and no explicit seccompProfile.type=Unconfined unless documented as an approved exception. Missing seccompProfile fields are not a finding in GKE Autopilot because Autopilot applies the RuntimeDefault seccomp profile to workload Pods by default.
+remediation:
+  type: iac_patch
+  command: 'Update workload manifests, Helm charts, overlays, or GitOps sources so hardened security contexts are defined before deployment. Apply settings at the Pod level when they apply to all containers, and use container level settings where a specific container requires a different configuration. • Set workloads to run as non root where compatible. • Set allowPrivilegeEscalation=false for workload containers. • Set privileged=false and remove host level access unless explicitly required. • Drop unnecessary Linux capabilities, and use drop: ["ALL"] where the application supports it. • Set seccompProfile.type=RuntimeDefault where seccomp is explicitly defined, and remove unsupported custom Localhost seccomp profiles from GKE Autopilot workloads. Redeploy the workload and validate application behavior in a lower environment before broad rollout.'

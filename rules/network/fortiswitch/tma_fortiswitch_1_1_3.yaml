@@ -1,0 +1,24 @@
+id: TMA-FORTISWITCH-1.1.3
+title: Ensure 'Post-Login-Banner' is set
+description: Sets the banner after users successfully log in. This is equivalent to Message of the Day (MOTD) in some other systems. PASS requires a non-empty post-login-banner in config system global. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: low
+tags:
+- fortiswitch
+- banner
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.1.3 Ensure 'Post-Login-Banner' is set
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set post-login-banner (?:\"[^\"\n]+|[^\"'\s])[^\n]*[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set post-login-banner "All activity is logged."
+    end
+    # CIS guidance:
+    Run the following command in the CLI to enable the post-login-banner:
+    config system global
+        set post-login-banner <Enter a message for the system post-login
+    end

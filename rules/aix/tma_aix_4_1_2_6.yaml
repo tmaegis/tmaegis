@@ -1,0 +1,17 @@
+id: TMA-AIX-4.1.2.6
+title: Ensure access on /var/adm/ras is configured
+description: 'The /var/adm/ras directory contains log files which contain sensitive information such as login times and IP addresses. The log files in the /var/adm/ras directory can contain sensitive information such as login times and IP addresses, which may be altered by an attacker when removing traces of system access. Audit: no file in /var/adm/ras may be world writable, and only SRCKeyID may be world readable.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.2.6 Ensure access on /var/adm/ras is configured
+audit:
+  type: command
+  command: command -v ls >/dev/null 2>&1 || exit 1; [ -d /var/adm/ras ] || exit 1; out=$( { ls -l /var/adm/ras | awk 'substr($1,1,1)=="-" && (substr($1,9,1)=="w" || (substr($1,8,1)=="r" && $NF!="SRCKeyID")) {print}' ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remove world read and write access from all files in /var/adm/ras: # /usr/bin/chmod o-rw /var/adm/ras/*'

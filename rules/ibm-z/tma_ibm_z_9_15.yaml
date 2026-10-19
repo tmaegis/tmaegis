@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-9.15
+title: Ensure that access to BPX resources in the FACILITY class is controlled
+description: The RACF FACILITY class profiles prefixed with BPX are protecting sensitive UNIX System Services capabilities and must be protected. z/OS UNIX RACF-defined resources, prefixed with BPX in the FACILITY class consist of sensitive capabilities including SUPERUSER, daemon, and numerous file manipulation privileges.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.15 Ensure that access to BPX resources in the FACILITY class is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering BPX prefixed resources Request reports generated using IRRDBU00 ... (full steps: CIS section 9.15)'
+remediation:
+  type: iac_patch
+  command: 'To activate the FACILITY class use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for the FACILITY class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST the FACILITY class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To remove a BPX.SAFFASTPATH profile use the RACF RDELETE command: RDELETE FACILITY BPX.SAFFASTPATH To create catch-all profiles use the RACF RDEFINE command: RDEFINE FACILITY BPX.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''UNIX SYSTEM SERVICES CATCH-ALL PROFILE'') SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER FACILITY BPX.<qualifiers> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global
+    access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated ... (see CIS section 9.15)'

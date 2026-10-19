@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.44.2
+title: (NG) Ensure 'Allow camera and microphone access in Microsoft Defender Application Guard' is set to 'Disabled'
+description: 'The policy allows you to determine whether applications inside Microsoft Defender Application Guard can access the device’s camera and microphone. The recommended state for this setting is: Disabled. Note: Microsoft Defender Application Guard requires a 64-bit version of Windows and a CPU supporting hardware-assisted CPU virtualization (Intel VT-x or AMD-V). This feature is not officially supported on virtual hardware, although it can work on VMs (especially for testing) provided that the hardware-assisted CPU virtualization feature is exposed by the host to the guest VM. More information on s'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.44.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI'' -Name ''AllowCameraMicrophoneRedirection'' -ErrorAction SilentlyContinue).''AllowCameraMicrophoneRedirection''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowCameraMicrophoneRedirection='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\AppHVSI' -Name 'AllowCameraMicrophoneRedirection' -Value 0 -PropertyType DWord -Force | Out-Null

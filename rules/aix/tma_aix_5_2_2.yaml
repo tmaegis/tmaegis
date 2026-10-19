@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.2
+title: Ensure minimum password age is configured
+description: 'The minimum password age determines the number of weeks that you must use a password before you can change it. Users may have favorite passwords that they like to use because they are easy to remember and they believe that their password choice is secure from compromise. Audit: reads `lssec -f /etc/security/user -s default -a minage`.'
+target: aix
+level: 2
+severity: high
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.2 Ensure minimum password age is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a minage 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*minage=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 1 ]; then echo compliant; else echo "minage=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a minage=1

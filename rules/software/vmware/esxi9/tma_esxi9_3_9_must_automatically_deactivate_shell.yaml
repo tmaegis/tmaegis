@@ -1,0 +1,38 @@
+id: TMA-ESXI9-3.9
+title: Host must automatically deactivate shell services
+description: Enabling the automatic deactivation of shell services minimizes the attack surface on the host. The time window for the ESXi Shell and SSH services' availability is defined by UserVars.ESXiShellTimeOut, after which these services are terminated. The recommended setting for this parameter is 3600. The audit reads UserVars.ESXiShellTimeOut with esxcli and requires 3600 seconds or less (0 disables it and fails). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 3.9 Host must automatically deactivate shell services
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /UserVars/ESXiShellTimeOut 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/UserVars/ESXiShellTimeOut: no integer value'; exit 1 ;; esac
+    if [ "$v" -gt 0 ] && [ "$v" -le 3600 ]; then echo compliant; else echo "/UserVars/ESXiShellTimeOut = $v (expected 1-3600)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /UserVars/ESXiShellTimeOut -i 3600
+  guidance: "To set the timeout to the desired value, perform the following from the vSphere web client: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand System. 3. Select Advanced System Settings then click Edit. 4. Enter ESXiShellTimeOut in the filter. 5. Set the value for this parameter is set to 3600 (1 hour) or less 6. Click OK. Note: A value of 0 disables the ESXiShellTimeOut. Alternately, run the following PowerCLI command: # Set UserVars.ESXiShellTimeOut to 3600 on all hosts Get-VMHost | Get-AdvancedSetting -Name 'UserVars.ESXiShellTimeOut' | Set- AdvancedSetting -Value \"3600\""

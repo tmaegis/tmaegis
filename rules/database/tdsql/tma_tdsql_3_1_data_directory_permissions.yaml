@@ -1,0 +1,17 @@
+id: TMA-TDSQL-3.1
+title: Ensure Correct Permissions on TDSQL Data Directories
+description: 'TDSQL data directories and MySQL instance data directories should have restrictive permissions. Only the TDSQL service account should have read/write access. TDSQL creates data directories with 0755 by default, but stricter permissions are recommended. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses TDSQL_DATA (default /data/tdsql/data) for the instance data directory. Counts files that grant the listed permission to other users; any match fails, and a missing directory fails. (o+rw; sockets and symlinks excluded). Expected: directories 0750, files 0640, owner tdsql/mysql.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.1 Ensure Correct Permissions on TDSQL Data Directories
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_DATA:-/data/tdsql/data}"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_DATA:-/data/tdsql/data}"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" ! -type l ! -type s -perm /o+rw -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: chmod 750 <data dir>; find <data dir> -type d -exec chmod 750 {} +; find <data dir> -type f -exec chmod 640 {} +; chown -R tdsql:tdsql <data dir> (or mysql:mysql for instance files).

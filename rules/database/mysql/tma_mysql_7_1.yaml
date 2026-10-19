@@ -1,0 +1,18 @@
+id: TMA-MYSQL-7.1
+title: Ensure your authentication_policy is Set to a Secure Option
+description: 'Define your authentication policy by setting the mysql system variable authentication_policy. The default value of authentication_policy is ''*,,''. This means that factor 1 is required in account definitions and can use any authentication plugin (with caching_sha2_password being the default), and that factors 2 and 3 are optional and each can use any authentication plugin. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- authentication
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 7.1 Ensure your authentication_policy is Set to a Secure Option
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.authentication_policy NOT LIKE '%mysql_native_password%', 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set authentication_policy (e.g. ''*,,'' or ''caching_sha2_password,,'') without mysql_native_password, then migrate accounts: SELECT user, host FROM mysql.user WHERE plugin = ''mysql_native_password''; ALTER USER <user> IDENTIFIED WITH caching_sha2_password BY RANDOM PASSWORD PASSWORD EXPIRE;'

@@ -1,0 +1,19 @@
+id: TMA-MCP-2.1
+title: Ensure stdio is preferred for local, single-user servers
+description: The stdio transport is used for local development environments and single-user tool deployments, and Streamable HTTP is reserved for servers that must serve remote clients or multiple concurrent users. Each server's transport choice is inventoried, and a documented operational reason is kept on file for any server on a network-exposed transport where stdio would suffice. When a local stdio server is later promoted to serve multiple users, moving to Streamable HTTP means it must then meet the transport- security requirements, TLS and Origin validation, and the applicable client-configuration requirements. The stdio transport confines all communication to local inter-process pipes, eliminating the network attack surface for servers that do not require remote access. A stdio server cannot be reached by external attackers over the network, cannot be subject to DNS rebinding, and requires...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 2.1 Ensure stdio is preferred for local, single-user servers
+audit:
+  type: manual
+  command: 'Inventory each MCP service unit and record whether the server process owns a TCP listener. A listener does not by itself prove Streamable HTTP, and its absence does not prove stdio, so determine the transport from the unit''s ExecStart, the MCP client configuration, and the server configuration. Run the following command: for unit in $(systemctl list-units --type=service --no-legend ''mcp*'' | awk ''{print $1}''); do pid=$(systemctl show -p MainPID --value "$unit" 2>/dev/null) if [ -n "$pid" ] && [ "$pid" -gt 0 ] 2>/dev/null \ && ss -ltnp 2>/dev/null | grep -q "pid=$pid,"; then echo "NETWORK-LISTENER $unit (TCP listener detected, determine whether it carries MCP)" else echo "NO-PROCESS-LISTENER $unit (no TCP listener owned by this process, inspect the configured MCP transport)" fi done A local, single-user server carrying MCP over a network listener is a finding. The system is compliant when every local, single-user server is confirmed to use stdio, and any server exposing a
+    network listener either does not carry MCP over it or genuinely serves multiple users or remote clients.'
+remediation:
+  type: iac_patch
+  command: 'Reconfigure the server to use stdio and restart it. Then run the following command to confirm the server process owns no TCP listener, substituting the service unit name. The check reports ERROR and stops if the service did not restart, is not active, or has no active MainPID: MCP_UNIT="${MCP_UNIT:-<MCP_UNIT>}" sudo systemctl restart "$MCP_UNIT" || { echo "ERROR: service restart failed for $MCP_UNIT" exit 1 } if ! systemctl is-active --quiet "$MCP_UNIT"; then echo "ERROR: $MCP_UNIT is not active after restart" exit 1 fi pid=$(systemctl show -p MainPID --value "$MCP_UNIT" 2>/dev/null) if [ -z "$pid" ] || [ "$pid" -le 0 ] 2>/dev/null; then echo "ERROR: $MCP_UNIT has no active MainPID, cannot attribute the listener check" exit 1 fi if ss -ltnp 2>/dev/null | grep -q "pid=$pid,"; then echo "FAIL: a TCP listener is owned by the MCP server process" else echo "PASS: no TCP listener is owned by the MCP server process" fi A PASS confirms no TCP listener is owned by the MCP server process.
+    It does not by itself prove the transport is stdio, which the manual assessment confirms from the server configuration.'

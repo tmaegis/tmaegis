@@ -1,0 +1,41 @@
+id: TMA-ROS1-1.1.2
+title: Ensure /tmp is configured
+description: The /tmp directory is a world-writable directory used for temporary storage by all users and some applications. The audit requires /tmp to be a separate mount (findmnt). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: low
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.1.2 Ensure /tmp is configured
+audit:
+  type: command
+  shell: bash
+  command: findmnt -kn /tmp >/dev/null 2>&1 && echo compliant || echo '/tmp is not a separate partition'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    findmnt -kn /tmp >/dev/null 2>&1 && exit 0
+    if ! grep -qE '^[^#][^[:space:]]*[[:space:]]+/tmp[[:space:]]' /etc/fstab; then
+      cp -a /etc/fstab /etc/fstab.tmaegis.bak.$(date +%Y%m%d%H%M%S)
+      echo 'tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0' >> /etc/fstab
+    fi
+    systemctl unmask tmp.mount 2>/dev/null; systemctl daemon-reload 2>/dev/null
+    mount /tmp 2>/dev/null || mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime tmpfs /tmp; true
+  guidance: "Configure /etc/fstab as appropriate. Example: tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0 OR Run the following commands to enable systemd /tmp mounting: systemctl unmask tmp.mount systemctl enable tmp.mount Edit /etc/systemd/system/local-fs.target.wants/tmp.mount to configure the /tmp mount: [Mount] What=tmpfs Where=/tmp Type=tmpfs Options=mode=1777,strictatime,noexec,nodev,nosuid"

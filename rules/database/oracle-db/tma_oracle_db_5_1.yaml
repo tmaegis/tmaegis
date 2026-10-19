@@ -1,0 +1,46 @@
+id: TMA-ORACLE-DB-5.1
+title: Ensure All Auditable System Actions Commands Are Audited
+description: Oracle defines (*) the various command categories such as DDL, DML, TCL, etc. partly deviating from the ANSI standard. However, these command categories are incomplete and only represent a part of the auditable commands. For this reason, the term "Auditable System Actions" is used in the following. This type of definition allows a flexible and future-oriented possibility to add new commands ... Counts (container, auditable action/privilege) pairs not covered by an enabled unified policy for ALL USERS with success and failure. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- logging
+- audit
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 5.1 Ensure All Auditable System Actions Commands Are Audited
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    with privs(privilege) as (
+      select distinct a.privilege from dba_sys_privs a
+      where a.privilege not in (select name from auditable_system_actions where component = 'Standard')
+      and a.privilege not in ('INHERIT ANY PRIVILEGES')
+      union
+      select a.name from auditable_system_actions a where a.component = 'Standard'
+      and a.name not in ('ALL','SELECT','DELETE','INSERT','UPDATE','EXECUTE','LOGON','LOGOFF')
+    ),
+    cis_audit(con_id, audit_option) as (select c.con_id, ll.privilege from v$containers c, privs ll where c.open_mode = 'READ WRITE'),
+    audit_enabled as (
+      select distinct aud.con_id, aud.audit_option from containers(audit_unified_policies) aud
+      where aud.audit_option in (select privilege from privs)
+      and aud.audit_option_type in ('SYSTEM PRIVILEGE','STANDARD ACTION')
+      and exists (select 1 from containers(audit_unified_enabled_policies) e
+        where e.success = 'YES' and e.failure = 'YES' and e.enabled_option = 'BY USER' and e.entity_name = 'ALL USERS'
+        and e.policy_name = aud.policy_name and e.con_id = aud.con_id)
+    )
+    select count(*) from cis_audit c
+    where not exists (select 1 from audit_enabled e where e.audit_option = c.audit_option and e.con_id = c.con_id);
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Execute the following SQL statement to remediate this recommendation: ALTER AUDIT POLICY CIS_LOCAL_SYSTEM_ACTIONS ADD ACTIONS <DDL>; or ALTER AUDIT POLICY CIS_LOCAL_SYSTEM_ACTIONS ADD PRIVILEGES <DDL>; Note: If you do not have CIS_CDB_DDL_ACTIONS or CIS_PDB_DDL_ACTIONS policy, please create one using the CREATE AUDIT POLICY statement. Refer to Section 8.1 where a PL/SQL block is provided to help create or modify the audit policy to remediate this item in both container and pluggable database.'

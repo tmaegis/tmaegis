@@ -1,0 +1,21 @@
+id: TMA-MONGO-BIND-ALL
+title: Ensure mongod does not listen on all interfaces
+description: bindIp 0.0.0.0 or bindIpAll exposes the database on every network interface; bind only to localhost and required private addresses. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist).
+target: mongodb
+level: 1
+severity: high
+tags:
+- mongodb
+- database
+- network
+reference: CIS MongoDB Benchmark - Network Exposure / Bind Address (verify section number for your release)
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*(?:bindIp:[^#\n]*0\.0\.0\.0|bindIp:[^#\n]*::(?:[ ,'\x22]|$)|bindIpAll:[ \t]*true)
+  must_not_match: true
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: Set net.bindIp to 127.0.0.1 plus the specific private addresses required (remove bindIpAll), then restart mongod

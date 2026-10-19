@@ -1,0 +1,17 @@
+id: TMA-GKE-4.1.3
+title: Minimize wildcard use in Roles and ClusterRoles
+description: Kubernetes Roles and ClusterRoles define what actions users, groups, and service accounts can perform against Kubernetes API resources. Wildcard permissions should be minimized because the * character applies broadly across API groups, resources, or verbs and can grant more access than intended. Roles should explicitly define only the API groups, resources, and verbs required for the subject’s function. The benchmark marks this recommendation Manual.
+target: gke
+level: 1
+severity: medium
+tags:
+- gke
+- policies
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.3 Minimize wildcard use in Roles and ClusterRoles
+audit:
+  type: manual
+  command: Review Kubernetes RBAC roles in GKE Standard clusters to identify wildcard permissions in Roles and ClusterRoles. The audit should check for * in apiGroups, resources, or verbs, because wildcard permissions can unintentionally grant access to current or future Kubernetes APIs, resources, custom resources, or actions. After identifying wildcard rules, review the related RoleBinding and ClusterRoleBinding objects to determine which users, groups, or service accounts receive the permissions.
+remediation:
+  type: iac_patch
+  command: Replace wildcard permissions with explicit RBAC rules that define only the required API groups, resources, and verbs. Remediation should focus on preserving required access while removing broad * grants that could expand privileges as APIs, resources, or CRDs are added. Validate affected users, workloads, controllers, and automation before removing wildcard access. GKE RBAC guidance recommends least privilege role design and avoiding wildcard permissions.

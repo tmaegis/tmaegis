@@ -1,0 +1,33 @@
+id: TMA-KERBEROS-MAX-LIFE
+title: Ensure maximum ticket lifetime is 10 hours or less
+description: 'Long ticket lifetimes extend the window in which a stolen ticket can be replayed. The audit parses max_life in every realm of kdc.conf (/etc/krb5kdc/kdc.conf or /var/kerberos/krb5kdc/kdc.conf), accepting seconds, h:m[:s] and NdNhNmNs forms, and requires it to be set and at most 36000 seconds. Per-principal maximums (kadmin modprinc -maxlife) also apply and are not checked here.'
+target: kerberos
+level: 1
+severity: medium
+tags: [kerberos, kdc, tickets]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - Kerberos ticket lifetime (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    f=/etc/krb5kdc/kdc.conf; [ -f "$f" ] || f=/var/kerberos/krb5kdc/kdc.conf
+    [ -f "$f" ] || exit 1
+    awk -v key=max_life -v lim=36000 '
+    function dur(s,   t, n, c, p, k) {
+      gsub(/[ \t]/, "", s)
+      if (s ~ /^[0-9]+$/) return s + 0
+      if (s ~ /^[0-9]+:[0-9]+(:[0-9]+)?$/) { k = split(s, p, ":"); return p[1]*3600 + p[2]*60 + (k > 2 ? p[3] : 0) }
+      t = 0
+      while (match(s, /^[0-9]+[dhms]/)) {
+        c = substr(s, RLENGTH, 1); n = substr(s, 1, RLENGTH - 1) + 0
+        t += n * (c == "d" ? 86400 : (c == "h" ? 3600 : (c == "m" ? 60 : 1)))
+        s = substr(s, RLENGTH + 1)
+      }
+      return (s == "" ? t : -1)
+    }
+    $0 ~ "^[ \t]*" key "[ \t]*=" { v = $0; sub(/^[^=]*=/, "", v); d = dur(v); found = 1; if (d < 0 || d > lim) bad = 1 }
+    END { if (found && !bad) print "compliant" }' "$f"
+  expected_output: compliant
+  requires_file: [/etc/krb5kdc/kdc.conf, /var/kerberos/krb5kdc/kdc.conf]
+remediation:
+  type: iac_patch
+  command: 'In each realm of kdc.conf set max_life = 10h 0m 0s, restart krb5kdc, and lower krbtgt/<REALM> with kadmin: modprinc -maxlife "10 hours" krbtgt/<REALM>.'

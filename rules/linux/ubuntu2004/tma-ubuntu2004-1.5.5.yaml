@@ -1,0 +1,20 @@
+id: TMA-UBUNTU2004-1.5.5
+title: Ensure Automatic Error Reporting is not enabled
+description: The Apport Error Reporting Service automatically generates crash reports for debugging
+target: linux
+os_family:
+- ubuntu-20.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 1.5.5
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''dpkg-query -s apport &> /dev/null && grep -Psi -- ''"''"''^\h*enabled\h*=\h*[^0]\b''"''"'' /etc/default/apport'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active apport.service | grep ''"''"''^active''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit /etc/default/apport and add or edit the enabled parameter to equal 0: enabled=0 Run the following commands to stop and mask the apport service # systemctl stop apport.service # systemctl mask apport.service - OR - Run the following command to remove the apport package: # apt purge apport'

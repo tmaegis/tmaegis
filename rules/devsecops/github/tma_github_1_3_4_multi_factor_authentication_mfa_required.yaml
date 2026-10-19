@@ -1,0 +1,25 @@
+id: TMA-GITHUB-1.3.4
+title: Ensure Multi-Factor Authentication (MFA) is required for contributors of new code
+description: 'Require collaborators from outside the organization to use Multi-Factor Authentication (MFA) in addition to a standard user name and password when authenticating to the source code management platform. By default every user authenticates within the system by password only. If the password of a user is compromised, however, the user account and every repository to which they have access are in danger of data loss ... No organization member or outside collaborator may have two-factor authentication disabled (filter=2fa_disabled; owner token required). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: high
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.3.4 Ensure Multi-Factor Authentication (MFA) is required for contributors of new code
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    O=${GH_ORG:-$(gh api 'repos/{owner}/{repo}' --jq .owner.login 2>/dev/null)}
+    [ -n "$O" ] || exit 1
+    m=$(gh api --paginate "orgs/$O/members?filter=2fa_disabled&per_page=100" --jq '.[].login' 2>/dev/null) || exit 1
+    c=$(gh api --paginate "orgs/$O/outside_collaborators?filter=2fa_disabled&per_page=100" --jq '.[].login' 2>/dev/null) || exit 1
+    b=$(printf '%s\n%s\n' "$m" "$c" | grep . || true)
+    [ -z "$b" ] && echo compliant || printf 'no 2FA: %s\n' $b
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Organization Settings > Authentication security: enable Require two-factor authentication for everyone; ask the listed users to enable 2FA (they are removed when the requirement is enabled).'

@@ -1,0 +1,18 @@
+id: TMA-AKS-5.1.2
+title: Minimize and scope access to Azure Container Registry (ACR)
+description: Limit ACR access for AKS and related users to only the permissions required for their function. AKS-to-ACR integration grants the cluster’s kubelet managed identity the AcrPull role so nodes can pull images without broader registry rights for ABAC-enabled registries using the Container Registry Repository Reader role instead. The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: medium
+tags:
+- aks
+- managed-services
+- rbac
+- registry
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.1.2 Minimize and scope access to Azure Container Registry (ACR)
+audit:
+  type: manual
+  command: Review ACR access for AKS to confirm the registry uses least-privilege, identity-based access. Verify the ACR admin account is disabled, determine whether the registry is using RBAC only or RBAC + ABAC, confirm the AKS kubelet identity has only image pull rights, and review other principals for unnecessary push, delete, or broader registry permissions. • Confirm that adminUserEnabled is false, since the local admin account provides broad registry access and is not the preferred authentication method for AKS-integrated ACR use.
+remediation:
+  type: iac_patch
+  command: 'Disable the ACR local admin account and use identity-based, least-privilege access for registry authentication and authorization. For AKS, use the kubelet managed identity for required image pull access, and assign only the minimum registry role required by the registry authorization model: AcrPull for non-ABAC registries or Container Registry Repository Reader for ABAC-enabled registries. Human users, pipelines, and other workloads should use Microsoft Entra service principals, managed identities, or repository-scoped permissions only where additional access is operationally required, rather than shared local registry credentials. • Identify any scripts, pipelines, or workloads that still depend on the ACR admin username and password. • Assign the AKS kubelet identity only the required pull role. • Remove unnecessary push, delete, catalog, or admin permissions from other principals.'

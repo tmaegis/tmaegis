@@ -1,0 +1,17 @@
+id: TMA-AWS-2.1.3
+title: Ensure Organizations management account is not used for workloads
+description: Ensure that the AWS Organizations management account is used only for organizational governance tasks and does not host production workloads, applications, or business data. The management account is the most privileged account in an AWS Organization and performs sensitive administrative functions such as creating and managing member accounts, applying service control policies (SCPs), and managing consolidated billing. Workloads, applications, and associated data should be deployed in dedicated member accounts, not in the management account. The management account has unique privileges that cannot be restricted by SCPs, making it the highest-risk account in an organization. Deploying workloads or storing business data in the management account increases the attack surface and blast radius of a compromise. If a workload vulnerability or misconfiguration occurs in the management account...
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.1.3 Ensure Organizations management account is not used for workloads
+audit:
+  type: manual
+  command: '1. Confirm which AWS account is the management account for the organization (for example, via AWS Organizations “Overview” page or organizational documentation). 2. Ensure you have read-only access to review resources in this account. 3. Use your organization’s standard discovery methods (for example, AWS Config, CMDB/asset inventory, or CSPM) to obtain a list of services and resources running in the management account. - At a minimum, identify compute, storage, database, and application services (for example, EC2, Lambda, ECS, S3, RDS, DynamoDB, API Gateway, load balancers). 4. For each identified resource, determine whether it is: - Governance/security: resources that support centralized management, logging, audit, or security (for example, org-wide CloudTrail, Config aggregator, Security Hub or GuardDuty delegated admin, billing/cost tooling). - Workload/business: resources that support business applications, production or non-production workloads, or customer-facing systems.
+    5. If any workload/business resources are present in the management account, record this as a gap and document the affected services and resource types'
+remediation:
+  type: iac_patch
+  command: 1. Inventory all workload resources currently in the management account (compute, storage, databases, application services). 2. For each class of workload resource (for example, production, non-production, shared services), create or confirm dedicated member accounts within the organization and place them into the appropriate OUs. 3. For each workload resource, design a migration plan to the appropriate member account. - Execute the migrations in phases, starting with lower-risk environments (for example, development/test) before production. 4. Review and adjust IAM roles and permissions in the management account so that only personnel responsible for organization governance and security have access 5. Update architecture diagrams, runbooks, and onboarding processes to state that new workloads must be deployed only into designated workload accounts, not the management account.

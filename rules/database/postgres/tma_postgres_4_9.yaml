@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-4.9
+title: Make use of predefined roles
+description: PostgreSQL provides a set of predefined roles that provide access to certain commonly needed privileged capabilities and information. Administrators can GRANT these roles to users and/or other roles in their environment, providing those users with access to the specified capabilities and information.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authorization
+- superuser
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.9 Make use of predefined roles
+audit:
+  type: manual
+  command: Run SELECT rolname FROM pg_roles WHERE rolsuper IS TRUE; and, for each superuser other than the bootstrap account, decide whether predefined roles (pg_read_all_data, pg_write_all_data, pg_monitor, pg_signal_backend, pg_checkpoint, pg_maintain, ...) would suffice. Unneeded superusers are a fail.
+remediation:
+  type: iac_patch
+  command: GRANT the suitable predefined role(s) to the account, then ALTER ROLE <role> NOSUPERUSER;

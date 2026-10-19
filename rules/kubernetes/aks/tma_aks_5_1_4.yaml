@@ -1,0 +1,16 @@
+id: TMA-AKS-5.1.4
+title: Restrict AKS workloads to approved container registries only
+description: Configure AKS so workloads pull images only from registries that have been explicitly approved by the organization, such as selected ACR instances or other trusted registries. In AKS, this is typically enforced with Azure Policy by auditing or denying deployments that reference images outside the approved registry list, while AKS-to-ACR integration provides the managed identity and pull-role pattern needed for authorized image retrieval from ... The benchmark marks this recommendation Manual.
+target: aks
+level: 2
+severity: medium
+tags:
+- aks
+- managed-services
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 5.1.4 Restrict AKS workloads to approved container registries only
+audit:
+  type: manual
+  command: Review AKS image source controls to confirm workloads are limited to approved container registries. The audit should verify that an Azure Policy definition or initiative is assigned to the cluster to audit or deny unapproved image sources, that the approved registry list is explicitly defined, and that AKS has valid pull access only to those approved registries. In addition, deploy only validated images which supports restricting image sources to trusted registries.
+remediation:
+  type: iac_patch
+  command: Restrict AKS workloads to approved container registries by enforcing an Azure Policy control for allowed images or trusted registries, defining the approved registry list, and ensuring workloads reference only those registries. In AKS, using the Azure Policy add-on with built-in AKS policies, and AKS image-management guidance recommends deploying only validated images. 1. Enable the Azure Policy add-on on the AKS cluster if it is not already installed. 2. Assign an AKS policy or initiative that audits or denies unapproved image sources, and set the parameters to the organization’s approved registry list. 3. Migrate or mirror workload images from external or nonapproved registries into an approved registry, such as ACR, before deployment. AKS-to-ACR integration supports authenticated image pulls through the kubelet managed identity. 4.

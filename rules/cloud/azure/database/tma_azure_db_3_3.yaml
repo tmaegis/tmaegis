@@ -1,0 +1,20 @@
+id: TMA-AZURE-DB-3.3
+title: Ensure that 'disableLocalAuth' is set to 'true'
+description: Ensure that key-based authentication (including resource owner password credential authentication) is disabled for Azure Cosmos DB accounts by setting disableLocalAuth to true. Instead, use Microsoft Entra ID for authentication, as it provides stronger security through managed credentials, multi-factor authentication (MFA), centralized access control, and seamless integration with Azure RBAC. Disabling key-based authorization ensures that access to your Azure Cosmos DB account relies on the more secure Microsoft Entra ID authentication, reducing the risk of credential misuse and unauthorized access.
+target: azure
+level: 1
+severity: high
+tags:
+- auth
+- azure
+- cloud
+- database
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 3.3 Ensure that 'disableLocalAuth' is set to 'true'
+audit:
+  type: manual
+  command: 'Audit from Azure CLI Run the following command to get the disableLocalAuth setting for each Cosmos DB account: az cosmosdb list --query "[].{name:name, resourceGroup:resourceGroup, disableLocalAuth:disableLocalAuth}" Ensure that disableLocalAuth is set to true for each Cosmos DB account. Audit from PowerShell Run the following command to list Cosmos DB accounts in a resource group: Get-AzCosmosDBAccount -ResourceGroupName <resource-group> Run the following command to get the Cosmos DB account in a resource group with a given name: $cosmosdb = Get-AzResource -ResourceType Microsoft.DocumentDB/databaseAccounts -ResourceGroupName <resource-group> - ResourceName <cosmosdb-account> Run the following command to get the disableLocalAuth setting for the Cosmos DB account: $cosmosdb.Properties.disableLocalAuth Ensure that the command returns True. Repeat for each Cosmos DB account. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open
+    a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definition...'
+remediation:
+  type: iac_patch
+  command: 'Map all the resources that currently have access to the Azure Cosmos DB account with keys or access tokens. Create an Entra ID identity for each of these resources: - For Azure resources, you can create a managed identity. You may choose between system-assigned and user-assigned managed identities. - For non-Azure resources, create Entra ID service principals. Grant each Entra ID service principal the minimum permissions it requires. We recommend using one of the two built-in role definitions: Cosmos DB Built-in Data Reader or Cosmos DB Built-in Data Contributor. Validate that the new resource is functioning correctly. After new permissions are granted to identities, it may take a few hours for them to propagate. When all resources work correctly with the new identities, continue to the next step. Remediate from Azure CLI For each Cosmos DB account requiring remediation, run the following command to set disableLocalAuth to true: az resource update --resource-group <resource-group>
+    --name <cosmosdb- account> --resource-type Microsoft.DocumentDB/databaseAccounts --set properties.disableLocalAuth=true Remediate from PowerShell For each Cosmos DB account requiring remediation, run t...'

@@ -1,0 +1,21 @@
+id: TMA-UBUNTU1804-3.5.2.3
+title: Ensure loopback traffic is configured
+description: Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network (127.0.0.0/8 for IPv4 and ::1/128 for IPv6).
+target: linux
+os_family:
+- ubuntu-18.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 18.04 LTS Benchmark v2.0.1 ARCHIVE - 3.5.2.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v ufw >/dev/null 2>&1 || { echo "step1: ufw not installed"; return 1; }; o=$(bash -c ''ufw status verbose'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''To Action From'' || { echo step1: missing ''To Action From''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''-- ------ ----'' || { echo step1: missing ''-- ------ ----''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Anywhere on lo ALLOW IN Anywhere'' || { echo step1: missing ''Anywhere on lo ALLOW IN Anywhere''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Anywhere DENY IN 127.0.0.0/8'' || { echo step1: missing ''Anywhere DENY IN 127.0.0.0/8''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Anywhere (v6) on lo ALLOW IN Anywhere (v6)'' || { echo step1: missing
+    ''Anywhere (v6) on lo ALLOW IN Anywhere (v6)''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Anywhere (v6) DENY IN ::1'' || { echo step1: missing ''Anywhere (v6) DENY IN ::1''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # ufw allow in on lo # ufw deny in from 127.0.0.0/8 # ufw deny in from ::1'

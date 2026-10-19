@@ -1,0 +1,30 @@
+id: TMA-BIND-8.3
+title: Ensure Any Signing Keys using RSA Have a Length of 2048 or Greater
+description: If one of the RSA digital signature algorithms is used, then then key length should be at least 2048 bits. The Elliptic Curve algorithms have sufficient key length without any additional options, and will provide for smaller signed DNS responses then the RSA algorithms. The audit requires the base64 Prime1 value of every RSA K*.private key under $BIND_HOME to be at least 172 characters (2048-bit key).
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 8.3 Ensure Any Signing Keys using RSA Have a Length of 2048 or Greater
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    keys=$(find $BH /etc/bind/keys -name 'K*.private' -type f 2>/dev/null | sort -u)
+    [ -n "$keys" ] || { echo compliant; exit 0; }
+    bad=$(for k in $keys; do awk '/^Prime1:/ && length($2) < 172 {print FILENAME ": Prime1 length " length($2)}' "$k"; done)
+    [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: 'To remediate a weak RSA key, perform the following: ; Generate a new key to replace the weak key using dnssec-keygen and one of the recommended algorithms and key lengths. Examples commands are shown below. # dnssec-keygen -a RSASHA256 -b 2048 example.com # dnssec-keygen -a ECDSAP384SHA384 cisecurity.org ; Implement a rollover period to phase out the weak key and replace it with the the newly generated key. ; Once the key is fully deleted from the active use, remove the file.'

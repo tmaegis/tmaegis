@@ -1,0 +1,60 @@
+id: TMA-ORACLE-DB-3.2
+title: Ensure 'PASSWORD_LOCK_TIME' Is Greater Than Or Equal To '1'
+description: 'The PASSWORD_LOCK_TIME setting determines how many days must pass for the user''s account to be unlocked after the set number of failed login attempts has occurred. The suggested value for this is one day or greater. DEFAULT limits resolve to the DEFAULT profile value. Default: 1 Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- password-policy
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 3.2 Ensure 'PASSWORD_LOCK_TIME' Is Greater Than Or Equal To '1'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from (
+      select p.con_id, p.profile, to_number(decode(p.limit, 'DEFAULT',
+        (select decode(d.limit, 'UNLIMITED', '9999', d.limit) from cdb_profiles d
+          where d.profile = 'DEFAULT' and d.resource_name = p.resource_name and d.con_id = p.con_id),
+        'UNLIMITED', '9999', p.limit)) lim
+      from cdb_profiles p where p.resource_name = 'PASSWORD_LOCK_TIME'
+    ) where lim < 1;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v sqlplus >/dev/null 2>&1 || exit 0
+    profs=$(sqlplus -S -L / as sysdba <<'EOF'
+    set heading off feedback off pagesize 0
+    select distinct profile from dba_profiles;
+    exit
+    EOF
+    )
+    for p in $profs; do
+    sqlplus -S -L / as sysdba <<EOF
+    ALTER PROFILE "$p" LIMIT PASSWORD_LOCK_TIME 1;
+    exit
+    EOF
+    done; true
+  guidance: "Remediate this setting by executing the following SQL statement for each PROFILE returned by the audit procedure. ALTER PROFILE <profile_name> LIMIT PASSWORD_LOCK_TIME 1;"

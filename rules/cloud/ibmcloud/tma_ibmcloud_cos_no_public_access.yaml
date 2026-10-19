@@ -1,0 +1,25 @@
+id: TMA-IBMCLOUD-COS-NO-PUBLIC-ACCESS
+title: Ensure Cloud Object Storage buckets are not publicly accessible
+description: COS public access is granted through policies on the account's Public Access group. That group must have no cloud-object-storage policies (passes if the group does not exist). Read-only ibmcloud CLI calls using the current CLI session and targeted region (ibmcloud login, or IBMCLOUD_API_KEY); JSON output is parsed with grep/sed/awk. A missing CLI, plugin or session fails the check.
+target: ibmcloud
+level: 1
+severity: critical
+tags:
+- ibmcloud
+- storage
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - Storage - Cloud Object Storage public access disabled (verify section number for your release)
+audit:
+  type: command
+  command: 'grp=$(ibmcloud iam access-groups --output json 2>/dev/null) || exit 1
+
+    if ! printf ''%s\n'' "$grp" | grep -q ''"Public Access"''; then echo compliant; exit 0; fi
+
+    out=$(ibmcloud iam access-group-policies "Public Access" --output json 2>/dev/null) || exit 1
+
+    n=$(printf ''%s\n'' "$out" | grep -c ''"cloud-object-storage"'' || true)
+
+    [ "$n" -eq 0 ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove the cloud-object-storage policies from the Public Access group (ibmcloud iam access-group-policy-delete "Public Access" <policy-id>) and disable public access in the COS console.

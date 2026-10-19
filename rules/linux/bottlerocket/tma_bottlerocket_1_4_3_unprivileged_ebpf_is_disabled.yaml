@@ -1,0 +1,21 @@
+id: TMA-BOTTLEROCKET-1.4.3
+title: Ensure unprivileged eBPF is disabled
+description: Unprivileged users should not have access to eBPF. The audit reads /proc/sys/kernel/unprivileged_bpf_disabled and requires 1. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 1
+severity: medium
+tags:
+- bottlerocket
+- system
+reference: CIS Bottlerocket Benchmark v1.0.0 - 1.4.3 Ensure unprivileged eBPF is disabled
+audit:
+  type: command
+  command: |-
+    bad=0
+    chk() { f=/proc/sys/$(printf %s "$1" | tr . /); v=$(cat "$f" 2>/dev/null) || { echo "$1: not readable"; bad=1; return; }; [ "$v" = "$2" ] || { echo "$1 = $v (expected $2)"; bad=1; }; }
+    chk kernel.unprivileged_bpf_disabled 1
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set the active kernel parameter and persist the setting: # apiclient apply <<EOF [settings.kernel.sysctl] "kernel.unprivileged_bpf_disabled" = "1" EOF'

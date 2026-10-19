@@ -1,0 +1,16 @@
+id: TMA-AZURE-GUEST-USERS-REVIEWED
+title: Ensure guest users are reviewed on a regular basis
+description: Stale B2B guest accounts keep access to tenant resources after the collaboration ends. Review requires business context, so this is a manual check. Read-only Azure CLI calls against the current subscription; credentials come from the CLI's normal sign-in (az login, a service principal or managed identity; select the subscription with az account set). A missing CLI or session fails the check.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- identity
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - Identity - guest users reviewed regularly (verify section number for your release)
+audit:
+  type: manual
+  command: 'In Microsoft Entra admin center > Users > All users, filter User type = Guest (or run: az ad user list --filter "userType eq ''Guest''" --query ''[].[displayName,mail,createdDateTime]'' -o table). Confirm each guest still needs access, remove stale or unknown guests, and set up recurring Access Reviews (Identity Governance) for guest users.'
+remediation:
+  type: iac_patch
+  command: Delete or disable unneeded guests (az ad user delete --id <id>) and configure Entra ID Access Reviews for guests with auto-apply of results.

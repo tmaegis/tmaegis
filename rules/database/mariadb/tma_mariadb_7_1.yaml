@@ -1,0 +1,18 @@
+id: TMA-MARIADB-7.1
+title: Disable use of the mysql_old_password plugin
+description: 'The mysql_old_password plugin uses a cracked password routine with several flaws. It is present but not used by default in MariaDB. Steps should be taken to ensure that passwords will not be created with this plugin and that clients will not be able to authenticate to the MariaDB server using this plugin. Requires old_passwords OFF and secure_auth ON. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- authentication
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 7.1 Disable use of the mysql_old_password plugin
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF(@@global.old_passwords = 0 AND @@global.secure_auth = 1, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set old_passwords=0 and secure_auth=ON under [mariadbd] in /etc/mysql/mariadb.conf.d/50-server.cnf (or /etc/my.cnf.d/server.cnf), then restart MariaDB.

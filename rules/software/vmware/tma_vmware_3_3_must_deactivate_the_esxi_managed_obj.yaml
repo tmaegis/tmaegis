@@ -1,0 +1,38 @@
+id: TMA-VMWARE-3.3
+title: Host must deactivate the ESXi Managed Object Browser (MOB)
+description: The Managed Object Browser (MOB) is a web-based server application that lets you examine and change system objects and configurations. It is a prudent security measure to deactivate the MOB unless it's essential for operations. The parameter governing this behavior is Config.HostAgent.plugins.solo.enableMob with a recommended setting of False. The audit reads Config.HostAgent.plugins.solo.enableMob with esxcli and requires false (0). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: high
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.3 Host must deactivate the ESXi Managed Object Browser (MOB)
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Config/HostAgent/plugins/solo/enableMob 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/Config/HostAgent/plugins/solo/enableMob: no integer value'; exit 1 ;; esac
+    if [ "$v" -eq 0 ]; then echo compliant; else echo "/Config/HostAgent/plugins/solo/enableMob = $v (expected false/0)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Config/HostAgent/plugins/solo/enableMob -i 0
+  guidance: "To disabled MOB, perform the following from the vSphere Web Client: 1. Select a host 2. Click Configure then expand System then select Advanced System Settings. 3. Click Edit then search for Config.HostAgent.plugins.solo.enableMob 4. Set the value to false. 5. Click OK. Note: You cannot disable the MOB while a host is in lockdown mode. Note 2: You must disable MOB from the vSphere interface not via the vim-cmd command."

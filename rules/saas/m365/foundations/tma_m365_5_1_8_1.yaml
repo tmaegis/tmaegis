@@ -1,0 +1,18 @@
+id: TMA-M365-5.1.8.1
+title: Ensure that password hash sync is enabled for hybrid deployments
+description: 'Password Hash Synchronization is one of the sign-in methods used to enable hybrid identity authentication. With this method, Microsoft Entra Connect synchronizes a cryptographically derived representation of a user’s on-premises Active Directory password to Microsoft Entra ID. The original NT password hash (MD4) is never transmitted to Entra ID. Instead, Entra Connect computes a SHA-256 hash of the original MD4 hash and synchronizes that value. Because only this secondary hash is stored in the cloud, the credential material in Entra ID cannot be reused for on-premises pass-the-hash attacks, even if compromised. Note: The audit and remediation procedures described in this recommendation are applicable only to Microsoft 365 tenants operating in a hybrid identity configuration using Microsoft Entra Connect. They do not apply to federated or cloud-only deployments. Password hash synchroni...'
+target: m365
+level: 1
+severity: medium
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.1.8.1 Ensure that password hash sync is enabled for hybrid deployments
+audit:
+  type: manual
+  command: 'To audit using the UI: Only Global Admin and Hybrid Identity Administrator roles have access to view the actual Password Hash Sync status message. Inadequate role access will result in a default message stating: "Unable to retrieve your tenant’s password hash sync information." 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Entra Connect. 3. Select Connect Sync. 4. Under Microsoft Entra Connect sync, verify the Password Hash Sync status message indicates that synchronization is occurring and no errors are present, with one of the following messages: o Password hash synchronization is enabled o Password hash synchronization cloud configuration is enabled o Password hash synchronization heartbeat detected To audit using the Microsoft Graph API: Permission required: OnPremDirectorySynchronization.Read.All 1. Execute a GET request to the following relative URI: v1.0/directory/onPremisesSynchronization 2. Verify that features.passwordSyncEnabled
+    is true. To audit for the on-prem tool: 1. Log in to the server that hosts the Microsoft Entra Connect tool. 2. Run Azure AD Connect, and then click Configure and View or export current configur...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the on-prem Microsoft Entra Connect tool: 1. Log in to the on premises server that hosts the Microsoft Entra Connect tool 2. Double-click the Azure AD Connect icon that was created on the desktop 3. Click Configure. 4. On the Additional tasks page, select Customize synchronization options and click Next. 5. Enter the username and password for your global administrator. 6. On the Connect your directories screen, click Next. 7. On the Domain and OU filtering screen, click Next. 8. On the Optional features screen, check Password hash synchronization and click Next. 9. On the Ready to configure screen click Configure. 10. Once the configuration completes, click Exit.'

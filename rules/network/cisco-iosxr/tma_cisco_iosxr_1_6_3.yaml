@@ -1,0 +1,18 @@
+id: TMA-CISCO-IOSXR-1.6.3
+title: Ensure Exec Timeout for Console Sessions is set
+description: 'Verify device is configured to automatically disconnect console sessions after a defined maximum session time, set in minutes. Note there are 3 different timeout values: - absolute-timeout: terminate the connection after the specified time has elapsed, regardless of whether the connection is being used at the time of termination. This prevents unauthorized users from misusing abandoned sessions. For example, if the network administrator disconnects leaving a console session open, that session will remain open (in the same state and privilege level) for the next person who connects a ... Default 10 minutes applies when unset; fails if the console timeout is above 10 minutes or disabled. Audited against the hierarchical output of ''show running-config'' (run ''terminal length 0'' first; not ''show running-config formal'').'
+target: cisco-iosxr
+level: 1
+severity: medium
+tags:
+- cisco-iosxr
+- network
+- ntp
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.6.3 Ensure Exec Timeout for Console Sessions is set
+audit:
+  type: config_regex
+  pattern: '(?m)^line console[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+exec-timeout (?:0(?: 0)?|(?:1[1-9]|[2-9]\d|[1-9]\d{2,})(?: \d+)?|10 0*[1-9]\d*)[ \t\r]*$'
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: vty-pool default 0 4 line-template default line default exec-timeout 10 0

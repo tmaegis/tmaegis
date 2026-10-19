@@ -1,0 +1,18 @@
+id: TMA-AZURE-CONTAINER-LINUX-1.4.7
+title: Ensure kernel lockdown is configured
+description: Lockdown must be enabled in integrity mode. On Azure Container Linux, kernel lockdown is enabled in integrity mode, which restricts modification of the running kernel. Note that this prevents unsigned kernel modules from being loaded. This could interfere with the operation of hardware or third-party software that depends on these modules.
+target: azure-container-linux
+level: 2
+severity: low
+tags:
+- azure-container-linux
+- cis-converted
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 1.4.7 Ensure kernel lockdown is configured
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -Fw ''"''"''[integrity]''"''"'' /sys/kernel/security/lockdown'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''none [integrity] confidentiality'' || { echo step1: missing ''none [integrity] confidentiality''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable kernel lockdown in integrity mode via the kernel command line by adding lockdown=integrity, then rebuild and deploy the Azure Container Linux image. On ACL the setting is applied at image build time rather than at runtime.

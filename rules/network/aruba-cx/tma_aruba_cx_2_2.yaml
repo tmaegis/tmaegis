@@ -1,0 +1,25 @@
+id: TMA-ARUBA-CX-2.2
+title: Traffic Control - Rate limiting
+description: 'Hardware: Ethernet, MAC Address: 08:97:34:b1:20:00 MTU 1500 Type 1000BT qos trust none rate-limit broadcast 2000 pps (2000 actual) rate-limit icmp ip-all 10000 kbps (10000 actual) Speed 1000 Mb/s L3 Counters: Rx Disabled, Tx Disabled Auto-Negotiation is on Flow-control: off Rx 0 input packets 0 bytes 0 input error 0 dropped 0 CRC/FCS L3: 0 packets, 0 bytes Tx 127 output packets 16510 bytes 0 input error 0 dropped 0 collision L3: 0 packets, 0 bytes'
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- layer2
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 2.2 Traffic Control - Rate limiting
+audit:
+  type: manual
+  command: Run 'show interface <id> qos' on access and uplink ports and confirm broadcast, multicast, unknown-unicast and ICMP rate limits ('rate-limit ...') are configured according to the organisation's traffic policy.
+remediation:
+  type: iac_patch
+  command: |-
+    To configure rate-limit in interfaces -
+    interface <ID>
+    rate-limit {broadcast|multicast|unknown-unicast|icmp {ip-
+    all|ip|ipv6}} <RATE> {kbps|percent|pps} Sample configurations - Limiting broadcast traffic to 2000pps on interface 1/1/3:
+    interface 1/1/3
+    rate-limit broadcast 500 kbps
+    Limiting all ICMP IPv4 traffic to 10000kbps on interface 1/1/3:
+    interface 1/1/3
+    rate-limit icmp ip 10000 kbps

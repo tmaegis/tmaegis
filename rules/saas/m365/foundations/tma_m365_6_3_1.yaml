@@ -1,0 +1,17 @@
+id: TMA-M365-6.3.1
+title: Ensure users installing Outlook add-ins is not allowed
+description: 'Role assignment policies in Exchange Online control whether users can install and manage add-ins for Outlook. Three management roles govern this capability: My Custom Apps allows users to sideload custom add-ins, My Marketplace Apps allows users to install add-ins from the marketplace, and My ReadWriteMailbox Apps allows users to install add-ins that request read/write mailbox permissions. When these roles are assigned to a user''s role assignment policy, users can self-install add-ins in both Outlook desktop and Outlook on the web, granting those add-ins access to mailbox data. This recommendation applies to the default role assignment policy, which is automatically assigned to new mailboxes unless a custom policy is specified. Attackers exploit vulnerable or malicious add-ins to read, exfiltrate, or modify mailbox content including email, calendar items, and contacts. Restricting use...'
+target: m365
+level: 2
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 6.3.1 Ensure users installing Outlook add-ins is not allowed
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Exchange admin center https://admin.exchange.microsoft.com. 2. Expand Roles and select User roles. 3. Select Default Role Assignment Policy. 4. In the properties pane on the right click on Manage permissions. 5. Under Other roles verify that My Custom Apps, My Marketplace Apps, and My ReadWriteMailbox Apps are not checked. Note: As of this release of the Benchmark the manage permissions link no longer displays anything when a user assigned the Global Reader role clicks on it. As an alternative, users assigned the Global Reader directory role can inspect the Roles column or use the PowerShell method to perform the audit. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following script: $RoleList = @( "My Custom Apps", "My Marketplace Apps", "My ReadWriteMailbox Apps" ) $DefaultPolicy = Get-RoleAssignmentPolicy | Where-Object { $_.IsDefault -eq $true } $NonCompliantRoles = $DefaultPolicy.AssignedRoles
+    | Where-Object { $_ -in $RoleList } Write-Host "Checking Default Role Assignment Policy: $($DefaultPolicy.Name)" if ($NonCompliantRoles) { "Non-compliant - the following roles are assigned: " + ($...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Exchange admin center https://admin.exchange.microsoft.com. 2. Click to expand Roles and select User roles. 3. Select Default Role Assignment Policy. 4. In the properties pane on the right click on Manage permissions. 5. Under Other roles uncheck any non-compliant roles: My Custom Apps, My Marketplace Apps, and My ReadWriteMailbox Apps. 6. Click Save changes. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following script: $TargetRoles = @( "My Custom Apps", "My Marketplace Apps", "My ReadWriteMailbox Apps" ) $DefaultPolicy = Get-RoleAssignmentPolicy | Where-Object { $_.IsDefault -eq $true } $Assignments = Get-ManagementRoleAssignment -RoleAssignee $DefaultPolicy.Identity | Where-Object { $_.Role -in $TargetRoles } foreach ($Assignment in $Assignments) { Remove-ManagementRoleAssignment -Identity $Assignment.Identity - Confirm:$false }'

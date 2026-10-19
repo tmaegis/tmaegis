@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-8.1
+title: Ensure 'SSL Forward Proxy Policy' for traffic destined to the Internet is configured
+description: 'Configure SSL Forward Proxy for all traffic destined to the Internet. In most organizations, including all categories except financial-services, government and health-and-medicine is recommended. PASS requires a decryption rule of type ssl-forward-proxy; confirm it covers internal sources to the untrusted zone with the documented category exclusions. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- crypto
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 8.1 Ensure 'SSL Forward Proxy Policy' for traffic destined to the Internet is configured
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase decryption rules (?:"[^"\n]*"|\S+) type ssl-forward-proxy\b
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set rulebase decryption rules outbound-decrypt from trust to untrust source any destination any category any action decrypt type ssl-forward-proxy
+    commit
+    # CIS guidance:
+    Navigate to Policies > Decryption. Create a Policy for all traffic destined to the Internet. This Policy should include:
+    Source tab: The Source Zone and/or Source Address should include all target internal networks. Source User should include all target internal users Destination tab: The Destination Zone should include the untrusted target zone (usually the internet). Destination Address is typically Any for an internet destination. Service/URL Category tab: all URL Category entries should be included except financial-services, government and health-and-medicine (this list may vary depending on your organization and its policies). Options tab: Type set to SSL Forward Proxy

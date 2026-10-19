@@ -1,0 +1,16 @@
+id: TMA-TDSQL-9.5
+title: Ensure `max_connections` Is Capacity-Planned and Monitored
+description: max_connections must be sized from instance capacity, per-connection memory, application pool limits, administrative reserve, and measured peak concurrency, and monitored with current and rejected connections.
+target: tdsql
+level: 1
+severity: low
+tags:
+- tdsql
+- availability
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 9.5 Ensure `max_connections` Is Capacity-Planned and Monitored
+audit:
+  type: manual
+  command: SHOW GLOBAL VARIABLES LIKE 'max_connections'; SHOW GLOBAL STATUS LIKE 'Max_used_connections'; SHOW GLOBAL STATUS LIKE 'Threads_connected'; SHOW GLOBAL STATUS LIKE 'Connection_errors_max_connections'; Review a representative peak period and confirm an approved capacity calculation, coordinated application/Gateway pool totals, an administrative reserve, and alerts for utilization and rejected connections.
+remediation:
+  type: iac_patch
+  command: Calculate the approved limit from workload and memory evidence, coordinate application pool limits, and persist it through a TDSQL custom parameter template. Do not apply a generic value such as 2048 without capacity testing.

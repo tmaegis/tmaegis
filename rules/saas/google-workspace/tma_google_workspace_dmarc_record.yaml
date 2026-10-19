@@ -1,0 +1,17 @@
+id: TMA-GWS-DMARC-RECORD
+title: Ensure a DMARC policy of quarantine or reject is published
+description: 'An enforcing DMARC policy tells receivers to quarantine or reject mail that fails SPF/DKIM alignment, stopping direct-domain spoofing. Checked from any POSIX shell with dig: set DOMAIN to the mail domain (e.g. DOMAIN=example.com). Fails if DOMAIN is unset or dig is missing.'
+target: google-workspace
+level: 1
+severity: high
+tags:
+- google-workspace
+- mail-auth
+reference: CIS Google Workspace Foundations Benchmark v1.4.0 - Gmail / DMARC policy (verify section number for your release)
+audit:
+  type: command
+  command: command -v dig >/dev/null 2>&1 || exit 1; [ -n "$DOMAIN" ] || exit 1; out=$(dig +short TXT "_dmarc.$DOMAIN" 2>/dev/null) || exit 1; if printf '%s\n' "$out" | tr -d '" ' | grep -qiE '^v=DMARC1;(.*;)?p=(quarantine|reject)'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Publish TXT at _dmarc.<domain>, starting with v=DMARC1; p=none; rua=mailto:dmarc@<domain> to collect reports, then move to p=quarantine and p=reject once all legitimate senders align.

@@ -1,0 +1,19 @@
+id: TMA-JUNIPER-JUNOS-2.5
+title: Ensure "Protect RE" Firewall Filter includes Flood Attack Protection terms
+description: 'Flood Attack protection should be included in the "Protect RE" Filter. As with any computer system connected to a network, an attacker may attempt to overwhelm the resources of a Junos device by flooding it with unwanted traffic, consuming resources and potentially resulting in a Denial of Service (or DoS) Attack. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 2.5 Ensure "Protect RE" Firewall Filter includes Flood Attack Protection terms
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options available for Management Service selection, management subnets and filter design, it is not possible to automatically score this recommendation. "Protect RE" Firewall Filters should be set for ingress traffic on all Loopback interfaces as discussed in Recommendation 2.1 Ensure "Protect RE" Firewall Filter is set for inbound traffic to the Routing Engine for IPv4 (inet) and IPv6 (inet6) as necessary.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! A full discussion of Firewall Filters is beyond the scope of this Benchmark. It is important to ensure that Firewall Filters include terms to match and accept all of your required Routing Protocols, Management Services and any other services used on your Junos Device. As noted elsewhere, it is strongly recommended that changes to Firewall Filters applied to the Loopback interface always be applied using commit confirmed so that the change will be automatically rolled back should the administrator lose connection after committing the change. In this example, we will add the new Flood Protection terms seen in the audit procedure to our existing Firewall Filter from Recommendation 2.3 Ensure "Protect RE" Firewall filter includes Rate-Limiting for Management Services terms using the following commands from the hierachy: First we need to create an additional 'policer' definition, which can be re-used in multiple terms of filters. mwhite@SRX1# set if-exceeding bandwidth-limit 100k mwhite@SRX1# set if-exceeding burst-size-limit 15k mwhite@SRX1# set then discard This new policer enforces a bandwidth-limit of 100kb/s, with a burst-size proportional to the configured limit to allow bursts to briefly exceed the limit and smooth the impact of the policer on the service. The new limit-100k policer is used in the new Limit-SYNFlood term, while the other new terms re-use the limit-1m and limit-10m configured previously. A policer applies separately for each term, so SSH, HTTPS and new terms re-using these policers can receive 10Mb/s of traffic each, not a combined 10Mb/s between them.
+    ! ... see the benchmark for the full procedure

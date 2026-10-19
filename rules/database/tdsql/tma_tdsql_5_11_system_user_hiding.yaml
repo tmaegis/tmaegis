@@ -1,0 +1,16 @@
+id: TMA-TDSQL-5.11
+title: Ensure TXSQL System User Hiding and Anti-Forgery Is Enabled
+description: 'The TXSQL kernel provides three layers of protection for system user reserved prefixes (tdsqlsys, tdsql3_sys, controlled by the tdsql_system_user_prefix variable): 1. Hidden visibility - the mysql.user view automatically masks system user rows. 2. Forgery prevention - no client is allowed to create users with the system user reserved prefixes. 3.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- authentication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.11 Ensure TXSQL System User Hiding and Anti-Forgery Is Enabled
+audit:
+  type: manual
+  command: '-- 1. Execute after logging in as a regular user (should not see tdsqlsys_* users) SELECT User, Host FROM mysql.user WHERE User LIKE ''tdsqlsys_%''; -- 2. Attempt to create a user with the same prefix (should be rejected by the kernel) CREATE USER ''tdsqlsys_attacker''@''%'' IDENTIFIED BY ''fake_pass''; -- ERROR XXXX: User ''tdsqlsys_attacker'' is reserved for system use. -- 3. Attempt to write directly via INSERT (should be rejected by the kernel) INSERT INTO mysql.user (User, Host) VALUES (''tdsqlsys_evil'',''%''); -- ERROR XXXX: Modifying system tables is not allowed. -- 4.'
+remediation:
+  type: iac_patch
+  command: These protections are enabled by default out of the box in TDSQL. If system users are visible or can be created, the cluster is not running the TXSQL kernel or has been replaced with stock MySQL, and must be upgraded to the TXSQL kernel.

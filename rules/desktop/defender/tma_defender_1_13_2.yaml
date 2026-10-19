@@ -1,0 +1,18 @@
+id: TMA-DEFENDER-1.13.2
+title: Ensure 'Scan archive files' is set to 'Enabled'
+description: 'This policy setting configures whether Microsoft Defender Antivirus scans for malicious software and unwanted software in archive files such as .ZIP or .CAB files. The recommended state for this setting is: Enabled. Rationale: Archive files such as .zip, .rar, .7z, and .iso are a common and effective way threat actors hide malware, bypass basic defenses, and to delay detection. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Scan:DisableArchiveScanning (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.13.2 Ensure 'Scan archive files' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''DisableArchiveScanning'' -ErrorAction SilentlyContinue).''DisableArchiveScanning''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DisableArchiveScanning' -Value 0 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,23 @@
+id: TMA-CISCO-NXOS-3.3.2
+title: Configure Storm Control
+description: 'Traffic storm control (also called traffic suppression) allows you to monitor the levels of the incoming broadcast, multicast, and unicast traffic over a 3.9-millisecond interval. During this interval, the traffic level, which is a percentage of the total available bandwidth of the port, is compared with the traffic storm control level that you configured. When the traffic exceeds the configured level, you can configure traffic storm control to perform the following optional corrective actions : Shut down-When ingress traffic exceeds the traffic storm control level that is configured on a port, traffic storm ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: medium
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.3.2 Configure Storm Control
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The storm control levels and measurement methods will vary depending on normal traffic in your environment. Normally the action should be "shutdown", unless the values are in the process of being determined (in which case this is normally set to "trap"). If measuring in percent, remember that these are usually 10Gbps or faster interfaces.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To set the broadcast limit in percent (multicast limit shown):
+    interface ethernet 1/1
+    storm-control multicast level 10 or to set in packets per second (broadcast limit shown)
+    storm-control broadcast level pps 8000 Configure to send SNMP trap if a broadcast limit is exceeded
+    storm-control action trap or to place an interface into an ERR-DISABLE state if a broadcast limit is exceeded:
+    storm-control action disable

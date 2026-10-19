@@ -1,0 +1,39 @@
+id: TMA-COS-1.1.2
+title: Ensure /tmp is configured
+description: The /tmp directory is a world-writable directory used for temporary storage by all users and some applications. Making /tmp its own file system allows an administrator to set the noexec option on the mount, making /tmp useless for an attacker to install executable code. It would also prevent an attacker from establishing a hardlink to a system setuid program and wait for it to be updated. Once the program was updated, the hardlink would be broken and the attacker would have his own copy of the program. If the program happened to have a security vulnerability, the attacker could continue to exploit the known flaw. This can be accomplished by either mounting tmpfs to /tmp, or creating a separate partition for /tmp.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 1.1.2 Ensure /tmp is configured
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v mount >/dev/null 2>&1 || { echo "step1: mount not installed"; return 1; }; o=$(bash -c ''mount | grep -E ''"''"''\s/tmp\s''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''tmpfs on /tmp type tmpfs (rw,nosuid,nodev,noexec,relatime)'' || { echo step1: missing ''tmpfs on /tmp type tmpfs (rw,nosuid,nodev,noexec,relatime)''; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled tmp.mount'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- static || { echo step2: missing static; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    findmnt -kn /tmp >/dev/null 2>&1 && exit 0
+    if ! grep -qE '^[^#][^[:space:]]*[[:space:]]+/tmp[[:space:]]' /etc/fstab; then
+      cp -a /etc/fstab /etc/fstab.tmaegis.bak.$(date +%Y%m%d%H%M%S)
+      echo 'tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0' >> /etc/fstab
+    fi
+    systemctl unmask tmp.mount 2>/dev/null; systemctl daemon-reload 2>/dev/null
+    mount /tmp 2>/dev/null || mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime tmpfs /tmp; true
+  guidance: "Run the following commands to configure mount options systemctl edit tmp.mount Edit the file to define the options that needs to be set. For example: [Mount] Options= Options=mode=1777,strictatime,noexec,nodev,nosuid Restart the tmp.mount systemctl daemon-reload # might be optional systemctl restart tmp.mount /etc is stateless on Container-Optimized OS. Therefore, /etc cannot be used to make these changes persistent across reboots. The steps mentioned above needs to be performed after every boot."

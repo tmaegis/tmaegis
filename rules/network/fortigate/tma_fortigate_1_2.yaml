@@ -1,0 +1,29 @@
+id: TMA-FORTIGATE-1.2
+title: Ensure intra-zone traffic is not always allowed
+description: This is to make sure that only specific, authorized traffic is allowed between networks in the same zone. FAILs if any zone sets intrazone allow. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- firewall-policy
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 1.2 Ensure intra-zone traffic is not always allowed
+audit:
+  type: config_regex
+  pattern: (?m)^config system zone\n(?:[ \t]+[^\n]*\n)*?[ \t]+set intrazone allow[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system zone
+        edit "<zone>"
+            set intrazone deny
+        next
+    end
+    # CIS guidance:
+    In this example, we'll turn off intra-zone traffic in the zone DMZ. In CLI:
+    config system zone
+        edit DMZ
+            set intrazone deny
+        end
+    In the GUI, click on Network -> Interfaces, select the zone and click on "Edit" and turn on "Block intra-zone traffic"

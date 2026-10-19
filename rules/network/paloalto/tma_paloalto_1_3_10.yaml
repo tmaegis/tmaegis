@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-1.3.10
+title: Ensure 'Password Profiles' do not exist
+description: 'Password profiles that are weaker than the recommended minimum password complexity settings must not exist. FAILs if any mgt-config password-profile exists (profiles override the global complexity settings). Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- authentication
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.3.10 Ensure 'Password Profiles' do not exist
+audit:
+  type: config_regex
+  pattern: (?m)^set mgt-config password-profile \S
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    delete mgt-config password-profile <profile>
+    commit
+    # CIS guidance:
+    Navigate to Device > Password Profiles. Ensure Password Profiles weaker than the recommended minimum password complexity settings do not exist.

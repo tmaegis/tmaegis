@@ -1,0 +1,29 @@
+id: TMA-BIND-5.1
+title: Securely Authenticate Zone Transfers
+description: A zone transfer is a mechanism commonly used by DNS deployments to replicate zone information from master/primary servers to slave/secondary servers. Each pair of name servers participating in zone transfers should authenticate the requests and ensure the integrity of the responses by using a unique shared secret TSIG key. The audit requires at least one allow-transfer statement and that every allow-transfer list (options and zones) contains only none or key <name> entries; any, IP addresses and ACL names fail. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 2
+severity: high
+tags:
+- bind
+- dns
+- zone-transfer
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 5.1 Securely Authenticate Zone Transfers
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    printf '%s\n' "$flat" | grep -Eq '(^|[ ;{])allow-transfer \{' || { echo 'no allow-transfer statement'; exit 1; }
+    bad=$(printf '%s\n' "$flat" | grep -Eo '(^|[ ;{])allow-transfer \{[^}]*\}' | sed 's/.*allow-transfer {//; s/}$//' | tr ';' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$' | grep -Eiv '^("?none"?|key "?[^ "]+"?)$')
+    [ -z "$bad" ] && echo compliant || { echo 'allow-transfer entries not allowed:'; printf '%s\n' "$bad" | sort -u; }
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: Generate TSIG keys 256 bits in length, unique for each host-to-host communication. Securely Transfer the keys and configure the keys to be required in all allow-transfer statements.

@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-4.2.8
+title: Ensure that the kubeAPIQPS [--event-qps] argument is set to a level which ensures appropriate event capture
+description: Security relevant information should be captured. The --event-qps flag on the Kubelet can be used to limit the rate at which events are gathered. Setting this too low could result in relevant events not being logged, however the unlimited setting of 0 could result in a denial of service on the kubelet. The benchmark marks this recommendation Manual.
+target: openshift
+level: 2
+severity: low
+tags:
+- openshift
+- worker-node
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 4.2.8 Ensure that the kubeAPIQPS [--event-qps] argument is set to a level which ensures appropriate event capture
+audit:
+  type: manual
+  command: 'OpenShift uses the kubeAPIQPS argument and sets it to a default value of 50. When this value is set to > 0, event creations per second are limited to the value set. If this value is set to 0, event creations per second are unlimited. Use the following command to validate the kubeAPIQPS configuration: for node in $(oc get nodes -ojsonpath=''{.items[*].metadata.name}''); do oc get --raw /api/v1/nodes/$node/proxy/configz | jq ''.kubeletconfig.kubeAPIQPS'' done Review the value set for the kubeAPIQPS argument and determine whether this has been set to an appropriate level for the cluster.'
+remediation:
+  type: iac_patch
+  command: None by default. Follow the documentation to edit kubeletconfig parameters.

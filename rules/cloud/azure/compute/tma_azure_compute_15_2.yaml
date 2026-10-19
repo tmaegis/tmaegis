@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-15.2
+title: Ensure Batch pools disk encryption is set enabled
+description: Azure Batch pools must have disk encryption enabled to protect data at rest on both OS and temporary disks, using Azure-managed encryption keys by default. Enabling disk encryption meets compliance requirements, follows security best practices, and safeguards against unauthorized access to cached data and task outputs stored on VM disks.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+- encryption
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 15.2 Ensure Batch pools disk encryption is set enabled
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Login to Azure portal https://portal.azure.com 2. Navigate to Batch Accounts For each Batch account perform the following: 1. Expand the Features section then click on Pools 2. For each Pool ID, click the name to open the pool 3. Under the Configuration section, check Disk Encryption If the pool is encrypted, it should display "OS disk" and/or "Temporary disk" encryption enabled. Audit from Azure CLI Run the following commands: # List all pools and their encryption status az batch pool list \ --account-name <batch-account-name> \ --query "[].{id:id, encryption:deploymentConfiguration.virtualMachineConfiguration.diskEncryption Configuration}" \ --output table Expected Output: "OsDisk" and/or "TemporaryDisk" should be listed under encryption.targets. Audit from PowerShell Run the following command: # Get Batch account context $batchContext = Get-AzBatchAccount -AccountName "<batch-account-name>" # List all pools and check encryption Get-AzBatchPool -BatchContext
+    $batchContext | ForEach-Object { $pool = $_ $encryptionConfig = $pool.DeploymentConfiguration.VirtualMachineConfiguration.DiskEncryptionConfi guration [PSCustomObject]@{ PoolId = $pool.Id OsDiskE...'
+remediation:
+  type: iac_patch
+  command: 'NOTE: Encrypted pools must be created as replacements for unencrypted pools. Please ensure that necessary precautions are taken to backup and restore data from persistent disk pools. Remediate from Azure Portal 1. Navigate to Azure Batch accounts 2. Select your Batch account 3. Click Pools in the left menu 4. For each unencrypted pool, click Create new pool 5. Under Advanced settings, enable Disk encryption and select OS disk or All disks 6. Configure all other settings to match your existing pool 7. Click Create to deploy the encrypted pool 8. Resize the old unencrypted pool to 0 nodes after verifying the new pool is operational Repeat steps 4-8 for each unencrypted pool Remediate from Azure CLI 1. Get pool configuration config=$(az batch pool show --pool-id <pool-name> --query "{vmSize:vmSize,image:virtualMachineConfiguration.imageReference,nodeCount:ta rgetDedicatedNodes}") 2. Create encrypted replacement az batch pool create \ --id "<pool-name>-encrypted" \ --vm-size $(jq
+    -r ''.vmSize'' <<< "$config") \ --image-reference "$(jq -r ''.image.publisher + ":" + .image.offer + ":" + .image.sku + ":" + .image.version'' <<< "$config")" \ --node-count $(jq -r ''.nodeCount'' <<< "$config")...'

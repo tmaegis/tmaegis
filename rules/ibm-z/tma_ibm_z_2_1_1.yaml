@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.1.1
+title: Ensure that access to DASDVOL and STGADMIN resources are controlled
+description: Users responsible for direct access storage device (DASD) administration must be given access to perform necessary functions though profiles in the DASDVOL class (for non-SMS volumes) as well as STGADMIN prefixed profiles in the FACILITY and XFACILIT classes for SMS managed volumes. Failure to properly control and log access to DASD administration resources reduces the integrity and availability of the operating system environment, as well as increases the risk for compromise of confidential data.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.1.1 Ensure that access to DASDVOL and STGADMIN resources are controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that DASDVOL and FACILITY and XFACILIT appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that DASDVOL and FACILITY and XFACILIT appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that DASDVOL and FACILITY and XFACILIT appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The DASDVOL entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- The FACILITY entry ... (full steps: CIS section 2.1.1)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(DASDVOL) SETROPTS CLASSACT(FACILITY) SETROPTS CLASSACT(XFACILIT) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(DASDVOL) SETROPTS GENERIC(FACILITY) SETROPTS GENERIC(XFACILIT) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(DASDVOL) SETROPTS RACLIST(FACILITY) SETROPTS RACLIST(XFACILIT) To create catch-all profiles use the RACF RDEFINE command: RDEFINE DASDVOL ** + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''CATCH-ALL PROFILE'') PERMIT ** CLASS(DASDVOL) + ACCESS(ALTER) ID(STGADMIN) SETROPTS REFRESH RACLIST(DASDVOL) RDEFINE FACILITY IGG.CATLOCK + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''CONTROLS WHO CAN LOCK/UNLOCK CATALOGS AND WHO CAN ACCESS LOCKED CATALOGS'') PERMIT IGG.CATLOCK CLASS(FACILITY) + ACCESS(ALTER) ID(STGADMIN SYSPROG) RDEFINE FACILITY STGADMIN.** + UACC(NONE) + AUDIT(FAILURES(READ)) + DATA(''STORAGE ADMINISTRATION
+    CATCH-ALL PROFILE'') PERMIT STGADMIN.** CLASS(FACILITY) + ACCESS(ALTER) ID(STGADMIN) RDEFINE FACILITY STGADMIN.ADR.STGADMIN.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''DFSMSDSS ... (see CIS section 2.1.1)'

@@ -1,0 +1,49 @@
+id: TMA-ORACLE-DB-2.3.3
+title: Ensure 'MLE_PROG_LANGUAGES' Is Set To 'OFF'
+description: 'The MLE_PROG_LANGUAGES will enable Oracle Database Multilingual Engine (MLE), which is currently supporting Java Script. This parameter is available starting with Oracle Database 23ai. Counts non-compliant GV$SYSTEM_PARAMETER rows across instances and containers; 0 is required. Oracle 23ai only; not part of the CIS Oracle 19c v2.0.0 benchmark. Releases without the parameter return no rows and pass. Default: ALL Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- parameters
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.3.3 Ensure 'MLE_PROG_LANGUAGES' Is Set To 'OFF'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from gv$system_parameter v
+    where upper(v.name) = 'MLE_PROG_LANGUAGES'
+    and upper(v.value) != 'OFF';
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v sqlplus >/dev/null 2>&1 || exit 0
+    sqlplus -S -L / as sysdba <<'EOF'
+    whenever sqlerror exit failure
+    ALTER SYSTEM SET MLE_PROG_LANGUAGES='OFF' SCOPE=BOTH;
+    exit
+    EOF
+  guidance: "To remediate this recommendation, execute the following SQL statement. ALTER SYSTEM SET MLE_PROG_LANGUAGES='OFF' SCOPE=BOTH;"

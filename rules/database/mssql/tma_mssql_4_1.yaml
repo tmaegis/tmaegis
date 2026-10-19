@@ -1,0 +1,17 @@
+id: TMA-MSSQL-4.1
+title: Ensure 'MUST_CHANGE' Option is set to 'ON' for All SQL Authenticated Logins
+description: 'Whenever this option is set to ON, SQL Server will prompt for an updated password the first time the new or altered login is used. Default: ON when creating a new login via the SSMS GUI. OFF when creating a new login using T-SQL CREATE LOGIN unless the MUST_CHANGE option is explicitly included along with CHECK_EXPIRATION = ON.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- manual
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 4.1 Ensure 'MUST_CHANGE' Option is set to 'ON' for All SQL Authenticated Logins
+audit:
+  type: manual
+  command: Using SQL Server Management Studio 1. Open SQL Server Management Studio. 2. Open Object Explorer and connect to the target instance. 3. Navigate to the Logins tab in Object Explorer and expand. Right click on the desired login and select Properties. 4. Verify the User must change password at next login checkbox is checked. Using T-SQL SELECT name ,CAST(LOGINPROPERTY(log.name, N'IsMustChange') AS bit) AS [MustChangePassword],* FROM sys.server_principals AS log WHERE type = 'S' and CAST(LOGINPROPERTY(log.name, N'IsMustChange') AS bit) = 1 Returns "1" row for each new Login that has not been ...
+remediation:
+  type: iac_patch
+  command: 'Set the MUST_CHANGE option for SQL Authenticated logins when creating a login initially: CREATE LOGIN <login_name> WITH PASSWORD = ''<password_value>'' MUST_CHANGE, CHECK_EXPIRATION = ON, CHECK_POLICY = ON; Set the MUST_CHANGE option for SQL Authenticated logins when resetting a password: ALTER LOGIN <login_name> WITH PASSWORD = ''<new_password_value>'' MUST_CHANGE;'

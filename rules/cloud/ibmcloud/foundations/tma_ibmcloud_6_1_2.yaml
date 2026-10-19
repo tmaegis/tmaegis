@@ -1,0 +1,18 @@
+id: TMA-IBMCLOUD-6.1.2
+title: Ensure Web application firewall is ENABLED in IBM Cloud Internet Services (CIS)
+description: 'A Web Application Firewall (WAF) is a security solution designed to protect web applications by monitoring, filtering, and blocking malicious HTTP/S (OSI Layer 7) traffic between a client (usually a browser) and a web server. What is a Web Application Firewall? A WAF sits between the internet and your web application, acting as a reverse proxy that inspects incoming and outgoing web traffic. It uses rule-based logic, machine learning, or behavioral analysis to detect and prevent common threats including the OWASP Top-10 attack techniques. A WAF may use one or more of the following detection methods: - Signature-based detection (matches known attack patterns) - Anomaly-based detection (flags behavior outside the baseline) - Policy-based rules (user-defined or vendor-supplied rules) Key benefits of a CIS WAF The IBM Cloud™ Internet Services WAF is an easy way to set up, manage, and cust...'
+target: ibmcloud
+level: 1
+severity: medium
+tags:
+- cloud
+- ibmcloud
+- network
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 6.1.2 Ensure Web application firewall is ENABLED in IBM Cloud Internet Services (CIS)
+audit:
+  type: manual
+  command: 'The Web Application Firewall setting can be audited using the following mechanisms Using Console: 1. Login to the IBM Cloud at https://cloud.ibm.com 2. Click Menu icon, Resource list 3. Select the Cloud Internet Service Instance 4. Select the domain that needs to be audited from the domains drop down 5. Choose the Security section from the left panel. 6. Click on the WAF tab in the Security panel. 7. Make sure the CIS Managed Ruleset and CIS OWASP Core Ruleset are both deployed and enabled Using API: 1. Run the curl command below. The value for $iam_token will be the IBM Cloud iam token retrieved by running the command ibmcloud iam oauth-tokens Request: curl -s https://api.cis.cloud.ibm.com/v1/{crn}/zones/{zoneid}/rulesets/phases/http_re quest_firewall_managed/entrypoint \ -H ''content-type: application/json'' \ -H ''accept: application/json'' \ -H "x-auth-user-token: Bearer $iam_token" | jq ''.result.rules[] | {ruleid: .action_parameters.id, enabled: .enabled}'' Response: {
+    "ruleid": "efb7b8c949ac4650a09736fc376e9aee", "enabled": true } { "ruleid": "4814384a9e5d4991b9815dcfc25d2f1f", "enabled": true } In the above response rules map to the deployed ruleset ids as shown below CIS Mana...'
+remediation:
+  type: iac_patch
+  command: 'The Web Application Firewall can be enabled in Cloud Internet Services using the following procedure Using Console 1. Login to the IBM Cloud at https://cloud.ibm.com 2. Click Menu icon, Resource list 3. Select the Cloud Internet Service Instance 4. Select the domain that needs to be audited from the domains drop down 5. Choose the Security section from the left panel. 6. Click on the WAF tab in the Security panel. 7. Deploy the following WAF managed rulesets by clicking the Deploy button next to them o CIS Managed Ruleset o CIS OWASP Core Ruleset 8. After rulesets are deployed or if they are already deployed, make sure they are enabled by clicking on the toggle under the Status column. Note: For WAF to be inline of the request flow, the DNS records or global load balancers need to have proxies enabled. Only when the records are proxied, the traffic will flow through the Cloud Internet Services reverse proxy and will get inspected.'

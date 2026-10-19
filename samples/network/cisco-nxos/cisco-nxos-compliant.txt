@@ -1,0 +1,70 @@
+!Command: show running-config
+!Synthetic sample: Cisco NX-OS running-config (hardened). Not a secure template.
+version 10.3(3) Bios:version
+hostname nx-leaf-01
+vdc nx-leaf-01 id 1
+!
+feature ssh
+feature tacacs+
+feature ospf
+feature interface-vlan
+!
+clock timezone UTC 0 0
+ntp server 192.0.2.123 use-vrf management
+ntp server 192.0.2.124 use-vrf management
+!
+userpassphrase default-lifetime 90
+userpassphrase default-warntime 14
+userpassphrase default-gracetime 3
+userpassphrase min-length 12
+!
+tacacs-server host 192.0.2.60 key 7 "REDACTED"
+tacacs-server host 192.0.2.61 key 7 "REDACTED"
+aaa group server tacacs+ TACGRP
+    server 192.0.2.60
+    server 192.0.2.61
+    use-vrf management
+aaa authentication login default group TACGRP
+aaa authentication login console group TACGRP
+!
+login block-for 120 attempts 3 within 60
+ssh login-attempts 3
+no ip source-route
+!
+banner motd #Authorized access only#
+banner exec #Authorized access only. Activity is logged.#
+!
+snmp-server globalEnforcePriv
+snmp-server user nmsuser network-operator auth sha REDACTED priv aes-128 REDACTED
+snmp-server host 192.0.2.51 traps version 3 priv nmsuser
+snmp-server source-interface traps loopback0
+snmp-server enable traps
+!
+class-map type control-plane match-any COPP-CLASS
+  match protocol arp
+policy-map type control-plane COPP-POLICY
+  class COPP-CLASS
+    police cir 1000 kbps
+control-plane
+  service-policy input COPP-POLICY
+!
+interface loopback0
+  ip address 198.51.100.1/32
+!
+interface Vlan10
+  no shutdown
+  no ip redirects
+  ip address 192.0.2.1/24
+!
+interface mgmt0
+  ip address 198.51.100.11/24
+!
+router ospf 1
+  log-adjacency-changes
+!
+line console
+  exec-timeout 5
+line vty
+  exec-timeout 5
+  session-limit 4
+  access-class MGMT-ACL in

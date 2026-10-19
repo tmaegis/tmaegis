@@ -1,0 +1,16 @@
+id: TMA-IIS-2.1
+title: Ensure 'global authorization rule' is set to restrict access
+description: 'IIS introduced URL Authorization, which allows the addition of Authorization rules to the actual URL, instead of the underlying file system resource, as a way to protect it. Authorization rules can be configured at the server, web site, folder (including Virtual Directories), or file level. Manual review: the benchmark gives no reliable automated check for this control.'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- authentication
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 2.1 Ensure 'global authorization rule' is set to restrict access
+audit:
+  type: manual
+  command: 'Verify an authorization rule specifying no access to all users except the Administrators group: To verify using AppCmd.exe enter the following command: %systemroot%\system32\inetsrv\appcmd list config - section:system.webserver/security/authorization OR To verify using PowerShell enter the following command: Get-WebConfiguration -pspath ''IIS:\'' -filter ''system.webServer/security/authorization'' OR At the web site or application level, verify that the authorization rule configured has been applied: 1. Connect to Internet Information Services (IIS Manager) 2.'
+remediation:
+  type: iac_patch
+  command: 'To configure URL Authorization at the server level using command line utilities: Enter the following command in AppCmd.exe to configure: %systemroot%\system32\inetsrv\appcmd set config - section:system.webServer/security/authorization /- "[users=''*'',roles='''',verbs='''']" %systemroot%\system32\inetsrv\appcmd set config - section:system.webServer/security/authorization /+"[accessType=''Allow'',roles=''Administrators'']" OR Enter the following command in PowerShell to configure: Remove-WebConfigurationProperty -pspath ''MACHINE/WEBROOT/APPHOST'' -filter "system.webServer/security/authorization" -name "." -AtElement @{users=''*'';roles='''';verbs=''''} Add-WebConfigurationProperty -pspath ''MACHINE/WEBROOT/APPHOST'' -filter "system.webServer/security/authorization" -name "." -value @{accessType=''Allow'';roles=''Administrators''} OR To configure URL Authorization at the server level using IIS Manager: 1.'

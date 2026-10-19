@@ -1,0 +1,18 @@
+id: TMA-SUPPLY-CHAIN-SBOM
+title: Ensure the build pipeline generates a Software Bill of Materials (SBOM)
+description: 'An SBOM (SPDX or CycloneDX) lists every component shipped in an artifact so consumers can respond quickly to new vulnerabilities and verify provenance. The audit searches tracked CI configuration (GitHub Actions workflows, GitLab CI, CircleCI, Jenkinsfile, Azure Pipelines, Bitbucket, Buildkite, GoReleaser) for SBOM tooling: syft/anchore sbom-action, CycloneDX tools, cdxgen, Microsoft sbom-tool, trivy SBOM output, docker buildx --sbom / sbom: true, goreleaser sboms. A keyword match is a heuristic; confirm the SBOM is published with the release. Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.'
+target: supply-chain
+level: 2
+severity: medium
+tags:
+- supply-chain
+- artifacts
+- sbom
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Artifacts - generate and distribute an SBOM (verify section number for your release)
+audit:
+  type: command
+  command: "top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1\ncd \"$top\" || exit 1\nfiles=$(git ls-files 2>/dev/null) || exit 1\nci=$(printf '%s\\n' \"$files\" | grep -E '^\\.github/workflows/[^/]+\\.ya?ml$|^\\.gitlab-ci\\.ya?ml$|^\\.circleci/config\\.ya?ml$|^Jenkinsfile$|^azure-pipelines\\.ya?ml$|^bitbucket-pipelines\\.ya?ml$|^\\.goreleaser\\.ya?ml$|^\\.buildkite/[^/]+\\.ya?ml$')\nif [ -z \"$ci\" ]; then echo \"no CI configuration found, so no SBOM generation\"; exit 0; fi\nhits=$(printf '%s\\n' \"$ci\" | while IFS= read -r f; do\n  grep -ilE 'syft|cyclonedx|cdxgen|anchore/sbom-action|sbom-tool|spdx-sbom-generator|trivy.*(sbom|--format[[:space:]=]+(cyclonedx|spdx))|--sbom|^[[:space:]]*sboms?:' \"$f\"\ndone)\nif [ -n \"$hits\" ]; then echo compliant; else echo \"no SBOM generator (syft, cyclonedx, cdxgen, trivy sbom, buildx --sbom, goreleaser sboms) found in CI configuration\"; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add an SBOM step to the release pipeline, e.g. anchore/sbom-action (syft) or cyclonedx-gomod/cyclonedx-npm, docker/build-push-action with sbom: true, or an sboms: section in .goreleaser.yaml; attach the SBOM to the release and sign/attest it (cosign attest --type cyclonedx).'

@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.1.8
+title: Minimize access to create persistent storage
+description: Permission to create persistent storage in AKS Automatic is granted only where it is required. This includes direct creation of PersistentVolume objects and, more commonly, creation of PersistentVolumeClaim objects that reference an existing StorageClass and cause a CSI driver to provision an Azure Disk, Azure Files share, or other supported storage resource. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: medium
+tags:
+- aks-automatic
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.8 Minimize access to create persistent storage
+audit:
+  type: manual
+  command: Review AKS Automatic authorization to identify any users, groups, or service accounts that can create PersistentVolume, PersistentVolumeClaim, or StorageClass resources. Review the applicable Kubernetes Role, ClusterRole, RoleBinding, and ClusterRoleBinding objects. Microsoft Entra ID authorization for the Kubernetes API is preconfigured in AKS Automatic, so also review direct and inherited Azure role assignments and custom roles that grant these permissions.
+remediation:
+  type: iac_patch
+  command: Remove persistent storage creation rights from any user, group, or service account that does not require them. Replace unnecessary Azure role assignments or Kubernetes RBAC bindings with roles that provide only the required permissions. Limit direct PersistentVolume and StorageClass administration to approved administrators, and allow workloads to create PersistentVolumeClaim objects only in the required namespace. Kubernetes RBAC does not restrict which existing StorageClass a principal can name in a claim. If workloads must be limited to approved storage classes, enforce that requirement through an admission policy, such as Azure Policy for Kubernetes, which is enabled on AKS Automatic. After making changes, verify that required applications can still provision storage through the intended AKS CSI driver path.

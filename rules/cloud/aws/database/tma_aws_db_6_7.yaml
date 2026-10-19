@@ -1,0 +1,18 @@
+id: TMA-AWS-DB-6.7
+title: Ensure MemoryDB has automatic backups enabled
+description: Ensure that Amazon MemoryDB clusters that store critical or stateful data have automatic backups enabled with a non-zero retention period. This setting configures MemoryDB to take snapshots of database and retain them for a defined number of days, allowing restoration of data in case of corruption, accidental deletion, or infrastructure failure. Automatic backups provide a simple and reliable way to recover MemoryDB data without relying solely on application-level safeguards. In the event of node failure, misconfiguration, or data corruption, a recent backup snapshot can be used to create a new database, significantly reducing recovery time and impact on dependent applications.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- backup
+- cloud
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 6.7 Ensure MemoryDB has automatic backups enabled
+audit:
+  type: manual
+  command: List snapshot settings for all memorydb clusters aws memorydb describe-clusters \ --query "Clusters[*].{Name:Name,SnapshotRetentionLimit:SnapshotRetentionLimit}" - SnapshotRetentionLimit > 0 ⇒ automatic snapshots enabled. - SnapshotRetentionLimit = 0 or missing/null ⇒ automatic snapshots disabled.
+remediation:
+  type: iac_patch
+  command: Enable automatic snapshots on a specific cluster aws memorydb update-cluster \ --cluster-name <cluster-name> \ --snapshot-retention-limit 7 \ --snapshot-window "03:00-04:00" - --snapshot-retention-limit 7 configures a 7-day retention; use a value aligned with your policy (for example 7, 14, or 30 days). - --snapshot-window "03:00-04:00" (optional) sets the daily snapshot window in UTC. Choose an off-peak period to minimize performance impact. - MemoryDB applies these changes immediately for the cluster configuration.

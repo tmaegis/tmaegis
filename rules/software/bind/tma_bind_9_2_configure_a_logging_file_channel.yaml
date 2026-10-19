@@ -1,0 +1,27 @@
+id: TMA-BIND-9.2
+title: Configure a Logging File Channel
+description: To capture logs to a local file, setup a channel for the file, in the logging configuration section. It's often helpful to have one log file for security related logs, and a second one with a dynamic severity level to be used as needed for debugging. The audit requires a logging channel with a file destination. The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- operations
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 9.2 Configure a Logging File Channel
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    printf '%s\n' "$flat" | grep -Eq 'channel "?[^ ]+"? \{[^}]*[{; ]file "' && echo compliant || echo 'no logging file channel'
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: In named.conf, configure a channel for a local security log file with the categories config, dnssec, network, security, updates, xfer-in and xfer-out. The local log file will be within the chroot directory. logging { . . . channel local_security_log { file "/var/run/named/secure.log" versions 10 size 20m; severity debug; print-time yes; }; // Config file processing category config { local_security_log; }; // Processing signed responses category dnssec { local_security_log; }; // Network Operations category network { local_security_log; }; // Approved or unapproved requests category security { local_security_log; }; // dynamic updates category update { local_security_log; }

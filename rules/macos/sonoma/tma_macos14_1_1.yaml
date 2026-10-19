@@ -1,0 +1,33 @@
+id: TMA-MACOS14-1.1
+title: Ensure Apple-provided Software Updates Are Installed
+description: Software vendors release security patches and software updates for their products when security vulnerabilities are discovered. There is no simple way to complete this action without a network connection to an Apple software repository. Please ensure appropriate access for this control. This check is only for what Apple provides through software update. It is important that these updates be applied in a timely manner to prevent unauthorized persons from exploiting the identified vulnerabilities.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- patching
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 1.1 Ensure Apple-provided Software Updates Are Installed
+audit:
+  type: command
+  command: '[ -x /usr/bin/defaults ] || exit 1
+
+    d=$(/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate LastFullSuccessfulDate 2>/dev/null) || { echo "never checked"; exit 0; }
+
+    t=$(/bin/date -j -f "%Y-%m-%d %H:%M:%S %z" "$d" +%s 2>/dev/null) || exit 1
+
+    now=$(/bin/date +%s)
+
+    [ $((now - t)) -le 2592000 ] || { echo "last successful check older than 30 days: $d"; exit 0; }
+
+    n=$(/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates 2>/dev/null | /usr/bin/grep -c "Product Key")
+
+    if [ "${n:-0}" -eq 0 ]; then echo compliant; else echo "updates pending: $n"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Graphical Method: Perform the following to install all available software updates: 1. Open System Settings 2. Select General 3. Select Software Update 4. Select Update All Terminal Method: Run the following command to verify what packages need to be installed: % /usr/bin/sudo /usr/sbin/softwareupdate -l The output will include the following: Software Update found the following new or updated software: Note: If the software update server cannot be reached, that will need further investigation. This could be due to a network issue and must be resolved within your organization. Run the following command to install all the packages that need to be updated: To install all updates run the command: % /usr/bin/sudo /usr/sbin/softwareupdate -i -a Or run the following command to install individual packages: % /usr/bin/sudo /usr/sbin/softwareupdate -i ''<package name>'' Note: If one of the software updates listed includes Action: restart, then you must attach the -R flag to force a system
+    restart. If the system update is complete but no restart occurs, then the system is in an unknown state that requires a future restart. It is advised to run updates and forced restarts during system downtim...'

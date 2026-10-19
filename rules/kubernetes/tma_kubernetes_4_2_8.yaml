@@ -1,0 +1,17 @@
+id: TMA-KUBERNETES-4.2.8
+title: Ensure that the eventRecordQPS argument is set to a level which ensures appropriate event capture
+description: Security relevant information should be captured. The eventRecordQPS on the Kubelet configuration can be used to limit the rate at which events are gathered and sets the maximum event creations per second. Setting this too low could result in relevant events not being logged, however the unlimited setting of 0 could result in a denial of service on the kubelet. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 2
+severity: low
+tags:
+- kubernetes
+- worker-node
+- kubelet
+reference: CIS Kubernetes Benchmark v2.1.0 - 4.2.8 Ensure that the eventRecordQPS argument is set to a level which ensures appropriate event capture
+audit:
+  type: manual
+  command: 'Run the following command on each node: sudo grep "eventRecordQPS" /etc/systemd/system/kubelet.service.d/10-kubeadm.conf or If using command line arguments, kubelet service file is located /etc/systemd/system/kubelet.service.d/10-kubelet-args.conf sudo grep "eventRecordQPS" /etc/systemd/system/kubelet.service.d/10-kubelet-args.conf Review the value set for the argument and determine whether this has been set to an appropriate level for the cluster. If the argument does not exist, check that there is a Kubelet config file specified by --config and review the value in this location.'
+remediation:
+  type: iac_patch
+  command: 'If using a Kubelet config file, edit the file to set eventRecordQPS: to an appropriate level. If using command line arguments, edit the kubelet service file /etc/systemd/system/kubelet.service.d/10-kubeadm.conf on each worker node and set the below parameter in KUBELET_ARGS variable. Based on your system, restart the kubelet service. For example: systemctl daemon-reload systemctl restart kubelet.service'

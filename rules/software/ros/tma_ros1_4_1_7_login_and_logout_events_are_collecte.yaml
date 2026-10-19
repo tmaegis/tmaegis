@@ -1,0 +1,27 @@
+id: TMA-ROS1-4.1.7
+title: Ensure login and logout events are collected
+description: Monitor login and logout events. The parameters below track changes to files associated with login/logout events. The file /var/log/faillog tracks failed events from login. The file /var/log/lastlog maintain records of the last time a user successfully logged in. The file /var/log/tallylog maintains records of failures via the pam_tally2 module The audit inspects the loaded rules (auditctl -l). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- logging
+reference: CIS ROS Melodic Benchmark v1.0.0 - 4.1.7 Ensure login and logout events are collected
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v auditctl >/dev/null 2>&1 || exit 1
+    out=$(auditctl -l 2>/dev/null) || exit 1
+    bad=0
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)logins( |$)' | grep -Fq -- '-w /var/log/faillog ' || { echo 'missing watch: -w /var/log/faillog -k logins'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)logins( |$)' | grep -Fq -- '-w /var/log/lastlog ' || { echo 'missing watch: -w /var/log/lastlog -k logins'; bad=1; }
+    printf '%s\n' "$out" | grep -E -- '(-k |key=)logins( |$)' | grep -Fq -- '-w /var/log/tallylog ' || { echo 'missing watch: -w /var/log/tallylog -k logins'; bad=1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit or create a file in the /etc/audit/rules.d/ directory ending in .rules Example: vi /etc/audit/rules.d/logins.rules and add the following lines: -w /var/log/faillog -p wa -k logins -w /var/log/lastlog -p wa -k logins -w /var/log/tallylog -p wa -k logins'

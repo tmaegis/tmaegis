@@ -1,0 +1,18 @@
+id: TMA-IBMCLOUD-4.3
+title: Ensure incoming connections are limited to allowed sources
+description: Restrict incoming connections to database instances to approved sources, ensuring access is limited to authorized entities. IBM Cloud Databases supports Context-Based Restrictions (CBR) for both public and private endpoints. Context-based restrictions give account owners and administrators the ability to define and enforce access restrictions for resources based on a rule's criteria. The criteria include the network location of access requests, the endpoint type from where the request is sent, the multifactor authentication level of an identity, and sometimes the API that the request tries to access.
+target: ibmcloud
+level: 1
+severity: high
+tags:
+- cloud
+- ibmcloud
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 4.3 Ensure incoming connections are limited to allowed sources
+audit:
+  type: manual
+  command: 'Using Console: 1. Log on to your IBM Cloud account 2. On the top bar, click on Manage and then on Context-Based Restrictions 3. On the left, click on Network zones and then on the Create button. 4. Give the rule a name and fill out the other details as appropriate. Complete creation. 5. On the left, click on Network rules and then on the Create button 6. Select the appropriate database resource, such as Databases for PostgreSQL. Click on next. 7. When asked for APIs to protect, deselect All and select Data Plane instead. Click on next. 8. Under Resources, select Specific resources, and then in the dropdown, select instance 9. Click on Select a value, and you can choose a database to match. Click on review and then on continue. Using CLI: 1. Create a zone for IP 192.0.2.2 ibmcloud cbr zone-create --addresses=192.0.2.2 --name=my_zone 2. Note the ID of the zone from the response, or from the zones list ibmcloud cbr zones 3. Create the rule that only allows the defined zone to connect
+    to our PostgreSQL database ibmcloud cbr rule-create --enforcement-mode enabled --context-attributes networkZoneId=ac31d7c9911cd0b98bb77490b2254258 --service-name databases-for- postgresql --service-ins...'
+remediation:
+  type: iac_patch
+  command: 'Configure restrictions using the following procedure: Using Console: 1. Log on to your IBM Cloud account 2. On the top bar, click on Manage and then on Context-Based Restrictions 3. On the left, click on Network zones and then on the Create button. 4. Give the rule a name and fill out the other details as appropriate. Complete creation. 5. On the left, click on Network rules and then on the Create button 6. Select the appropriate database resource, such as Databases for PostgreSQL. Click on next. 7. When asked for APIs to protect, deselect All and select Data Plane instead. Click on next. 8. Under Resources, select Specific resources, and then in the dropdown, select instance 9. Click on Select a value, and you can choose a database to match. Click on review and then on continue. 10. Select the check mark for the zone that you want to give access to (the one created at the start of the process), then click on the Add button. You will see it on the right side. Click on continue.
+    11. Give it a descriptive name, and then click on Create. Using CLI: 1. Create a zone for IP 192.0.2.2 ibmcloud cbr zone-create --addresses=192.0.2.2 --name=my_zone 2. Note the ID of the zone from the res...'

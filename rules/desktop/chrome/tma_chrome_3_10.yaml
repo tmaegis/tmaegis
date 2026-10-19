@@ -1,0 +1,19 @@
+id: TMA-CHROME-3.10
+title: 'Ensure ''Enable predict network actions` is set to ''Enabled: Do not predict actions on any network connection'''
+description: 'Google Chrome comes with the network prediction feature which provides DNS prefetching, TCP and SSL preconnection, and prerendering of web pages. - Predict network actions on any network connection (0) or (1) - Do not predict network actions on any network connection (2) The recommended state for this setting is: Enabled with a value of Do not predict network actions on any network connection (2) Rationale: Opening connections to resources that may not be used could allow unneeded connections increasing attack surface and in some cases could lead to opening connections to resources which the user did not intend to utilize. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:NetworkPredictionOptions (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert
+  it.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 3.10 Ensure ''Enable predict network actions` is set to ''Enabled: Do not predict actions on any network connection'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''NetworkPredictionOptions'' -ErrorAction SilentlyContinue).''NetworkPredictionOptions''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'NetworkPredictionOptions' -Value 2 -PropertyType DWord -Force | Out-Null

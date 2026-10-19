@@ -1,0 +1,21 @@
+id: TMA-CISCO-FTD-2.1.10
+title: Access Policy Application Settings should be set
+description: 'When creating a rule, where possible the "Application" field should be preferred for use over the traditional "Dest Port" fields. Even when the destination port is known, the Application value should be added for each rule. This preference makes things like Data Exfiltration or Beaconing to Command and Control servers more difficult for malicious actors. Masquerading traffic of this type over port 53 (usually used for DNS) or as unencrypted traffic using 443/tcp is a common ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-ftd
+level: 1
+severity: medium
+tags:
+- cisco-ftd
+- network
+- hardening
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 2.1.10 Access Policy Application Settings should be set
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. For each rule in the Access Policy (especially perm,it rules), ensure that the Application field is filled in. Even if the destination port is "known" for any particular rule, the application should still be filled in.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! For each Access Policy Rule:
+    - Choose "Edit"
+    - Choose the "Applications" tab for that rule
+    - Select all applications that are applicable for that rule Note that if any application other than "Any" is selected, then the application list must be complete, or some desired traffic will be blocked (or undesired traffic will be permitted). This means that this is often an iterative process. A common method is to have a rule with the Application list implemented, then follow that rule with an identical one, but with "Any" selected for the application field. This second rule will log differently - with a higher severity or to a different log server, so that as the second rule triggers, exceptions are easily seen and the first rule can be adjusted. After some period of time the second rule will no longer trigger and will be deleted.

@@ -1,0 +1,19 @@
+id: TMA-MSSQL-3.11
+title: Ensure the public role in the msdb database is not granted access to SQL Agent proxies
+description: 'The public database role contains every user in the msdb database. SQL Agent proxies define a security context in which a job step can run. Default: By default, the msdb public database role does not have access to any proxy. Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- privileges
+- sql-agent
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 3.11 Ensure the public role in the msdb database is not granted access to SQL Agent proxies
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM msdb.dbo.sysproxylogin spl JOIN msdb.sys.database_principals dp ON dp.sid = spl.sid JOIN msdb.dbo.sysproxies sp ON sp.proxy_id = spl.proxy_id WHERE dp.name = 'public';"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 1. Ensure the required security principals are explicitly granted access to the proxy (use sp_grant_login_to_proxy). 2. Revoke access to the <proxyname> from the public role. USE [msdb] GO EXEC dbo.sp_revoke_login_from_proxy @name = N'public', @proxy_name = N'<proxyname>'; GO

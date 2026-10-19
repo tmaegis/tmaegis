@@ -1,0 +1,20 @@
+id: TMA-BIND-QUERYLOG
+title: Ensure DNS query logging is enabled
+description: 'Query logs support incident response (malware C2 lookups, data exfiltration over DNS). They are verbose, so this is a level 2 control. The audit parses named-checkconf -p output (/etc/bind/named.conf or /etc/named.conf) and passes when "querylog yes;" is set in options or the logging block routes the queries category to a channel.'
+target: bind
+level: 2
+severity: low
+tags: [bind, dns, logging]
+reference: CIS BIND DNS Server Benchmark - Logging / query logging (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    conf=/etc/bind/named.conf; [ -f "$conf" ] || conf=/etc/named.conf
+    out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ')
+    printf '%s\n' "$flat" | grep -Eq '[{; ](querylog yes;|category "?queries"? \{)' && echo compliant
+  expected_output: compliant
+  requires_file: [/etc/bind/named.conf, /etc/named.conf]
+remediation:
+  type: iac_patch
+  command: 'Add to the logging block: channel query_log { file "/var/log/named/query.log" versions 5 size 50m; print-time yes; }; category queries { query_log; }; (or "querylog yes;" in options). Run named-checkconf, then rndc reconfig.'

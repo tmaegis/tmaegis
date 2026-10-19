@@ -1,0 +1,58 @@
+id: TMA-UBUNTU2004-5.3.3.3.3
+title: Ensure pam_pwhistory includes use_authtok
+description: use_authtok - When password changing enforce the module to set the new password to the one provided by a previously stacked password module
+target: linux
+os_family:
+- ubuntu-20.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 5.3.3.3.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep -Psi -- ''"''"''^\h*password\h+[^#\n\r]+\h+pam_pwhistory\.so\h+([^#\n\r]+\h+)?use_authtok\b''"''"'' /etc/pam.d/common-'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- password || { echo step1: missing password; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+    PAMF="/etc/pam.d/system-auth /etc/pam.d/password-auth /etc/pam.d/system-password /etc/pam.d/common-auth /etc/pam.d/common-password /etc/pam.d/common-account /etc/pam.d/common-session /etc/pam.d/common-session-noninteractive /etc/pam.d/postlogin"
+    # tma_pam_sed EXPR : sed -E on every existing PAM stack file (follows symlinks, backs up once)
+    tma_pam_sed() { for f in $PAMF /usr/share/pam-configs/unix; do
+      [ -e "$f" ] || continue; tma_bak "$f"; sed -i --follow-symlinks -E "$1" "$f"; done; }
+    # tma_conf_set FILE KEY VALUE : "key = value", replacing active or commented key lines
+    tma_conf_set() { f=$1; k=$2; v=$3; mkdir -p "$(dirname "$f")"; [ -e "$f" ] || : > "$f"; tma_bak "$f"
+      sed -i -E "/^[[:space:]]*#?[[:space:]]*$k[[:space:]]*=/d" "$f"; printf '%s = %s\n' "$k" "$v" >> "$f"; }
+    tma_conf_del() { for f in $2; do [ -e "$f" ] || continue; tma_bak "$f"; sed -i -E "/^[[:space:]]*$1[[:space:]]*=/d" "$f"; done; }
+    MOD=pam_pwhistory
+    # only when an earlier password module (pwquality/pwhistory) supplies the token, else passwd would break
+    for f in $PAMF; do
+      [ -e "$f" ] || continue
+      t=$(mktemp)
+      awk -v mod="$MOD" '
+        /^[[:space:]]*password[[:space:]].*pam_(pwquality|pwhistory)\.so/ {seen=1}
+        $0 ~ "^[[:space:]]*password[[:space:]].*pam_" mod "\\.so" && seen && $0 !~ /use_authtok/ {$0=$0 " use_authtok"}
+        {print}' "$f" > "$t"
+      if ! cmp -s "$t" "$f"; then tma_bak "$f"; cat "$t" > "$f"; fi
+      rm -f "$t"
+    done
+    true
+  guidance: "Run the following command: # awk '/Password-Type:/{ f = 1;next } /-Type:/{ f = 0 } f {if (/pam_pwhistory\\.so/) print FILENAME}' /usr/share/pam-configs/* Edit any returned files and add the use_authtok argument to the pam_pwhistory line in the Password section: Example File: Name: pwhistory password history checking Default: yes Priority: 1024 Password-Type: Primary Password: requisite pam_pwhistory.so remember=24 enforce_for_root use_authtok # <- **ensure line includes use_authtok** Run the following command to update the files in the /etc/pam.d/ directory: # pam-auth-update --enable <MODIFIED_PROFILE_NAME> Example: # pam-auth-update --enable pwhistory"

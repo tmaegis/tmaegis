@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.1.9
+title: Ensure all checks have passed before merging new code
+description: Before a code change request can be merged to the code base, all predefined checks must successfully pass. On top of manual reviews of code changes, a code protect should contain a set of prescriptive checks which validate each change. Organizations should enforce those status checks so that changes can only be introduced if all checks have successfully passed. This set of checks should serve as the absolute quality, stability, and security conditions which must be met in order to merge new code to a project.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.9 Ensure all checks have passed before merging new code
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To block the merging of merge requests when checks fail: 1. On the left sidebar, select Search or go to and find your project. 2. Select Settings > Merge requests. 3. Select the Status checks must succeed checkbox. 4. Select Save changes.'

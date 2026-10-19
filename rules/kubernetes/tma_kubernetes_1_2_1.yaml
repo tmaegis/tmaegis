@@ -1,0 +1,16 @@
+id: TMA-KUBERNETES-1.2.1
+title: Ensure that anonymous requests to the API server are restricted
+description: Disable anonymous requests to the API server entirely, or restrict anonymous authentication to only the specific endpoints that require it using the structured authentication configuration. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 1
+severity: critical
+tags:
+- kubernetes
+- api-server
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.2.1 Ensure that anonymous requests to the API server are restricted
+audit:
+  type: manual
+  command: 'Determine which anonymous authentication mode is in use: # Check for structured authentication configuration AUTH_CONFIG=$(ps -ef | grep kube-apiserver | grep -oP ''(?<=--authentication-config[= ])\S+'') # Check for the --anonymous-auth flag ANON_AUTH=$(ps -ef | grep kube-apiserver | grep -oP ''(?<=--anonymous-auth[= ])\S+'') If --authentication-config is set Inspect the file for anonymous auth restrictions: cat "$AUTH_CONFIG" | grep -A 10 "anonymous:" Verify one of: • enabled: false — anonymous auth is fully disabled, or • enabled: true with a conditions list restricting access to only ...'
+remediation:
+  type: iac_patch
+  command: 'Option 1 — Structured authentication configuration Add an anonymous section to the AuthenticationConfiguration file to restrict anonymous access to only required endpoints: apiVersion: apiserver.config.k8s.io/v1beta1 kind: AuthenticationConfiguration anonymous: enabled: true conditions: - path: /healthz - path: /livez - path: /readyz Start the API server with --authentication-config pointing to this file. Remove the --anonymous-auth flag if present. Option 2 — Disable anonymous authentication entirely: Edit the API server pod specification file ``/etc/kubernetes/manifests/kube-apiserver.yaml` on the control plane node and set: --anonymous-auth=false Ensure load balancer health checks and any bootstrap processes authenticate to the API server.'

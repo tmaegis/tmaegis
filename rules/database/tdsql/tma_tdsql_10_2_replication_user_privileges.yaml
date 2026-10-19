@@ -1,0 +1,18 @@
+id: TMA-TDSQL-10.2
+title: Ensure the Replication User Has Minimal Privileges
+description: The replication-dedicated account (tdsqlsys_repl) should hold only the minimum privileges necessary for replication. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Counts grant lines for 'tdsqlsys_repl'@'%' that contain anything other than REPLICATION SLAVE / REPLICATION CLIENT (or USAGE) on *.*.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- privileges
+- replication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 10.2 Ensure the Replication User Has Minimal Privileges
+audit:
+  type: sql_query
+  command: out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SHOW GRANTS FOR 'tdsqlsys_repl'@'%'" 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -vcE '^GRANT (USAGE|REPLICATION SLAVE|REPLICATION CLIENT)(, (REPLICATION SLAVE|REPLICATION CLIENT))* ON \*\.\* TO ' || true
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: REVOKE ALL PRIVILEGES ON *.* FROM 'tdsqlsys_repl'@'%'; GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'tdsqlsys_repl'@'%'; (coordinate with the TDSQL Manager, which manages this account).

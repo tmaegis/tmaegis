@@ -1,0 +1,19 @@
+id: TMA-CHROME-2.2.1
+title: 'Ensure ''Control use of insecure content exceptions'' is set to ''Enabled: Do not allow any site to load mixed content'''
+description: 'Setting controls whether users can add exceptions to allow mixed content for specific sites. - Do not allow any site to load mixed content (2) - Allow users to add exceptions to allow mixed content (3) The recommended state for this setting is: Enabled with the value of Do not allow any site to load mixed content (2) NOTE: This policy can be overridden for specific URL patterns using the InsecureContentAllowedForUrls... Rationale: Allowing mixed (secure / insecure) content from a site can lead to malicious content being loaded. Mixed content occurs if the initial request is secure over HTTPS, but HTTPS and HTTP content is subsequently loaded to display the web page. HTTPS content is secure. HTTP content is insecure. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DefaultInsecureContentSetting (REG_DWORD); compliant when it
+  is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.2.1 Ensure ''Control use of insecure content exceptions'' is set to ''Enabled: Do not allow any site to load mixed content'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultInsecureContentSetting'' -ErrorAction SilentlyContinue).''DefaultInsecureContentSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultInsecureContentSetting' -Value 2 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,17 @@
+id: TMA-OPNSENSE-3.2
+title: Ensure Login Protection methods are enabled.
+description: OPNsense strongly recommends enabling two-factor authentication (e.g., using TOTP) to protect user accounts, which is highly effective against password-based brute-force attacks.
+target: opnsense
+level: 1
+severity: medium
+tags:
+- logging
+- opnsense
+reference: CIS OPNsense Benchmark v1.0.0 - 3.2 Ensure Login Protection methods are enabled.
+audit:
+  type: config_regex
+  pattern: <sshguard_threshold>(?:[1-9]|[12]\d|30)</sshguard_threshold>
+remediation:
+  type: iac_patch
+  command: '- Navigate to System > Access > Servers - Click the Plus Sign to add a TOTP Server - Give the server a descriptive name - Select the TOTP Server Type - Select a Token Length of 6 - Install Google Authenticator on your phone - Add a user from System > Access > Users - Enter a Username and Password and fill in the other fields just as you would do for any other user. Then select the Generate new (160bit) secret under OTP seed. - Click Save - For testing the user authentication, OPNsense offers a simple tester. Go to System ‣ Access ‣ Tester - Select the Authentication server you have configured, and enter the user name. Then enter the *token + password, remember the order is token and then password in the same field. - Hit the test button and if all goes well you should see successfully authenticated. - Per default the system validates user credentials against the “Local Database”. In System ‣ Settings ‣ Administration, section Authentication you should change this to your newly
+    added authentication server to make sure no local user can gain access without 2FA.'

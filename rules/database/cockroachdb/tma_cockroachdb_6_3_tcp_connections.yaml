@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-6.3
+title: Ensure remote connections via TCP/IP sockets are configured correctly
+description: TCP/IP connections enable remote access to CockroachDB clusters across networks. CockroachDB supports multiple authentication methods for remote connections, with certificate-based authentication being the most secure option. All TCP/IP connections must use TLS encryption to protect data in transit. Remote connection security depends on proper network configuration, authentication method selection, and TLS settings.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- tls
+- network
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 6.3 Ensure remote connections via TCP/IP sockets are configured correctly
+audit:
+  type: manual
+  command: 'From a remote host run cockroach sql --insecure --host=<server>:26257 (must fail: server is not running in insecure mode) and cockroach sql --certs-dir=certs --host=<server>:26257 (must succeed). Check --listen-addr/--advertise-addr/--http-addr bind only intended interfaces and that clients use sslmode=verify-full.'
+remediation:
+  type: iac_patch
+  command: 'Prerequisites: Complete certificate infrastructure setup as described in section 6.0. 1. Configure Server for Remote Access # Start CockroachDB listening on appropriate network interfaces cockroach start \ --certs-dir=certs \ --store=node1 \ --listen-addr=0.0.0.0:26257 \ --advertise-addr=database-server:26257 \ --http-addr=0.0.0.0:8080 \ --join=database-server:26257 # For multi-node clusters, configure each node cockroach start \ ...'

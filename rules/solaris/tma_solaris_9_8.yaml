@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.8
+title: Ensure root PATH Integrity
+description: 'The root user can execute any command on the system and could be tricked into executing programs if the PATH is not set correctly. Including the current working directory (.) or any other writable directory in root''s executable path makes it likely that an attacker can gain superuser access by forcing an administrator operating as root to execute a malcode, such as a Trojan horse program. Audit: root''s login PATH must not contain ::, a trailing :, ''.'', or group/other writable directories.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.8 Ensure root PATH Integrity
+audit:
+  type: command
+  command: 'p=$(su - root -c ''echo $PATH'' 2>/dev/null | tail -n 1); [ -n "$p" ] || exit 1; r=compliant; case "$p" in *::*) r="Empty Directory in PATH (::)";; *:) r="Trailing : in PATH";; esac; IFS=:; set -- $p; unset IFS; for d in "$@"; do [ "$d" = . ] && r="PATH contains ."; if [ -d "$d" ]; then s=$(ls -ld "$d/" | awk ''substr($1,6,1)!="-" {print "Group Write permission set on directory"} substr($1,9,1)!="-" {print "Other Write permission set on directory"}'' | head -n 1); [ -z "$s" ] || r="$s $d"; fi; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step.

@@ -1,0 +1,20 @@
+id: TMA-MONGODB-4.1
+title: Ensure legacy TLS protocols are disabled
+description: Only modern TLS protocols should be enabled in MongoDB for all client connections and upstream connections. Removing legacy TLS and SSL protocols (SSL 3.0, TLS 1.0 and 1.1), and enabling emerging and stable TLS protocols (TLS 1.2, and TLS 1.3), ensures users are able to take advantage of strong security capabilities and protects them from insecure legacy protocols. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist).
+target: mongodb
+level: 2
+severity: medium
+tags:
+- mongodb
+- tls
+- encryption
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 4.1 Ensure legacy TLS protocols are disabled
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*disabledProtocols:[^\n]*(?:TLS1_0[^\n]*TLS1_1|TLS1_1[^\n]*TLS1_0)
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: iac_patch
+  command: 'Add ''disabledProtocols: TLS1_0,TLS1_1'' under net.tls in /etc/mongod.conf and restart mongod/mongos.'

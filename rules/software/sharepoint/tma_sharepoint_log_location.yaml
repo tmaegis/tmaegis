@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-LOG-LOCATION
+title: Ensure diagnostic (ULS) logs are not stored on the system drive
+description: ULS trace logs grow quickly; storing them on the system drive risks filling it and stopping the server, which also loses audit evidence. Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 2
+severity: low
+tags:
+- sharepoint
+- logging
+reference: CIS Microsoft SharePoint Server Benchmark - Logging / Diagnostic logging configuration (verify section number for your release)
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $c = Get-SPDiagnosticConfig -ErrorAction Stop; $loc = [Environment]::ExpandEnvironmentVariables("$($c.LogLocation)"); if ($loc -and -not $loc.StartsWith($env:SystemDrive, [StringComparison]::OrdinalIgnoreCase) -and $c.LogMaxDiskSpaceUsageEnabled -eq $true) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-SPDiagnosticConfig -LogLocation 'D:\SPLogs\ULS' -LogMaxDiskSpaceUsageEnabled -LogDiskSpaceUsageGB 20 (the path must exist on every farm server).

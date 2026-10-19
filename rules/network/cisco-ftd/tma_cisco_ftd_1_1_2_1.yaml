@@ -1,0 +1,24 @@
+id: TMA-CISCO-FTD-1.1.2.1
+title: Use an External Authentication Source for Administrative Logins
+description: 'By default, the Firepower administrative account is set during installation (commonly to "admin", but any value appropriate to the organization is fine), and is locally defined. It is recommended that a back-end directory be used to authenticate all other administrative access of all levels. If the single "admin" account is used, only a single administrator can access the FMC console at one time, subsequent logins will disconnect the currently active session. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-ftd
+level: 1
+severity: high
+tags:
+- cisco-ftd
+- network
+- logging
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 1.1.2.1 Use an External Authentication Source for Administrative Logins
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. In the FMC Console: Navigate to System / Users Verify that all administrative user accounts have "External" as their Authentication Method Note that the default administrative user that was defined during the installation (often this found to be "admin") will remain in this list as an Internal user. It is recommended to keep this user in place, in the event that the external authentication service is not available.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! First create an External Authentication Object:
+    - Navigate to System / Users / External Authentication.
+    - Create an External Authentication Object (RADIUS or LDAP)
+    - Whichever method is defined, be sure to configure both a Primary and a Backup server for redundant authentication
+    - On the External Authentication service, it's recommended to control access by directory Groups rather than by user account (this is easily done in both RADIUS and in LDAP)
+    - For both RADIUS or LDAP, the various administrative users should be populated in their respective RBAC roles. In a smaller environment, it is common to see all administrators be populated in the "Administrator" category, which gives them full administrative (read/write) rights. If this is not done, a "Default User Role" should be selected.
+    - If it is desired to restrict Shell Access to specific users only, in earlier versions of FMC add them in the Shell Access Filter section. In later versions (6.4 or later), you can control this access using RADIUS Attributes (Service Type: Administrative)

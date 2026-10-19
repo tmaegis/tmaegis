@@ -1,0 +1,27 @@
+id: TMA-LNX-SSH-IGNORERHOSTS
+title: Ensure SSH IgnoreRhosts is enabled
+description: Hardens the SSH daemon directive IgnoreRhosts.
+target: linux
+os_family:
+- ubuntu-22.04
+- ubuntu-24.04
+- rocky-9
+level: 1
+severity: medium
+tags:
+- ssh
+- server
+reference: CIS Linux Benchmark - Services / SSH Server Configuration (verify section number for your distro release)
+audit:
+  type: command
+  command: sshd -T 2>/dev/null | grep -i '^ignorerhosts '
+  expected_output: ignorerhosts yes
+remediation:
+  type: file_line
+  file_path: /etc/ssh/sshd_config
+  match_regex: (?mi)^\s*#?\s*IgnoreRhosts\b.*$
+  replace_line: IgnoreRhosts yes
+  verify_cmd: sshd -t -f {file}
+  backup_files:
+  - /etc/ssh/sshd_config
+  insert_at: top

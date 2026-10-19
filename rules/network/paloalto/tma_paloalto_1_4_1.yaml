@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-1.4.1
+title: Ensure 'Idle timeout' is less than or equal to 10 minutes for device management
+description: 'Set the Idle Timeout value for device management to 10 minutes or less to automatically close inactive sessions. PASS requires idle-timeout between 1 and 10 minutes. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- management
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.4.1 Ensure 'Idle timeout' is less than or equal to 10 minutes for device management
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig setting management idle-timeout (?:[1-9]|10)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig setting management idle-timeout 10
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Management > Authentication Settings. Set Idle Timeout to less than or equal to 10.

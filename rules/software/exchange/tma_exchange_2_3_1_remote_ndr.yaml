@@ -1,0 +1,17 @@
+id: TMA-EXCHANGE-2.3.1
+title: Ensure 'Enable non-delivery reports to remote domains' is set to 'False'
+description: This policy setting is used to determine if the server sends non-delivery reports (also known as NDRs or bounce messages) to remote domains. Prints the number of remote domains where NDREnabled is not False (expected 0). Every remote domain (including Default) is checked. Run on a Mailbox server (organization-wide objects are read from AD). Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 2
+severity: low
+tags:
+- exchange
+- remote-domains
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 2.3.1 Ensure 'Enable non-delivery reports to remote domains' is set to 'False'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $bad = @(Get-RemoteDomain -ErrorAction Stop | Where-Object { $_.NDREnabled -ne $false }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Set-RemoteDomain '<RemoteDomain>' -NDREnabled $false

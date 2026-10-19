@@ -1,0 +1,16 @@
+id: TMA-IBM-I-5.4.4
+title: Configuring SSH - set privilege separation
+description: The recommendation is to edit the /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config file to ensure that privilege separation is enabled. Note, that as of OpenSSH 7.5 this configuration directive has been deprecated. Setting privilege separation helps to secure remote ssh access. Once a user is authenticated the sshd daemon creates a child process which has the privileges of the authenticated user and this then handles incoming network traffic.
+target: ibm-i
+level: 1
+severity: high
+tags:
+- ibm-i
+- ssh
+reference: CIS IBM i V7R5M0 Benchmark v2.1.0 - 5.4.4 Configuring SSH - set privilege separation
+audit:
+  type: manual
+  command: 'DSPF ''/QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config'' On the Control field, type UsePrivilegeSeparation and press F16 (shift F4) Control: UsePrivilegeSeparation __________________________________ The display should yield the following output: UsePrivilegeSeparation yes'
+remediation:
+  type: iac_patch
+  command: 'EDTF ''/QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config'' file to ensure that privilege separation is enabled: Replace: UsePrivilegeSeparation no With: UsePrivilegeSeparation yes Re-cycle the sshd daemon to pick up the configuration changes: Note: In IBM i OpenSSH 6.9p1, UsePrivilegeSeparation is explicitly set to "no". Once upgrading to 8.0p1, UsePrivilegeSeparation is deprecated. There is a warning message generated when the sshd server is started when the option exists in sshd_config. To disable the warning, you can comment out or remove the line containing UsePrivilegeSeparation from the sshd_config file.'

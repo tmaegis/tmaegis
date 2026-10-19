@@ -1,0 +1,17 @@
+id: TMA-GKE-4.6.2
+title: Require RuntimeDefault seccomp or approved custom profiles for workload pods
+description: Require GKE workload pods to use the RuntimeDefault seccomp profile unless an approved custom Localhost profile is required. Seccomp should be configured in the pod or container security context to reduce the system calls available to containers. The benchmark marks this recommendation Manual.
+target: gke
+level: 2
+severity: low
+tags:
+- gke
+- policies
+- pod-security
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.6.2 Require RuntimeDefault seccomp or approved custom profiles for workload pods
+audit:
+  type: manual
+  command: Review running Pods across all namespaces and identify containers that do not explicitly use RuntimeDefault or an approved Localhost seccomp profile. In GKE Standard clusters, seccomp must be applied manually because GKE does not apply a profile for you. echo -e "NAMESPACE\tPOD\tCONTAINER\tEFFECTIVE_SECCOMP" kubectl get pods -A -o json | jq -r ' .items[] as $p | ($p.spec.securityContext.seccompProfile.type // "unset") as $podProfile | (($p.spec.containers // []) + ($p.spec.initContainers // []))[] | (.securityContext.seccompProfile.type // $podProfile) as $effective | ...
+remediation:
+  type: iac_patch
+  command: Update the workload controller templates for any Pods returned by the audit so seccomp is defined in the source manifest, not patched directly on running Pods. Apply the setting through the owning Deployment, StatefulSet, DaemonSet, Job, CronJob, Helm chart, Kustomize overlay, or GitOps source. • Set securityContext.seccompProfile.type to RuntimeDefault at the Pod level where possible so all containers inherit the runtime default seccomp profile. • Use container level seccomp settings only when a specific container requires a different approved profile than the rest of the Pod. • Replace Unconfined with RuntimeDefault unless there is a documented and approved exception. • Allow Localhost only for approved custom seccomp profiles, and confirm the profile is documented, tested, and available on every node where the workload can run.

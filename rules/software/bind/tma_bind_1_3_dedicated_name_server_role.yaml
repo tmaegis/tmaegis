@@ -1,0 +1,17 @@
+id: TMA-BIND-1.3
+title: Dedicated Name Server Role
+description: 'A name server may be an authoritative name server for one or more domains for which it is configured to provide information. An authoritative-only name server only answers queries on the domains for which it is configured, and will reject queries for other domains. A caching name server will answer queries any domain. Manual review: the check needs remote queries, architecture knowledge or site policy.'
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- architecture
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 1.3 Dedicated Name Server Role
+audit:
+  type: manual
+  command: 'Authoritative-Only Name Server: To audit an authoritative name server, ensure it doesn''t answer queries for other non- authoritative domain names. The following command may be run on a Linux system other than the name server to verify the query status is refused. $ dig @<ip_address_of_nameserver> <non_authoritative_name> | grep status; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 52410 Alternatively, the BIND configuration file name.conf and all included configuration files may be searched for the allow-recursion statement.'
+remediation:
+  type: iac_patch
+  command: 'Authoritative-Only Name Server: For the authoritative-only name server add or modify the allow-recursion statement to only include the localhost to as shown below, or add a recursion statement with a value of no as shown below. options { . . . allow-rescursion { local; }; or recursion no; Caching-Only Name Server: For the caching-only name server remove the non-local zone statements from the configuration file and restart the server.'

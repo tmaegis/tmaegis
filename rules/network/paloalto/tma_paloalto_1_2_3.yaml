@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-1.2.3
+title: Ensure HTTP and Telnet options are disabled for the management interface
+description: 'HTTP and Telnet options should not be enabled for device management. PASS requires both disable-telnet yes and disable-http yes under deviceconfig system service. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- management
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.2.3 Ensure HTTP and Telnet options are disabled for the management interface
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:template \S+ config )?deviceconfig system service disable-telnet yes[ \t]*$(?s:.*?)^set (?:template \S+ config )?deviceconfig system service disable-http yes[ \t]*$|^set (?:template \S+ config )?deviceconfig system service disable-http yes[ \t]*$(?s:.*?)^set (?:template \S+ config )?deviceconfig system service disable-telnet yes[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system service disable-telnet yes
+    set deviceconfig system service disable-http yes
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Interfaces > Management. Set the HTTP and Telnet boxes to unchecked.

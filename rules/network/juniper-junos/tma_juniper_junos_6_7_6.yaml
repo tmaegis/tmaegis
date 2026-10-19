@@ -1,0 +1,23 @@
+id: TMA-JUNIPER-JUNOS-6.7.6
+title: Ensure Different Authentication Keys for each NTP Server
+description: Different authentication keys should be set for each NTP Server. Having established the need for NTP, it is essential to ensure that the devices time is not manipulated by an attacker as this could allow DoS to services relying on accurate time as well as replay attacks and other malicious activity. Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- ntp
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.7.6 Ensure Different Authentication Keys for each NTP Server
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. From the command prompt, execute the following command: [edit] user@host#show system ntp | match "server|key" The above command should return each of the configured NTP Servers for the JUNOS Device, as well as configured and trusted keys. The following conditions must all be met: - Every server has a ''key '' configured - Each server uses a different '''' - A corresponding ''authentication-key'' is configured for each ''key '' - Each ''authentication-key'' used with a server is included in the ''trusted-key'' list'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Keys are configured on a key ring and identified by an ID number. To add a key enter the following commands from the hierarchy:
+    set system ntp authentication-key <Key ID> type <algorithm> value <Key>
+    set system ntp trusted-key <Key ID> Set the keys for all configured NTP servers using the following commands under the hierarchy:
+    set system ntp server <Servers IP> key <key ID> If this device is operating as an NTP Server and has clients which use different keys or algorithms, these can be set with the peer option:
+    set system ntp peer <Peers IP> key <key ID> NOTE
+    - The Key ID must also be listed in the trusted-key list to be accepted.

@@ -1,0 +1,20 @@
+id: TMA-WIN2016-17.1.2
+title: Ensure 'Audit Kerberos Authentication Service' is set to 'Success and Failure' (DC Only)
+description: 'This subcategory reports the results of events generated after a Kerberos authentication TGT request. Kerberos is a distributed authentication service that allows a client running on behalf of a user to prove its identity to a server without sending data across the network. This helps mitigate an attacker or server from impersonating a user. • 4768: A Kerberos authentication ticket (TGT) was requested. • 4771: Kerberos pre-authentication failed. • 4772: A Kerberos authentication ticket request failed. The recommended state for this setting is: Success and Failure.'
+target: windows
+os_family:
+- windows-server-2016-dc
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 17.1.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9242-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9242-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

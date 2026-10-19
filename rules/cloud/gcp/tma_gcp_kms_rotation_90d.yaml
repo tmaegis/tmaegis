@@ -1,0 +1,17 @@
+id: TMA-GCP-KMS-ROTATION-90D
+title: Ensure Cloud KMS encryption keys are rotated within 90 days
+description: Regular rotation limits the data protected by one key version. Every enabled ENCRYPT_DECRYPT key in every key ring of every location must have a rotationPeriod of 7776000s (90 days) or less. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: medium
+tags:
+- gcp
+- kms
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Cloud KMS - key rotation period of 90 days or less (verify section number for your release)
+audit:
+  type: command
+  command: "locs=$(gcloud kms locations list --format='value(locationId)' 2>/dev/null) || exit 1\nbad=0\nfor l in $locs; do\n  rings=$(gcloud kms keyrings list --location \"$l\" --format='value(name)' 2>/dev/null) || exit 1\n  for k in $rings; do\n    keys=$(gcloud kms keys list --keyring \"$k\" --location \"$l\" --format='value(name,purpose,rotationPeriod,primary.state)' 2>/dev/null) || exit 1\n    old=$(printf '%s\\n' \"$keys\" | awk -F '\\t' '$2 == \"ENCRYPT_DECRYPT\" && $4 == \"ENABLED\" { rp = $3; sub(/s$/, \"\", rp); if (rp == \"\" || rp + 0 > 7776000) print $1 }')\n    [ -z \"$old\" ] || { printf 'rotation >90d: %s\\n' $old; bad=1; }\n  done\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: gcloud kms keys update <key> --keyring <ring> --location <loc> --rotation-period=90d --next-rotation-time=<RFC3339 time>.

@@ -1,0 +1,37 @@
+id: TMA-VMWARE-3.6
+title: Host should deactivate SNMP
+description: 'Simple Network Management Protocol (SNMP) facilitates the management of networked devices. Minimize attack surface by disabling non-essential services. The recommended setting is to have the SNMP service stopped unless required and configured securely. The audit runs esxcli system snmp get and requires "Enable: false". When SNMP is required, document the exception and apply 6.4.1. Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- management
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 3.6 Host should deactivate SNMP
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system snmp get 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk -F': *' 'tolower($1) ~ /^ *enable$/ {print $2; exit}' | tr 'A-Z' 'a-z' | sed 's/ *$//')
+    if [ "$v" = false ]; then echo compliant; else echo "SNMP Enable: ${v:-not reported}"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system snmp set --enable false
+  guidance: "1. Disable SNMP when not required with: esxcli system snmp set --enable false If SNMP is required, restrict targets/communities, prefer secure SNMP configurations supported by the environment, and limit the ESXi firewall ruleset to authorized management networks."

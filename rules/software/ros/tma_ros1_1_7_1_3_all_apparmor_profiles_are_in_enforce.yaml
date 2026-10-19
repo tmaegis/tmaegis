@@ -1,0 +1,25 @@
+id: TMA-ROS1-1.7.1.3
+title: Ensure all AppArmor Profiles are in enforce or complain mode
+description: AppArmor profiles define what resources applications are able to access. The audit runs apparmor_status and requires loaded profiles (enforce or complain) and no unconfined processes that have a profile. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.7.1.3 Ensure all AppArmor Profiles are in enforce or complain mode
+audit:
+  type: command
+  shell: bash
+  command: |-
+    out=$(apparmor_status 2>/dev/null) || exit 1
+    l=$(printf '%s\n' "$out" | awk '/profiles are loaded/{print $1; exit}')
+    u=$(printf '%s\n' "$out" | awk '/processes are unconfined/{print $1; exit}')
+    [ "${l:-0}" -gt 0 ] || { echo 'no AppArmor profiles loaded'; exit 1; }
+    [ "${u:-0}" -eq 0 ] && echo compliant || echo "$u processes are unconfined"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set all profiles to enforce mode: # aa-enforce /etc/apparmor.d/* OR Run the following command to set all profiles to complain mode: # aa-complain /etc/apparmor.d/* Any unconfined processes may need to have a profile created or activated for them and then be restarted.'

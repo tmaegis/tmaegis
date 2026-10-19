@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.23.2
+title: 'Ensure ''Block signing into Office'' is set to ''Enabled: Org ID only'''
+description: 'This policy setting controls whether users can provide credentials to Office using either their Microsoft Account or the user ID assigned by the organization for accessing Office 365. By selecting the Org ID only option, users can sign in only by using the user ID assigned by the organization for accessing Office 365. The recommended state for this setting is: Enabled: Org ID only Audit: reads the registry value(s) signinoptions that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.23.2 Ensure ''Block signing into Office'' is set to ''Enabled: Org ID only'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\common\signin'') -Name ''signinoptions'' -ErrorAction SilentlyContinue).''signinoptions''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $_.PSChildName + '':signinoptions='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Org ID only: Microsoft Office 2016\Miscellaneous\Block Signing into Office'

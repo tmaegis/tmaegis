@@ -1,0 +1,35 @@
+id: TMA-NGINX-2.3.1
+title: Ensure NGINX directories and files are owned by root
+description: The NGINX configuration directory and all contained files must be owned by the root user and group to prevent unauthorized modification. Counts files and directories under /etc/nginx not owned by root:root; expects 0. Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 1
+severity: high
+tags:
+- nginx
+- permissions
+reference: CIS NGINX Benchmark v3.0.0 - 2.3.1 Ensure NGINX directories and files are owned by root
+audit:
+  type: command
+  command: '[ -d /etc/nginx ] || exit 1; find /etc/nginx \( ! -user root -o ! -group root \) -print 2>/dev/null | wc -l'
+  expected_output: '0'
+  requires_file:
+  - /etc/nginx
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v nginx >/dev/null 2>&1 || exit 0
+    chown -R root:root /etc/nginx
+  guidance: "chown -R root:root /etc/nginx"

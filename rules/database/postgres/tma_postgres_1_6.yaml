@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-1.6
+title: Verify That 'PGPASSWORD' is Not Set in Users' Profiles
+description: PostgreSQL can read a default database password from an environment variable called PGPASSWORD. Run as root; counts Bash login scripts in /home/*, /root and /etc/environment that mention PGPASSWORD (other shells need manual review).
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- credentials
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 1.6 Verify That 'PGPASSWORD' is Not Set in Users' Profiles
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; n=$(grep -ls PGPASSWORD /home/*/.bashrc /home/*/.profile /home/*/.bash_profile /root/.bashrc /root/.profile /root/.bash_profile /etc/environment 2>/dev/null | wc -l); echo "$n"'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove PGPASSWORD from the listed login scripts and use ~/.pgpass (mode 0600), a service file without passwords, or certificate/peer authentication instead.

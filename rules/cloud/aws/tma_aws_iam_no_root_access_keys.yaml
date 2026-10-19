@@ -1,0 +1,19 @@
+id: TMA-AWS-IAM-NO-ROOT-ACCESS-KEYS
+title: Ensure no root user account access key exists
+description: Root access keys grant unrestricted, unscoped access to the account and cannot be limited by IAM policy. Checks AccountAccessKeysPresent from the account summary. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: critical
+tags:
+- aws
+- iam
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Identity and Access Management - no root user access keys (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(aws iam get-account-summary --query ''SummaryMap.AccountAccessKeysPresent'' --output text 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out"'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Sign in as root, open Security credentials and delete (after deactivating and confirming nothing uses them) every root access key. Use IAM roles or users for programmatic access.

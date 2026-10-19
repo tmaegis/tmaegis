@@ -1,0 +1,41 @@
+id: TMA-ARUBA-CX-4.1.1
+title: Control Plane Policing
+description: This sequence describes configuring Control plane policing (COPP)
+target: aruba-cx
+level: 2
+severity: medium
+tags:
+- aruba-cx
+- hardening
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 4.1.1 Control Plane Policing
+audit:
+  type: manual
+  command: Run 'show copp-policy <applied-policy>' (and 'show running-config | include copp') and confirm a control plane policing policy is applied with class rates and priorities tuned to the organisation's needs (not left unreviewed at factory-default).
+remediation:
+  type: iac_patch
+  command: |-
+    Syntax:
+    config
+    copp-policy test_1
+    class <class> ?
+      drop             Drop packets matching this class
+      factory-default  Set this class to factory default configuration
+      priority         Specify the priority for this class
+    class <class> drop ?
+    class <class> factory-default ?
+    class <class> priority ?
+      <0-6>  The priority for this class
+    class <class> priority <0-6> ?
+      rate  Specify the rate for this class
+    class <class> priority <priority> rate ?
+      <25-99999>  The rate for this class in units of packets per second
+    class <class> priority <priority> rate <rate> ?
+      burst  Specify the burst for this class
+      <cr>
+    class <class> priority <priority> rate <rate> burst ?
+      <1-9999>  The burst for this class in units of packets
+    class <class> priority <0-6> rate <25-99999> burst <1-
+    9999> ? <cr>
+    exit
+    Example:
+    6300# config 6300(config-copp)# copp-policy test_1 6300(config-copp)# class acl-logging priority 1 rate 50 burst 100 6300(config-copp)# default-class priority 2 rate 4225 burst 528 6300(config-copp)# exit 6300(config)# exit 6300#

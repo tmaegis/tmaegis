@@ -1,0 +1,20 @@
+id: TMA-MYSQL-3.6
+title: Ensure 'general_log_file' Has Appropriate Permissions
+description: 'MySQL can operate using a variety of log files, each used for different purposes. These are the binary log (which can be encrypted), error log, slow query log, relay log (which can be encrypted), general log, and in the enterprise edition, the audit log (which can be encrypted). Passes when the general log is off and no old file remains, or when it is on and the file is -rw------- mysql:mysql. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- filesystem
+- permissions
+- logging
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 3.6 Ensure 'general_log_file' Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; on=$(mysql -NBe "SELECT IFNULL(@@global.general_log + 0, '''')" 2>/dev/null) || exit 1; f=$(mysql -NBe "SELECT IFNULL(@@global.general_log_file, '''')" 2>/dev/null) || exit 1; case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; if [ "$on" = 0 ]; then [ -e "$f" ] && echo "general log disabled but old file $f exists" || echo compliant; exit 0; fi; s=$(stat -c ''%a %U %G'' "$f" 2>/dev/null) || exit 1; [ "$s" = "600 mysql mysql" ] && echo compliant || echo "$s"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Disable the general log (SET PERSIST general_log = OFF) and remove old general log files; if it must stay on: chmod 600 <general_log_file> && chown mysql:mysql <general_log_file>.'

@@ -1,0 +1,19 @@
+id: TMA-MYSQL-2.9
+title: Require Current Password for Password Reset
+description: 'Require the current password for password reset. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: low
+tags:
+- mysql
+- database
+- authentication
+- password
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.9 Require Current Password for Password Reset
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.password_require_current = 1, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST password_require_current = ON"

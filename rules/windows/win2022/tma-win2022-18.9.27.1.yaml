@@ -1,0 +1,20 @@
+id: TMA-WIN2022-18.9.27.1
+title: Ensure 'Allow Custom SSPs and APs to be loaded into LSASS' is set to 'Disabled' (DC only)
+description: 'This policy setting controls the configuration under which the Local Security Authority Subsystem Service (LSASS) will load custom Security Support Provider/Authentication Package (SSP/AP). The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-server-2022-dc
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.9.27.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System'' -Name ''AllowCustomSSPsAPs'' -ErrorAction SilentlyContinue).''AllowCustomSSPsAPs''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowCustomSSPsAPs='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System' -Name 'AllowCustomSSPsAPs' -Value 0 -PropertyType DWord -Force | Out-Null

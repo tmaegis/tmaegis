@@ -1,0 +1,34 @@
+id: TMA-MACOS14-2.6.5
+title: Ensure Gatekeeper Is Enabled
+description: Gatekeeper is Apple’s application that utilizes allowlisting to restrict downloaded applications from launching. It functions as a control to limit applications from unverified sources from running without authorization. In an update to Gatekeeper in macOS 13 Ventura, Gatekeeper checks every application on every launch, not just quarantined apps. Disallowing unsigned software will reduce the risk of unauthorized or malicious applications from running on the system.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.6.5 Ensure Gatekeeper Is Enabled
+audit:
+  type: command
+  command: /usr/sbin/spctl --status 2>&1
+  expected_output: assessments enabled
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/sbin/spctl --global-enable 2>/dev/null || /usr/sbin/spctl --master-enable
+  guidance: "Graphical Method: Perform the following steps to enable Gatekeeper: 1. Open System Settings 2. Select Privacy & Security 3. Set 'Allow apps downloaded from' to 'App Store and identified developers' Terminal Method: Run the following command to enable Gatekeeper to allow applications from App Store and identified developers: % /usr/bin/sudo /usr/sbin/spctl --global-enable Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.systempolicy.control 2. The key to include is AllowIdentifiedDevelopers 3. The key must be set to <true/> 4. The key to also include is EnableAssessment 5. The key must be set to <true/>"

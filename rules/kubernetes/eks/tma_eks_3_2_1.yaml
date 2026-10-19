@@ -1,0 +1,26 @@
+id: TMA-EKS-3.2.1
+title: Ensure kubelet anonymous authentication is disabled
+description: 'In Amazon EKS, this control means the worker node kubelet must not accept unauthenticated requests. In current EKS node bootstrapping, kubelet settings are applied through the node’s effective KubeletConfiguration, so this requirement is represented as authentication.anonymous.enabled: false in the live kubelet configuration rather than depending on a legacy command-line flag being visible in the process list. Reads every node''s effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access.'
+target: eks
+level: 1
+severity: critical
+tags:
+- eks
+- worker-node
+- kubelet
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.2.1 Ensure kubelet anonymous authentication is disabled
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"anonymous":\{"enabled":false\}'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit returns true, the worker node is allowing anonymous requests to the kubelet and should be treated as noncompliant. If the result is null or the field is missing, first confirm the configz response is complete, because Kubernetes identifies that endpoint as the view of the kubelet’s final actuated configuration. Once the result is validated, remediation in EKS should be performed through the supported node provisioning or node update workflow, not by directly editing the kubelet config file on the host. Remediation of new cluster When creating a new EKS cluster or node group, the goal is to ensure worker nodes join the cluster with kubelet anonymous authentication already disabled. This is done by defining the setting in the bootstrap configuration that EKS applies during node creation.

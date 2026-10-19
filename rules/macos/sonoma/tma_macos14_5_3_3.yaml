@@ -1,0 +1,19 @@
+id: TMA-MACOS14-5.3.3
+title: Audit Connected FAT32 and ExFAT Drives
+description: 'While FAT32 and exFAT offer cross-platform convenience, they introduce critical security gaps. These formats do not support encryption without third-party products (on any platform). Consequently, FAT32 and exFAT should be reserved strictly for temporary, non-sensitive data transfers, while any sustained use or sensitive data storage should utilize APFS (Encrypted). Note: While the recommendation for FAT32 and ExFAT drives is not automated, we have included a script check within CIS-CAT if your organization does want to not allow either format to be used and does not have an existing solution. Prohibiting FAT32 and exFAT devices centers on the total absence of native access controls and data-at-rest protection. Unlike APFS or HFS+, which allow for granular folder restrictions, FAT32 and exFAT operate with an effective "777" permission state, granting every user and process on a system...'
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 5.3.3 Audit Connected FAT32 and ExFAT Drives
+audit:
+  type: manual
+  command: 'Terminal Method: Run the following command to list any FAT32 or ExFAT external Volumes are connected: % diskutil list external | grep -E ''DOS_FAT_32|Microsoft Basic Data'' Any FAT32 or ExFAT drives connected should meet your organization''s existing device policies for external drives.'
+remediation:
+  type: iac_patch
+  command: 'Any connected FAT32 or ExFAT volumes need to be audited to verify that they meet your organization''s existing device policies for external drives. Note: Removable storage is generally formatted in FAT32 or ExFAT. Those drives generally are used by additional non-Apple devices and are outside the scope of the benchmark. If your organization has a use for those devices, removable storage should only be connected when importing data to your Apple device. After import, those drive(s) should be immediately ejected and then disconnected from the computer.'

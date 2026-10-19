@@ -1,0 +1,18 @@
+id: TMA-MARIADB-7.3
+title: Ensure strong authentication is utilized for all accounts
+description: 'The mysql_native_password and mysql_old_password plugins utilize weak cryptography and/or weak password routines. In particular, the mysql_old_password plugin utilizes cracked password routines and is subject to Pass-the-Hash attacks. The mysql_native_password plugin relies on the Secure Hash Algorithm 1 (SHA-1) algorithm. Counts accounts still using mysql_native_password/mysql_old_password/no plugin, apart from root and mysql with an invalid password string. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: critical
+tags:
+- mariadb
+- database
+- authentication
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 7.3 Ensure strong authentication is utilized for all accounts
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT COUNT(*) FROM mysql.user WHERE plugin IN ('mysql_native_password', 'mysql_old_password', '') AND NOT (User = 'root' AND authentication_string = 'invalid') AND NOT (User = 'mysql' AND authentication_string = 'invalid')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket; SET PASSWORD FOR 'mysql'@'localhost' = 'invalid'; SET PASSWORD FOR 'mariadb.sys'@'localhost' = 'invalid'; and move every other listed account to ed25519, gssapi, pam or unix_socket (ALTER USER ... IDENTIFIED VIA ed25519 USING PASSWORD('...')).

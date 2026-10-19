@@ -1,0 +1,38 @@
+id: TMA-MACOS15-2.6.3.1
+title: Ensure Share Mac Analytics Is Disabled
+description: Share Mac Analytics (Share with App Developers dependent on Mac Analytic sharing) includes diagnostics, usage, and location data. Turn off all Analytics and Improvements sharing.
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.6.3.1 Ensure Share Mac Analytics Is Disabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    /usr/bin/osascript -l JavaScript <<'EOS'
+    $.NSUserDefaults.alloc.initWithSuiteName('com.apple.SubmitDiagInfo').objectForKey('AutoSubmit').js
+    EOS
+  expected_output: 'false'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.SubmitDiagInfo" 'AutoSubmit' -bool false
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile (preferred): com.apple.SubmitDiagInfo AutoSubmit = <false/>."

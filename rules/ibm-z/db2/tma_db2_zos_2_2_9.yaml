@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.2.9
+title: Ensure that access to dynamic query-related tables is restricted
+description: 'The following tables contain information related to the stabilization of access paths for dynamic SQL statements and dependencies for dynamic query packages: SYSIBM.SYSDYNQRY SYSIBM.SYSDYNQRYDEP SYSIBM.SYSDYNQRY_TXTL PUBLIC should be restricted from accessing these tables. Exposing dynamic SQL statements and dynamic queries can enable attackers to gain access to your organization''s data.'
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.2.9 Ensure that access to dynamic query-related tables is restricted
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check if PUBLIC has access: SELECT GRANTEE, TCREATOR, TTNAME FROM SYSIBM.SYSTABAUTH WHERE TCREATOR = ''SYSIBM'' AND TTNAME IN (''SYSDYNQRY'', ''SYSDYNQRYDEP'', ''SYSDYNQRY_TXTL'') AND GRANTEE = ''PUBLIC''; Output that contains zero rows is considered a successful finding. Otherwise, PUBLIC has SELECT privilege and the remediation steps should be followed. For external security users: Issue the RACF RLIST command to list the profiles that control access to the dynamic query-related tables in the ... (full steps: CIS section 2.2.9)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the SQL REVOKE statement to revoke access from PUBLIC. For external security users: Issue the RACF RALTER command to update the profiles and change the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

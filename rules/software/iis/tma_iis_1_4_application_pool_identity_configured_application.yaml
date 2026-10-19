@@ -1,0 +1,19 @@
+id: TMA-IIS-1.4
+title: Ensure 'application pool identity' is configured for all application pools
+description: Application Pool Identities are the actual users/authorities that will run the worker process - w3wp.exe. Assigning the correct user authority will help ensure that applications can function properly, while not giving overly permissive permissions on the system. These identities can further be used in ACLs to protect system content. It is recommended that each Application Pool run under a unique identity. Every application pool and the applicationPoolDefaults must use identityType ApplicationPoolIdentity. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: high
+tags:
+- iis
+- accounts
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 1.4 Ensure 'application pool identity' is configured for all application pools
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $bad = @(Get-ChildItem IIS:\AppPools | Where-Object { $_.processModel.identityType -ne 'ApplicationPoolIdentity' }) + @((Get-WebConfiguration -Filter 'system.applicationHost/applicationPools/applicationPoolDefaults/processModel' -PSPath 'MACHINE/WEBROOT/APPHOST') | Where-Object { $_.identityType -ne 'ApplicationPoolIdentity' }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-ItemProperty IIS:\AppPools\<pool> -Name processModel.identityType -Value ApplicationPoolIdentity (and set applicationPoolDefaults the same way).

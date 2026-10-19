@@ -1,0 +1,18 @@
+id: TMA-AWS-COMPUTE-2.6
+title: Ensure detailed monitoring is enable for production EC2 Instances
+description: Ensure that detailed monitoring is enabled for your Amazon EC2 instances. Monitoring is an important part of maintaining the reliability, availability, and performance of your Amazon EC2 instances
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- compute
+- monitoring
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 2.6 Ensure detailed monitoring is enable for production EC2 Instances
+audit:
+  type: manual
+  command: 'From the Console: 1. Login to EC2 using https://console.aws.amazon.com/ec2/ 2. On the left Click INSTANCES, click Instances. 3. Select the EC2 instance you want to review. 4. Select the Description tab. 5. Check the Launch time. 6. Determine the level of monitoring by reviewing the ''Monitoring attribute''. 7. If the value is set to basic refer to the remediation below. 8. Repeat steps no. 3 – 7 to verify the monitoring level for all instances. 9. Go through the other AWS regions and repeat the audit process. From the CLI 1. Run the describe-instances command aws ec2 describe-instances --region us-east-1 --output json --filters "Name=monitoring-state,Values=disabled" --query "Reservations[*].Instances[*].{Instance:InstanceId}" 2. The output should be a list of running instances that have enhanced monitoring disabled. 3. Based on this list of instance ids refer to the remediation below.'
+remediation:
+  type: iac_patch
+  command: 'From the Console: 1. Login to EC2 using https://console.aws.amazon.com/ec2/ 2. On the left Click INSTANCES, click Instances. 3. Select the EC2 instance you want to review. 4. Select the Monitoring tab. 5. Click on ''Enable Detailed Monitoring` 6. Click on Yes, Enable 7. Repeat steps no. 3 – 6 for any other instances that require detailed monitoring to be enabled. From the CLI 1. Run the monitor-instances command using the list of instances collected in the audit. aws ec2 monitor-instances --instance-ids <i-instancename> 2. The output will show ''state: pending'' 3. Wait a few minutes and run the same command again for that instance and it will show enabled.'

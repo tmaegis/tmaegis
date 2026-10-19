@@ -1,0 +1,19 @@
+id: TMA-MSSQL2022-2.2
+title: Ensure 'CLR Enabled' Server Configuration Option is set to '0'
+description: The clr enabled option specifies whether user assemblies can be run by SQL Server. Enabling use of CLR assemblies widens the attack surface of SQL Server and puts it at risk from both inadvertent and malicious assemblies.
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.2 Ensure 'CLR Enabled' Server Configuration Option is set to '0'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN EXISTS (SELECT 1 FROM sys.configurations WHERE name = 'clr strict security' AND CAST(value AS int) = 1 AND CAST(value_in_use AS int) = 1) OR EXISTS (SELECT 1 FROM sys.configurations WHERE name = 'clr enabled' AND CAST(value AS int) = 0 AND CAST(value_in_use AS int) = 0) THEN 'compliant' ELSE 'noncompliant' END;"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'clr enabled', 0; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"
+  guidance: "For AWS RDS Instances, please refer to the documentation for using Parameter Groups here: Working with parameter groups Run the following T-SQL command: EXECUTE sp_configure 'clr enabled', 0; RECONFIGURE;"

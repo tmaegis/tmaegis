@@ -1,0 +1,18 @@
+id: TMA-CASSANDRA-3.1
+title: Ensure the cassandra and superuser roles are separate
+description: The default installation of Cassandra includes a superuser role named cassandra. This necessitates the creation of a separate role to be the superuser role. Runs cqlsh against CQLSH_HOST/CQLSH_PORT (default 127.0.0.1:9042) with credentials from ~/.cassandra/cqlshrc ([authentication] username/password) of a superuser. Passes when the default cassandra role is not a superuser; also review the remaining superuser roles (3.8).
+target: cassandra
+level: 1
+severity: high
+tags:
+- cassandra
+- authentication
+- privileges
+reference: CIS Apache Cassandra 5.0 Benchmark v1.1.0 - 3.1 Ensure the cassandra and superuser roles are separate
+audit:
+  type: sql_query
+  command: out=$(cqlsh -e 'SELECT role FROM system_auth.roles WHERE is_superuser = True ALLOW FILTERING;' 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -cE '^[[:space:]]*cassandra[[:space:]]*$' || true
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: CREATE ROLE <admin> WITH PASSWORD = '<strong>' AND LOGIN = true AND SUPERUSER = true; GRANT ALL PERMISSIONS ON ALL KEYSPACES TO <admin>; log in as it and run ALTER ROLE cassandra WITH SUPERUSER = false AND LOGIN = false;

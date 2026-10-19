@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-4.3.2
+title: Restrict workload traffic with Kubernetes Network Policies
+description: EKS Auto Mode supports Kubernetes NetworkPolicy resources for namespace Layer 3 and Layer 4 pod traffic isolation, and also supports broader EKS network policy capabilities such as ClusterNetworkPolicy and ApplicationNetworkPolicy where applicable. Workload isolation depends on the relevant workloads actually being covered by NetworkPolicy, ClusterNetworkPolicy, or other supported EKS network policy resources. Reported as a manual review because it needs site-specific judgement.
+target: eks-auto
+level: 1
+severity: medium
+tags:
+- eks-auto
+- policies
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.3.2 Restrict workload traffic with Kubernetes Network Policies
+audit:
+  type: manual
+  command: Review the Kubernetes network policy in the EKS Auto Mode cluster and verify that every required workload is selected by either namespace NetworkPolicy, ApplicationNetworkPolicy, or a cluster ClusterNetworkPolicy. A separate policy in every namespace is not always required because ClusterNetworkPolicy can apply shared controls across all workloads or selected namespaces, while namespace policies can provide application segmentation. EKS Auto Mode supports different network policy types, including standard Kubernetes NetworkPolicy, DNS-based policies, and cluster rules.
+remediation:
+  type: iac_patch
+  command: Create and apply Kubernetes NetworkPolicy, ApplicationNetworkPolicy, or ClusterNetworkPolicy objects so every required workload is explicitly covered by policy. Use namespace NetworkPolicy for workload Network and Transport layer segmentation, use ApplicationNetworkPolicy when DNS egress filtering is required, and use ClusterNetworkPolicy when a shared security posture must apply across multiple namespaces or workload groups. EKS Auto Mode supports these network policy patterns for pod traffic isolation and centralized network access controls. • Set default deny and then add only the ingress and egress rules needed for approved traffic such as DNS, required service-to-service flows, and authorized external destinations. Use specific selectors and destinations rather than broad namespace, pod, IP, or domain patterns whenever possible.

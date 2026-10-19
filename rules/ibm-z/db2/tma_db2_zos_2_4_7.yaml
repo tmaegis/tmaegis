@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.4.7
+title: Secure PACKADM authority access
+description: The PACKADM authority defines certain privileges on collections and packages. It has the package privileges on all packages in specific collections and the CREATE IN privilege on these collections. It is recommended that the PACKADM authority be granted to an authorized ID or a role. Allowing PACKADM authority for PUBLIC jeopardizes the Db2 system and organizational data. If an account that possesses this authority is compromised or used in a malicious manner, Db2 data will be at increased risk.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.4.7 Secure PACKADM authority access
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check PACKADM authority access: SELECT GRANTEE, GRANTEETYPE, NAME FROM SYSIBM.SYSRESAUTH WHERE OBTYPE = ''C'' AND QUALIFIER = ''PACKADM''; If PUBLIC has PACKADM access, follow the remediation steps. Review the access list to ensure that the grants are aligned with your organization''s access policies. For external security users: Issue the RACF RLIST command to list the profile that controls access to the PACKADM authority in the DSNADM class. Examine the universal access (UACC) and user ... (full steps: CIS section 2.4.7)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the following SQL statement to revoke PACKADM access from PUBLIC: REVOKE PACKADM FROM PUBLIC; For external security users: Issue the RACF RALTER command to update the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

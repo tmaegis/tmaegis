@@ -1,0 +1,17 @@
+id: TMA-AIX-4.8.1
+title: Ensure root access is controlled
+description: 'Restricts access to root via su to members of a specific group. Direct login via console and/or remote login via telnet is blocked. For accountability, no direct access to root is allowed. The attributes here control access to root for programs other than OpenSSH. Setting the sugroups attribute to SUADMIN ensures that only members of the this group are able to su root. Audit: root must have login=false and rlogin=false, and su must be restricted by sugroups (not ALL).'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.8.1 Ensure root access is controlled
+audit:
+  type: command
+  command: command -v lsuser >/dev/null 2>&1 || exit 1; out=$(lsuser -a login rlogin su sugroups root 2>/dev/null) || exit 1; r=compliant; case " $out " in *" login=true "*|*" rlogin=true "*) r="$out";; esac; case " $out " in *" su=false "*) ;; *" sugroups=ALL "*|*" sugroups= "*) r="$out";; esac; case "$out" in *sugroups=*) ;; *) r="$out";; esac; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'In /etc/security/user, set the root stanza sugroups attribute to SUADMIN and ensure the login and rlogin attributes are set to false: lsgroup SUADMIN >/dev/null || mkgroup -a SUADMIN chuser login=false rlogin=false sugroups=SUADMIN root NOTE: For the remediation the setting of su is irrelevant.'

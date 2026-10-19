@@ -1,0 +1,35 @@
+id: TMA-DB2-3.2.3
+title: Disable Grants During Restore (DB2_RESTORE_GRANT_ADMIN_AUTHORITIES)
+description: 'The DB2_RESTORE_GRANT_ADMIN_AUTHORITIES registry variable determines whether the authorization ID of the user performing a restore is granted administrative authorities (SECADM, DBADM, DATAACCESS, and ACCESSCTRL authorities) on the restored database. It is typically used when restoring a database on a server where the original database creator account does not exist. It is recommended that ... Unset or OFF passes. Default: The default value of DB2_RESTORE_GRANT_ADMIN_AUTHORITIES is OFF. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- registry
+- privileges
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.2.3 Disable Grants During Restore (DB2_RESTORE_GRANT_ADMIN_AUTHORITIES)
+audit:
+  type: command
+  command: 'out=$(db2set -all 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''/^\[[a-zA-Z]\]/ { l = $0; sub(/^\[[a-zA-Z]\] */, "", l); k = l; sub(/=.*/, "", k); v = l; sub(/^[^=]*=/, "", v); gsub(/[ \t]/, "", v); if (!(k in r)) r[k] = v } END { if (!("DB2_RESTORE_GRANT_ADMIN_AUTHORITIES" in r) || toupper(r["DB2_RESTORE_GRANT_ADMIN_AUTHORITIES"]) == "OFF") print "compliant"; else print "noncompliant: " r["DB2_RESTORE_GRANT_ADMIN_AUTHORITIES"] }'''
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v db2 >/dev/null 2>&1 || exit 0
+    db2set DB2_RESTORE_GRANT_ADMIN_AUTHORITIES=OFF
+  guidance: "Run the following command to set the DB2_RESTORE_GRANT_ADMIN_AUTHORITIES registry variable to OFF: db2set DB2_RESTORE_GRANT_ADMIN_AUTHORITIES=OFF"

@@ -1,0 +1,54 @@
+id: TMA-FORTIGATE-2.4.6
+title: Apply Local-in Policies
+description: Configure Local-in Policies to control inbound traffic that is destined to a FortiGate interface. PASS requires at least one local-in policy. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- firewall-policy
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.4.6 Apply Local-in Policies
+audit:
+  type: config_regex
+  pattern: '(?m)^config firewall local-in-policy6?\n[ \t]+edit '
+remediation:
+  type: iac_patch
+  command: |-
+    config firewall local-in-policy
+        edit 1
+            set intf "port1"
+            set srcaddr "mgmt-hosts"
+            set dstaddr "all"
+            set action accept
+            set service "HTTPS" "SSH"
+            set schedule "always"
+        next
+    end
+    # CIS guidance:
+    Local-in Policies can only be configured through the CLI:
+    config firewall {local-in-policy | local-in-policy6}
+        edit <policy_number>
+            set intf <interface>
+            set srcaddr <source_address> [source_address] ...
+            set dstaddr <destination_address> [destination_address] ...
+            set action {accept | deny}
+            set service <service_name> [service_name] ...
+            set schedule <schedule_name>
+            set comments <string>
+        next
+    end
+    For example, to prevent the source subnet 10.10.10.0/24 from pinging port1, but allow administrative access for PING on port1:
+    config firewall address
+        edit "10.10.10.0"
+            set subnet 10.10.10.0 255.255.255.0
+        next
+    end
+    config firewall local-in-policy
+        edit 1
+            set intf "port1"
+            set srcaddr "10.10.10.0"
+            set dstaddr "all"
+            set service "PING"
+            set schedule "always"
+        next
+    end

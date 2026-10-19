@@ -1,0 +1,17 @@
+id: TMA-SHAREPOINT-2.9
+title: Ensure that the SharePoint Online Web Part Gallery component is configured with limited access
+description: For each SharePoint web application, the platform should be configured to prevent users from accessing the Online Web Part Gallery. Prints the number of web applications where users can access the Online Web Part Gallery (AllowAccessToWebPartCatalog is not False) (expected 0). Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: low
+tags:
+- sharepoint
+- web-parts
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 2.9 Ensure that the SharePoint Online Web Part Gallery component is configured with limited access
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $bad = @(Get-SPWebApplication -ErrorAction Stop | Where-Object { $_.AllowAccessToWebPartCatalog -ne $false }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Central Administration > Security > Manage web part security > for each web application select 'Prevents users from accessing the Online Web Part Gallery' (or $wa = Get-SPWebApplication <url>; $wa.AllowAccessToWebPartCatalog = $false; $wa.Update()).

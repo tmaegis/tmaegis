@@ -1,0 +1,16 @@
+id: TMA-DOCKER-7.2
+title: Ensure that swarm services are bound to a specific host interface
+description: 'By default, Docker swarm services will listen on all interfaces on the host. This may not be necessary for the operation of the swarm where the host has multiple network interfaces. When a swarm is initialized the default value for the --listen-addr flag is 0.0.0.0:2377 which means that swarm services will listen on all interfaces on the host. Reported as a manual review item: the audit needs a site-specific judgement.'
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- manual
+reference: CIS Docker Benchmark v1.9.0 - 7.2 Ensure that swarm services are bound to a specific host interface
+audit:
+  type: manual
+  command: 'You should check the network listener on port 2377 (the default for docker swarm) and 7946 (container network discovery), and confirm that it is only listening on specific interfaces. For example, in this could be done using the following command: ss -lp | grep -iE '':2377|:7946'''
+remediation:
+  type: iac_patch
+  command: Resolving this issues requires re-initialization of the swarm, specifying a specific interface for the --listen-addr parameter.

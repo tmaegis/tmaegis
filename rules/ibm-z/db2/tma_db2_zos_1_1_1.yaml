@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-1.1.1
+title: Ensure that Db2 system data sets are protected
+description: The Db2 data sets that contain system and configuration information, and log data must be protected from unauthorized modifications or deletions. These data sets can be accessed outside of Db2. Failure to properly restrict access to the Db2 system and log data sets can result in a loss of system integrity or data.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- hardening
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 1.1.1 Ensure that Db2 system data sets are protected
+audit:
+  type: manual
+  command: For each data set on the protection list, issue the following RACF commands to determine the protection profiles in place and evaluate access control to those resources. LISTDSD DATASET('<dataset name>')
+remediation:
+  type: iac_patch
+  command: 1. Create a protection profile for each of the data set in the list above. 2. Specify UACC(NONE) or no ID(*) to prevent universal access. 3. Permit READ, ALTER, CONTROL access based on roles and responsibilities and conform to least access needed. For example, issue the following RACF commands to create generic profiles for active log data sets and assign access control to Db2 started tasks. ADDSD 'DSNC000.LOGCOPY*' UACC(NONE) PERMIT 'DSNC000.LOGCOPY*' ID(SYSDSP) ACCESS(ALTER)

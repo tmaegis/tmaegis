@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.3.2
+title: Ensure Local Accounts can ONLY be used during loss of external AAA
+description: Authentication using locally configured usernames and passwords should only be permitted when External AAA servers are down or cannot be reached. Juniper routers support local user accounts in addition to RADIUS and TACACS+ based authentication. JUNOS will use each of the configured protocols in order set under [edit system authentication-order] until the password is either accepted or the end of the ... Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.3.2 Ensure Local Accounts can ONLY be used during loss of external AAA
+audit:
+  type: config_regex
+  pattern: (?m)^set system authentication-order [^\n]*\bpassword\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Remove local user authentication from the authentication order by issuing the following command from the hierarchy;
+    delete system authentication-order password This command will leave other authentication methods (RADIUS or TACACS+) that are already configured under the authentication-order statement.

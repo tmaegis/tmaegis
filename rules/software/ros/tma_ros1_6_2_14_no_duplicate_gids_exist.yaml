@@ -1,0 +1,22 @@
+id: TMA-ROS1-6.2.14
+title: Ensure no duplicate GIDs exist
+description: Although the groupadd program will not let you create a duplicate Group ID (GID), it is possible for an administrator to manually edit the /etc/group file and change the GID field. The audit requires no duplicate GIDs in /etc/group. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.14 Ensure no duplicate GIDs exist
+audit:
+  type: command
+  shell: bash
+  command: |-
+    d=$(cut -d: -f3 /etc/group | sort | uniq -d) || exit 1
+    [ -z "$d" ] && echo compliant || { echo 'duplicate GIDs:'; printf '%s\n' "$d"; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the results of the audit script, establish unique GIDs and review all files owned by the shared GID to determine which group they are supposed to belong to.

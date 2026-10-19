@@ -1,0 +1,23 @@
+id: TMA-DOCKER-2.6
+title: Ensure aufs storage driver is not used
+description: The aufs storage driver is deprecated, unsupported in current kernels and known to cause kernel crashes. The audit reads the storage driver from docker info.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- daemon
+- storage
+reference: CIS Docker Benchmark v1.9.0 - 2.6 Ensure aufs storage driver is not used
+audit:
+  type: command
+  command: d=$(docker info --format '{{.Driver}}') || exit 1; [ "$d" = aufs ] && echo "$d" || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Migrate to the overlay2 storage driver: set "storage-driver": "overlay2" in /etc/docker/daemon.json, re-pull or rebuild images, and restart the Docker daemon.'

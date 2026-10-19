@@ -1,0 +1,48 @@
+id: TMA-MACOS-2.3.3.8
+title: Ensure Content Caching Is Disabled
+description: Starting with macOS 10.13, Apple introduced a service to make it easier to deploy data from Apple, including software updates, where there are bandwidth constraints to the Internet and fewer constraints or greater bandwidth exist on the local subnet. This capability can be very valuable for organizations that have throttled and possibly metered Internet connections.
+target: macos
+level: 2
+severity: low
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 2.3.3.8 Ensure Content Caching Is Disabled
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    /usr/bin/osascript -l JavaScript <<'EOS'
+    function run() {
+      let pref1 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.AssetCache').objectForKey('Activated'))
+      let pref2 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.applicationaccess').objectForKey('allowContentCaching'))
+      if ( ( pref1 == 0 ) || ( pref2 == 0 ) ) {
+        return("true")
+      } else {
+        return("false")
+      }
+    }
+    EOS
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.AssetCache" 'Activated' -bool false
+    /usr/bin/defaults write "/Library/Preferences/com.apple.applicationaccess" 'allowContentCaching' -bool false
+    [ -x /usr/bin/AssetCacheManagerUtil ] && /usr/bin/AssetCacheManagerUtil deactivate 2>/dev/null; true
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile (preferred): com.apple.applicationaccess allowContentCaching = <false/>. Terminal: sudo /usr/bin/AssetCacheManagerUtil deactivate. GUI: System Settings > General > Sharing > Set Content Caching to disabled."

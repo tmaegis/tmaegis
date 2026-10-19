@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-2.1
+title: Ensure the file permissions mask is correct
+description: Files are always created using a default set of permissions. File permissions can be restricted by applying a permissions mask called the umask. The yugabyte user account should use a umask of 077 to deny file access to all user accounts except the owner.
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- permissions
+reference: CIS YugabyteDB Benchmark v2.0.0 - 2.1 Ensure the file permissions mask is correct
+audit:
+  type: manual
+  command: As root run su - yugabyte -c umask. The umask of the yugabyte user must be 0077 or more restrictive; anything less restrictive (e.g. the default 0022) is a finding. Check .bash_profile, .profile and .bashrc of the yugabyte user.
+remediation:
+  type: iac_patch
+  command: 'Depending upon the yugabyte user''s environment, the umask is typically set in the initialization file .bash_profile, but may also be set in .profile or .bashrc. To set the umask, add the following to the appropriate profile file: # whoami yugabyte # cd ~ # ls -ld .{bash_profile,profile,bashrc} ls: cannot access ''.bash_profile'': No such file or directory ls: cannot access ''.profile'': No such file or directory ls: cannot access ''.bashrc'': No such ...'

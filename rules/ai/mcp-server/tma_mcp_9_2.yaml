@@ -1,0 +1,19 @@
+id: TMA-MCP-9.2
+title: Ensure the MCP server process is confined to its working set by OS-level kernel-enforced controls
+description: Each MCP server process is confined to the directories it legitimately needs by OS-level enforcement that the kernel applies regardless of what the server code attempts. Suitable mechanisms include POSIX ACLs, a mandatory access control profile such as AppArmor or SELinux, and container bind mounts for containerized deployments. The deployment selects the mechanism, and whichever is used, the service account's effective filesystem access is confined to its working set. MCP Roots is a deprecated advisory feature that a server can ignore, so it is never the boundary and is not relied on for containment. The boundary is verified as the MCP service account, by reading a known file inside the working set and being denied a known file outside it, and denied attempts are logged for anomaly detection. MCP Roots does not constrain a server that ignores it, and under the 2026-07-28 revision it...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 9.2 Ensure the MCP server process is confined to its working set by OS-level kernel-enforced controls
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_9_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 9.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Confine the MCP service account to its working directory with OS-level enforcement and deny it access to sensitive paths. Then confirm the effective access with the sentinel check in the Audit. Where POSIX ACLs are the chosen mechanism, the following commands apply a working-directory-only restriction. They need setfacl from the acl package and a filesystem mounted with ACL support: SVC_ACCT="<MCP_SERVICE_ACCOUNT>" WORK_DIR="<MCP_WORK_DIR>" SENSITIVE_DIR="<SENSITIVE_DIR>" sudo setfacl -R -m u:"$SVC_ACCT":rX "$WORK_DIR" sudo setfacl -R -m u:"$SVC_ACCT":--- "$SENSITIVE_DIR" Where a mandatory access control profile is the chosen mechanism, author an AppArmor or SELinux profile that confines the process to the same scope. The profile is platform-specific and is not applied by the commands above. For containerized deployments, expose only the working directory through a bind mount, read-only where possible. Configure denied-access logging for anomaly detection.'

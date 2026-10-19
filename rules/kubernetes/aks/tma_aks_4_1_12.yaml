@@ -1,0 +1,17 @@
+id: TMA-AKS-4.1.12
+title: Minimize access to the service account token creation
+description: Minimize access to service account token creation so that only tightly controlled administrative or platform identities can request tokens for Kubernetes service accounts in AKS. AKS uses service accounts as a core Kubernetes identity type and documents that workloads can use Service Account Token Volume Projection to obtain a Kubernetes token, and AKS OIDC guidance states that projected service account tokens are required for Kubernetes 1.30+ ... The benchmark marks this recommendation Manual.
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.12 Minimize access to the service account token creation
+audit:
+  type: manual
+  command: Confirm that the ability to create service account tokens is restricted to only the identities that explicitly require it for approved platform or workload operations. In AKS, service accounts remain Kubernetes identities governed by Kubernetes RBAC, while Microsoft Entra Workload ID relies on projected service account tokens and OIDC federation to obtain Azure access tokens, so unnecessary token-creation rights should be treated as a credential-issuance risk rather than a routine namespace permission.
+remediation:
+  type: iac_patch
+  command: Review all Role and ClusterRole definitions for access to the serviceaccounts/token subresource, removing that permission from any user, group, CI/CD identity, or workload service account that does not have a documented operational requirement. In AKS, service accounts are still governed through Kubernetes RBAC, and Microsoft’s guidance is to grant users, groups, and service accounts only the permissions they need. This review should also account for Azure RBAC for Kubernetes Authorization where it is enabled, because Microsoft documents that Microsoft Entra identities and Kubernetes service accounts follow different authorization paths in AKS. 1. Review Role and ClusterRole objects for serviceaccounts/token access. 2. Remove that permission from broad operational roles, CI/CD identities, and workload service accounts. 3.

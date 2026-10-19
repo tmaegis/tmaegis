@@ -1,0 +1,22 @@
+id: TMA-GKE-5.4.1
+title: Enable GKE metadata server on Standard node pools
+description: Enable the GKE metadata server on GKE node pools to support Workload Identity Federation for GKE and reduce workload access to the full Compute Engine metadata server. This setting helps workloads use Kubernetes based identity federation instead of relying on broad node service account credentials. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Every node pool is checked.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.4.1 Enable GKE metadata server on Standard node pools
+audit:
+  type: command
+  command: |-
+    wp=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(workloadIdentityConfig.workloadPool)') || exit 1
+    [ -n "$wp" ] || { echo "noncompliant: Workload Identity not enabled"; exit 0; }
+    out=$(gcloud container node-pools list --cluster "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(name,config.workloadMetadataConfig.mode)') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F '\t' 'NF && $2!="GKE_METADATA" {print $1 ": " $2}')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable Workload Identity Federation for GKE on the cluster if the audit shows that no workload pool is configured. This is required before the GKE metadata server can be enabled on Standard node pools. gcloud container clusters update $CLUSTER_NAME \ --location=$LOCATION \ --project=$PROJECT_ID \ --workload-pool=$PROJECT_ID.svc.id.goog Enable the GKE metadata server on existing node pools that require workload access to Google Cloud APIs. Existing node pools are not automatically updated when the cluster setting is enabled, so each existing node pool must be updated or replaced. gcloud container node-pools update $NODE_POOL \ --cluster=$CLUSTER_NAME \ --location=$LOCATION \ --project=$PROJECT_ID \ --workload-metadata=GKE_METADATA After remediation, rerun the audit command and confirm that each applicable node pool reports GKE_METADATA.

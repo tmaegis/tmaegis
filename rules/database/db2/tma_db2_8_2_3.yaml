@@ -1,0 +1,19 @@
+id: TMA-DB2-8.2.3
+title: Secure the Configuration File
+description: A configuration file, ekeystore.cfg, is created by the user in order to configure external keymanager functionality. This file should be secured against tampering via OS permissions. For external key managers (KEYSTORE_TYPE PKCS11 or KMIP) the configuration file named by KEYSTORE_LOCATION (e.g. ekeystore.cfg) must be mode 600 or stricter; other keystore types pass. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance's configuration.
+target: db2
+level: 2
+severity: medium
+tags:
+- db2
+- database
+- encryption
+- filesystem
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.2.3 Secure the Configuration File
+audit:
+  type: command
+  command: 'out=$(db2 get dbm cfg 2>/dev/null) || exit 1; t=$(printf ''%s\n'' "$out" | sed -n ''s/.*(KEYSTORE_TYPE) *= *//p'' | tr -d '' ''); case "$t" in PKCS11|KMIP) ;; *) echo compliant; exit 0 ;; esac; p=$(printf ''%s\n'' "$out" | sed -n ''s/.*(KEYSTORE_LOCATION) *= *//p'' | sed ''s/[[:space:]]*$//''); [ -f "$p" ] || { echo "noncompliant: keystore configuration file $p not found"; exit 0; }; w=$(find "$p" -prune \( -perm -040 -o -perm -020 -o -perm -010 -o -perm -004 -o -perm -002 -o -perm -001 \) -print); [ -z "$w" ] && echo compliant || echo "noncompliant: $p is accessible by group/other"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Change the permissions for the file: $ chmod 600 ekeystore.cfg'

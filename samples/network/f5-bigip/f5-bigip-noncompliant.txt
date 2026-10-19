@@ -1,0 +1,41 @@
+# Synthetic sample: F5 BIG-IP tmsh "list" output (weak). Not a secure template.
+# Command: tmsh list sys
+auth password-policy {
+    expiration-warning 7
+    lockout-duration 30
+    max-duration 99999
+    max-login-failures 10
+    min-duration 0
+    minimum-length 6
+    password-memory 0
+    policy-enforcement disabled
+}
+auth remote-user {
+    default-partition all
+    default-role admin
+    remote-console-access tmsh
+}
+sys global-settings {
+    console-inactivity-timeout 0
+    gui-setup enabled
+    hostname bigip02.example.com
+}
+sys httpd {
+    allow { all }
+    auth-pam-idle-timeout 7200
+    ssl-protocol "all -SSLv2"
+}
+sys sshd {
+    allow { all }
+    inactivity-timeout 0
+}
+sys snmp {
+    agent-addresses { tcp6:161 udp6:161 tcp:161 udp:161 }
+    community-name public
+}
+net self self_external {
+    address 203.0.113.5/24
+    allow-service all
+    traffic-group traffic-group-local-only
+    vlan external
+}

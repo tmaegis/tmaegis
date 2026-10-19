@@ -1,0 +1,21 @@
+id: TMA-BOTTLEROCKET-1.4.4
+title: Ensure user namespaces are disabled
+description: User namespaces should be disabled unless required. Note that user namespaces can be necessary in environments where containers running as unprivileged users are meant to run other containers. These are often referred to as "rootless" containers. The audit reads /proc/sys/user/max_user_namespaces and requires 0. Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 2
+severity: low
+tags:
+- bottlerocket
+- system
+reference: CIS Bottlerocket Benchmark v1.0.0 - 1.4.4 Ensure user namespaces are disabled
+audit:
+  type: command
+  command: |-
+    bad=0
+    chk() { f=/proc/sys/$(printf %s "$1" | tr . /); v=$(cat "$f" 2>/dev/null) || { echo "$1: not readable"; bad=1; return; }; [ "$v" = "$2" ] || { echo "$1 = $v (expected $2)"; bad=1; }; }
+    chk user.max_user_namespaces 0
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set the active kernel parameter and persist the setting: # apiclient apply <<EOF [settings.kernel.sysctl] "user.max_user_namespaces" = "0" EOF'

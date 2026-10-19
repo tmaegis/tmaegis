@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-3.1.7
+title: Ensure the correct syslog facility is selected
+description: 'The syslog_facility setting specifies the syslog "facility" to be used when logging to syslog is enabled. You can choose from any of the ''local'' facilities: - LOCAL0 - LOCAL1 - LOCAL2 - LOCAL3 - LOCAL4 - LOCAL5 - LOCAL6 - LOCAL7 Your organization''s logging policy should dictate which facility to use based on the syslog daemon in use.'
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.7 Ensure the correct syslog facility is selected
+audit:
+  type: manual
+  command: Run SHOW syslog_facility; in ysqlsh (default local0). Where syslog is a log destination, the facility must be the one your syslog configuration routes to the protected YugabyteDB log (for example local1); an unrouted or shared facility is a finding.
+remediation:
+  type: iac_patch
+  command: 'Use the yb-tserver binary and its flags to configure the YB-TServer server (in this example, setting it to the LOCAL1 facility). Add the following GFLAG to YB- TServer: ./bin/yb-tserver --ysql_pg_conf_csv="syslog_facility=''local1''"'

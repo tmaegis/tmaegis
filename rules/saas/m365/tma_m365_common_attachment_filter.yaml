@@ -1,0 +1,17 @@
+id: TMA-M365-ATTACHMENT-FILTER
+title: Ensure the common attachment types filter is enabled in the default anti-malware policy
+description: 'The common attachment filter blocks executable and script attachment types that are frequently used to deliver malware. Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- malware
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Exchange Online Protection / Anti-malware - common attachments filter (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $p = Get-MalwareFilterPolicy -Identity Default -ErrorAction Stop; if ($p.EnableFileFilter -eq $true) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-MalwareFilterPolicy -Identity Default -EnableFileFilter $true

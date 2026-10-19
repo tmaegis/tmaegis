@@ -1,0 +1,28 @@
+id: TMA-BIND-2.6
+title: Set Group named or root for BIND Directories and Files
+description: All the BIND directories and files should have a group of either named or root. The audit lists files and directories under $BIND_HOME and $RUNDIR whose group is not root or named (bind on Debian) and requires none. $BIND_HOME is taken as the existing ones of /var/named (RHEL, including a chroot), /etc/bind and /var/cache/bind (Debian/Ubuntu) and $RUNDIR as /run/named; the runtime directories (dynamic, slaves, data, run, log, tmp, /var/cache/bind) are excluded where the benchmark excludes them.
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.6 Set Group named or root for BIND Directories and Files
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    out=$(find $BH $RUN \! \( $G \) -print 2>/dev/null) || exit 1
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out" | head -n 20; echo 'files or directories with a group other than root/named'; }
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: Run the command below to change all BIND directories and files to the group named. chgrp -R named $BIND_HOME $RUNDIR

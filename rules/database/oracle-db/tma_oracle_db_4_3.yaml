@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-4.3
+title: Review The Users Created Through Real Application Security
+description: 'Oracle Real Application Security (RAS) introduces an alternative user model that allows users to log in directly (e.g., with SQL*Plus) when DIRECT_LOGON = YES. RAS users do not appear in the DBA_USERS or CDB_USERS views and are not created using the standard CREATE USER command, making them difficult to detect. To ensure proper security monitoring, the CDB_XS_USERS view should be reviewed ... Default: Empty'
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.3 Review The Users Created Through Real Application Security
+audit:
+  type: manual
+  command: 'To assess this recommendation, execute the following statement: SELECT DECODE(C.CON_ID,0,''ENTIRE-''|| SYS_CONTEXT(''USERENV'',''DB_NAME''), 1,''ROOTONLY-''||SYS_CONTEXT(''USERENV'',''DB_NAME''), CON_ID_TO_CON_NAME(C.CON_ID)) AS CONTAINERNAME, C.NAME, C.DIRECT_LOGON_USER, C.STATUS, ACCOUNT_STATUS FROM CDB_XS_USERS C WHERE C.NAME NOT IN (''XSGUEST''); Review the list of RAS users. If any unauthorized user exists, this is a fail.'
+remediation:
+  type: iac_patch
+  command: Remove RAS-Users that are not needed. BEGIN SYS.XS_PRINCIPAL.DELETE_PRINCIPAL('<rasuser>'); END;

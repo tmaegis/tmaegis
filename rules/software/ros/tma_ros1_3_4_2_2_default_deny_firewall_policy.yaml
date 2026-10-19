@@ -1,0 +1,28 @@
+id: TMA-ROS1-3.4.2.2
+title: Ensure default deny firewall policy
+description: 'A default deny policy on connections ensures that any unconfigured network usage will be rejected. Applies when ufw is installed: the audit requires the default incoming, outgoing and routed policies to be deny or reject (routed may be disabled). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.2.2 Ensure default deny firewall policy
+audit:
+  type: command
+  shell: bash
+  command: |-
+    d=$(ufw status verbose 2>/dev/null | sed -n 's/^Default: //p') || exit 1
+    [ -n "$d" ] || { echo 'ufw is inactive'; exit 1; }
+    bad=0
+    for dir in incoming outgoing routed; do v=$(printf '%s\n' "$d" | tr ',' '\n' | grep "($dir)" | awk '{print $1}')
+      case "$v" in deny|reject) ;; disabled) [ "$dir" = routed ] || { echo "$dir: $v"; bad=1; } ;; *) echo "$dir: ${v:-unset}"; bad=1 ;; esac; done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/sbin/ufw
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement a default deny policy: # ufw default deny incoming # ufw default deny outgoing # ufw default deny routed'

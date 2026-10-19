@@ -1,0 +1,17 @@
+id: TMA-AWS-COMPUTE-3.4
+title: Ensure Amazon ECS task definitions do not have 'privileged' set to 'true'
+description: 'Ensure that Amazon ECS task definitions do not grant privileged access to the host container instance. Note: This recommendation assumes that only the latest active revision of a task definition is in use. If older revisions are in use, apply the audit and remediation procedures to those revisions as needed. Restricting privileged access enhances security of the host container instance by maintaining isolation and reducing the risk of privilege escalation.'
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 3.4 Ensure Amazon ECS task definitions do not have 'privileged' set to 'true'
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. Click JSON. 6. For each element under containerDefinitions, ensure that privileged is set to false or is absent. 7. Repeat steps 1-6 for each task definition. From Command Line: Run the following command to list task definitions: aws ecs list-task-definitions For the latest revision of a task definition, run the following command: aws ecs describe-task-definition --task-definition <task-definition-arn> -- query ''taskDefinition.containerDefinitions[*].privileged'' Ensure that the command does not return true. Repeat for each task definition.'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. Click Create new revision. 6. Click Create new revision with JSON. 7. For each element under containerDefinitions, set privileged to false, or remove "privileged": true. 8. Click Create. 9. Repeat steps 1-8 for each task definition requiring remediation. Note: When a task definition is updated, running tasks launched from the previous task definition remain unchanged. Updating a running task requires redeploying it with the new task definition.'

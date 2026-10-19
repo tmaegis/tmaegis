@@ -1,0 +1,20 @@
+id: TMA-REDIS-AUTHENTICATION
+title: Ensure client authentication is required
+description: 'Without requirepass or an ACL password on the default user, any client that can reach the port has full access. Compliant when requirepass is set or the default user is defined with a password (>pw / #hash) or is turned off. ACLs defined only in an aclfile must be reviewed separately. Checks /etc/redis/redis.conf (SKIP when it does not exist; RHEL uses /etc/redis.conf).'
+target: redis
+level: 1
+severity: critical
+tags:
+- redis
+- database
+- authentication
+reference: CIS Redis Benchmark - Authentication / requirepass and ACL (verify section number for your release)
+audit:
+  type: file_regex
+  file_path: /etc/redis/redis.conf
+  pattern: (?m)^[ \t]*(?:requirepass[ \t]+\S+|user[ \t]+default[ \t][^\n]*(?:[ \t][>#]\S+|[ \t]off\b))
+  requires_file:
+  - /etc/redis/redis.conf
+remediation:
+  type: iac_patch
+  command: Set 'requirepass <long random secret>' (Redis < 6) or define ACL users with 'user <name> on ><secret> ~<keys> +@<categories>' and 'user default off' in redis.conf; restart and update clients

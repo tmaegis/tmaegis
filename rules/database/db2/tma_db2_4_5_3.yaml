@@ -1,0 +1,18 @@
+id: TMA-DB2-4.5.3
+title: Review System Tablespaces
+description: 'System tablespaces store all system object data within that database. It is recommended that system tablespaces are used to store system data only and not user data. Only certain table spaces can be used to hold user tables. Counts user tables stored in SYSTOOLSPACE/SYSTOOLSTMPSPACE; 0 is required. Database-level check: set DB2DBDFT to the database name to audit (the rule connects to it with the instance owner''s credentials and fails when DB2DBDFT is unset). Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: low
+tags:
+- db2
+- database
+- privileges
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 4.5.3 Review System Tablespaces
+audit:
+  type: sql_query
+  command: db="${DB2DBDFT:?set DB2DBDFT to the database to audit}"; db2 connect to "$db" >/dev/null || exit 1; db2 -x "select count(*) from syscat.tables where tabschema not in ('SYSIBM','SYSTOOLS') and tbspace in ('SYSTOOLSPACE','SYSTOOLSTMPSPACE')"; rc=$?; db2 connect reset >/dev/null 2>&1; db2 terminate >/dev/null 2>&1; exit $rc
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 1. Connect to the Db2 database. db2 => connect to <dbname> 2. Review the system tablespaces to identify any user data objects within them. 3. Drop, migrate, or otherwise remove all user data objects (tables, schemas, etc.) from within the system tablespaces. 4. Revoke write access for the system tablespaces from all users. 5 Authentication Considerations

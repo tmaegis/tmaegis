@@ -1,0 +1,35 @@
+id: TMA-ORACLE-DB-3.3
+title: Ensure 'PASSWORD_LIFE_TIME + PASSWORD_GRACE_TIME' Is Less Than Or Equal To '365'
+description: 'The PASSWORD_LIFE_TIME setting determines how long a password may be used before the user is required to change it. The suggested value is 365 days or less. Note that recent NIST guidelines recommend using longer lifetimes for human actor passwords. UNLIMITED counts as 9999, so an unlimited lifetime fails. Default: 180 Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with ''sqlplus -S / as sysdba'' (OS authentication) so CDB_/GV$ views cover all open PDBs.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- password-policy
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 3.3 Ensure 'PASSWORD_LIFE_TIME + PASSWORD_GRACE_TIME' Is Less Than Or Equal To '365'
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    with l as (
+      select p.con_id, p.profile, to_number(decode(p.limit, 'DEFAULT', (select decode(d.limit, 'UNLIMITED', '9999', d.limit) from cdb_profiles d
+        where d.profile = 'DEFAULT' and d.resource_name = 'PASSWORD_LIFE_TIME' and d.con_id = p.con_id), 'UNLIMITED', '9999', p.limit)) lim
+      from cdb_profiles p where p.resource_name = 'PASSWORD_LIFE_TIME'),
+    g as (
+      select p.con_id, p.profile, to_number(decode(p.limit, 'DEFAULT', (select decode(d.limit, 'UNLIMITED', '9999', d.limit) from cdb_profiles d
+        where d.profile = 'DEFAULT' and d.resource_name = 'PASSWORD_GRACE_TIME' and d.con_id = p.con_id), 'UNLIMITED', '9999', p.limit)) lim
+      from cdb_profiles p where p.resource_name = 'PASSWORD_GRACE_TIME')
+    select count(*) from l, g where l.con_id = g.con_id and l.profile = g.profile and l.lim + g.lim > 365;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remediate this setting by executing the following SQL statement for each PROFILE returned by the audit procedure. ALTER PROFILE <profile_name> LIMIT PASSWORD_LIFE_TIME 365; OR ALTER PROFILE <profile_name> LIMIT PASSWORD_GRACE_TIME <NEW_VALUE>;

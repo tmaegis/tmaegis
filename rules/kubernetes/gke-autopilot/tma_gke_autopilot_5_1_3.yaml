@@ -1,0 +1,20 @@
+id: TMA-GKE-AUTOPILOT-5.1.3
+title: Enforce Binary Authorization for trusted GKE container image deployments
+description: Use Binary Authorization to enforce trusted image deployment policies for GKE Autopilot clusters. The policy should allow only approved container images to be deployed, based on defined admission rules such as approved image locations, trusted build or promotion processes, and required signed approvals where appropriate. Binary Authorization works with both Autopilot and Standard clusters. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke-autopilot
+level: 2
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+- registry
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.1.3 Enforce Binary Authorization for trusted GKE container image deployments
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(binaryAuthorization.evaluationMode)') || exit 1
+    if case "$v" in PROJECT_SINGLETON_POLICY_ENFORCE|POLICY_BINDINGS_AND_PROJECT_SINGLETON_POLICY_ENFORCE) true;; *) false;; esac; then echo compliant; else echo "noncompliant: binaryAuthorization.evaluationMode=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable Binary Authorization enforcement on the GKE Autopilot cluster when the audit shows that the cluster is not using an enforcing evaluation mode. Use PROJECT_SINGLETON_POLICY_ENFORCE to enforce the project Binary Authorization policy. If the cluster also uses continuous validation with policy bindings, use POLICY_BINDINGS_AND_PROJECT_SINGLETON_POLICY_ENFORCE instead. Monitoring only modes should not be used as the remediation target for this control. gcloud container clusters update $CLUSTER_NAME \ --location=$LOCATION \ --project=$PROJECT_ID \ --binauthz-evaluation-mode=PROJECT_SINGLETON_POLICY_ENFORCE Export the current Binary Authorization policy to a local YAML file. The trusted image deployment rules are edited in this policy file, not directly in the GKE cluster configuration.

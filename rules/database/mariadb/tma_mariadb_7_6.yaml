@@ -1,0 +1,18 @@
+id: TMA-MARIADB-7.6
+title: Ensure No Anonymous Accounts Exist
+description: 'Anonymous accounts are users with empty usernames (''''). Anonymous accounts have no passwords, so anyone can use them to connect to the MariaDB server. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- authentication
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 7.6 Ensure No Anonymous Accounts Exist
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT COUNT(*) FROM mysql.user WHERE user = ''" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: DROP USER ''@'<host>'; for each anonymous account (or run mariadb-secure-installation).

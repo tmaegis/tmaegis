@@ -1,0 +1,20 @@
+id: TMA-MCP-2.2
+title: Ensure TLS is required for HTTP and plaintext is disallowed
+description: MCP Streamable HTTP servers that carry sensitive data are expected to be deployed over a secure transport. The MCP specification requires Origin validation and recommends authentication for HTTP deployments, but it does not prescribe a minimum TLS protocol revision. TLS 1.2 or higher is the baseline established here, consistent with current enterprise TLS configuration guidance. A server that serves plaintext HTTP, negotiates a legacy TLS version, or presents an expired certificate does not meet this baseline. Transmitting MCP messages, OAuth tokens, and tool-call payloads over unencrypted HTTP exposes all of it to interception. An attacker positioned on the network can read or modify every message. Authorization tokens captured from plaintext can then be replayed to invoke tools as the victim. TLS is the baseline defense against both. Permitting TLS 1.0 or 1.1 reopens known transport...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+- tls
+reference: CIS MCP Server Benchmark v1.0.0 - 2.2 Ensure TLS is required for HTTP and plaintext is disallowed
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_2_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 2.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Terminate TLS in front of the MCP server and redirect or refuse plaintext. The following nginx example defines the upstream, redirects port 80 to HTTPS, restricts protocols to TLS 1.2 and 1.3, and proxies the MCP path. Substitute the upstream address, the server name, and the certificate paths: upstream mcp_upstream { server <MCP_UPSTREAM_ADDR>; } server { listen 80; server_name <MCP_SERVER_NAME>; return 308 https://$host$request_uri; } server { listen 443 ssl; server_name <MCP_SERVER_NAME>; ssl_protocols TLSv1.2 TLSv1.3; ssl_ciphers HIGH:!aNULL:!MD5; ssl_certificate <TLS_CERTIFICATE_PATH>; ssl_certificate_key <TLS_CERTIFICATE_KEY_PATH>; location /mcp { proxy_pass http://mcp_upstream; } } After applying the configuration, run the Audit to confirm all three probes print PASS.'

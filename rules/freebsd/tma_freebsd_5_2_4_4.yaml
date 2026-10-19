@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.2.4.4
+title: Ensure only authorized groups are assigned ownership of audit log files
+description: 'Audit log files contain information about the system and system activity. Access to audit records can reveal system and configuration data to attackers, potentially compromising its confidentiality. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 2
+severity: high
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.2.4.4 Ensure only authorized groups are assigned ownership of audit log files
+audit:
+  type: command
+  command: 'command -v find >/dev/null 2>&1 || exit 1; d=$(awk -F: ''/^dir:/ {print $2; exit}'' /etc/security/audit_control 2>/dev/null); [ -n "$d" ] && [ -d "$d" ] || exit 1; out=$( { find "$d" -type f ! -group wheel ! -group audit -exec stat -Lf "%N %Sg" {} + ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to configure the audit log files to be owned by the audit group: # chgrp audit /var/audit'

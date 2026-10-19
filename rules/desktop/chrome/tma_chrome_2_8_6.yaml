@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.8.6
+title: Ensure 'Enable or disable PIN-less authentication for remote access hosts' is set to 'Disabled'
+description: 'Chrome allows a user to opt-out of using user-specified PIN authentication and instead pair clients and hosts during connection time. The recommended state for this setting is: Disabled (0) Rationale: If this setting is enabled, users can opt to pair clients and hosts at connection time, eliminating the need to enter a PIN every time. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:RemoteAccessHostAllowClientPairing (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: high
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.8.6 Ensure 'Enable or disable PIN-less authentication for remote access hosts' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''RemoteAccessHostAllowClientPairing'' -ErrorAction SilentlyContinue).''RemoteAccessHostAllowClientPairing''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RemoteAccessHostAllowClientPairing' -Value 0 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,23 @@
+id: TMA-PALOALTO-3.1
+title: Ensure a fully-synchronized High Availability peer is configured
+description: 'Ensure a High Availability peer is fully synchronized and in a passive or active state. PASS requires HA enabled and HA2 state-synchronization enabled. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- high-availability
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 3.1 Ensure a fully-synchronized High Availability peer is configured
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:template \S+ config )?deviceconfig high-availability enabled yes[ \t]*$(?s:.*?)^set (?:template \S+ config )?deviceconfig high-availability group (?:\d+ )?state-synchronization enabled yes[ \t]*$|^set (?:template \S+ config )?deviceconfig high-availability group (?:\d+ )?state-synchronization enabled yes[ \t]*$(?s:.*?)^set (?:template \S+ config )?deviceconfig high-availability enabled yes[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig high-availability enabled yes
+    set deviceconfig high-availability group state-synchronization enabled yes
+    set deviceconfig high-availability interface ha2 port <interface>
+    commit
+    # CIS guidance:
+    Navigate to Device > High Availability > HA Communications. Click HA Communications. Click Data Link (HA2). Select the correct interface. Select the desired protocol (IPv4 or IPv6). Select the correct Transport. Set the Enable Session Synchronization box to be checked. Choose Save Configuration.

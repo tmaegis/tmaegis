@@ -1,0 +1,18 @@
+id: TMA-CISCO-FTD-1.1.2.2
+title: Enable SSHv2
+description: 'SSHv2 is the preferred choice for secure remote access. Once configured it allows for an encrypted connection to the remote device. SSHv1 is deprecated and is no longer recommended. Checks the LINA config pushed by FMC Platform Settings > Secure Shell: fails without an ''ssh <ip> <mask> <ifname>'' entry or when SSH is allowed from any address. Automated checks run against the FTD LINA configuration from ''show running-config'' on the FTD CLI (configuration is pushed by the FMC); FMC GUI settings are manual checks.'
+target: cisco-ftd
+level: 1
+severity: high
+tags:
+- cisco-ftd
+- network
+- management-plane
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 1.1.2.2 Enable SSHv2
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^s\n]|s(?:$|[^h\n]|h(?:$|[^ \n]| (?:$|[^123456789\n])))))[^\n]*\n)*(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^s\n]|s(?:$|[^h\n]|h(?:$|[^ \n]| (?:$|[^123456789\n])))))[^\n]*)?\z)|(?:^ssh (?:0\.0\.0\.0 0\.0\.0\.0|::/0|0::0/0) )
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: Devices > Platform Settings > Secure Shell 1. Click Add 2. Enter in IP addresses or Range 3. Select Zone/Interface

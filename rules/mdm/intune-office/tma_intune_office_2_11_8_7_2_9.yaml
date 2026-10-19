@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.11.8.7.2.9
+title: Ensure 'Trust access to Visual Basic Project' is set to 'Disabled'
+description: 'This policy setting controls whether automation clients such as Microsoft Visual Studio 2005 Tools for Microsoft Office (VSTO) can access the Visual Basic for Applications project system in the specified applications. VSTO projects require access to the Visual Basic for Applications project system in Excel, PowerPoint, and Word, even though the projects do not use Visual Basic for Applications. Design-time support of controls in both Visual Basic and C# projects depends on the Visual Basic for Applications project system in Word and Excel. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) accessvbom that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.11.8.7.2.9 Ensure 'Trust access to Visual Basic Project' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\word\security'') -Name ''accessvbom'' -ErrorAction SilentlyContinue).''accessvbom''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':accessvbom='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled. Microsoft Word 2016\Word Options\Security\Trust Center\Trust access to Visual Basic Project

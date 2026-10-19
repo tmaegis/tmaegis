@@ -1,0 +1,19 @@
+id: TMA-MYSQL-9.3
+title: Ensure 'super_priv' is Not Set to 'Y' for Replication Users
+description: 'The SUPER privilege found in the mysql.user table governs the use of a variety of MySQL features. These features include, CHANGE MASTER TO, KILL, mysqladmin kill option, PURGE BINARY LOGS, SET GLOBAL, mysqladmin debug option, logging control, and more. Treats every account other than root holding REPLICATION SLAVE as a replication user and counts those that also hold SUPER. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- replication
+- authorization
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 9.3 Ensure 'super_priv' is Not Set to 'Y' for Replication Users
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT COUNT(*) FROM mysql.user WHERE Repl_slave_priv = 'Y' AND Super_priv = 'Y' AND user NOT IN ('root')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: REVOKE SUPER ON *.* FROM '<repl user>'@'<host>'; (grant REPLICATION_SLAVE_ADMIN instead if MySQL Shell ReplicaSet administration needs it).

@@ -1,0 +1,22 @@
+id: TMA-ARISTA-EOS-2.4.1
+title: Idle Timeout
+description: Tine out access to the console after a period of inactivity. Inactive unattended console sessions provide the opportunity for anyone with physical access to the device to make configuration changes enabling them to disrupt network operations resulting in a network outage. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: medium
+tags:
+- arista-eos
+- network
+- ntp
+reference: CIS Arista EOS Benchmark v1.0.0 - 2.4.1 Idle Timeout
+audit:
+  type: config_regex
+  pattern: (?m)^management console[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+idle-timeout (?:[1-9]|10)[ \t\r]*$
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure idle timeout
+    configure
+    management console
+    idle-timeout ? <0-86400> Idle session timeout in minutes
+    idle-timeout 10

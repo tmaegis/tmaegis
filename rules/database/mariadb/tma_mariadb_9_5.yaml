@@ -1,0 +1,19 @@
+id: TMA-MARIADB-9.5
+title: Ensure mutual TLS is enabled
+description: Mutual TLS (a.k.a. Two-Way TLS) enhances TLS by requiring that both parties authenticate each other when establishing a connection. Mutual TLS adds a requirement (over TLS) that the client provide its certificate so the server can authenticate the client.
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- replication
+- tls
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 9.5 Ensure mutual TLS is enabled
+audit:
+  type: manual
+  command: If replication uses TLS, run SHOW REPLICA STATUS\G on the replica and verify Master_SSL_Cert and Master_SSL_Key name the replica's certificate and key; on the primary verify the replication account requires a certificate (SELECT user, host, ssl_type FROM mysql.user WHERE Repl_slave_priv = 'Y'; ssl_type X509 or SPECIFIED).
+remediation:
+  type: iac_patch
+  command: 'On the replica: CHANGE MASTER TO MASTER_SSL_CERT = ''<cert>'', MASTER_SSL_KEY = ''<key>'', MASTER_SSL_CA = ''<ca>''; on the primary: ALTER USER ''<repl>''@''<host>'' REQUIRE X509;'

@@ -1,0 +1,21 @@
+id: TMA-AZURE-STORAGE-4.1
+title: Ensure 'Key encryption key' is set to a customer-managed key for Azure Managed Lustre file systems
+description: Enable customer-managed encryption keys (CMEK) for Azure Managed Lustre file systems to enhance data security and provide greater control over encryption processes. By using CMEK, organizations can manage their own encryption keys within Azure Key Vault, allowing them to rotate, revoke, or otherwise control access to these keys in accordance with their security policies. Using customer-managed encryption keys (CMEK) gives organizations complete control over encryption keys, ensuring compliance and enhancing data security. CMEK allows for key rotation, revocation, and lifecycle management, thus improving data protection and facilitating immediate control over data access in Azure Managed Lustre file systems.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 4.1 Ensure 'Key encryption key' is set to a customer-managed key for Azure Managed Lustre file systems
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Azure Managed Lustre. 2. Click the name of a file system. 3. Under Settings, click Properties. 4. Under Encryption settings, ensure that the value next to Key encryption key is View value as JSON. 5. Repeat steps 1-4 for each file system. Audit from Azure CLI Run the following command to lust Azure Managed Lustre file systems: az amlfs list For each file system, run the following command: az amlfs show --resource-group <resource-group> --name <file-system> Ensure that under encryptionSettings > keyEncryptionKey, keyUrl is set to a customer-managed key URL. Audit from PowerShell Run the following command to install the Az.StorageCache module: Install-Module Az.StorageCache Enter Y when prompted. Run the following command to list Azure Managed Lustre file systems: Get-AzStorageCacheAmlFileSystem Run the following command to get the file system in a resource group with a given name: $filesystem = Get-AzStorageCacheAmlFileSystem -ResourceGroupName
+    <resource- group> -Name <file-system> Run the following command to get the key encryption key URL for the file system: $filesystem.KeyEncryptionKeyUrl Ensure that the command returns a customer-managed key...'
+remediation:
+  type: iac_patch
+  command: 'To create an Azure Managed Lustre file system that uses a customer-managed encryption key: Remediate from Azure Portal 1. Go to Azure Managed Lustre. 2. Click + Create. 3. Provide the required information on the Basics tab. 4. Configure the Advanced tab if necessary. 5. Click the Disk encryption keys tab. 6. Next to Disk encryption key type, select the radio button next to Customer managed. 7. Next to Key vault, key and version, click Select or create a key vault, key, or version. 8. Select a key vault, key, and version. 9. Click Select. 10. Next to User assigned identities, click Add user assigned managed identities. 11. In the filter box, type to filter by identity name and/or resource group name. 12. Check the box next to a managed identity. 13. Click Add. 14. Click Review + create. 15. Click Create. Remediate from Azure CLI Run the following command to create an Azure Managed Lustre file system with a customer-managed encryption key: az amlfs create --resource-group <resource-group>
+    --name <file-system> --sku <sku> --storage-capacity <size-in-tib> --zones [<availability-zone>] -- maintenance-window "{dayOfWeek:<day>,timeOfDayUtc:''<time>''}" --mi-user- assigned "<user-assigned...'

@@ -1,0 +1,18 @@
+id: TMA-AZURE-8.3.10
+title: Ensure that Azure Key Vault Managed HSM is Used when Required
+description: 'Azure Key Vault Managed HSM is a fully managed, highly available, single-tenant cloud service that safeguards cryptographic keys using FIPS 140-2 Level 3 validated HSMs. Note: While an automated assessment procedure exists for this recommendation, the assessment status remains manual, as this recommendation to use Managed HSM applies only to scenarios where specific regulatory and compliance requirements mandate the use of a dedicated hardware security module. Managed HSM is a fully managed, highly available, single-tenant service that ensures FIPS 140-2 Level 3 compliance. It provides centralized key management, isolated access control, and private endpoints for secure access. Integrated with Azure services, it supports migration from Key Vault, ensures data residency, and offers monitoring and auditing for enhanced security.'
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- crypto
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 8.3.10 Ensure that Azure Key Vault Managed HSM is Used when Required
+audit:
+  type: manual
+  command: 'Requisite Permissions - read section overview! Data-plane access not required. Can be audited and remediated with Azure Resource Manager permissions. Audit from Azure CLI Run the following command to list key vaults: az keyvault list --query [*].[name,type] Ensure that at least one key vault with type Microsoft.KeyVault/managedHSMs exists. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 587c79fe-dd04-4a5e-9d0b-f89598c7261b - Name: ''Keys should be backed by a hardware security module (HSM)'''
+remediation:
+  type: iac_patch
+  command: 'Requisite Permissions - read section overview! Data-plane access not required. Can be audited and remediated with Azure Resource Manager permissions. Remediate from Azure CLI Run the following command to set oid to be the OID of the signed-in user: $oid = az ad signed-in-user show --query id -o tsv Alternatively, prepare a space-separated list of OIDs to be provided as the administrators of the HSM. Run the following command to create a Managed HSM: az keyvault create --resource-group <resource-group> --hsm-name <hsm-name> -- retention-days <retention-days> --administrators $oid The command can take several minutes to complete. After the HSM has been created, it must be activated before it can be used. Activation requires providing a minimum of three and a maximum of ten RSA key pairs, as well as the minimum number of keys required to decrypt the security domain (called a quorum). OpenSSL can be used to generate the self-signed certificates, for example: openssl req -newkey rsa:2048
+    -nodes -keyout cert_1.key -x509 -days 365 -out cert_1.cer Run the following command to download the security domain and activate the Managed HSM: az keyvault security-domain download --hsm-name <mana...'

@@ -1,0 +1,22 @@
+id: TMA-ESXI9-2.6
+title: Host must have reliable time synchronization sources
+description: Ensuring reliable time synchronization is crucial as various functions like cryptography, audit logging, cluster operations, and incident response/forensics are heavily dependent on synchronized time. Utilizing at least four NTP sources is recommended for achieving reliable time synchronization. The audit runs esxcli system ntp get and requires NTP to be enabled with at least one server. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- base
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 2.6 Host must have reliable time synchronization sources
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system ntp get 2>/dev/null) || exit 1
+    en=$(printf '%s\n' "$out" | sed -n 's/^ *Enabled: *//p' | head -n 1)
+    srv=$(printf '%s\n' "$out" | sed -n 's/^ *Servers\{0,1\}: *//p' | head -n 1)
+    [ "$en" = true ] && [ -n "$srv" ] && echo compliant || echo "ntp enabled=$en servers=$srv"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To enable and properly configure NTP synchronization, perform the following from the vSphere web client: 1. Select a host 2. Click Configure then expand System then select Time Configuration. 3. Select Edit next to Network Time Protocol 4. Select the Enable box, then fill in the appropriate NTP Servers. 5. in the NTP Service Startup Policy drop down select Start and stop with host. 6. Click OK.'

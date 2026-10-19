@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-5.2.7
+title: Minimize the admission of containers with the NET_RAW capability
+description: Do not generally permit containers with the potentially dangerous NET_RAW capability. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- policies
+- pod-security
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 5.2.7 Minimize the admission of containers with the NET_RAW capability
+audit:
+  type: manual
+  command: 'Use the following command to list all SCCs that drop all capabilities: oc get scc -A -o json | jq ''.items[] | select(.requiredDropCapabilities[]?|any(. == "ALL"; .)) | .metadata.name'' Verify at least one SCC is returned.'
+remediation:
+  type: iac_patch
+  command: Create an SCC that sets requiredDropCapabilities to include ALL or at least NET_RAW and take it into use by assigning it to applicable users and groups.

@@ -1,0 +1,20 @@
+id: TMA-WIN2019-2.3.10.11
+title: 'Ensure ''Network access: Restrict clients allowed to make remote calls to SAM'' is set to ''Administrators: Remote Access: Allow'' (MS only)'
+description: 'This policy setting allows you to restrict remote RPC connections to SAM. The recommended state for this setting is: Administrators: Remote Access: Allow. Note: A Windows 10 v1607, Server 2016 or newer OS is required to access and set this value in Group Policy. Note #2: This setting was originally only supported on Windows Server 2016 or newer, then support for it was added to Windows Server 2008 R2 or newer via the March 2017 security patches. Note #3: If your organization is using Microsoft Defender for Identity (formerly Azure Advanced Threat Protection (Azure ATP)), the (organization-name'
+target: windows
+os_family:
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 2.3.10.11
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa'' -Name ''restrictremotesam'' -ErrorAction SilentlyContinue).''restrictremotesam''; if (-not ($null -ne $v -and (($v -replace ''\s'','''') -eq ''O:BAG:BAD:(A;;RC;;;BA)''))) { $bad += ''restrictremotesam='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa' -Name 'restrictremotesam' -Value 'O:BAG:BAD:(A;;RC;;;BA)' -PropertyType String -Force | Out-Null

@@ -1,0 +1,18 @@
+id: TMA-AZURE-7.1
+title: Ensure that RDP Access from the Internet is Evaluated and Restricted
+description: Network security groups should be periodically evaluated for port misconfigurations. Where RDP is not explicitly required and narrowly configured for resources attached to a network security group, Internet-level access to Azure resources should be restricted or eliminated. The potential security problem with using RDP over the Internet is that attackers can use various brute force techniques to gain access to Azure Virtual Machines. Once the attackers gain access, they can use a virtual machine as a launch point for compromising other machines on an Azure Virtual Network or even attack networked devices outside of Azure.
+target: azure
+level: 1
+severity: high
+tags:
+- access-control
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 7.1 Ensure that RDP Access from the Internet is Evaluated and Restricted
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Network security groups. 2. Click the name of a network security group. 3. Under Settings, click Inbound security rules. 4. Ensure that no inbound security rule exists that matches the following: o Port: 3389 or range including 3389 o Protocol: TCP or Any o Source: 0.0.0.0/0, Internet, or Any o Action: Allow 5. Repeat steps 1-4 for each network security group. To audit from Azure Resource Graph: 1. Go to Resource Graph Explorer. 2. Click New query. 3. Paste the following into the query window: resources | where type =~ "microsoft.network/networksecuritygroups" | project id, name, securityRule = properties.securityRules | mv-expand securityRule | extend access = securityRule.properties.access, direction = securityRule.properties.direction, protocol = securityRule.properties.protocol, destinationPort = case(isempty(securityRule.properties.destinationPortRange), securityRule.properties.destinationPortRanges, securityRule.properties.destinationPortRange),
+    sourceAddress = case(isempty(securityRule.properties.sourceAddressPrefix), securityRule.properties.sourceAddressPrefixes, securityRule.properties.sourceAddressPrefix) | where access =~ "Allow" and d...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Network security groups. 2. Click the name of a network security group. 3. Under Settings, click Inbound security rules. 4. Check the box next to any inbound security rule matching: o Port: 3389 or range including 3389 o Protocol: TCP or Any o Source: 0.0.0.0/0, Internet, or Any o Action: Allow 5. Click Delete. 6. Click Yes. 7. Repeat steps 1-6 for each network security group requiring remediation. Remediate from Azure CLI For each network security group rule requiring remediation, run the following command to delete the rule: az network nsg rule delete --resource-group <resource-group> --nsg-name <network-security-group> --name <rule>'

@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.9.26.8
+title: 'Ensure ''Post-authentication actions: Actions'' is set to ''Enabled: Reset the password and logoff the managed account'' or higher'
+description: 'This policy settings configures post-authentication actions which will be executed after detecting an authentication by the LAPS managed account. The Action refers to actions to take upon expiry of the grace period before executing the specified post- authentication actions. Post-authentication actions: • Reset password: upon expiry of the grace period, the managed account password will be reset. • Reset the password and logoff the managed account: upon expiry of the grace period, the managed account password will be reset and any interactive logon sessions using the managed account will termi'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.9.26.8
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS'' -Name ''PostAuthenticationActions'' -ErrorAction SilentlyContinue).''PostAuthenticationActions''; if (-not ($null -ne $v -and @(3,5,11) -contains [int64]$v)) { $bad += ''PostAuthenticationActions='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Name 'PostAuthenticationActions' -Value 3 -PropertyType DWord -Force | Out-Null

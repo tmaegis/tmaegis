@@ -1,0 +1,18 @@
+id: TMA-VSCODE-1.4.1
+title: 'Ensure ''UpdateMode'' is set to ''Enabled: Enable Automatic Update Checks. Code will check for updates automatically and periodically.'''
+description: 'This policy setting controls whether VS Code automatically updates when a new version is released. The recommended state for this setting is: Enabled: Enable Automatic Update Checks. Code will check for updates automatically and periodically. Rationale: Software needs to be patched regularly to address vulnerabilities. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\VSCode:UpdateMode (REG_SZ); compliant when it is ''default'' (whitespace-insensitive). Remediation writes default locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: vscode
+level: 1
+severity: medium
+tags:
+- vscode
+- developer-tools
+- cis-l1
+reference: 'CIS Visual Studio Code GPO Benchmark v1.0.0 - 1.4.1 Ensure ''UpdateMode'' is set to ''Enabled: Enable Automatic Update Checks. Code will check for updates automatically and periodically.'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'' -Name ''UpdateMode'' -ErrorAction SilentlyContinue).''UpdateMode''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and ("$v" -replace ''\s'','''') -eq ''default'')) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'UpdateMode' -Value 'default' -PropertyType String -Force | Out-Null

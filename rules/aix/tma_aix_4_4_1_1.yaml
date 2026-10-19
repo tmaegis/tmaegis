@@ -1,0 +1,17 @@
+id: TMA-AIX-4.4.1.1
+title: Ensure NFS client mounts are disabled in /etc/filesystems
+description: 'Disable automated mount of remote NFS shares. NFS is frequently exploited to gain unauthorized access to files and directories. Automated and/or pre-defined mounts should not exist. AIX does not allow the kernel service that enables NFS mounts to be disabled. Audit: no stanza in /etc/filesystems may use vfs = nfs.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- network
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.4.1.1 Ensure NFS client mounts are disabled in /etc/filesystems
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; [ -r /etc/filesystems ] || exit 1; out=$( { grep -E "^[[:blank:]]*vfs[[:blank:]]*=[[:blank:]]*nfs" /etc/filesystems ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Ensure that there are no current NFS client mounts: mount |grep "nfs" cat /etc/filesystems |grep "nfs" The above commands should yield no output. Stop NFS services: stopsrc -g nfs'

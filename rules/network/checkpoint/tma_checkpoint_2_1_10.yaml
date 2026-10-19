@@ -1,0 +1,24 @@
+id: TMA-CHECKPOINT-2.1.10
+title: Ensure DHCP is disabled
+description: Disable the Dynamic Host Configuration Protocol (DHCP) server on your device. FAILs if the Gaia DHCP server (or a DHCP subnet) is enabled. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: medium
+tags:
+- checkpoint
+- layer2
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 2.1.10 Ensure DHCP is disabled
+audit:
+  type: config_regex
+  pattern: (?m)^set dhcp server (?:enable|subnet \S+ enable)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    set dhcp server disable
+    save config
+    # CIS guidance:
+    Run the following command to disable the DHCP. CLI:
+    set dhcp server disable
+    GUI:
+    Navigate to Network Management > DHCP Server > DHCP Server Configuration > veriify Enable DHCP Server is unchecked

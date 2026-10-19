@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-1.1
+title: Restrict GPU and USB pass through to approved devices
+description: The ability to pass through devices provides the capability to offload tasks from the CPU to the device itself. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.1 Restrict GPU and USB pass through to approved devices
+audit:
+  type: manual
+  command: List the host devices available to virtualization workloads and verify the host devices returned are necessary for workload execution. $ oc get hyperconverged kubevirt - hyperconverged - n openshift - cnv -ojsonpath='{.spec.permittedHostDevices}'
+remediation:
+  type: iac_patch
+  command: 'Enforcing limitations to the passthroughof approved devices protects against the introduction of a malicious or unknown device to the system. The system administrator can remove the unwanted devices by patching the HCO object. { "mediatedDevices": [ { "mdevNameSelector": "DEVICE_A", "resourceName": "vendor.com/DEVICE_A" } ], "pciHostDevices": [ { "externalResourceProvider": true, "pciDeviceSelector": "XXX:YYY", "resourceName": "vendor.com/DEVICE_B" }, { "pciDeviceSelector": "NNN:MMM", "resourceName": "vendor.com/DEVICE_C" } ], "usbHostDevices": [ { "resourceName": "kubevirt.io/storage", "selectors": [ { "product": "0001", "vendor": "46f4" } ] } ] If the first PCI device (the DEVICE_A at index 0, in bold) should not be permitted to be passed through to a VM, here’s how to remove it: $ oc ...'

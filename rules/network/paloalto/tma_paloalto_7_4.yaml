@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-7.4
+title: Ensure that logging is enabled on built-in default security policies
+description: 'Enable logging on built-in default security policies "intrazone-default" and "interzone- default" PASS requires log-end yes overridden on both interzone-default and intrazone-default rules. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- logging
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 7.4 Ensure that logging is enabled on built-in default security policies
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase default-security-rules rules interzone-default log-end yes[ \t]*$(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase default-security-rules rules intrazone-default log-end yes[ \t]*$|^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase default-security-rules rules intrazone-default log-end yes[ \t]*$(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?rulebase default-security-rules rules interzone-default log-end yes[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set rulebase default-security-rules rules interzone-default log-end yes
+    set rulebase default-security-rules rules intrazone-default log-end yes
+    commit
+    # CIS guidance:
+    Navigate to Policies > Security Go to default policies intrazone-default and interzone-default. On Actions tab, enable Log at Session End on log setting.

@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.9.35.6.4
+title: Ensure 'Allow standby states (S1-S3) when sleeping (plugged in)' is set to 'Disabled'
+description: 'This policy setting manages whether or not Windows is allowed to use standby states when putting the computer in a sleep state. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.9.35.6.4
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\abfc2519-3608-4c2a-94ea-171b0ed546ab'' -Name ''ACSettingIndex'' -ErrorAction SilentlyContinue).''ACSettingIndex''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''ACSettingIndex='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\abfc2519-3608-4c2a-94ea-171b0ed546ab')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\abfc2519-3608-4c2a-94ea-171b0ed546ab' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Power\PowerSettings\abfc2519-3608-4c2a-94ea-171b0ed546ab' -Name 'ACSettingIndex' -Value 0 -PropertyType DWord -Force | Out-Null

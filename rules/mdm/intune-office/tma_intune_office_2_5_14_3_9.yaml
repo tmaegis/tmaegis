@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.3.9
+title: 'Ensure ''Authentication with Exchange server'' is set to ''Enabled: Kerberos Password Authentication'''
+description: 'This policy setting controls which authentication method Outlook uses to authenticate with an on-premises Microsoft Exchange Server. NOTE: - Exchange Server supports the Kerberos authentication protocol and NTLM for authentication. The Kerberos protocol is the more secure authentication method and is supported on Windows 2000 Server and later versions. NTLM authentication is supported in pre-Windows 2000 environments. Policy setting options for controlling how Outlook authenticates with Microsoft Exchange Server: Kerberos Password Authentication - Outlook attempts to authenticate using the Kerberos protocol only. ... Audit: reads the registry value(s) authenticationservice that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: high
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.3.9 Ensure ''Authentication with Exchange server'' is set to ''Enabled: Kerberos Password Authentication'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''authenticationservice'' -ErrorAction SilentlyContinue).''authenticationservice''; if (-not ($null -ne $v -and @(16) -contains [int64]$v)) { $_.PSChildName + '':authenticationservice='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Kerberos/NTLM Password Authentication: Microsoft Outlook 2016\Security\Security Form Settings\Outlook Security Mode > Authentication with Exchange Server Warning: When configuring on Outlook clients that connect to Exchange Online (365), this setting must be set to Disabled or left unconfigured. Important: For this setting to apply, the Outlook Security Mode setting must be enabled in Microsoft Outlook 2016\Security\Security Form Settings with Use Outlook Security Group Policy selected, as set in this benchmark.'

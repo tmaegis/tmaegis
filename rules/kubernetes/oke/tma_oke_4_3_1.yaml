@@ -1,0 +1,17 @@
+id: TMA-OKE-4.3.1
+title: Ensure the OKE CNI add-on uses an Oracle supported version
+description: There are a variety of CNI plugins available for Kubernetes. In OKE, the CNI plugin used for pod networking is an essential cluster add-on and should run an Oracle supported version that is compatible with the cluster’s Kubernetes version. Reported as a manual review because it needs site-specific judgement.
+target: oke
+level: 1
+severity: medium
+tags:
+- oke
+- policies
+- network
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.3.1 Ensure the OKE CNI add-on uses an Oracle supported version
+audit:
+  type: manual
+  command: Review the documentation of the OKE CNI add-on in use by the cluster, and confirm that it is an Oracle supported version for the Kubernetes version running on the cluster. • List the cluster add-ons deployed on the cluster and identify the installed CNI plugin add-on version. oci ce cluster list-addons --cluster-id $CLUSTER_ID • List the add-on versions supported for the Kubernetes version running on the cluster. oci ce addon-option list --kubernetes-version $KUBERNETES_VERSION • If you know the CNI add-on name shown by the cluster, narrow the supported version check to that add-on.
+remediation:
+  type: iac_patch
+  command: Update the OKE CNI add on to an Oracle supported version that is compatible with the cluster’s Kubernetes version. If automatic add on updates are enabled, confirm the cluster is running a supported Kubernetes version so compatible CNI updates can be applied. If a specific add on version is selected, verify that the selected version is supported for the cluster’s Kubernetes version and update it when Oracle publishes a newer supported version. For the OCI CNI plugin, apply updates using Oracle’s documented approach. The recommended approach is to provision new nodes so they receive CNI plugin pods running the latest supported CNI plugin version, then drain and remove nodes running older CNI plugin pods when appropriate.

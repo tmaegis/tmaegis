@@ -1,0 +1,21 @@
+id: TMA-EKS-AUTO-4.1.7
+title: Standardize EKS cluster access by using access entries, policies, and permissions
+description: EKS Auto Mode provides the Cluster Access Management API, access entries, and associated access policies as the recommended way to manage IAM principal access to the Kubernetes API. This model is preferred over the deprecated aws-auth ConfigMap for cluster access management, supports cluster or namespace permissions, and can also reference Kubernetes groups when native Role, ClusterRole, RoleBinding, or ClusterRoleBinding objects are needed for ... Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE. Checks the authentication mode is API or API_AND_CONFIG_MAP; review access entry scopes separately.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- rbac
+- file-permissions
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.1.7 Standardize EKS cluster access by using access entries, policies, and permissions
+audit:
+  type: command
+  command: |-
+    m=$(aws eks describe-cluster --name "${EKS_CLUSTER:?set EKS_CLUSTER}" --query cluster.accessConfig.authenticationMode --output text) || exit 1
+    case "$m" in API|API_AND_CONFIG_MAP) echo compliant;; *) echo "noncompliant: authenticationMode=$m";; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Log in to the AWS Management Console, navigate Amazon Elastic Kubernetes Service > Clusters and click on your EKS cluster. Go to the Access tab and click on Manage in the Access Configuration section. Under Cluster Authentication Mode for Cluster Access settings choose one of the following. • EKS API Use this as the target mode for EKS Auto Mode clusters after access has been migrated to access entries and associated access policies. The cluster will source authenticated IAM principals only from EKS access entry APIs • EKS API and ConfigMap Use this only when legacy aws-auth ConfigMap access must still coexist during migration or for an approved compatibility need.

@@ -1,0 +1,20 @@
+id: TMA-CISCO-ASA-1.7.1
+title: Ensure 'HTTP source restriction' is set to an authorized IP address
+description: Determines the client IP addresses that are allowed to connect to the security appliance through HTTP. One key element of securing the network is the security of management access to the infrastructure devices. It is critical to establish the appropriate controls in order to prevent unauthorized access to infrastructure devices. Fails if HTTP/ASDM access is allowed from any address, or 'http server enable' is set without any 'http <ip> <mask> <ifname>' restriction. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 2
+severity: high
+tags:
+- cisco-asa
+- network
+- management-plane
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.7.1 Ensure 'HTTP source restriction' is set to an authorized IP address
+audit:
+  type: config_regex
+  pattern: (?m)(?:^http (?:0\.0\.0\.0 0\.0\.0\.0|::/0|0::0/0) )|(?:\A(?:[ \t]*(?:$|[^h \t\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^123456789\n]))))))[^\n]*\n)*[ \t]*http server enable[^\n]*(?:\n(?:[ \t]*(?:$|[^h \t\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^123456789\n]))))))[^\n]*))*\n?\z)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Run the following to enable HTTP access source restriction
+    http <source_ip> <source_netmask> <interface_name>

@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-4.2
+title: Ensure excessive administrative privileges are revoked
+description: With respect to YugabyteDB administrative YSQL commands, only superusers should have elevated privileges. YugabyteDB regular, or application, users should not possess the ability to create roles, create new databases, manage replication, or perform any other action deemed privileged.
+target: yugabytedb
+level: 1
+severity: high
+tags:
+- yugabytedb
+- privileges
+reference: CIS YugabyteDB Benchmark v2.0.0 - 4.2 Ensure excessive administrative privileges are revoked
+audit:
+  type: manual
+  command: Run ysqlsh -c "\du" and compare each role with the superuser baseline (\du yugabyte). Only approved administrators may hold Superuser, Create role, Create DB, Replication or Bypass RLS; regular or application roles with these attributes are a finding (fix with ALTER ROLE <r> NOSUPERUSER NOCREATEROLE NOCREATEDB NOREPLICATION NOBYPASSRLS).
+remediation:
+  type: iac_patch
+  command: 'If any regular or application users have been granted excessive administrative rights, those privileges should be removed immediately via the Yugabyte ALTER ROLE YSQL command. Using the same example above, the following YSQL statements revoke all unnecessary elevated administrative privileges from the regular user appuser: # whoami yugabyte # ysqlsh -c "ALTER ROLE appuser NOSUPERUSER;" ALTER ROLE # ysqlsh -c "ALTER ROLE appuser NOCREATEROLE;" ...'

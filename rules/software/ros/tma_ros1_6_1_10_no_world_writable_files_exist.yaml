@@ -1,0 +1,24 @@
+id: TMA-ROS1-6.1.10
+title: Ensure no world writable files exist
+description: Unix-based systems support variable settings to control access to files. World writable files are the least secure. See the chmod(2) man page for more information. The audit searches local filesystems for world-writable files and requires none. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.1.10 Ensure no world writable files exist
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v findmnt >/dev/null 2>&1 || exit 1
+    mps=$(findmnt -rn -l -o TARGET,FSTYPE | awk '$2 !~ /^(nfs|nfs4|cifs|smb3|smbfs|fuse|proc|sysfs|tmpfs|devtmpfs|devpts|cgroup|cgroup2|pstore|securityfs|debugfs|tracefs|configfs|bpf|mqueue|hugetlbfs|autofs|binfmt_misc|efivarfs|overlay|squashfs|nsfs|ramfs|fusectl|rpc_pipefs)$/ {print $1}')
+    out=$(for m in $mps; do find "$m" -xdev -type f -perm -0002 -print 2>/dev/null; done | sort -u | head -n 50)
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out"; echo 'world-writable files'; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Removing write access for the "other" category ( chmod o-w <filename> ) is advisable, but always consult relevant vendor documentation to avoid breaking any application dependencies on a given file.

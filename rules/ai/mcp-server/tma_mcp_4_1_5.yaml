@@ -1,0 +1,18 @@
+id: TMA-MCP-4.1.5
+title: Ensure a human can deny tool invocations and sensitive or high-impact operations require confirmation
+description: A human can always deny a tool invocation, and sensitive or high-impact operations require explicit confirmation before they execute. A compliant host makes clear which tools are exposed to the model, shows a clear indicator when a tool is invoked, and shows the tool inputs to the user before the call. Routine, non-sensitive read operations proceed without a prompt but are logged. Sensitive operations, and high-impact or irreversible operations such as external communications, financial or legal commitments, security-posture changes, and destructive writes, require explicit human confirmation or approval before execution. In agentic multi-step workflows, the same confirmation applies to a sequence of operations that is collectively high-impact, so the human's ability to deny covers the aggregate effect, not only a single call. The operator maintains the judgment of what is sensitive o...
+target: mcp-server
+level: 2
+severity: low
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.1.5 Ensure a human can deny tool invocations and sensitive or high-impact operations require confirmation
+audit:
+  type: manual
+  command: 'Confirm the host or gateway keeps a human able to deny any tool invocation, and that sensitive or high-impact operations require confirmation. Verify behavior at the enforcement point, not by calling the MCP server directly unless the server is explicitly the enforcement point: attempt a high-impact operation through the host or gateway and confirm a human approval is required before execution, and separately confirm a routine read executes without a prompt but is logged. Set ENFORCEMENT to the host control API, gateway, or policy engine that enforces the controls (only the MCP server if the server itself is the enforcement point), set HIGH_IMPACT_TOOL to a tool the operator classifies as sensitive or high-impact, set TOKEN to a bearer token the enforcement point accepts, and set APPROVAL_JQ to the boolean the deployment documents as its attributable human-approval signal, for example a host approval state. Run the following command: ENFORCEMENT="<HITL_ENFORCEMENT_URL>" HIGH_IMPACT_TOOL="<HIGH_IMPACT_TOOL>"
+    PROTO="2026-07-28" APPROVAL_JQ="${APPROVAL_JQ:-.result.approval.state==\"pending_human\"}" TOKEN="<BEARER_TOKEN>" command -v jq >/dev/null 2>&1 || { echo "ERROR: jq is requir...'
+remediation:
+  type: iac_patch
+  command: These are host and gateway configuration settings, with no portable command. Configure human-in-the-loop controls at the host or the gateway, the enforcement point, so a human can deny any tool invocation and sensitive or high-impact operations require explicit confirmation or approval before execution, while routine reads proceed without a prompt but are logged. Maintain the operator's classification of which operations are sensitive or high-impact independently of server-provided annotations (see Recommendation 3.2.3), and review it whenever a tool is added or its behavior changes. Apply the confirmation to a multi-step sequence that is collectively high- impact, not only to an individual call. Show the tool inputs to the user before the call so the confirmation is informed.

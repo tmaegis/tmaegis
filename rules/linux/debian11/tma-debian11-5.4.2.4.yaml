@@ -1,0 +1,20 @@
+id: TMA-DEBIAN11-5.4.2.4
+title: Ensure root password is set
+description: There are a number of methods to access the root account directly. Without a password set any user would be able to gain access and thus control over the entire system.
+target: linux
+os_family:
+- debian-11
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 11 Benchmark v2.0.0 - 5.4.2.4
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v awk >/dev/null 2>&1 || { echo "step1: awk not installed"; return 1; }; command -v passwd >/dev/null 2>&1 || { echo "step1: passwd not installed"; return 1; }; o=$(bash -c ''passwd -S root | awk ''"''"''$2 ~ /^P/ {print "User: \"" $1 "\" Password is set"}''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''User: "root" Password is set'' || { echo step1: missing ''User: "root" Password is set''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set a password for the root user: # passwd root'

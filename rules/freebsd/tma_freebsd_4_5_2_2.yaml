@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.5.2.2
+title: Ensure root user umask is configured
+description: 'The user file-creation mode mask (umask) is used to determine the file permission for newly created directories and files. In FreeBSD, the default permissions for any newly created directory is 0755 (rwxr-xr-x), and for any newly created file it is 0644 (rw-r-- r--). The umask modifies the default FreeBSD permissions by restricting (masking) these permissions. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.2.2 Ensure root user umask is configured
+audit:
+  type: command
+  command: command -v grep >/dev/null 2>&1 || exit 1; out=$( { grep -Esi -- "^[[:space:]]*umask[[:space:]]+(([0-7][0-7][01][0-7]\b|[0-7][0-7][0-7][0-6]\b)|([0-7][01][0-7]\b|[0-7][0-7][0-6]\b)|(u=[rwx]{1,3},)?(((g=[rx]?[rx]?w[rx]?[rx]?\b)(,o=[rwx]{1,3})?)|((g=[wrx]{1,3},)?o=[wrx]{1,3}\b)))" /root/.profile /root/.shrc ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Edit /root/.profile and /root/.shrc and remove, comment out, or update any line with umask to be 0027 or more restrictive.

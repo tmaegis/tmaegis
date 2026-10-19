@@ -1,0 +1,24 @@
+id: TMA-PFSENSE-3.3
+title: Ensure Allow access again after time is set to 300 or more second
+description: Account password lockout >= 300 seconds. Allow access again after a user has been locked out (due to failed login attempts). The user is allowed access after the configured time if there have been no login attempts during that time). PASS requires the Login Protection blocktime (<sshguard_blocktime>) of 300 seconds or more. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 2
+severity: medium
+tags:
+- pfsense
+- time
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 3.3 Ensure Allow access again after time is set to 300 or more second
+audit:
+  type: config_regex
+  pattern: <sshguard_blocktime>(?:[3-9]\d\d|\d{4,})</sshguard_blocktime>
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: System > Advanced > Admin Access > Login Protection > Blocktime = 300, Save.
+    # CIS guidance:
+    In GUI:
+    -
+    Navigate to System > Advanced > Admin Access
+    - set the 'Login Protection' options.
+    - set 'Blocktime' value to 300.
+    - CLIck Save

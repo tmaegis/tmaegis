@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-1.3
+title: Ensure Data Cluster Initialized Successfully
+description: First-time installs of YugabyteDB require the instantiation of the database cluster. A database cluster is a collection of databases that are managed by a single server instance. Runs yb-admin -master_addresses ${YB_MASTERS:-127.0.0.1:7100} list_all_masters and list_all_tablet_servers; passes when at least one master and one tablet server are listed and all are ALIVE.
+target: yugabytedb
+level: 1
+severity: high
+tags:
+- yugabytedb
+- availability
+reference: CIS YugabyteDB Benchmark v2.0.0 - 1.3 Ensure Data Cluster Initialized Successfully
+audit:
+  type: command
+  command: 'm=${YB_MASTERS:-127.0.0.1:7100}; ms=$(yb-admin -master_addresses "$m" list_all_masters 2>/dev/null) || exit 1; ts=$(yb-admin -master_addresses "$m" list_all_tablet_servers 2>/dev/null) || exit 1; a=$(printf ''%s\n'' "$ms" | awk ''NR > 1 && NF {n++; if ($0 !~ /ALIVE/) b++} END {print (n > 0 && b == 0) ? "ok" : "bad"}''); t=$(printf ''%s\n'' "$ts" | awk ''NR > 1 && NF {n++; if ($0 !~ /ALIVE/) b++} END {print (n > 0 && b == 0) ? "ok" : "bad"}''); [ "$a$t" = okok ] && echo compliant || echo noncompliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Investigate the masters/tablet servers that are not ALIVE (logs under <fs_data_dirs>/yb-data/*/logs) and follow the YugabyteDB troubleshooting guide: https://docs.yugabyte.com/preview/troubleshoot/'

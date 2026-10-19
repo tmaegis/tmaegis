@@ -1,0 +1,23 @@
+id: TMA-CISCO-NXOS-1.4.4
+title: Set password length for local credentials
+description: Password length should be set to some value that makes compromising any captured hashed difficult. This generally means that the maximum value of 127 should never be changed, and that the minimum value, which defaults to 8, should always be increased. Typical values for minimum passphrase length of administrative users are generally 20 characters or longer (values of 30 or 32 are often seen). Passwords are stored in a non-reversible, hashed and salted format. If an attacker should "harvest" a password hash, it is of course hashed in a non-reversible format -however, it can be decoded using dictionary and/or brute-force attacks using tools such as ... Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- aaa
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.4.4 Set password length for local credentials
+audit:
+  type: config_regex
+  pattern: (?m)^userpassphrase min-length \d+
+remediation:
+  type: iac_patch
+  command: |-
+    ! Passphrase length values can only be set globally, not per-local user
+    userpassphrase min-length <minimum passphrase length>
+    userpassphrase max-length <maximum passphrase length> or in a single command: userpassphrase min-length max-length example:
+    userpassphrase min-length 20
+    userpassphrase max-length 127 Or in a single command:
+    userpassphrase min-length 20 max-length 127

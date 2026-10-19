@@ -1,0 +1,20 @@
+id: TMA-FORTIGATE-SSL-MIN-PROTO
+title: Ensure the minimum SSL/TLS protocol version is TLS 1.2
+description: ssl-min-proto-version sets the global minimum protocol for SSL/TLS connections originated or terminated by FortiOS. PASS requires TLSv1-2 or TLSv1-3 in config system global. Audited against FortiOS 'show full-configuration' output (patterns are scoped to the named 'config ... end' block, whose member lines are indented).
+target: fortigate
+level: 1
+severity: high
+tags:
+- fortigate
+- crypto
+reference: CIS Fortinet FortiGate Benchmark - Ensure only TLS 1.2 or later is used (verify section number for your FortiOS release)
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+.*\n)*?[ \t]+set ssl-min-proto-version (?i:tlsv1-[23])[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set ssl-min-proto-version TLSv1-2
+        set admin-https-ssl-versions tlsv1-2 tlsv1-3
+    end

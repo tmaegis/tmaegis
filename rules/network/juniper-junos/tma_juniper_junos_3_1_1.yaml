@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-3.1.1
+title: Ensure Caller ID is set
+description: Caller restrictions MUST be used when Incoming calls are permitted. Some JUNOS routers support the use of a dial in modem connection for Telnet/SSH administration of the router from a remote connection over the telephone network. Fails if a dialer interface accepts incoming calls from any Caller ID. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 3.1.1 Ensure Caller ID is set
+audit:
+  type: config_regex
+  pattern: (?m)^set interfaces dl\d+ [^\n]*\bincoming-map accept-all\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have configured a dialer interface to accept incoming calls, you should restrict the allowable Caller ID by entering the following command under the hierarchy (where n is the dialer interface number);
+    set interfaces dln unit 0 dialer-options incoming-map caller <Approved CallerID Number> Up to 15 caller numbers may be configured on a dialer interface, repeat the command above for each number you wish to add.

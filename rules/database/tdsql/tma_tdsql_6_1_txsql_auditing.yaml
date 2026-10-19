@@ -1,0 +1,18 @@
+id: TMA-TDSQL-6.1
+title: Ensure TXSQL Auditing Is Enabled on All Data Nodes
+description: TDSQL provides the audit_txsql audit facility to record SQL activity on TXSQL data nodes. Auditing must be enabled consistently on every primary and replica in every shard so that a node switch or distributed query cannot create an audit blind spot. ALL mode records all SQL activity. FILTER mode uses database, source-IP, and user exclusion lists and therefore requires a formally approved exception. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Run against every primary and replica of every shard. Passes when the audit_txsql plugin is ACTIVE, audit_txsql_audit_mode = ALL and the db/ip/user filters are empty; also confirm audit files are written in audit_txsql_audit_dir with complete records.
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- logging
+- audit
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 6.1 Ensure TXSQL Auditing Is Enabled on All Data Nodes
+audit:
+  type: sql_query
+  command: 'pl=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SELECT COUNT(*) FROM information_schema.PLUGINS WHERE PLUGIN_NAME = ''audit_txsql'' AND PLUGIN_STATUS = ''ACTIVE''" 2>/dev/null) || exit 1; out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SHOW GLOBAL VARIABLES WHERE Variable_name IN (''audit_txsql_audit_mode'', ''audit_txsql_filter_db'', ''audit_txsql_filter_ip'', ''audit_txsql_filter_user'')" 2>/dev/null) || exit 1; r=$(printf ''%s\n'' "$out" | awk -F''\t'' ''$1 == "audit_txsql_audit_mode" {m = toupper($2)} $1 ~ /^audit_txsql_filter_/ && $2 != "" {f++} END {print (m == "ALL" && f == 0) ? "ok" : "bad"}''); [ "$pl" -ge 1 ] && [ "$r" = ok ] && echo compliant || echo noncompliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET GLOBAL audit_txsql_audit_mode = 'ALL'; (with empty audit_txsql_filter_db/ip/user) through a TDSQL custom parameter template associated with every instance.

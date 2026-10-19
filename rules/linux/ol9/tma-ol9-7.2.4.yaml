@@ -1,0 +1,20 @@
+id: TMA-OL9-7.2.4
+title: Ensure no duplicate UIDs exist
+description: Although the useradd program will not let you create a duplicate User ID (UID), it is possible for an administrator to manually edit the /etc/passwd file and change the UID field.
+target: linux
+os_family:
+- ol-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 9 Benchmark v3.0.0 - 7.2.4
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n  while read -r l_count l_uid; do\n    if [ \"$l_count\" -gt 1 ]; then\n      echo -e \"Duplicate UID: \\\"$l_uid\\\" Users: \\\"$(awk -F: '\"'\"'($3 == n) { print $1 }'\"'\"' n=$l_uid /etc/passwd | xargs)\\\"\"\n    fi\n  done < <(cut -f3 -d\":\" /etc/passwd | sort -n | uniq -c)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Based on the Audit Procedure output, for each UID shared by more than one account, keep the UID on the correct account and assign a new, unused UID to each of the other accounts: # usermod -u <UID> <username> usermod reassigns ownership of files in the account''s home directory automatically. Review any other files owned by the previously shared UID and reassign ownership to the correct account as appropriate.'

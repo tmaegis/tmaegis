@@ -1,0 +1,19 @@
+id: TMA-SUPPLY-CHAIN-WORKFLOW-PERMISSIONS
+title: Ensure GitHub Actions workflows declare least-privilege GITHUB_TOKEN permissions
+description: 'Without an explicit permissions block the GITHUB_TOKEN inherits the repository/organisation default, which is often read-write on all scopes; a compromised step can then push code or publish releases. The audit requires every workflow under .github/workflows to have a top-level permissions: key (job-level overrides can then grant more where needed). Passes with a note when there are no workflows. Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.'
+target: supply-chain
+level: 1
+severity: medium
+tags:
+- supply-chain
+- build-pipeline
+- github-actions
+- least-privilege
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Build Pipelines - least privilege for pipeline credentials (verify section number for your release)
+audit:
+  type: command
+  command: "top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1\ncd \"$top\" || exit 1\nwf=$(git ls-files -- '.github/workflows/*.yml' '.github/workflows/*.yaml' 2>/dev/null) || exit 1\nbad=$(printf '%s\\n' \"$wf\" | while IFS= read -r f; do\n  [ -n \"$f\" ] || continue\n  grep -qE '^permissions:' \"$f\" || echo \"$f\"\ndone)\nif [ -z \"$bad\" ]; then echo compliant; else echo \"workflows without a top-level permissions block:\"; printf '%s\\n' \"$bad\"; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add ''permissions: contents: read'' (or ''permissions: {}'') at the top of each workflow and grant additional scopes only on the jobs that need them; set the organisation/repository default workflow permissions to read-only (Settings > Actions > General > Workflow permissions).'

@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-3.3
+title: Ensure 'Orphaned Users' are Dropped From SQL Server Databases
+description: A database user for which the corresponding SQL Server login is undefined or is incorrectly defined on a server instance cannot log in to the instance and is referred to as orphaned and should be removed. Orphan users should be removed to avoid potential misuse of those broken users in any way.
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 3.3 Ensure 'Orphaned Users' are Dropped From SQL Server Databases
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; DECLARE @n int = 0, @k int, @db sysname, @s nvarchar(max); DECLARE c CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.databases WHERE state = 0 AND HAS_DBACCESS(name) = 1; OPEN c; FETCH NEXT FROM c INTO @db; WHILE @@FETCH_STATUS = 0 BEGIN SET @s = N'USE ' + QUOTENAME(@db) + N'; SELECT @k = COUNT(*) FROM (SELECT DP.name FROM sys.database_principals DP WHERE DP.sid NOT IN (SELECT L.sid FROM sys.syslogins L WHERE L.sid = DP.sid) AND (SELECT containment FROM sys.databases WHERE name = DB_NAME()) = 0 AND DP.type IN (''S'',''U'',''G'') AND DP.type_desc NOT IN (''DATABASE_ROLE'',''APPLICATION_ROLE'') AND DP.name NOT IN (''dbo'',''guest'',''INFORMATION_SCHEMA'',''sys'',''MS_DataCollectorInternalUser'') AND NOT (DP.name = ''cdc'' AND (SELECT is_cdc_enabled FROM sys.databases WHERE name = DB_NAME()) = 1)) AS x;'; EXEC sp_executesql @s, N'@k int OUTPUT', @k = @k OUTPUT; SET @n = @n + @k; FETCH NEXT FROM c INTO @db; END; CLOSE c; DEALLOCATE c; SELECT
+    @n;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'If the orphaned user cannot or should not be matched to an existing or new login using the Microsoft documented process referenced below, run the following T-SQL query in the appropriate database to remove an orphan user: USE <database_name>; GO DROP USER <username>;'

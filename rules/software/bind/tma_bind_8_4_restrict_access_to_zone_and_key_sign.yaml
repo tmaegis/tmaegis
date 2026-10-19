@@ -1,0 +1,30 @@
+id: TMA-BIND-8.4
+title: Restrict Access to Zone and Key Signing Keys
+description: The files and directories for Zone Signing Keys (ZSK) and Key Signing Keys (KSK) should be read-only by the named user, with no access to other. The audit finds the DNSSEC key files (K*.private, K*.key) under $BIND_HOME and requires them and their directories to have no group write and no other permissions (find -perm /027).
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 8.4 Restrict Access to Zone and Key Signing Keys
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    keys=$(find $BH /etc/bind/keys \( -name 'K*.private' -o -name 'K*.key' \) -type f 2>/dev/null | sort -u)
+    [ -n "$keys" ] || { echo compliant; exit 0; }
+    bad=$(for k in $keys; do find "$k" "$(dirname "$k")" -maxdepth 0 -perm /027 -print; done | sort -u)
+    [ -z "$bad" ] && echo compliant || { echo 'key files/directories with group write or other access:'; printf '%s\n' "$bad"; }
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: iac_patch
+  command: 'Perform the following: chmod -R g-w,o-rwX $KEYDIR'

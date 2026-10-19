@@ -1,0 +1,31 @@
+id: TMA-ARUBA-CX-3.3.1.1
+title: PIM Accept-Register
+description: PIM Accept-register is a security feature designed to control which sources and groups are allowed to register with the Rendezvous Point (RP). This feature works alongside the RP configuration and includes an access list (ACL) option to filter sources and groups. The ACL specifies rules for permitting or denying traffic based on source and group addresses. When configured, this functionality ensures that only authorized multicast sources and groups are registered with the RP, enhancing security and preventing unauthorized multicast traffic.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- routing
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.3.1.1 PIM Accept-Register
+audit:
+  type: manual
+  command: Where PIM sparse mode runs, run 'show run pim' / 'show run pim6' and confirm 'accept-register access-list <acl>' limits which sources may register with the RP.
+remediation:
+  type: iac_patch
+  command: |-
+    Sample PIM Accept-Register configuration -
+    access-list ip <pim_reg_acl>
+    10 permit any <20.1.1.1> <225.1.1.2>
+    20 deny any <30.1.1.1> <225.1.1.3>
+    exit
+    router pim
+    accept-register access-list <pim_reg_acl>
+    exit
+    access-list ipv6 <pim_regv6_acl>
+    10 permit any <20.::1> <ff1e::1>
+    20 deny any <30::1> <ff1e::3>
+    exit
+    router pim6
+    accept-register access-list <pim_regv6_acl>
+    exit

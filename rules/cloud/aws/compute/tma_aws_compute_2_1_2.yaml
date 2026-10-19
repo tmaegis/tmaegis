@@ -1,0 +1,18 @@
+id: TMA-AWS-COMPUTE-2.1.2
+title: Ensure Amazon Machine Images (AMIs) are encrypted
+description: Amazon Machine Images (AMIs) should utilize EBS encrypted snapshots AMIs backed by EBS snapshots should use EBS encryption. Snapshot volumes can be encrypted and attached to an AMI to help protect data at rest.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+- encryption
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 2.1.2 Ensure Amazon Machine Images (AMIs) are encrypted
+audit:
+  type: manual
+  command: 'Perform the following to determine AMIs are encrypted: From the Console: 1. Login to the EC2 console at https://console.aws.amazon.com/ec2/ 2. In the left pane, click AMIs under Images 3. Select an AMI 4. In the Details tab, review the Block devices section 5. Confirm that the associated snapshots are encrypted If the snapshots are not encrypted, refer to the remediation below. From the Command Line: 1. Run the following command: aws ec2 describe-images --region us-east-1 --owner self --filter "Name=block- device-mapping.encrypted,Values=false" --query "Images[*].[ImageId]" 2. If this command returns a list of AMIs, these AMIs are not encrypted'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to encrypt AMI EBS Snapshots: From the Console: 1. Login to the EC2 console at https://console.aws.amazon.com/ec2/ 2. In the left pane, click AMIs 3. Select the AMI that does not comply to the encryption policy 4. Click on Actions 5. Click on Copy AMI - Destination region - Select the region the AMI is in - Name - Enter the new Name - Description - Enter the new description - Encryption - Select Encrypt target EBS snapshots 6. Click on Copy AMI 7. Once the AMI has finished copying, select the AMI that does not have encrypted EBS snapshots 8. Click on Actions 9. Click on Deregister From the Command Line: 1. Run the following command to copy the AMI with encrypted block devices: aws ec2 copy-image --name <New_AMI_Name> --source-image-id <Image-ID> -- source-region <region> --encrypted 2. Run the following command to deregister the older AMI: aws ec2 deregister-image --image-id <Image-ID>'

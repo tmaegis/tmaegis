@@ -1,0 +1,17 @@
+id: TMA-M365-5.2.3.6
+title: Ensure system-preferred multifactor authentication is enabled
+description: System-preferred multifactor authentication (MFA) prompts users to sign in by using the most secure method they registered. The user is prompted to sign-in with the most secure method according to the below order. The order of authentication methods is dynamic. It's updated by Microsoft as the security landscape changes, and as better authentication methods emerge. 1. Temporary Access Pass 2. Passkey (FIDO2) 3. Microsoft Authenticator notifications 4. External authentication methods 5. Time-based one-time password (TOTP) 6. Telephony 7. Certificate-based authentication The recommended state is Enabled. Regardless of the authentication method enabled by an administrator or set as preferred by the user, the system will dynamically select the most secure option available at the time of authentication. This approach acts as an additional safeguard to prevent the use of weaker methods, suc...
+target: m365
+level: 1
+severity: high
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.3.6 Ensure system-preferred multifactor authentication is enabled
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Authentication methods and select Settings. 3. Verify the System-preferred multifactor authentication State is set to Enabled and All users are included. 4. Verify that only documented exclusions exist and that they are reviewed annually To audit using PowerShell: 1. Connect to Microsoft Graph using Connect-MgGraph -Scopes "Policy.Read.AuthenticationMethod" 2. Run the following commands: $Uri = ''https://graph.microsoft.com/beta/policies/authenticationMethodsPolicy'' (Invoke-MgGraphRequest -Method GET -Uri $Uri).systemCredentialPreferences 3. Verify that includeTargets is set to all_users and state is set to enabled.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Entra admin center https://entra.microsoft.com/. 2. Expand Entra ID > Authentication methods and select Settings. 3. Set the System-preferred multifactor authentication State to Enabled and include All users. 4. Any users exclusions should be documented and reviewed annually.'

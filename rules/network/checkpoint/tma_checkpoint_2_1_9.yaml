@@ -1,0 +1,24 @@
+id: TMA-CHECKPOINT-2.1.9
+title: Ensure Telnet is disabled
+description: Disables the telnet access to the security appliance in the case it has been configured. FAILs if Telnet is enabled (set net-access telnet on). Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: high
+tags:
+- checkpoint
+- management
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 2.1.9 Ensure Telnet is disabled
+audit:
+  type: config_regex
+  pattern: (?m)^set net-access telnet on[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    set net-access telnet off
+    save config
+    # CIS guidance:
+    Run the following command to disable the telnet. CLI:
+    set net-access telnet off
+    GUI:
+    Navigate to System Management > Network Access > verify Enable Telnet is unchecked.

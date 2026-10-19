@@ -1,0 +1,19 @@
+id: TMA-MSSQL2022-2.17
+title: Ensure 'clr strict security' Server Configuration Option is set to '1'
+description: The clr strict security option specifies whether the engine applies the PERMISSION_SET on the assemblies. Enabling use of CLR assemblies widens the attack surface of SQL Server and puts it at risk from both inadvertent and malicious assemblies.
+target: mssql
+level: 1
+severity: high
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.17 Ensure 'clr strict security' Server Configuration Option is set to '1'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN CAST(value AS int) = 1 AND CAST(value_in_use AS int) = 1 THEN 'compliant' ELSE 'noncompliant' END FROM sys.configurations WHERE name = 'clr strict security';"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'clr strict security', 1; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"
+  guidance: "Run the following T-SQL command: EXECUTE sp_configure 'show advanced options', 1; RECONFIGURE; EXECUTE sp_configure 'clr strict security', 1; RECONFIGURE; GO EXECUTE sp_configure 'show advanced options', 0; RECONFIGURE;"

@@ -1,0 +1,16 @@
+id: TMA-NGINX-3.1
+title: Ensure detailed logging is enabled
+description: 'System logging must be configured to meet organizational security and privacy policies. Detailed logs provide the necessary context (event source, timestamp, user, network data) for incident response and forensic analysis. Modern logging strategies favor structured formats (JSON) over unstructured text to facilitate parsing by SIEM solutions. Note ... Manual review: the benchmark gives no reliable automated check for this control.'
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- logging
+reference: CIS NGINX Benchmark v3.0.0 - 3.1 Ensure detailed logging is enabled
+audit:
+  type: manual
+  command: '1. Verify Log Format Configuration: Inspect the log_format directives in your configuration: nginx -T 2>/dev/null | grep -i "log_format" Evaluation: Confirm that a detailed format (preferably JSON) is defined. Verify that the format includes critical fields: $time_iso8601, $remote_addr, $remote_user, $request, $status, $http_user_agent. 2. Verify Access Log Usage: Check that the defined format is actually used by the access_log directive: nginx -T 2>/dev/null | grep "access_log" Evaluation ...'
+remediation:
+  type: iac_patch
+  command: 'Define a detailed log format in the http block of /etc/nginx/nginx.conf. It is highly recommended to use JSON format for compatibility with modern SIEM tools. Recommended Configuration (JSON): http { log_format main_access_json escape=json ''{'' ''"timestamp": "$time_iso8601",'' ''"remote_addr": "$remote_addr",'' ''"remote_user": "$remote_user",'' ''"server_name": "$server_name",'' ''"request_method": "$request_method",'' ''"request_uri": "$request_uri",'' ''"status": $status,'' ''"body_bytes_sent": $body_bytes_sent,'' ''"http_referer": "$http_referer",'' ''"http_user_agent": "$http_user_agent",'' ''"x_forwarded_for": "$http_x_forwarded_for",'' ''"request_id": "$request_id"'' ''}''; # Apply the format globally or per server access_log /var/log/nginx/access.json main_access_json; } Legacy Configuration (Text-based): If JSON is not feasible, ensure the text format captures all necessary fields ...'

@@ -1,0 +1,23 @@
+id: TMA-KERBEROS-KDC-ENCTYPES
+title: Ensure the KDC does not support DES, 3DES or RC4 encryption types
+description: 'DES and RC4-HMAC (arcfour) keys are crackable and des3-cbc-sha1 is deprecated; principals created with them weaken every ticket. The audit checks the MIT KDC configuration (/etc/krb5kdc/kdc.conf on Debian/Ubuntu, /var/kerberos/krb5kdc/kdc.conf on RHEL) and fails if supported_enctypes or master_key_type names a des, des3, rc4 or arcfour type. When unset, MIT defaults to AES only.'
+target: kerberos
+level: 1
+severity: high
+tags: [kerberos, kdc, crypto]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - Strong Kerberos encryption types (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    n=0; bad=0
+    for f in /etc/krb5kdc/kdc.conf /var/kerberos/krb5kdc/kdc.conf; do
+      [ -f "$f" ] || continue
+      n=$((n+1))
+      grep -Eiq '^[[:space:]]*(supported_enctypes|master_key_type)[[:space:]]*=.*(des|rc4|arcfour)' "$f" && { echo "$f lists weak enctypes"; bad=1; }
+    done
+    [ "$n" -gt 0 ] && [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file: [/etc/krb5kdc/kdc.conf, /var/kerberos/krb5kdc/kdc.conf]
+remediation:
+  type: iac_patch
+  command: 'In each [realms] entry of kdc.conf set supported_enctypes = aes256-cts-hmac-sha1-96:normal aes128-cts-hmac-sha1-96:normal (add aes256-cts-hmac-sha384-192:normal on 1.15+). Restart krb5kdc and kadmind, then rekey affected principals (kadmin: cpw -randkey / change password) so old DES/RC4 keys are removed; rekeying krbtgt requires planning.'

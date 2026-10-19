@@ -1,0 +1,19 @@
+id: TMA-AZURE-COMPUTE-2.4.8
+title: Ensure end-to-end TLS encryption is enabled
+description: 'End-to-end (E2E) TLS encryption ensures that front-end to worker communication within function app deployment slots is encrypted using TLS. Without this feature, while incoming HTTPS requests are encrypted to the front ends, the traffic from front ends to workers running the application workloads would travel unencrypted inside Azure’s infrastructure. This recommendation applies to function apps using the Consumption, Premium, or Dedicated (App Service) plans, which support deployment slots. E2E TLS helps ensure full encryption of traffic between: - Clients and front ends - Front ends and worker processes hosting the application'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- compute
+- encryption
+- tls
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.4.8 Ensure end-to-end TLS encryption is enabled
+audit:
+  type: manual
+  command: 'Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to list deployment slots: az functionapp deployment slot list --resource-group <resource-group-name> -- name <function-app-name> For each deployment slot, ensure that endToEndEncryptionEnabled is set to true. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: cbe0e5eb-fea9-491d-ab20-a62cf049c5ae - Name: ''Function app slots should enable end to end encryption'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to enable end-to-end TLS encryption: az resource update --resource-group <resource-group-name> --name <function- app-name>/slots/<deployment-slot-name> --resource-type "Microsoft.Web/sites" --set properties.endToEndEncryptionEnabled=true'

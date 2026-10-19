@@ -1,0 +1,17 @@
+id: TMA-AWS-COMPUTE-12.15
+title: Ensure Lambda function URLs do not use wildcard CORS origins
+description: 'Lambda function URLs support an optional CORS configuration including AllowOrigins, AllowCredentials, AllowMethods, and AllowHeaders. This recommendation applies only when CORS is configured on the function URL; function URLs without a CORS block are out of scope and pass automatically. When CORS is configured, AllowOrigins must not be set to * (wildcard), which would allow any website to make cross-origin requests to the function URL. Combined with AllowCredentials: true, this enables credential- bearing cross-origin requests from any origin. A wildcard CORS origin allows any malicious website to make authenticated cross- origin requests to the Lambda function URL. If a victim visits an attacker-controlled page while authenticated, the attacker''s JavaScript can read the function''s response data, including user data, session tokens, or application secrets. Restricting origins to known...'
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 12.15 Ensure Lambda function URLs do not use wildcard CORS origins
+audit:
+  type: manual
+  command: '1. List all Lambda functions in the region: aws lambda list-functions --region $AWS_REGION --query ''Functions[].FunctionName'' --output table 2. For each function returned above, check whether it has a function URL configured: aws lambda get-function-url-config --function-name <function-name> --region $AWS_REGION \ --query ''{AuthType:AuthType,Cors:Cors}'' --output json - If the command returns ResourceNotFoundException, the function has no URL (skip). - Otherwise, inspect the Cors.AllowOrigins value in the output. The function URL Fails if AllowOrigins contains * (wildcard). This is especially severe when combined with AllowCredentials: true.'
+remediation:
+  type: iac_patch
+  command: '1. For each function URL that Failed the audit, update the CORS configuration to allow only specific origins: aws lambda update-function-url-config --function-name <function-name> -- region $AWS_REGION \ --cors ''{ "AllowOrigins": ["https://app.example.com", "https://admin.example.com"], "AllowMethods": ["GET", "POST"], "AllowHeaders": ["Content-Type", "Authorization"], "AllowCredentials": true }'' 2. Verify by repeating audit step 2 on the function.'

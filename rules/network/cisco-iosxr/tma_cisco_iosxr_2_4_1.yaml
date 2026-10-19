@@ -1,0 +1,22 @@
+id: TMA-CISCO-IOSXR-2.4.1
+title: Authentication (HSRP)
+description: Enable authentication for HSRP packets and to specify the set of keys that can be used on an interface. This is part of the HSRP authentication setup. Passes when HSRP is not configured. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 2
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 2.4.1 Authentication
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n])))))))))))))))[^\n]*\n)*[ \t]*router hsrp[^\n]*(?:\n(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n])))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure HSRP with the appropriate password.
+    router hsrp
+    interface {interface}
+    address-family ipv4 hsrp {hsrp_group_number} authentication {hsrp_password}

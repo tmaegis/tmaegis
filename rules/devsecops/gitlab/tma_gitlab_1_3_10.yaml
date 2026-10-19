@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.3.10
+title: Ensure Source Code Management (SCM) email notifications are restricted to verified domains
+description: Restrict the Source Code Management (SCM) organization's email notifications to approved domains only. Restricting Source Code Management email notifications to verified domains only prevents data leaks, as personal emails and custom domains are more prone to account takeover via DNS hijacking or password breach.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.3.10 Ensure Source Code Management (SCM) email notifications are restricted to verified domains
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Restrict Source Code Management email notifications to approved domains only by performing the following: - On the left sidebar, select Search or go to and find your top-level group. - Select Settings > Domain Verification. - When viewing Domain Verification, select the project listed next to the relevant domain. - Ensure access is limited to the relevant domains.'

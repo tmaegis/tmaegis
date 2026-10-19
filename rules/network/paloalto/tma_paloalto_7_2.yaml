@@ -1,0 +1,18 @@
+id: TMA-PALOALTO-7.2
+title: Ensure 'Service setting of ANY' in a security policy allowing traffic does not exist
+description: Create security policies specifying application-default for the Service setting, in addition to the specific ports desired. The Service setting of any should not be used for any policies that allow traffic.
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- firewall-policy
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 7.2 Ensure 'Service setting of ANY' in a security policy allowing traffic does not exist
+audit:
+  type: manual
+  command: 'Policies > Security: for every rule with action allow, confirm Service is application-default or specific service objects, never any. CLI: show rulebase security rules | match "service any" and check that each hit is a deny rule.'
+remediation:
+  type: iac_patch
+  command: |-
+    Navigate to Policies > Security. For each exposed host, set a Security Policy exists with:
+    Source tab: Zone set to OUTSIDE Address set to any Destination tab: Zone set to DMZ / Address set to <DMZ Host Object> Application tab: Application set to web-browsing (or appropriate application) Service tab: Service set to application-default. The value of any should never be used

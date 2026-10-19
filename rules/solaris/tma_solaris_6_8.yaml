@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-6.8
+title: Restrict FTP Use
+description: 'If FTP is permitted to be used on the system, the file /etc/ftpd/ftpusers is used to specify a list of users who are not allowed to access the system via FTP. FTP is an old and insecure protocol that transfers files and credentials in clear text and can be replaced by using sftp. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- network
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.8 Restrict FTP Use
+audit:
+  type: command
+  command: command -v logins >/dev/null 2>&1 || exit 1; out=$( { for user in $(logins -s | awk '{ print $1 }') aiuser noaccess nobody nobody4; do grep -w "$user" /etc/ftpd/ftpusers >/dev/null 2>&1 || echo "User $user not in /etc/ftpd/ftpusers."; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # cd /etc/ftpd # cp ftpusers ftpusers.orig # for user in `logins -s | awk ''{ print $1 }''` aiuser noaccess nobody nobody4; do $(echo $user >> ftpusers) done # sort -u ftpusers > ftpusers.CIS # mv ftpusers.CIS ftpusers If your site policy states that users have to be authorized to use FTP, consider placing all users in the /etc/ftpd/ftpusers file and then explicitly removing those who are permitted to use the service. To accomplish this, use the command: # getent passwd | cut -f1 -d":" > /etc/ftpd/ftpusers This prohibits any user on the system from using ftp unless they are explicitly removed from the file. Note that this file will need to be updated as users are added to or removed from the system.'

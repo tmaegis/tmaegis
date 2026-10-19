@@ -1,0 +1,18 @@
+id: TMA-KUBERNETES-5.1.14
+title: Ensure that access to the Kubelet API uses fine-grained subresources instead of nodes/proxy where possible
+description: Where principals require access to specific Kubelet API endpoints such as /healthz, /pods, or /configz, use the fine-grained RBAC subresources nodes/healthz, nodes/pods, and nodes/configz instead of granting nodes/proxy access. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 2
+severity: medium
+tags:
+- kubernetes
+- policies
+- kubelet
+- rbac
+reference: CIS Kubernetes Benchmark v2.1.0 - 5.1.14 Ensure that access to the Kubelet API uses fine-grained subresources instead of nodes/proxy where possible
+audit:
+  type: manual
+  command: Review all ClusterRoleBindings and RoleBindings that grant access to the nodes/proxy subresource. For each principal identified, determine whether it requires access to /exec, /attach, /run, or /debug endpoints. If it does not, it should be using fine-grained subresources instead of nodes/proxy.
+remediation:
+  type: iac_patch
+  command: For each principal that does not require access to command execution endpoints, create a ClusterRole granting only the required fine-grained subresources.

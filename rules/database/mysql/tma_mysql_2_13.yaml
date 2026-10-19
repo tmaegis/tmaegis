@@ -1,0 +1,18 @@
+id: TMA-MYSQL-2.13
+title: Ensure Socket Peer-Credential Authentication is Used Appropriately
+description: The server-side auth_socket authentication plugin, authenticates clients that connect to the MySQL server from the local host through the Unix socket file. Users authenticated by the auth_socket need not specify a password when connecting to the server.
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- authentication
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.13 Ensure Socket Peer-Credential Authentication is Used Appropriately
+audit:
+  type: manual
+  command: Run SELECT PLUGIN_NAME, PLUGIN_STATUS FROM information_schema.PLUGINS WHERE PLUGIN_NAME LIKE 'auth%'; and SELECT user, host, plugin FROM mysql.user WHERE plugin = 'auth_socket'; If the plugin is enabled but not allowed, a host is not localhost or an unauthorized user is listed, this is a fail.
+remediation:
+  type: iac_patch
+  command: Drop or re-authenticate unauthorized auth_socket users (ALTER USER ... IDENTIFIED WITH caching_sha2_password ...), or remove the plugin (UNINSTALL PLUGIN auth_socket / remove plugin-load-add) if not allowed.

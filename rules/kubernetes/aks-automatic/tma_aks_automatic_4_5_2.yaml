@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.5.2
+title: Apply Security Context to Your Pods and Containers
+description: Apply securityContext settings to pods and containers so workload runtime behavior is explicitly constrained instead of relying on image defaults or permissive cluster admission. Microsoft’s current AKS pod security guidance identifies settings such as runAsNonRoot, runAsUser, runAsGroup, fsGroup, allowPrivilegeEscalation, capabilities, and seccompProfile. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 2
+severity: low
+tags:
+- aks-automatic
+- policies
+- pod-security
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.5.2 Apply Security Context to Your Pods and Containers
+audit:
+  type: manual
+  command: Audit this control by reviewing workload manifests to confirm pod and container securityContext settings are explicitly defined and aligned to the AKS security baseline. In current AKS guidance, securityContext is the primary manifest mechanism for enforcing least privilege runtime behavior. AKS supports validating or enforcing these settings through Pod Security Admission and Deployment Safeguards. • Review pod specs for explicit securityContext settings at the pod and container level, including regular, init, and ephemeral containers.
+remediation:
+  type: iac_patch
+  command: 'Remediate by defining and enforcing a hardened pod and container security baseline for all application namespaces in AKS, then requiring workloads to declare the necessary securityContext fields in their manifests. Pod Security Admission is enabled by default and is applied with namespace labels. Microsoft’s pod security guidance recommends explicit settings such as execution without root access, allowPrivilegeEscalation: false, limited capabilities, and seccompProfile. AKS Automatic already uses Deployment Safeguards with the Baseline Pod Security Standard in Enforce mode at create or update time. • Apply PSA restricted labels to general application namespaces that can meet the Restricted Pod Security Standard, using warn and audit first where rollout needs to be staged.'

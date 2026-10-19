@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-2.3
+title: Disable PostgreSQL Command History
+description: On Linux/UNIX, the PostgreSQL client logs most interactive statements to a history file. The default PostgreSQL history file is named .psql_history in the user's home directory. The PostgreSQL command history should be disabled. Run as root; counts .psql_history files under /home, /root and the postgres home that are not symlinks to /dev/null.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- credentials
+- history
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 2.3 Disable PostgreSQL Command History
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; h=$(getent passwd postgres | cut -d: -f6); l=$(find /home /root $h -maxdepth 3 -name .psql_history 2>/dev/null); n=0; for f in $l; do [ "$(readlink "$f")" = /dev/null ] || n=$((n+1)); done; echo "$n"'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'For each user: rm -f ~<user>/.psql_history, then either add ''\set HISTFILE /dev/null'' to ~<user>/.psqlrc or ln -s /dev/null ~<user>/.psql_history; optionally set PSQL_HISTORY=/dev/null in /etc/environment.'

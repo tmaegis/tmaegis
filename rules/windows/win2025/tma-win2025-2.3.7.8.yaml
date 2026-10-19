@@ -1,0 +1,20 @@
+id: TMA-WIN2025-2.3.7.8
+title: 'Ensure ''Interactive logon: Require Domain Controller Authentication to unlock workstation'' is set to ''Enabled'' (MS only)'
+description: 'Logon information is required to unlock a locked computer. For domain accounts, this security setting determines whether it is necessary to contact a Domain Controller to unlock a computer. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2025-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 2.3.7.8
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'' -Name ''ForceUnlockLogon'' -ErrorAction SilentlyContinue).''ForceUnlockLogon''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''ForceUnlockLogon='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name 'ForceUnlockLogon' -Value 1 -PropertyType DWord -Force | Out-Null

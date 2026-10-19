@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.3.4
+title: Ensure users must provide password for escalation
+description: 'The operating system must be configured so that users must provide a password for privilege escalation. Without re-authentication, users may access resources or perform tasks for which they do not have authorization. When operating systems provide the capability to escalate a functional capability, it is critical the user re-authenticate. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 2
+severity: high
+tags:
+- freebsd
+- password-policy
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.3.4 Ensure users must provide password for escalation
+audit:
+  type: command
+  command: c=$(cat /usr/local/etc/sudoers /usr/local/etc/sudoers.d/* 2>/dev/null); [ -n "$c" ] || exit 1; printf '%s\n' "$c" | grep -E "^[^#].*NOPASSWD" | head -n 5 | grep . || echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the outcome of the audit procedure, use visudo -f <PATH TO FILE> to edit the relevant sudoers file. Remove any line with occurrences of NOPASSWD tags in the file.

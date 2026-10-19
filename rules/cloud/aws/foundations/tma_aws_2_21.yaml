@@ -1,0 +1,19 @@
+id: TMA-AWS-2.21
+title: 'Ensure AWS resource policies do not allow unrestricted access using "Principal": "*"'
+description: 'Ensure AWS resource-based policies, such as Amazon S3 bucket policies, Amazon SQS queue policies, Amazon SNS topic policies, and AWS Lambda resource policies, do not grant unrestricted access using "Principal": "*" with "Effect": "Allow" unless the policy includes restrictive conditions that limit access to specific trusted identities, accounts, services, or network boundaries. Resource-based policies are evaluated alongside identity-based IAM policies during authorization decisions. When a policy statement specifies "Principal": "*" with "Effect": "Allow", it grants the specified permissions to any AWS principal unless additional conditions restrict the request. This may unintentionally allow access from users, roles, or services in any AWS account. Such broad access significantly increases the risk of unauthorized data access, resource abuse, or data exfiltration.'
+target: aws
+level: 1
+severity: high
+tags:
+- access-control
+- aws
+- cloud
+reference: 'CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.21 Ensure AWS resource policies do not allow unrestricted access using "Principal": "*"'
+audit:
+  type: manual
+  command: '1. Identify resources that support resource-based policies within the AWS account, such as S3 buckets, SQS queues, SNS topics, and Lambda functions 2. Retrieve the resource policies for each resource. Example CLI commands: SQS Queue Policies aws sqs get-queue-attributes \ --queue-url https://sqs.region.amazonaws.com/account/QUEUE \ --attribute-names Policy S3 Bucket Policies aws s3api get-bucket-policy \ --bucket YOUR-BUCKET-NAME SNS Topic Policies aws sns get-topic-attributes \ --topic-arn TOPIC-ARN \ --query "Attributes.Policy" \ --output text 3. Inspect the retrieved policies and identify statements containing: - "Effect": "Allow" AND "Principal": "*" OR - "Principal": {"AWS": "*"} 4. Evaluate whether the statement includes restrictive conditions such as: - aws:SourceArn - aws:SourceAccount - aws:PrincipalArn - Other service-specific condition keys 5. Determine audit status: - Compliant: Wildcard principals are present only when restrictive conditions limit access to trusted
+    principals or services - Non-Compliant: Wildcard principals are used without sufficient restrictions'
+remediation:
+  type: iac_patch
+  command: 'If a resource policy contains "Principal": "*" with "Effect": "Allow" and lacks sufficient restrictions, modify the policy to limit access. OPTION 1 – Restrict the Principal Replace the wildcard principal ("Principal": "*") with a specific account, role, user, or service. Example: Non-Compliant Policy { "Version": "2012-10-17", "Statement": [ { "Sid": "AllowPublicAccess", "Effect": "Allow", "Principal": "*", "Action": "sqs:SendMessage", "Resource": "arn:aws:sqs:us-east-1:123456789012:my-queue" } ] } Steps: 1. Retrieve the current policy: aws sqs get-queue-attributes \ --queue-url https://sqs.us-east-1.amazonaws.com/123456789012/my-queue \ --attribute-names Policy \ --query ''Attributes.Policy'' 2. Update the policy with a specific principal: aws sqs set-queue-attributes \ --queue-url https://sqs.us-east-1.amazonaws.com/123456789012/my-queue \ --attributes ''{ "Policy": "{\"Version\":\"2012-10- 17\",\"Statement\":[{\"Sid\":\"AllowSpecificAccount\",\"Effect\":\"Allow\",\" Principal\":{\"AWS\":\"arn:aws:iam::345678901234:root\"},\"Action\":\"sqs:Sen
+    dMessage\",\"Resource\":\"arn:aws:sqs:us-east-1:123456789012:my-queue\"}]}" }'' Resulting Compliant Policy: { "Version": "2012-10-17", "St...'

@@ -1,0 +1,19 @@
+id: TMA-IIS-6.1
+title: Ensure FTP requests are encrypted
+description: FTP Publishing Service for IIS supports adding an SSL certificate to an FTP site. Using an SSL certificate with an FTP site is also known as FTP-S or FTP over Secure Socket Layers (SSL). FTP-S is an RFC standard (RFC 4217) where an SSL certificate is added to an FTP site and thereby making it possible to perform secure file transfers. siteDefaults FTP ssl controlChannelPolicy and dataChannelPolicy must both be SslRequire. Not applicable when the FTP service is not installed. PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 1
+severity: high
+tags:
+- iis
+- ftp
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 6.1 Ensure FTP requests are encrypted
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.applicationHost/sites/siteDefaults/ftpServer/security/ssl' -PSPath 'MACHINE/WEBROOT/APPHOST'; if ([string]$c.controlChannelPolicy -eq 'SslRequire' -and [string]$c.dataChannelPolicy -eq 'SslRequire') { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\ftpsvc.dll
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.applicationHost/sites/siteDefaults/ftpServer/security/ssl -Name controlChannelPolicy -Value SslRequire; same for dataChannelPolicy (and assign an SSL certificate)

@@ -1,0 +1,16 @@
+id: TMA-M365-1.2.1
+title: Ensure that only organizationally managed/approved public groups exist
+description: 'Microsoft 365 Groups is the foundational membership service that drives all teamwork across Microsoft 365. With Microsoft 365 Groups, you can give a group of people access to a collection of shared resources. When a new group is created in the Administration panel, the default privacy value of the group is "Public". (In this case, ‘public’ means accessible to the identities within the organization without requiring group owner authorization to join.) The recommended state is Microsoft 365 Groups are set to Private in the Administration panel. Note: Although there are several different group types, this recommendation concerns Microsoft 365 Groups specifically. If group privacy is not controlled, any user may access sensitive information, depending on the group they try to access. When the privacy value of a group is set to "Public," users may access data related to this group (e.g. Sh...'
+target: m365
+level: 2
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 1.2.1 Ensure that only organizationally managed/approved public groups exist
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft 365 admin center https://admin.microsoft.com. 2. Expand Teams & groups > Active teams & groups. 3. On the Active teams and groups page, check that no groups have the status ''Public'' in the privacy column. To audit using PowerShell: 1. Connect to the Microsoft Graph service using Connect-MgGraph -Scopes "Group.Read.All". 2. Run the following Microsoft Graph PowerShell command: $Groups = Get-MgGroup -All -Filter "groupTypes/any(c:c eq ''Unified'')" ` -Property Id,DisplayName,Visibility,GroupTypes # Displays the groups to the console for review $Groups | ft Id,DisplayName,Visibility 3. Verify that Visibility is Private for each group.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft 365 admin center https://admin.microsoft.com. 2. Expand Teams & groups > Active teams & groups. 3. On the Active teams and groups page, select the group''s name that is public. 4. On the popup groups name page, Select Settings. 5. Under Privacy, select Private.'

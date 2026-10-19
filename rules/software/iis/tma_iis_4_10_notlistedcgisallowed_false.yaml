@@ -1,0 +1,19 @@
+id: TMA-IIS-4.10
+title: Ensure 'notListedCgisAllowed' is set to false
+description: The notListedCgisAllowed attribute is a server-level setting that is located in the ApplicationHost.config file in the <isapiCgiRestriction> element of the <system.webServer> section under <security>. This element ensures that malicious users cannot copy unauthorized CGI binaries to the Web server and then run them. It is recommended that notListedCgisAllowed be set to false. isapiCgiRestriction notListedCgisAllowed must be false. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: high
+tags:
+- iis
+- request-filtering
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 4.10 Ensure 'notListedCgisAllowed' is set to false
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.webServer/security/isapiCgiRestriction' -PSPath 'MACHINE/WEBROOT/APPHOST'; if ($c.notListedCgisAllowed -eq $false) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/security/isapiCgiRestriction -Name notListedCgisAllowed -Value False

@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.1.1
+title: Ensure that the cluster-admin role is only used where required
+description: This control is valid for AKS Automatic clusters, not only AKS Standard clusters. Azure RBAC for Kubernetes authorization is preconfigured in AKS Automatic, and cluster creation through the Azure CLI automatically assigns the creator the Azure Kubernetes Service RBAC Cluster Admin role. Kubernetes RBAC remains relevant for service accounts and any Kubernetes RBAC bindings created in the cluster, so both authorization paths must be reviewed. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: critical
+tags:
+- aks-automatic
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.1 Ensure that the cluster-admin role is only used where required
+audit:
+  type: manual
+  command: This audit statement identifies the principals that are granted the Kubernetes cluster-admin role by reviewing ClusterRoleBinding assignments in the AKS cluster. It filters the binding output to show each binding name and the associated user, group, or service account, allowing the reviewer to determine which identities have unrestricted cluster administrative access.
+remediation:
+  type: iac_patch
+  command: Review all ClusterRoleBinding objects that grant access to the Kubernetes cluster-admin role and identify the users, groups, or service accounts associated with each binding. Validate whether each principal still requires full cluster administrative access or whether its responsibilities can be met through a lower privileged role, preferably a namespace Role/RoleBinding or a more limited ClusterRole, in accordance with AKS and Kubernetes least privilege guidance. Where full administrative access is not required, first assign the principal to an approved lower privilege role and confirm that required operational tasks continue to function as expected. After the replacement access has been validated, remove the unnecessary cluster-admin binding to reduce the risk of privilege escalation and cluster misuse. kubectl delete clusterrolebinding [name]

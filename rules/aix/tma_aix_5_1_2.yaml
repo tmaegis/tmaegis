@@ -1,0 +1,17 @@
+id: TMA-AIX-5.1.2
+title: Ensure usernames and UIDs are unique
+description: 'All users should have a unique UID. In particular the only user on the system to have a UID of 0 should be the root user. Likewise, usernames need to be verified as unique. The only user with a UID of 0 on the system must be the root account. Any account (username) with a UID of 0 has super user privileges on the system and becomes root at login. Access to the root account should be via su, sudo or PKI fingerprint. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.1.2 Ensure usernames and UIDs are unique
+audit:
+  type: command
+  command: 'command -v cut >/dev/null 2>&1 || exit 1; out=$( { cut -d: -f3 /etc/passwd | sort -n | uniq -d; cut -d: -f1 /etc/passwd | sort | uniq -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Examine the user IDs of all configured accounts: cut -d: -f 3 /etc/passwd | sort -n | uniq -d If a number, or numbers are returned from the command above, these are UID values which are not unique within the /etc/passwd file. Determine the effected accounts/s: cut -d: -f 1 /etc/passwd | sort -n | uniq -d | while read UID; do cut -f "1 3" -d : /etc/passwd |grep ":${UID}" done Examine the usernames IDs of all configured accounts: cut -d: -f 1 /etc/passwd | sort -n | uniq -d If a username, or usernames are returned from the command above, these are username values which are not unique within the /etc/passwd file. Determine the effected accounts/s: cut -d: -f 1 /etc/passwd | sort -n | uniq -d | while read username; do cut -f "1 3" -d : /etc/passwd |grep "${username}:" done NOTE: Any account names returned should either be deleted or have the UID changed To remove: rmuser <username> To change the UID: chuser id=<id> <username>'

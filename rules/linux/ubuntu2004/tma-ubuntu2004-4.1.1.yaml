@@ -1,0 +1,21 @@
+id: TMA-UBUNTU2004-4.1.1
+title: Ensure a single firewall configuration utility is in use
+description: 'In Linux security, employing a single, effective firewall configuration utility ensures that only legitimate traffic gets processed, reducing the system’s exposure to potential threats. The choice between ufw, nftables, and iptables depends on organizational needs. Note: iptables is being phased out, and support for iptables will be reduced over time. It is recommended to transition towards either nftables or ufw as the default firewall management tool.'
+target: linux
+os_family:
+- ubuntu-20.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 4.1.1
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   active_firewall=() firewalls=(\"ufw\" \"nftables\" \"iptables\")\n   # Determine which firewall is in use\n   for firewall in \"${firewalls[@]}\"; do\n      case $firewall in\n         nftables)\n            cmd=\"nft\" ;;\n         *)\n            cmd=$firewall ;;\n      esac\n      if command -v $cmd &> /dev/null && systemctl is-enabled --quiet $firewall && systemctl is-active --quiet $firewall; then\n         active_firewall+=(\"$firewall\")\n      fi\n   done\n   # Display audit results\n   if [ ${#active_firewall[@]} -eq 1 ]; then\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"Audit Results:\" \" ** PASS **\" \" - A single firewall is in use follow the recommendation in ${active_firewall[0]} subsection ONLY\"\n   elif [ ${#active_firewall[@]} -eq 0 ]; then\n      printf '\"'\"'%s\\n'\"'\"' \"\" \" Audit Results:\" \" ** FAIL **\" \"- No firewall in use or unable to determine firewall status\"\n   else\n      printf '\"'\"'%s\\\
+    n'\"'\"' \"\" \" Audit Results:\" \" ** FAIL **\" \" - Multiple firewalls are in use: ${active_firewall[*]}\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remediating to a single firewall configuration is a complex process and involves several steps. The following provides the basic steps to follow for a single firewall configuration: 1. Determine which firewall utility best fits organizational needs 2. Follow the recommendations in the subsequent subsection for the single firewall to be used Note: Review the firewall subsection overview for the selected firewall to be used, it contains a script to simplify this process. 3. Return to this recommendation to ensure a single firewall configuration utility is in use'

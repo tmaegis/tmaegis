@@ -1,0 +1,62 @@
+id: TMA-MACOS14-3.5
+title: Ensure Access to Audit Records Is Controlled
+description: The audit system on macOS writes important operational and security information that can be both useful for an attacker and a place for an attacker to attempt to obfuscate unwanted changes that were recorded. As part of defense-in-depth, the /etc/security/audit_control configuration and the files in /var/audit should be owned only by root with group wheel with read-only rights and no other access allowed. macOS ACLs should not be used for these files. The default folder for storing logs is /var/audit, but it can be changed. This recommendation will ensure that any target directory has appropriate access control in place even if the target directory is not the default of /var/audit. Audit records should never be changed except by the system daemon posting events. Records may be viewed or extracts manipulated, but the authoritative files should be protected from unauthorized changes.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- access-control
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 3.5 Ensure Access to Audit Records Is Controlled
+audit:
+  type: command
+  command: 'f=/etc/security/audit_control
+
+    [ -e "$f" ] || exit 1
+
+    d=$(/usr/bin/grep ''^dir'' "$f" | /usr/bin/awk -F: ''{print $2}'')
+
+    [ -n "$d" ] && [ -d "$d" ] || exit 1
+
+    r1=$(/bin/ls -n "$f" | /usr/bin/awk ''{s+=$3} END {print s+0}'')
+
+    r2=$(/bin/ls -n "$f" | /usr/bin/awk ''{s+=$4} END {print s+0}'')
+
+    r3=$(/bin/ls -n "$f" | /usr/bin/awk ''!/-r--r-----|current|total/{print $1}'' | /usr/bin/wc -l | /usr/bin/tr -d '' '')
+
+    r4=$(/bin/ls -n "$d" | /usr/bin/awk ''{s+=$3} END {print s+0}'')
+
+    r5=$(/bin/ls -n "$d" | /usr/bin/awk ''{s+=$4} END {print s+0}'')
+
+    r6=$(/bin/ls -n "$d" | /usr/bin/awk ''!/-r--r-----|current|total/{print $1}'' | /usr/bin/wc -l | /usr/bin/tr -d '' '')
+
+    if [ "$r1$r2$r3$r4$r5$r6" = 000000 ]; then echo compliant; else echo "owner/group/mode checks: $r1 $r2 $r3 $r4 $r5 $r6"; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    f=/etc/security/audit_control
+    [ -e "$f" ] || exit 1
+    d=$(/usr/bin/grep '^dir' "$f" | /usr/bin/awk -F: '{print $2}')
+    [ -n "$d" ] && [ -d "$d" ] || exit 1
+    /usr/sbin/chown root:wheel "$f"; /bin/chmod 440 "$f"
+    for x in "$d"/* "$d"/.[!.]*; do [ -f "$x" ] && [ ! -L "$x" ] && { /usr/sbin/chown root:wheel "$x"; /bin/chmod 440 "$x"; }; done
+    /usr/sbin/chown root:wheel "$d"; true
+  guidance: "Terminal Method: Run the following to commands to set the audit records to the root user and wheel group: % /usr/bin/sudo /usr/sbin/chown -R root:wheel /etc/security/audit_control % /usr/bin/sudo /bin/chmod -R 700 /etc/security/audit_control % /usr/bin/sudo /usr/sbin/chown -R root:wheel $(/usr/bin/sudo /usr/bin/grep '^dir' /etc/security/audit_control | /usr/bin/awk -F: '{print $2}') % /usr/bin/sudo /bin/chmod -R 700 $(/usr/bin/grep '^dir' /etc/security/audit_control | /usr/bin/awk -F: '{print $2}') Note: It is recommended to do a thorough verification process on why the audit logs have been changed before following the remediation steps. If the system has different access controls on the audit logs, and the changes cannot be traced, a new install may be prudent. Check for signs of file tampering as well as unapproved OS changes. Note: In macOS 14, and versions going forward, Apple disabled auditd by default. Since that is the default, the /etc/security/audit_control does not exist. If this remediation is ran without copying the /etc/security/audit_control.example to /etc/security/audit_control then it can cause a recursive permissions issue and can cause an unsupported state (un..."

@@ -1,0 +1,19 @@
+id: TMA-DOCKER-3.23
+title: Ensure that the Containerd socket file ownership is set to root:root
+description: The containerd socket /run/containerd/containerd.sock must be owned by root:root so that unprivileged users cannot alter Docker behaviour. The audit stats every existing candidate path (/run/containerd/containerd.sock); not applicable when none exists.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.23 Ensure that the Containerd socket file ownership is set to root:root
+audit:
+  type: command
+  command: for f in /run/containerd/containerd.sock; do [ -e "$f" ] || continue; o=$(stat -Lc '%U:%G' "$f") || exit 1; [ "$o" = root:root ] || { echo "$f $o"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /run/containerd/containerd.sock
+remediation:
+  type: command
+  command: for f in /run/containerd/containerd.sock; do if [ -e "$f" ]; then chown root:root "$f" || exit 1; fi; done

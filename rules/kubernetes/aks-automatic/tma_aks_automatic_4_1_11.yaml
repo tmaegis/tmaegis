@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.1.11
+title: Minimize access to webhook configuration objects
+description: Minimize access to webhook configuration objects so that only tightly controlled cluster administrative identities can create, update, or delete ValidatingWebhookConfiguration and MutatingWebhookConfiguration resources in AKS. Admission controllers run after authentication and authorization but before an object is persisted, and Microsoft’s AKS documentation shows that webhook configurations define the webhook service endpoint and related trust ... The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 1
+severity: high
+tags:
+- aks-automatic
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.1.11 Minimize access to webhook configuration objects
+audit:
+  type: manual
+  command: Audit this control by identifying who can modify cluster webhook configuration resources and confirming that webhook definitions are limited to approved admission use cases in AKS. Verify that ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects are present only where operationally required, that their coverage is not broader than necessary, and that access to manage them is restricted through least privilege RBAC. Misconfigured admission webhooks can disrupt cluster operations, especially when they apply too broadly or affect AKS managed resources.
+remediation:
+  type: iac_patch
+  command: Remove permission to create, update, patch, or delete ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects from broad ClusterRole assignments, then bind that access only to tightly controlled cluster administrative identities. Use least privilege Kubernetes RBAC and Azure RBAC for Kubernetes Authorization, which is preconfigured in AKS Automatic, with access granted through centrally managed identity groups rather than widely distributed individual assignments. Review service account permissions so workload identities do not inherit cluster webhook management capability. Remove unnecessary Azure role assignments or webhook configuration permissions from custom roles. Review each webhook configuration and narrow its match criteria to only the required namespaces, resources, and operations.

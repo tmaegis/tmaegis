@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-7.2
+title: Set Strong Password Creation Policies
+description: 'The variables in the /etc/default/passwd file indicate various strategies for creating differences required between an old and a new password. Administrators may wish to add site-specific dictionaries to the DICTIONLIST parameter. Warning: Sites often have differing opinions on the optimal value of the HISTORY parameter (how many previous passwords to remember per user in order to prevent re- use). Audit: /etc/default/passwd must set PASSLENGTH>=14, NAMECHECK=YES, HISTORY>=10, MINDIFF>=3, MINUPPER/MINLOWER/MINSPECIAL/MINDIGIT>=1, MAXREPEATS=1, WHITESPACE=YES and the dictionary settings.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- password-policy
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 7.2 Set Strong Password Creation Policies
+audit:
+  type: command
+  command: 'out=$(cat /etc/default/passwd 2>/dev/null) || exit 1; r=compliant; for p in ''^PASSLENGTH=(1[4-9]|[2-9][0-9])$'' ''^NAMECHECK=YES$'' ''^HISTORY=(1[0-9]|2[0-6])$'' ''^MINDIFF=([3-9]|[1-9][0-9])$'' ''^MINUPPER=[1-9]'' ''^MINLOWER=[1-9]'' ''^MINSPECIAL=[1-9]'' ''^MINDIGIT=[1-9]'' ''^MAXREPEATS=1$'' ''^WHITESPACE=YES$'' ''^DICTIONDBDIR=/var/passwd$'' ''^DICTIONLIST=/usr/share/lib/dict/words$''; do printf ''%s\n'' "$out" | grep -Eq -- "$p" || r="missing: $p"; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # cd /etc/default # awk ''/PASSLENGTH=/ { $1 = "PASSLENGTH=14" }; /NAMECHECK=/ { $1 = "NAMECHECK=YES" }; /HISTORY=/ { $1 = "HISTORY=10" }; /MINDIFF=/ { $1 = "MINDIFF=3" }; /MINUPPER=/ { $1 = "MINUPPER=1" }; /MINLOWER=/ { $1 = "MINLOWER=1" }; /MINSPECIAL=/ { $1 = "MINSPECIAL=1" }; /MINDIGIT=/ { $1 = "MINDIGIT=1" }; /MAXREPEATS=/ { $1 = "MAXREPEATS=1" }; /WHITESPACE=/ { $1 = "WHITESPACE=YES" }; /DICTIONDBDIR=/ { $1 = "DICTIONDBDIR=/var/passwd" }; /DICTIONLIST=/ { $1 = "DICTIONLIST=/usr/share/lib/dict/words" }; { print }'' passwd > passwd.CIS # mv passwd.CIS passwd'

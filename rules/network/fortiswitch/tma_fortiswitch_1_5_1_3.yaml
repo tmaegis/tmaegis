@@ -1,0 +1,34 @@
+id: TMA-FORTISWITCH-1.5.1.3
+title: Disable SNMPv3 Query Per User
+description: Disabling SNMP query for SNMPv3 Users that only need to receive SNMP traps FAILs if any SNMPv3 user has set queries enable. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 2
+severity: high
+tags:
+- fortiswitch
+- authentication
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.5.1.3 Disable SNMPv3 Query Per User
+audit:
+  type: config_regex
+  pattern: (?m)^config system snmp user\n(?:[ \t]+[^\n]*\n)*?[ \t]+set queries enable[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system snmp user
+        edit "<user>"
+            set queries disable
+        next
+    end
+    # CIS guidance:
+    To disable Queries for a specific SNMPv3 User in CLI:
+    {snmp_test is the example SNMPv3 username}
+    config system snmp user
+        edit snmp_test
+            set queries disable
+        next
+    end
+    To disable Queries for a specific SNMPv3 User in GUI:
+    1. System > Config > SNMP > Users
+    2. On the Users section click "Edit" on "snmp_test" and validate the configured SNMPv3 settings
+    3. Under the "Queries" section click the checkbox "Enabled" so it is turned off

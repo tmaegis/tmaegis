@@ -1,0 +1,20 @@
+id: TMA-AWS-COMPUTE-17.2
+title: Ensure Image Builder pipelines do not disable the built-in security cleanup script
+description: 'Before producing the final AMI snapshot, EC2 Image Builder runs a built-in security cleanup script on the build instance that securely removes cloud-init artifacts, SSH host keys and authorized_keys, instance log files, package manager logs, Task Orchestrator/Executor (TOE) working files, and SSM agent logs. This cleanup is enabled by default and runs automatically. However, AWS allows the cleanup to be partially or wholly disabled in two ways: (1) the recipe''s components can create skip_cleanup_* flag files that suppress individual sections of the cleanup, or (2) the recipe can specify additionalInstanceConfiguration.userDataOverride, which disables the entire cleanup script unless that user data explicitly creates the perform_cleanup flag file. The built-in cleanup exists to prevent residual sensitive artifacts — SSH host keys, authorized_keys containing operator public keys, instal...'
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- ci-cd
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 17.2 Ensure Image Builder pipelines do not disable the built-in security cleanup script
+audit:
+  type: manual
+  command: 'The cleanup can be bypassed in two ways: (a) a recipe''s additionalInstanceConfiguration.userDataOverride is set without re-enabling cleanup, or (b) a custom component creates a skip_cleanup_* flag file. 1. Identify any image recipes that have a userDataOverride configured: aws imagebuilder list-image-recipes --region $AWS_REGION \ --query ''imageRecipeSummaryList[].arn'' --output text \ | xargs -n1 -I {} aws imagebuilder get-image-recipe --image-recipe-arn {} - -region $AWS_REGION \ --query ''imageRecipe.[arn, additionalInstanceConfiguration.userDataOverride]'' --output table - For any recipe where the second column is not empty, base64-decode the override and review the script. The recipe Fails unless the script either (i) creates the file /var/lib/amazon/toe/perform_cleanup (which re-enables the built-in cleanup), or (ii) implements an equivalent organizational cleanup process to purge build artifacts, logs, and temporary credentials before AMI finalization. 2. Identify any
+    custom components in use: aws imagebuilder list-components --owner Self --region $AWS_REGION \ --query ''componentVersionList[].arn'' --output text \ | xargs -n1 -I {} aws imagebuilder get-component --component-b...'
+remediation:
+  type: iac_patch
+  command: '1. For components that Failed — remove the action that creates the skip_cleanup_* file from the component''s data and publish a new component version, then update affected recipes to reference the new component version: aws imagebuilder create-component --name <component-name> --region $AWS_REGION \ --semantic-version <next-version> --platform Linux \ --data file://component-fixed.yaml 2. For recipes that Failed — image recipes are immutable, so create a new recipe version whose userDataOverride adds the perform_cleanup flag file before any other commands. - Publish the new recipe version with the corrected override: aws imagebuilder create-image-recipe --name <recipe-name> --region $AWS_REGION \ --semantic-version <next-version> --parent-image <parent-image> \ --components ''[{"componentArn": "<component-arn>"}]'' \ --additional-instance-configuration "userDataOverride=$(base64 -w0 user- data-fixed.sh)" - Update any pipelines using the old recipe to reference the new version.
+    18 Elastic Container Registry (ECR) Amazon Elastic Container Registry (ECR) is a fully-managed container image registry service that makes it easy to store, manage, share, and deploy container images and OCI...'

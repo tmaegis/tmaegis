@@ -1,0 +1,39 @@
+id: TMA-DEBIAN12-1.2.1.8
+title: Ensure access to /etc/apt/sources.list.d directory is configured
+description: The /etc/apt/sources.list.d directory provides a way to add sources.list entries in separate files.
+target: linux
+os_family:
+- debian-12
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 12 Benchmark v2.0.0 - 1.2.1.8
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { s=$(stat -Lc ''%a %u %g'' /etc/apt/sources.list.d 2>&1) || { echo "step1: $s"; return 1; }; set -- $s; m=$((8#$1)); [ $((m & ~0755)) -eq 0 ] && [ "$2" = 0 ] && [ "$3" = 0 ] || { echo "step1: /etc/apt/sources.list.d is mode $1 uid $2 gid $3, want 755 or stricter, uid 0, gid 0"; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=/etc/apt/sources.list.d
+    [ -e "$p" ] || exit 0
+    cur=$(stat -Lc %a "$p")
+    chmod "$(printf '%o' $((8#$cur & 8#755)))" "$p"
+    chown 0:0 "$p"
+  guidance: "Run the following command to set permissions to /etc/apt/sources.list.d Uid and Gid to 0/root and access to 0755 or more restrictive: # chown root:root /etc/apt/sources.list.d # chmod u=rwx,g=rx,o=rx /etc/apt/sources.list.d"

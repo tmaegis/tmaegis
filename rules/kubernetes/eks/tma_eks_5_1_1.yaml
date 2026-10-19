@@ -1,0 +1,21 @@
+id: TMA-EKS-5.1.1
+title: Ensure Image Vulnerability Scanning using Amazon ECR image scanning or a third party provider
+description: Container image vulnerability scanning helps strengthen the security of EKS workloads by identifying known software weaknesses in the images those workloads run. This supports a more secure software supply chain and helps reduce the chance that vulnerable images are promoted into Kubernetes environments. Requires the aws CLI (ecr:GetRegistryScanningConfiguration) in the cluster region; passes for Enhanced scanning or Basic scanning with scan rules. A third-party scanner must be evidenced manually.
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- managed-services
+- registry
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.1.1 Ensure Image Vulnerability Scanning using Amazon ECR image scanning or a third party provider
+audit:
+  type: command
+  command: |-
+    out=$(aws ecr get-registry-scanning-configuration --query '[scanningConfiguration.scanType, length(scanningConfiguration.rules || `[]`)]' --output text) || exit 1
+    set -- $out
+    if [ "$1" = ENHANCED ] || [ "${2:-0}" -gt 0 ]; then echo compliant; else echo "noncompliant: $out"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable image vulnerability scanning in ECR for the repositories that supply container images to EKS workloads. Configure scanning at the private registry level in each Region, because ECR manages scan behavior through registry settings. Prefer Enhanced Scanning so Amazon Inspector can continuously scan container images for operating system and programming language package vulnerabilities. If Basic Scanning is used instead, ensure the repositories that store EKS images are covered by scan on push rules or are manually scanned before image promotion and deployment. EKS guidance recommends regularly scanning images in ECR or with a commercial scanner, and AWS notes that the older repository-level put-image-scanning-configuration path is being deprecated in favor of registry-level configuration. • Identify the ECR repositories and Regions that provide images to EKS workloads.

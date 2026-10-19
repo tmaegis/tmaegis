@@ -1,0 +1,77 @@
+id: TMA-AMZN2023-3.4.2.4
+title: Ensure host based firewall loopback traffic is configured
+description: Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network
+target: linux
+os_family:
+- amzn-2023
+level: 2
+severity: low
+tags:
+- cis-converted
+- linux
+reference: CIS Amazon Linux 2023 Benchmark v1.0.0 - 3.4.2.4
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   if nft list ruleset | awk '\"'\"'/hook\\s+input\\s+/,/\\}\\s*(#.*)?$/'\"'\"' | grep -Pq -- '\"'\"'\\H+\\h+\"lo\"\\h+accept'\"'\"'; then\n      l_output=\"$l_output\\n - Network traffic to the loopback address is correctly set to accept\"\n   else\n      l_output2=\"$l_output2\\n - Network traffic to the loopback address is not set to accept\"\n   fi\n   l_ipsaddr=\"$(nft list ruleset | awk '\"'\"'/filter_IN_public_deny|hook\\s+input\\s+/,/\\}\\s*(#.*)?$/'\"'\"' | grep -P -- '\"'\"'ip\\h+saddr'\"'\"')\"\n   if grep -Pq -- '\"'\"'ip\\h+saddr\\h+127\\.0\\.0\\.0\\/8\\h+(counter\\h+packets\\h+\\d+\\h+bytes\\h+\\d+\\h+)?dr op'\"'\"' <<< \"$l_ipsaddr\" || grep -Pq -- '\"'\"'ip\\h+daddr\\h+\\!\\=\\h+127\\.0\\.0\\.1\\h+ip\\h+saddr\\h+127\\.0\\.0\\.1\\h+drop'\"'\"' <<< \"$l_ipsaddr\"; then\n      l_output=\"$l_output\\n - IPv4 network traffic from loopback address correctly set to drop\"\n   else\n    \
+    \  l_output2=\"$l_output2\\n - IPv4 network traffic from loopback address not set to drop\"\n   fi\n   if grep -Pq -- '\"'\"'^\\h*0\\h*$'\"'\"' /sys/module/ipv6/parameters/disable; then\n      l_ip6saddr=\"$(nft list ruleset | awk '\"'\"'/filter_IN_public_deny|hook input/,/}/'\"'\"' | grep '\"'\"'ip6 saddr'\"'\"')\"\n      if grep -Pq '\"'\"'ip6\\h+saddr\\h+::1\\h+(counter\\h+packets\\h+\\d+\\h+bytes\\h+\\d+\\h+)?drop'\"'\"' <<< \"$l_ip6saddr\" || grep -Pq -- '\"'\"'ip6\\h+daddr\\h+\\!=\\h+::1\\h+ip6\\h+saddr\\h+::1\\h+drop'\"'\"' <<< \"$l_ip6saddr\"; then\n         l_output=\"$l_output\\n - IPv6 network traffic from loopback address correctly set to drop\"\n      else\n         l_output2=\"$l_output2\\n - IPv6 network traffic from loopback address not set to drop\"\n      fi\n   fi\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  *** PASS ***\\n$l_output\"\n   else\n      echo -e \"\\n- Audit Result:\\n  *** FAIL ***\\n$l_output2\\n\\n  - Correctly set:\\n$l_output\"\
+    \n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    tma_listen() { # $1 = 4|6 ; prints "proto port" for non-loopback listeners
+      ss -$1tuln 2>/dev/null | awk 'NR>1{p=($1 ~ /^udp/)?"udp":"tcp"; a=$5; sub(/.*:/,"",$5); if (a ~ /^(127\.|\[?::1\]?:)/) next; if ($5 ~ /^[0-9]+$/) print p, $5}' | sort -u; }
+    tma_ipt_save() { b=$1; command -v "${b}-save" >/dev/null 2>&1 || return 0
+      if [ "$b" = iptables ]; then v=v4; s=iptables; else v=v6; s=ip6tables; fi
+      if [ -d /etc/iptables ]; then f=/etc/iptables/rules.$v; elif [ -d /etc/sysconfig ]; then f=/etc/sysconfig/$s; else return 0; fi
+      tma_bak "$f"; "${b}-save" > "$f"; }
+    tma_ipt_loop() { b=$1; command -v "$b" >/dev/null 2>&1 || tma_pkg_install iptables
+      $b -C INPUT -i lo -j ACCEPT 2>/dev/null || $b -I INPUT 1 -i lo -j ACCEPT
+      $b -C OUTPUT -o lo -j ACCEPT 2>/dev/null || $b -I OUTPUT 1 -o lo -j ACCEPT
+      if [ "$b" = iptables ]; then src=127.0.0.0/8; else src=::1; fi
+      $b -C INPUT -s $src -j DROP 2>/dev/null || $b -A INPUT -s $src -j DROP; }
+    tma_ipt_ports() { b=$1; if [ "$b" = iptables ]; then v=4; else v=6; fi
+      tma_listen $v | while read -r pr po; do
+        $b -C INPUT -p "$pr" --dport "$po" -m state --state NEW -j ACCEPT 2>/dev/null || $b -A INPUT -p "$pr" --dport "$po" -m state --state NEW -j ACCEPT
+      done; }
+    tma_ipt_policy() { b=$1; tma_ipt_loop $b
+      $b -C INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || $b -I INPUT 2 -m state --state ESTABLISHED,RELATED -j ACCEPT
+      for p in $(tma_ssh_ports); do $b -C INPUT -p tcp --dport "$p" -m state --state NEW -j ACCEPT 2>/dev/null || $b -A INPUT -p tcp --dport "$p" -m state --state NEW -j ACCEPT; done
+      tma_ipt_ports $b
+      if [ "$b" = ip6tables ]; then $b -C INPUT -p ipv6-icmp -j ACCEPT 2>/dev/null || $b -A INPUT -p ipv6-icmp -j ACCEPT
+        $b -C OUTPUT -p ipv6-icmp -j ACCEPT 2>/dev/null || $b -A OUTPUT -p ipv6-icmp -j ACCEPT; fi
+      for pr in tcp udp icmp; do [ "$b" = ip6tables ] && [ $pr = icmp ] && continue
+        $b -C OUTPUT -p $pr -m state --state NEW,ESTABLISHED -j ACCEPT 2>/dev/null || $b -A OUTPUT -p $pr -m state --state NEW,ESTABLISHED -j ACCEPT; done
+      $b -P INPUT DROP; $b -P OUTPUT DROP; $b -P FORWARD DROP; }
+    tma_has_pkg ufw || tma_pkg_install ufw
+    ufw allow in on lo; ufw allow out on lo
+    ufw deny in from 127.0.0.0/8; ufw deny in from ::1
+    for p in $(tma_ssh_ports); do ufw allow "$p/tcp" >/dev/null; done
+    ufw status | grep -q '^Status: active' || ufw --force enable
+    true
+  guidance: "Run the following script to implement the loopback rules: #!/usr/bin/env bash { l_hbfw=\"\" if systemctl is-enabled firewalld.service | grep -q 'enabled' && systemctl is-enabled nftables.service | grep -q 'enabled'; then echo -e \"\\n - Error - Both FirewallD and NFTables are enabled\\n - Please follow recommendation: \\\"Ensure a single firewall configuration utility is in use\\\"\" elif ! systemctl is-enabled firewalld.service | grep -q 'enabled' && ! systemctl is-enabled nftables.service | grep -q 'enabled'; then echo -e \"\\n - Error - Neither FirewallD or NFTables is enabled\\n - Please follow recommendation: \\\"Ensure a single firewall configuration utility is in use\\\"\" else if systemctl is-enabled …"

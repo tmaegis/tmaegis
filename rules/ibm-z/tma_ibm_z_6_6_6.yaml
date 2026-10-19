@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-6.6.6
+title: Ensure that access to the otelnetd and EZATNTLE programs is controlled
+description: 'The z/OS Unix Telnet Server (otelnetd) provides remote access to the z/OS Unix command prompt. otelnetd does not provide any cryptographic protection of user connections. Due to this lack of security, the otelnetd server should not be used. Instead, use SSH for remote z/OS Unix command prompt access. Note: otelnetd is an alias for the EZATNTLE program.'
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 6.6.6 Ensure that access to the otelnetd and EZATNTLE programs is controlled
+audit:
+  type: manual
+  command: 'Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the PROGRAM entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering the EZATNTLE and OTELNETD resources Request reports generated using IRRDBU00 output that will allow you to: Verify that a EZATNTLE profile in the PROGRAM class is defined and: Has a UACC of NONE Is not in WARNING mode AUDIT a minimum of SUCCESS(READ) and FAILURES(READ) No permits defined Verify that a OTELNETD profile in the PROGRAM class is defined and: Has a UACC of NONE Is not in WARNING ... (full steps: CIS section 6.6.6)'
+remediation:
+  type: iac_patch
+  command: 'To create a PROGRAM profile use the RACF RDEFINE and PERMIT commands: RDEFINE PROGRAM EZATNTLE + UACC(NONE) + AUDIT(ALL(READ)) + ADDMEM(''SYS1.TCPIP.SEZALOAD''//NOPADCHK) + DATA("Z/OS UNIX TELNET SERVER") RDEFINE PROGRAM OTELNETD + UACC(NONE) + AUDIT(ALL(READ)) + ADDMEM(''SYS1.TCPIP.SEZALOAD''//NOPADCHK) + DATA("Z/OS UNIX TELNET SERVER ALIAS") SETROPTS REFRESH WHEN(PROGRAM) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER command: RALTER PROGRAM <profile> + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH WHEN(PROGRAM) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(PROGRAM) + DELETE ID(<non-compliant>) SETROPTS REFRESH WHEN(PROGRAM) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be
+    used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable ... (see CIS section 6.6.6)'

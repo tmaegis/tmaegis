@@ -1,0 +1,18 @@
+id: TMA-FIREFOX-1.1.18.5
+title: Ensure 'dom.disable_window_flip' is set to 'Enabled'
+description: 'This setting allows the configuration of how Firefox handles scripts from raising or lowering browser windows. The recommended state for this setting is: Enabled. Rationale: An arbitrary web site raising or lowering the browser window can cause improper input or can help disguise an attack taking place in a lowered window. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Mozilla\Firefox\Preferences:dom.disable_window_flip (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: firefox
+level: 1
+severity: medium
+tags:
+- firefox
+- browser
+- cis-l1
+reference: CIS Mozilla Firefox ESR GPO Benchmark v1.0.0 - 1.1.18.5 Ensure 'dom.disable_window_flip' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Mozilla\Firefox\Preferences'' -Name ''dom.disable_window_flip'' -ErrorAction SilentlyContinue).''dom.disable_window_flip''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Mozilla\Firefox\Preferences'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'dom.disable_window_flip' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,18 @@
+id: TMA-TDSQL-10.1
+title: Ensure SSL Is Enabled on the Replication Link
+description: 'The data stream of MySQL primary-replica replication should be encrypted with SSL to prevent replication data from being eavesdropped on the network. Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Run on replicas: passes when every replication channel shows Master_SSL_Allowed: Yes. A node that is not a replica (empty SHOW REPLICA STATUS) passes because it has no inbound replication link.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- tls
+- replication
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 10.1 Ensure SSL Is Enabled on the Replication Link
+audit:
+  type: sql_query
+  command: 'out=$(mysql ${TDSQL_MYSQL_OPTS:-} -e ''SHOW REPLICA STATUS\G'' 2>/dev/null) || exit 1; if [ -z "$out" ]; then echo compliant; else n=$(printf ''%s\n'' "$out" | grep -c ''Master_SSL_Allowed: Yes'' || true); t=$(printf ''%s\n'' "$out" | grep -c ''Master_SSL_Allowed:'' || true); [ "$t" -gt 0 ] && [ "$n" -eq "$t" ] && echo compliant || echo noncompliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure replication SSL through the TDSQL management platform (inter-component SSL, 9.2), or STOP REPLICA; CHANGE REPLICATION SOURCE TO SOURCE_SSL = 1, SOURCE_SSL_CA = ...; START REPLICA;

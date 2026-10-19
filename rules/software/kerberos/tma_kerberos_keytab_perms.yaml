@@ -1,0 +1,25 @@
+id: TMA-KERBEROS-KEYTAB-PERMS
+title: Ensure keytab files are owned by root and accessible only by their owner
+description: 'Keytabs contain long-term service keys usable to impersonate the service or decrypt its tickets. Checks /etc/krb5.keytab and the kadmind keytab (/etc/krb5kdc/kadm5.keytab or /var/kerberos/krb5kdc/kadm5.keytab): each existing file must be owned by root with no group or other permissions.'
+target: kerberos
+level: 1
+severity: high
+tags: [kerberos, permissions, keys]
+reference: CIS MIT Kerberos / Linux Benchmark guidance - Keytab file permissions (verify section number for your release)
+audit:
+  type: command
+  command: |-
+    n=0; bad=0
+    for f in /etc/krb5.keytab /etc/krb5kdc/kadm5.keytab /var/kerberos/krb5kdc/kadm5.keytab; do
+      [ -f "$f" ] || continue
+      n=$((n+1))
+      o=$(stat -Lc %U "$f") || exit 1
+      [ "$o" = root ] || { echo "$f owned by $o"; bad=1; }
+      [ -z "$(find -L "$f" -maxdepth 0 -perm /077)" ] || { echo "$f is accessible by group/other"; bad=1; }
+    done
+    [ "$n" -gt 0 ] && [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file: [/etc/krb5.keytab, /etc/krb5kdc/kadm5.keytab, /var/kerberos/krb5kdc/kadm5.keytab]
+remediation:
+  type: iac_patch
+  command: 'chown root:root <keytab> && chmod 600 <keytab> for each keytab listed. If a non-root service must read a keytab, give it a dedicated per-service keytab (ktutil) owned by that service account with mode 600 instead of opening /etc/krb5.keytab.'

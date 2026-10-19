@@ -1,0 +1,29 @@
+id: TMA-ROS1-5.2.14
+title: Ensure only strong MAC algorithms are used
+description: This variable limits the types of MAC algorithms that SSH can use during communication. The audit fails when sshd -T lists any of the weak MAC algorithms named in the benchmark. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- access-control
+reference: CIS ROS Melodic Benchmark v1.0.0 - 5.2.14 Ensure only strong MAC algorithms are used
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v sshd >/dev/null 2>&1 || exit 1
+    out=$(sshd -T -C user=root -C host="$(hostname)" -C addr="$(hostname -I 2>/dev/null | cut -d' ' -f1)" 2>/dev/null) || out=$(sshd -T 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk 'tolower($1)=="macs"{print tolower($2); exit}')
+    [ -n "$v" ] || { echo 'MACs unset'; exit 1; }
+    bad=0
+    for w in hmac-md5 hmac-md5-96 hmac-ripemd160 hmac-sha1 hmac-sha1-96 umac-64@openssh.com umac-128@openssh.com hmac-md5-etm@openssh.com hmac-md5-96-etm@openssh.com hmac-ripemd160-etm@openssh.com hmac-sha1-etm@openssh.com hmac-sha1-96-etm@openssh.com umac-64-etm@openssh.com umac-128-etm@openssh.com; do case ",$v," in *",$w,"*) echo "weak MACs: $w"; bad=1 ;; esac; done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/ssh/sshd_config
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/ssh/sshd_config file and add/modify the MACs line to contain a comma separated list of the site approved MACs Example: MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2- 512,hmac-sha2-256'

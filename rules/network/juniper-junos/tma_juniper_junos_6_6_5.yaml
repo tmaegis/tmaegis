@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.6.5
+title: Ensure all Custom Login Classes Forbid Shell Access
+description: 'All login classes should deny Shell access. JUNOS runs on top of a heavily modified BSD Unix based operating system and users with certain permission sets will be able to start a Shell to interact with this underlying system directly. Approximation: fails if custom classes exist but none has a deny-commands entry (verify it contains "start shell"). Audited against the output of ''show configuration | display set | no-more'' (set format, not the curly-brace hierarchy).'
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.6.5 Ensure all Custom Login Classes Forbid Shell Access
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^l\n]|l(?:$|[^o\n]|o(?:$|[^g\n]|g(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^l\n]|l(?:$|[^a\n]|a(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^ \n])))))))))))))))))))))))[^\n]*|[ \t]*set system login class \S+ (?:(?:$|[^d\n]|d(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^y\n]|y(?:$|[^\-\n]|-(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^m\n]|m(?:$|[^m\n]|m(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^d\n]|d(?:$|[^s\n])))))))))))))[^\n]*))\n)*[ \t]*set system login class [^\n]*(?:\n(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^s\n]|s(?:$|[^y\n]|y(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^m\n]|m(?:$|[^ \n]| (?:$|[^l\n]|l(?:$|[^o\n]|o(?:$|[^g\n]|g(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^c\n]|c(?:$|[^l\n]|l(?:$|[^a\n]|a(?:$|[^s\n]|s(?:$|[^s\n]|s(?:$|[^ \n])))))))))))))))))))))))[^\n]*|[ \t]*set system login class \S+
+    (?:(?:$|[^d\n]|d(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^y\n]|y(?:$|[^\-\n]|-(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^m\n]|m(?:$|[^m\n]|m(?:$|[^a\n]|a(?:$|[^n\n]|n(?:$|[^d\n]|d(?:$|[^s\n])))))))))))))[^\n]*))))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Deny Shell access for a class using the following command under the hierarchy:
+    set system login class <class name> deny-commands "start shell" You may also wish to deny other commands or groups of commands by using a list or Regular Expression as the deny-commands value, ensure that start shell is still included.

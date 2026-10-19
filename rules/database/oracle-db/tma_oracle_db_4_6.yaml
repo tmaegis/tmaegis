@@ -1,0 +1,29 @@
+id: TMA-ORACLE-DB-4.6
+title: Ensure That Users In Different RAC Instances Are Identical In PW Files
+description: In Oracle Real Application Clusters (RAC) environments, each instance maintains its own password file for authenticating users with administrative privileges (SYSDBA, SYSOPER, SYSBACKUP, etc.). If password files are not synchronized across all RAC nodes, certain administrative users may exist on only one node, causing authentication failures when attempting to log in from other nodes. To ... Relevant to RAC; single-instance databases pass. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- authentication
+- rac
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.6 Ensure That Users In Different RAC Instances Are Identical In PW Files
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from (select username from gv$pwfile_users group by username
+      having count(distinct inst_id) < (select count(distinct inst_id) from gv$pwfile_users));
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: After changes to the password file, all nodes should be synchronized.

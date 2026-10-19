@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-5.3
+title: Ensure forwarding of decrypted content to WildFire is enabled
+description: 'Allow the firewall to forward decrypted content to WildFire. Note that SSL Forward-Proxy must also be enabled and configured for this setting to take effect on inside-to-outside traffic flows. PASS requires ssl-decrypt allow-forward-decrypted-content yes. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 5.3 Ensure forwarding of decrypted content to WildFire is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:deviceconfig|vsys \S+) setting ssl-decrypt allow-forward-decrypted-content yes[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig setting ssl-decrypt allow-forward-decrypted-content yes
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Content-ID > Content-ID Settings. Set Allow forwarding of decrypted content to be checked. Note that SSL Forward Proxy must be configured for this setting to be effective.

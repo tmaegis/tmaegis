@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-8.3.3
+title: Ensure that access to JESJOBS GROUPREG resources is controlled
+description: JCL writers can define dependencies between job using a structure called a JOBGROUP. A JOBGROUP is a set of JCL that defines the dependencies between jobs and a set of JCL jobs streams that are part of the JOBGROUP. It is expected that all jobs in a job group run under the same user authority. Though this is not required. This resource prevents an unauthorized user from adding their job to an existing JOBGROUP.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 8.3.3 Ensure that access to JESJOBS GROUPREG resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that JESJOBS appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that JESJOBS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the JESJOBS entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no GROUPREG prefixed entries Request reports generated using IRRDBU00 output that will allow you to: Verify That a catch-all profile named GROUPREG.* or GROUPREG.** or GROUPREG.*.** ... (full steps: CIS section 8.3.3)'
+remediation:
+  type: iac_patch
+  command: 'To activate the JESJOBS class use the RACF SETROPTS command: SETROPTS CLASSACT(JESJOBS) To enable generic profile checking for the JESJOBS class use the RACF SETROPTS command: SETROPTS GENERIC(JESJOBS) To create a JESJOBS profile use the RACF RDEFINE and PERMIT commands: RDEFINE JESJOBS GROUPREG.** + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''CATCH-ALL PROFILE'') PERMIT GROUPREG.** CLASS(JESJOBS) + ACCESS(READ) ID(PRODCNTL SYSPROG) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER command: RALTER JESJOBS GROUPREG.** + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT <profile> CLASS(JESJOBS) + DELETE ID(<non-compliant>) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used
+    when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC ... (see CIS section 8.3.3)'

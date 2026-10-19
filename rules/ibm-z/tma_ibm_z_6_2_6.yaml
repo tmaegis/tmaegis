@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-6.2.6
+title: Ensure that access to the warning banner for the FTP server is controlled
+description: A logon banner can be used to inform users about the environment during the initial logon. Logon banners are used to warn users against unauthorized entry and the possibility of legal action for unauthorized users and advise all users that system use constitutes consent to monitoring. Failure to display a logon warning banner without this type of information could adversely impact the ability to prosecute unauthorized users and users who abuse the system.
+target: ibm-z
+level: 1
+severity: low
+tags:
+- ibm-z
+- network
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 6.2.6 Ensure that access to the warning banner for the FTP server is controlled
+audit:
+  type: manual
+  command: 'Request a copy of the FTP server configuration statements in FTP.DATA for any active site FTP server started tasks. Verify that the BANNER statement is coded. Verify that the logon banner(s) text(s) are in accordance with the company requirements. Note: These requirements are only applicable to BANNER z/OS data sets. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering BANNER data sets Request reports generated using IRRDBU00 output that will ... (full steps: CIS section 6.2.6)'
+remediation:
+  type: iac_patch
+  command: 'The site will need to folllow their standard change management process for updating FTP server configuration statements in FTP.DATA with a compliant BANNER value. To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''<profile>'' GENERIC + UACC(READ) + AUDIT(FAILURES(READ)) + DATA(''FTP SERVER LOGON BANNER'') PERMIT ''<profile>'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''<profile>'' GENERIC + UACC(READ) + AUDIT(FAILURES(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''<profile>'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global
+    access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL ... (see CIS section 6.2.6)'

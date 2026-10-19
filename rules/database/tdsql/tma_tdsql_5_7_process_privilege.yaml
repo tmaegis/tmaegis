@@ -1,0 +1,16 @@
+id: TMA-TDSQL-5.7
+title: Ensure No Excessive `PROCESS` Privilege Grants
+description: The PROCESS privilege allows users to view the current queries of all threads and users (SHOW PROCESSLIST), potentially exposing sensitive data contained in other users' SQL statements.
+target: tdsql
+level: 2
+severity: medium
+tags:
+- tdsql
+- privileges
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 5.7 Ensure No Excessive `PROCESS` Privilege Grants
+audit:
+  type: manual
+  command: SELECT User, Host FROM mysql.user WHERE Process_priv = 'Y' AND User NOT LIKE 'tdsqlsys%'; Confirm only system accounts and approved administrators hold this privilege.
+remediation:
+  type: iac_patch
+  command: REVOKE PROCESS ON *.* FROM 'username'@'host';

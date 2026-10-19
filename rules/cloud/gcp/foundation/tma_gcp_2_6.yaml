@@ -1,0 +1,19 @@
+id: TMA-GCP-2.6
+title: Ensure That the Log Metric Filter and Alerts Exist for Audit Configuration Changes
+description: Google Cloud Platform (GCP) services write audit log entries to the Admin Activity and Data Access logs to help answer the questions of, "who did what, where, and when?" within GCP projects. Cloud audit logging records information includes the identity of the API caller, the time of the API call, the source IP address of the API caller, the request parameters, and the response elements returned by GCP services. Cloud audit logging provides a history of GCP API calls for an account, including API calls made via the console, SDKs, command-line tools, and other GCP services. Admin activity and data access logs produced by cloud audit logging enable security analysis, resource change tracking, and compliance auditing. Configuring the metric filter and alerts for audit configuration changes ensures the recommended state of audit configuration is maintained so that all activities in the pro...
+target: gcp
+level: 1
+severity: high
+tags:
+- cloud
+- gcp
+- logging
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 2.6 Ensure That the Log Metric Filter and Alerts Exist for Audit Configuration Changes
+audit:
+  type: manual
+  command: 'From Google Cloud Console Ensure the prescribed log metric is present: 1. Go to Logging/Logs-based Metrics by visiting https://console.cloud.google.com/logs/metrics. 2. In the User-defined Metrics section, ensure that at least one metric <Log_Metric_Name> is present with the filter text: protoPayload.methodName="SetIamPolicy" AND protoPayload.serviceData.policyDelta.auditConfigDeltas:* Ensure that the prescribed alerting policy is present: 3. Go to Alerting by visiting https://console.cloud.google.com/monitoring/alerting. 4. Under the Policies section, ensure that at least one alert policy exists for the log metric above. Clicking on the policy should show that it is configured with a condition. For example, Violates when: Any logging.googleapis.com/user/<Log Metric Name> stream is above a threshold of 0 for greater than zero(0) seconds, means that the alert will trigger for any new owner change. Verify that the chosen alerting thresholds make sense for the user''s organization.
+    5. Ensure that appropriate notifications channels have been set up. From Google Cloud CLI Ensure that the prescribed log metric is present: 1. List the log metrics: gcloud beta logging metrics list --form...'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Console Create the prescribed log metric: 1. Go to Logging/Logs-based Metrics by visiting https://console.cloud.google.com/logs/metrics and click "CREATE METRIC". 2. Click the down arrow symbol on the Filter Bar at the rightmost corner and select Convert to Advanced Filter. 3. Clear any text and add: protoPayload.methodName="SetIamPolicy" AND protoPayload.serviceData.policyDelta.auditConfigDeltas:* 4. Click Submit Filter. Display logs appear based on the filter text entered by the user. 5. In the Metric Editor menu on the right, fill out the name field. Set Units to 1 (default) and Type to Counter. This will ensure that the log metric counts the number of log entries matching the user''s advanced logs query. 6. Click Create Metric. Create a prescribed Alert Policy: 1. Identify the new metric the user just created, under the section User-defined Metrics at https://console.cloud.google.com/logs/metrics. 2. Click the 3-dot icon in the rightmost column for the new
+    metric and select Create alert from Metric. A new page opens. 3. Fill out the alert policy configuration and click Save. Choose the alerting threshold and configuration that makes sense for the organizatio...'

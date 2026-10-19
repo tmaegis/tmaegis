@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-1.3.2
+title: Ensure 'Minimum Length' is greater than or equal to 12
+description: 'This determines the least number of characters that make up a password for a user account. PASS requires minimum-length of 12 or more. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- hardening
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.3.2 Ensure 'Minimum Length' is greater than or equal to 12
+audit:
+  type: config_regex
+  pattern: (?m)^set mgt-config password-complexity minimum-length (?:1[2-9]|[2-9]\d|1\d\d)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set mgt-config password-complexity minimum-length 12
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Management > Minimum Password Complexity. Set Minimum Length to greater than or equal to 12

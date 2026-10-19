@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-1.2
+title: Ensure systemd Service Files Are Enabled
+description: Confirm, and correct if necessary, the YugabyteDB systemd service is enabled.
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- service
+reference: CIS YugabyteDB Benchmark v2.0.0 - 1.2 Ensure systemd Service Files Are Enabled
+audit:
+  type: manual
+  command: Run systemctl get-default and systemctl list-dependencies <default target> | grep -i yugabyte. The YugabyteDB service (e.g. yugabyted.service, or yb-master/yb-tserver units) must be enabled as a want of the default target and run as the dedicated user with Restart=on-failure.
+remediation:
+  type: iac_patch
+  command: Irrespective of package source, YugabyteDB services can be identified because it typically includes the text string "yugabyted". PGDG installs do not automatically register the service as a "want" of the default systemd target. Multiple instances of YugabyteDB services often distinguish themselves using a version number.

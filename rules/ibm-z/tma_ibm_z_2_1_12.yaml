@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.1.12
+title: Ensure that access to memory and privileged program dumps is controlled
+description: Access to memory and privileged program dumps running Trusted Control Block (TCB) key 0-7 may hold passwords, encryption keys, or other sensitive data that must not be made available. Failure to control access to these facilities could result in unauthorized personnel modifying sensitive z/OS lists.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.1.12 Ensure that access to memory and privileged program dumps is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering the following resources o IEAABD.DMPAKEY o IEAABD.DMPAUTH ... (full steps: CIS section 2.1.12)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To create a FACILITY profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE FACILITY IEAABD.DMPAKEY + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''DUMP PROGRAMS WITH SYSTEM KEY < 8'') PERMIT IEAABD.DMPAKEY CLASS(FACILITY) + ACCESS(READ) ID(SYSPROG) RDEFINE FACILITY IEAABD.DMPAUTH + UACC(NONE) + AUDIT(ALL(READ)) + DTA(''GENERATE PROGRAM DUMPS'') PERMIT IEAABD.DMPAUTH CLASS(FACILITY) + ACCESS(UPDATE) ID(SYSPROG) SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER FACILITY <profile> + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant access list
+    entry use the RACF PERMIT and SETROPTS commands: PERMIT <profile> CLASS(FACILITY) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant GAC ... (see CIS section 2.1.12)'

@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-2.4.6
+title: Secure ACCESSCTRL authority access
+description: The ACCESSCTRL authority defines the access control authority. It allows its holder to grant explicit privileges to authorization IDs or roles by issuing SQL GRANT statements. It enables its holder to grant privileges on most objects and resources. It is recommended that the ACCESSCTRL authority be granted to an authorized ID or a role.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- permissions
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 2.4.6 Secure ACCESSCTRL authority access
+audit:
+  type: manual
+  command: 'For Db2 internal security users: Issue the following SQL statement to check ACCESSCTRL authority access: SELECT GRANTEE, GRANTEETYPE FROM SYSIBM.SYSUSERAUTH WHERE ACCESSCTRLAUTH = ''Y''; Review the access list to ensure that the grants are aligned with your organization''s access policies. For external security users: Issue the RACF RLIST command to list the profile that controls access to the ACCESSCTRL authority in the DSNADM class. Examine the universal access (UACC) and user (USER) settings for the profile. If the UACC setting is READ or the USER setting ... (full steps: CIS section 2.4.6)'
+remediation:
+  type: iac_patch
+  command: 'For Db2 internal security users: Issue the SQL REVOKE statement to revoke ACCESSCTRL access from any unauthorized ID or role. For external security users: Issue the RACF RALTER command to update the UACC setting to NONE. Issue the RACF PERMIT command to remove the ID(*) and specify users or groups.'

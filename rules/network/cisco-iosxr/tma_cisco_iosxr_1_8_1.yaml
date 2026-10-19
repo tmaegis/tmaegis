@@ -1,0 +1,22 @@
+id: TMA-CISCO-IOSXR-1.8.1
+title: Enable AES Password Encryption
+description: 'You can enable strong, reversible 128-bit Advanced Encryption Standard (AES) password encryption, also known as type-6 encryption. To start using type-6 encryption, you must enable the AES password encryption feature and configure a master encryption key, which is used to encrypt and decrypt passwords. Encryption of passwords is used to protect it from being sent over the wire cleartext or being accidentally exposed when sharing device configurations with third parties. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-iosxr
+level: 2
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.8.1 Enable AES Password Encryption
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Just verifying the running configuration might not be sufficient because it could be that no masterkey has been set. IOSXR# show run formal | i password6 password6 encryption aes Use the following show command to see if encryption is enabled and functional. Only when all three status are "Enabled" the feature is fully working.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Define a password encryption key
+    key config-key password-encryption New password Requirements: Min-length 6, Max-length 64 Characters restricted to [A-Z][a-z][0-9] Enter new key : Enter confirm key : Master key operation is started in background Enable aes config password encryption /* Enable Type 6 password encryption */
+    configure
+    password6 encryption aes
+    commit

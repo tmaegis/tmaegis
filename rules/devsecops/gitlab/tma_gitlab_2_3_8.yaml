@@ -1,0 +1,25 @@
+id: TMA-GITLAB-2.3.8
+title: Ensure scanners are in place to identify and prevent sensitive data in pipeline files
+description: Detect and prevent sensitive data, such as confidential ID numbers, passwords, etc., in pipelines. Sensitive data in pipeline configuration, such as cloud provider credentials or repository credentials, create vulnerabilities with which malicious actors could steal such information if they gain access to a pipeline. In order to mitigate this, set scanners that will identify and prevent the existence of sensitive data in the pipeline.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- ci-cd
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 2.3.8 Ensure scanners are in place to identify and prevent sensitive data in pipeline files
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For every pipeline that is in use, set scanners that will identify and prevent sensitive data within it. - On the left sidebar, select Search or go to and find your project. - Select Build > Pipeline editor. - Copy and paste the following to the bottom of the .gitlab-ci.yml file. If an include line already exists, add only the template line below it. include: - template: Jobs/Secret-Detection.gitlab-ci.yml - Select the Validate tab, then select Validate pipeline. The message Simulation completed successfully indicates the file is valid. - Select the Edit tab. - Optional. In the Commit message text box, customize the commit message. In the Branch text box, enter the name of the default branch. - Select Commit changes.'

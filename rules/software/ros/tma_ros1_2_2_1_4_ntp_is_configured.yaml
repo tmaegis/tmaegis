@@ -1,0 +1,28 @@
+id: TMA-ROS1-2.2.1.4
+title: Ensure ntp is configured
+description: 'ntp is a daemon which implements the Network Time Protocol (NTP). It is designed to synchronize system clocks across a variety of systems and use a source that is highly accurate. More information on NTP can be found at http://www.ntp.org. ntp can be configured to be a client and/or a server. This recommendation only applies if ntp is in use on the system. Applies when ntp is used: the audit requires restrict -4/-6 default lines with kod nomodify notrap nopeer noquery, a server or pool line, and ntpd running as the ntp user. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- services
+reference: CIS ROS Melodic Benchmark v1.0.0 - 2.2.1.4 Ensure ntp is configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    f=/etc/ntp.conf
+    for v in '-4 ' '-6 '; do grep -Eq "^restrict\s+$( [ "$v" = '-4 ' ] && echo '(-4\s+)?' || echo '-6\s+')default(\s+\S+)*" "$f" || { echo "no restrict ${v}default line"; exit 1; }; done
+    for o in kod nomodify notrap nopeer noquery; do [ "$(grep -E '^restrict\s+(-4\s+|-6\s+)?default' "$f" | grep -cw $o)" -ge 2 ] || { echo "restrict default lines lack $o"; exit 1; }; done
+    grep -Eq '^(server|pool)\s' "$f" || { echo 'no server/pool line'; exit 1; }
+    grep -Eqs '^RUNASUSER=ntp' /etc/init.d/ntp || ps -eo user=,comm= | awk '$2 == "ntpd" && $1 == "ntp" {f=1} END {exit !f}' || { echo 'ntpd does not run as ntp'; exit 1; }
+    echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/ntp.conf
+remediation:
+  type: iac_patch
+  command: 'Add or edit restrict lines in /etc/ntp.conf to match the following: restrict -4 default kod nomodify notrap nopeer noquery restrict -6 default kod nomodify notrap nopeer noquery Add or edit server or pool lines to /etc/ntp.conf as appropriate: server <remote-server> Configure ntp to run as the ntp user by adding or editing one of the following files as appropriate for your distribution: /etc/sysconfig/ntpd : OPTIONS="-u ntp:ntp" /etc/sysconfig/ntp : NTPD_OPTIONS="-u ntp:ntp" /etc/init.d/ntp: RUNASUSER=ntp'

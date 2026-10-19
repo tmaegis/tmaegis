@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-5.1
+title: Ensure Common SNMP Community Strings are NOT used
+description: Do not use common / default community strings. SNMP can be used to read, and sometime write, sensitive information about your router and network environment. When using SNMP Versions 1 and 2C (SNMPv2c) a community string is used to identify and, to a limited degree, authenticate Management Stations. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- snmp
+reference: CIS Juniper OS Benchmark v2.1.0 - 5.1 Ensure Common SNMP Community Strings are NOT used
+audit:
+  type: config_regex
+  pattern: (?m)(?i)^set snmp community \"?[^ \n\"]*(?:public|private|admin|monitor|security)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have deployed SNMPv1 or SNMPv2c on your router using one of these strings, rename the community using the following command under the hierarchy;
+    rename snmp community <old community> to community <new community>

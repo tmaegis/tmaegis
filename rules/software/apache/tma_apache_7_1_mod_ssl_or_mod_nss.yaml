@@ -1,0 +1,23 @@
+id: TMA-APACHE-7.1
+title: Ensure mod_ssl and/or mod_nss Is Installed
+description: Secure Sockets Layer (SSL) was developed by Netscape and turned into an open standard and was renamed Transport Layer Security (TLS) as part of the process. TLS is important for protecting communication and can provide authentication of the server and even the client. Compliant when ssl_module or nss_module is loaded. Uses the module list from apachectl -M (apache2ctl/httpd; needs root).
+target: apache
+level: 1
+severity: high
+tags:
+- apache
+- tls
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 7.1 Ensure mod_ssl and/or mod_nss Is Installed
+audit:
+  type: command
+  shell: bash
+  command: b=$(command -v apache2ctl || command -v apachectl || command -v httpd) || exit 1; m=$("$b" ${APACHE_CONF:+-f "$APACHE_CONF"} -M 2>/dev/null) || exit 1; printf '%s\n' "$m" | grep -Eiq '(ssl|nss)_module' && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Install mod_ssl (dnf install mod_ssl; a2enmod ssl on Debian/Ubuntu). Then run apachectl configtest and reload Apache.

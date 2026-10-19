@@ -1,0 +1,17 @@
+id: TMA-AIX-5.2.12
+title: Ensure minother is configured
+description: 'Defines the number of characters within a password which must be non-alphabetic. In setting the minother attribute, it increases password complexity by enforcing the use of non-alphabetic characters in every user password. Audit: reads `lssec -f /etc/security/user -s default -a minother`.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- password-policy
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 5.2.12 Ensure minother is configured
+audit:
+  type: command
+  command: command -v lssec >/dev/null 2>&1 || exit 1; out=$(lssec -f /etc/security/user -s default -a minother 2>/dev/null) || exit 1; v=$(printf '%s\n' "$out" | sed -n 's/.*minother=\([^ ]*\).*/\1/p'); if [ -n "$v" ] && [ "$v" -ge 3 ]; then echo compliant; else echo "minother=$v"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: chsec -f /etc/security/user -s default -a minother=3

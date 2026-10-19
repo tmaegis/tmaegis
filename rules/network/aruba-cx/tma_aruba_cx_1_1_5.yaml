@@ -1,0 +1,25 @@
+id: TMA-ARUBA-CX-1.1.5
+title: Enable Enhanced Secure Mode
+description: This sequence describes enabling enhanced secure mode
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- hardening
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.1.5 Enable Enhanced Secure Mode
+audit:
+  type: manual
+  command: Run 'show secure-mode'. Compliant output is 'Enhanced secure mode is set'; 'Standard secure mode is set' means enhanced secure mode has not been enabled (enabling it zeroizes the switch, so plan it from the serial console).
+remediation:
+  type: iac_patch
+  command: |-
+    boot system serviceos
+    One time boot to ServiceOS initiated. Checking if the configuration needs to be saved... This will reboot the system to ServiceOS and render
+     the entire switch unavailable.
+    Access to ServiceOS is only available through the serial console. Continue (y/n)? y Default boot image set to serviceos. The system is going down for reboot. ... ServiceOS login: admin
+    secure-mode enhanced
+    ############################WARNING############################ This will set the switch into enhanced secure mode.  Before enhanced secure mode is enabled, the switch must securely erase all customer data and reset the switch to factory defaults. This will initiate a reboot and render the switch unavailable until the zeroization is complete. ############################WARNING############################ Continue (y/n)? y reboot: Restarting system ... 6300 login: admin Password:
+    Please configure the 'admin' user account password. Enter new password: ***** Confirm new password: *****
+    show secure-mode
+    Enhanced secure mode is set

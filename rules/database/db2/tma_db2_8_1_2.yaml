@@ -1,0 +1,17 @@
+id: TMA-DB2-8.1.2
+title: Configure a Server-side Stash File for TLS (SSL_SVR_STASH)
+description: If a key store file is being used to configure TLS support in a Db2 instance, a stash file must also be configured to allow the Db2 server to be able to read certificates from the keystore. If the Microsoft certificate store is configured on a Windows platform, a stash file is not required.
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.1.2 Configure a Server-side Stash File for TLS (SSL_SVR_STASH)
+audit:
+  type: manual
+  command: 'Perform the following to determine if SSL_SVR_STASH is required, and if it is set. 1. Attach to the Db2 instance. db2 => attach to <db2instance> 2. Run the following command: db2 => get database manager configuration 3. Locate the value of SSL_SVR_KEYDB in the output: SSL server keydb file (SSL_SVR_KEYDB) = 4. A stash file is not required on Windows if using GSK_MS_CERTIFICATE_STORE. If the value of SSL_SVR_KEYDB is not GSK_MS_CERTIFICATE_STORE, locate the value of SSL_SVR_STASH and ensure SSL_SVR_STASH is not blank. SSL server stash file (SSL_SVR_STASH) ='
+remediation:
+  type: iac_patch
+  command: 'Perform the following to set SSL_SVR_STASH: 1. Attach to the Db2 instance. db2 => attach to <db2instance> 2. Run the following command, where <path> is the fully qualified path to the keystore file: db2 => update dbm cfg using SSL_SVR_STASH <path> If a stash file is being used, ensure only the instance owner and administrators have access to the file. Do not grant world readable or world writable permissions on the stash file. If the Microsoft certificate store is being used on Windows, it is not necessary to set SSL_SVR_STASH.'

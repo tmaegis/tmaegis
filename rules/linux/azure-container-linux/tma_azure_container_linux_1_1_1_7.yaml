@@ -1,0 +1,16 @@
+id: TMA-AZURE-CONTAINER-LINUX-1.1.1.7
+title: Ensure unused filesystems kernel modules are not available
+description: Filesystem kernel modules are pieces of code that can be dynamically loaded into the Linux kernel to extend its filesystem capabilities, or so-called base kernel, of an operating system. Filesystem kernel modules are typically used to add support for new hardware (as device drivers), or for adding system calls. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- manual-review
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 1.1.1.7 Ensure unused filesystems kernel modules are not available
+audit:
+  type: manual
+  command: 'Verify filesystem kernel modules that are not in use on the system are disabled. Review currently loaded kernel modules to ensure they are needed and conform to local site policy. Note: The "Audit script" included at the bottom of the "Audit Procedure" will perform the steps included below. 1. Run the following command to generate a list of filesystem types currently mounted on the system. # findmnt -Dkerno fstype | sort -u Review the output. These filesystem types should either be excluded from the audit or if no longer needed, unmounted and disabled. ...'
+remediation:
+  type: iac_patch
+  command: '- IF - the module is available in the running kernel: • Unload the filesystem kernel module from the kernel • Create a file ending in .conf with install filesystem kernel modules /bin/false in the /etc/modprobe.d/ directory • Create a file ending in .conf with deny list filesystem kernel modules in the /etc/modprobe.d/ directory WARNING: unloading, disabling or denylisting filesystem modules that are in use on the system may be FATAL. It is extremely important to thoroughly review the filesystems returned by the audit before following the remediation procedure. ...'

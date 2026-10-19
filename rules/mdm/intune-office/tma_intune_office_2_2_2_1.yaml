@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.2.1
+title: Ensure 'Do not show data extraction options when opening corrupt workbooks' is set to 'Enabled'
+description: 'This policy setting controls whether Excel presents users with a list of data extraction options before beginning an Open and Repair operation when users choose to open a corrupt workbook in repair or extract mode. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) extractdatadisableui that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.2.1 Ensure 'Do not show data extraction options when opening corrupt workbooks' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\options'') -Name ''extractdatadisableui'' -ErrorAction SilentlyContinue).''extractdatadisableui''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':extractdatadisableui='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Excel 2016\Data Recovery\Do Not Show Data Extraction Options When Opening Corrupt Workbooks'

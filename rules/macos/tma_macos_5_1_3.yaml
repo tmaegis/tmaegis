@@ -1,0 +1,38 @@
+id: TMA-MACOS-5.1.3
+title: Ensure Apple Mobile File Integrity (AMFI) Is Enabled
+description: Apple Mobile File Integrity (AMFI) was first released in macOS 10.12. The daemon and service block attempts to run unsigned code. AMFI uses launchd, code signatures, certificates, entitlements, and provisioning profiles to create a filtered entitlement dictionary for an app. AMFI is the macOS kernel module that enforces code-signing and library validation.
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 5.1.3 Ensure Apple Mobile File Integrity (AMFI) Is Enabled
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    out=$(/usr/sbin/nvram -p 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | /usr/bin/grep -c "amfi_get_out_of_my_way=1" || true
+  expected_output: '0'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    cur=$(/usr/sbin/nvram boot-args 2>/dev/null | /usr/bin/sed -E 's/^boot-args[[:space:]]*//')
+    new=$(printf '%s' "$cur" | /usr/bin/sed -E 's/amfi_get_out_of_my_way=1//g' | /usr/bin/tr -s " " | /usr/bin/sed -E 's/^ +| +$//g')
+    if [ -z "$new" ]; then /usr/sbin/nvram -d boot-args; else /usr/sbin/nvram boot-args="$new"; fi
+  guidance: "Terminal: sudo /usr/sbin/nvram boot-args=\"\"."

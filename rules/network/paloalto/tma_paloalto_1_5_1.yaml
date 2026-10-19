@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-1.5.1
+title: Ensure 'V3' is selected for SNMP polling
+description: 'For SNMP polling, only SNMPv3 should be used. PASS requires snmp-setting access-setting version v3. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- snmp
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.5.1 Ensure 'V3' is selected for SNMP polling
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:template \S+ config )?deviceconfig system snmp-setting access-setting version v3\b
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system snmp-setting access-setting version v3 views <view> view <name> oid 1.3.6.1 option include mask 0xf0
+    set deviceconfig system snmp-setting access-setting version v3 users <user> view <view> authpwd <auth> privpwd <priv>
+    commit
+    # CIS guidance:
+    Navigate to Device > Setup > Operations > Miscellaneous > SNMP Setup Select V3. In order to be usable, the User and View sections of this dialog should also be completed. These settings need to match the settings in the organization's NMS (Network Management System)

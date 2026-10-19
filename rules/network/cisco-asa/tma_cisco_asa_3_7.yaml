@@ -1,0 +1,20 @@
+id: TMA-CISCO-ASA-3.7
+title: Ensure 'ip verify' is set to 'reverse-path' for untrusted interfaces
+description: Enables the unicast Reverse-Path Forwarding (uRPF) on untrusted interfaces. The unicast Reverse-Path Forwarding(uRPF) enabled on an interface ensures that for a packet received on an interface, the security appliance checks the routing table to make sure that the same interface is used to get back to the source IP address. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 3.7 Ensure 'ip verify' is set to 'reverse-path' for untrusted interfaces
+audit:
+  type: config_regex
+  pattern: (?m)^ip verify reverse-path interface \S+
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the name of the untrusted interface <interface_name>
+    - Step 2: Run the following command to enable protection against IP spoofing
+    ip verify reverse-path interface <interface_name>

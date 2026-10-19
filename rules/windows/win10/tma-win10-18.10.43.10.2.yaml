@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.43.10.2
+title: Ensure 'Scan all downloaded files and attachments' is set to 'Enabled'
+description: 'This policy setting configures scanning for all downloaded files and attachments. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.43.10.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection'' -Name ''DisableIOAVProtection'' -ErrorAction SilentlyContinue).''DisableIOAVProtection''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''DisableIOAVProtection='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection' -Name 'DisableIOAVProtection' -Value 0 -PropertyType DWord -Force | Out-Null

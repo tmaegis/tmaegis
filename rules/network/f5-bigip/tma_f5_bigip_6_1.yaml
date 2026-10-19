@@ -1,0 +1,22 @@
+id: TMA-F5-BIGIP-6.1
+title: Ensure that SNMP access is allowed to trusted agents IPs only
+description: 'To limit access to trusted SNMP agents only PASS requires sys snmp allowed-addresses to list at least one trusted manager address besides loopback. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: high
+tags:
+- f5-bigip
+- snmp
+reference: CIS F5 Networks Benchmark v1.0.0 - 6.1 Ensure that SNMP access is allowed to trusted agents IPs only
+audit:
+  type: config_regex
+  pattern: (?m)^sys snmp \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+allowed-addresses \{ (?:\S+ )*?(?:[02-9]\d{0,2}|1\d?|1[013-9]\d|12[0-68-9])\.\d[^\n]*\}[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys snmp allowed-addresses add { 10.0.0.9 }
+    tmsh save sys config
+    # CIS guidance:
+    1-Login to Configuration utility
+    2- Go to System > SNMP > Agent > Configuration
+    3- Add trusted IP addresses in "Client Allow List"

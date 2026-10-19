@@ -1,0 +1,18 @@
+id: TMA-MYSQL-2.14
+title: Ensure MySQL is Bound to an IP Address
+description: 'By default, the MySQL server accepts TCP/IP connections from MySQL user accounts on all server host IPv6 and IPv4 interfaces. You can make this configuration more restrictive by setting the bind_address configuration option to a specific IPv4 or IPv6 address so that the server only accepts TCP/IP connections on that address. Fails when bind_address is empty, ''*'', ''::'' or ''0.0.0.0'' (all interfaces). Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- network
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 2.14 Ensure MySQL is Bound to an IP Address
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(IFNULL(@@global.bind_address, '') NOT IN ('', '*', '::', '0.0.0.0'), 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set bind_address=<specific IP> under [mysqld] in /etc/my.cnf (or /etc/mysql/mysql.conf.d/mysqld.cnf), then restart MySQL.

@@ -1,0 +1,39 @@
+id: TMA-UBUNTU1404-5.2.1
+title: Ensure permissions on /etc/ssh/sshd_config are configured
+description: The /etc/ssh/sshd_config file contains configuration specifications for sshd. The command below sets the owner and group of the file to root.
+target: linux
+os_family:
+- ubuntu-14.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 14.04 LTS Benchmark v2.1.0 ARCHIVE - 5.2.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v stat >/dev/null 2>&1 || { echo "step1: stat not installed"; return 1; }; o=$(bash -c ''stat /etc/ssh/sshd_config'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)'' || { echo step1: missing ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    for f in /etc/ssh/sshd_config $(find /etc/ssh/sshd_config.d -type f 2>/dev/null); do
+      [ -e "$f" ] || continue
+      chown root:root "$f"; m=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$m & 8#0600)))" "$f"
+    done
+    exit 0
+  guidance: "Run the following commands to set ownership and permissions on /etc/ssh/sshd_config: # chown root:root /etc/ssh/sshd_config # chmod og-rwx /etc/ssh/sshd_config"

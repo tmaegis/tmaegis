@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-7.1.2
+title: Ensure encryption in transit is required for File Shares (Microsoft.FileShares)
+description: 'Note: This recommendation applies to NFS file shares created with the Microsoft.FileShares provider. Encryption in transit protects data moving between NFS clients and the file share from interception and tampering. On Microsoft.FileShares, NFS traffic is encrypted with TLS (via the AZNFS/stunnel mount helper) when encryption in transit is required on the share. NFS has no built-in user authentication; access is governed at the network layer, so unencrypted NFS traffic is exposed to eavesdropping and man-in-the-middle attacks on the path between client and share. Requiring encryption in transit ensures mount traffic is protected with TLS, preserving the confidentiality and integrity of data in motion.'
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 7.1.2 Ensure encryption in transit is required for File Shares (Microsoft.FileShares)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to audit. 3. Under the share''s Settings, select Configuration. 4. Confirm that Encryption in transit is Enabled. If it is Disabled, the file share is non-compliant. 5. Repeat for each Microsoft.FileShares NFS file share. Audit from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share, run the following command: az fileshare show --resource-group <resource-group> --name <file-share-name> --query encryptionInTransitRequired A compliant share returns Enabled. Any other value (for example, Disabled) is non- compliant. Audit from PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share, run the following command: Get-AzFileShare -ResourceGroupName <resource-group> -ResourceName <file- share-name> | Select-Object -ExpandProperty
+    EncryptionInTransitRequired A compliant share returns Enabled. Any other value (for example, Disabled) is non- compliant.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. In the Azure portal, search for and select File shares. 2. Select the NFS file share to remediate. 3. Under the share''s Settings, select Configuration. 4. Set Encryption in transit to Enabled. 5. Select Save. 6. Repeat for each file share requiring remediation. Remediate from Azure CLI If the file share extension is not installed, add it: az extension add --name fileshare For each file share requiring remediation, run: az fileshare update --resource-group <resource-group> --name <file-share- name> --encryption-in-transit-required Enabled Remediate from PowerShell If the Az.FileShare module is not installed, install it: Install-Module -Name Az.FileShare -Repository PSGallery For each file share requiring remediation, run: Update-AzFileShare -ResourceName <file-share-name> -ResourceGroupName <resource-group> -EncryptionInTransitRequired Enabled'

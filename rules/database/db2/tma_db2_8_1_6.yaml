@@ -1,0 +1,17 @@
+id: TMA-DB2-8.1.6
+title: Configure Secure TLS Cipher Suites (SSL_CIPHERSPECS)
+description: 'The SSL_CIPHERSPECS database manager configuration parameter controls which cipher suites are enabled by Db2. If it is unset, Db2 will enable a default list of ciphers. Default: At the Db2 server, the default cipher suites contain only recommended values when running in FIPS or STRICT_FIPS mode. Specifically the ...'
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- manual
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 8.1.6 Configure Secure TLS Cipher Suites (SSL_CIPHERSPECS)
+audit:
+  type: manual
+  command: 'There are 4 conditions that are required for the TLS_RSA_WITH_* cipher suites to be enabled. 1. TLS has been enabled 2. TLSV12 has been enabled 3. NOFIPS mode has been enabled 4. SSL_CIPHERSPECS is either blank (default) or lists one or more of TLS_RSA_WITH_* cipher suite. Perform the following to see if TLS is in use: 1. Check if TLS has been turned on. As the instance owner, run the following command. db2set -all DB2COMM 2. The value of DB2COMM will be returned in the output. If is does not contain SSL, then TLS is not in use and this condiion is a pass. [i] SSL Perform the following to ...'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to set SSL_CIPHERSPECS: 1. Attach to the Db2 instance. db2 => attach to <db2instance> 2. Run the following command to enable a specific set of ciphers within the Db2 server. db2 => update dbm cfg using SSL_CIPHERSPECS <LIST> Replace <LIST> with one or multiple of the following cipher suites. If multiple items are specified, separate them with a single comma and no spaces. o TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 o TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 o TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 o TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 o TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 o TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 o TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 o TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 The choice of which values to use will depend on the type of certificate that the server is using. Even if TLS 1.3 is in use, it is acceptable not to specify any TLS 1.3 ...'

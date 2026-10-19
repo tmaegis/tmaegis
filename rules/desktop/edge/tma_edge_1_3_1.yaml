@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.3.1
+title: 'Ensure ''Allow users to manage installed CA certificates'' is set to ''Enabled: Disallow users from managing certificates'''
+description: 'This policy configures the level of access users have when managing CA certificates in Microsoft Edge. The recommended state for this setting is: Enabled: Disallow users from managing certificates. Rationale: Configuring this policy to the recommended state prevents users from unknowingly installing certificates that grant excessive trust, such as root CAs from unverified sources. It also prevents system-trusted certificates from being tampered with by users. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:CACertificatemanagementAllowed (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: high
+tags:
+- edge
+- browser
+- cis-l1
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.3.1 Ensure ''Allow users to manage installed CA certificates'' is set to ''Enabled: Disallow users from managing certificates'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''CACertificatemanagementAllowed'' -ErrorAction SilentlyContinue).''CACertificatemanagementAllowed''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'CACertificatemanagementAllowed' -Value 2 -PropertyType DWord -Force | Out-Null

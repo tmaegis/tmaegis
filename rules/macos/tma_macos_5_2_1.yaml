@@ -1,0 +1,88 @@
+id: TMA-MACOS-5.2.1
+title: Ensure Password Account Lockout Threshold Is Configured
+description: 'The account lockout threshold specifies the amount of times a user can enter an incorrect password before a lockout will occur. Ensure that a lockout threshold is part of the password policy on the computer. Audit: policyAttributeMaximumFailedAuthentications must be set and <= 5.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 5.2.1 Ensure Password Account Lockout Threshold Is Configured
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    v=$(/usr/bin/pwpolicy -getaccountpolicies 2>/dev/null | /usr/bin/tail -n +2 | /usr/bin/xmllint --xpath '//dict/key[text()="policyAttributeMaximumFailedAuthentications"]/following-sibling::integer[1]/text()' - 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$v" | /usr/bin/head -1)
+    if [ -n "$v" ] && [ "$v" -le 5 ]; then echo compliant; else echo "policyAttributeMaximumFailedAuthentications=${v:-unset}"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    out=$(/usr/bin/pwpolicy -getaccountpolicies 2>/dev/null)
+    if printf '%s\n' "$out" | /usr/bin/grep -q policyCategory; then
+      echo "TMAegis: account policies already present; not overwriting (merge manually)" >&2; exit 1
+    fi
+    t=$(/usr/bin/mktemp /tmp/tma-pwpolicy.XXXXXX) || exit 1
+    /bin/cat > "$t" <<'EOPLIST'
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+    <dict>
+    <key>policyCategoryAuthentication</key>
+    <array><dict>
+    <key>policyContent</key>
+    <string>(policyAttributeFailedAuthentications &lt; policyAttributeMaximumFailedAuthentications) OR (policyAttributeCurrentTime &gt; policyAttributeLastFailedAuthenticationTime + autoEnableInSeconds)</string>
+    <key>policyIdentifier</key><string>tmaegis-lockout</string>
+    <key>policyParameters</key>
+    <dict><key>autoEnableInSeconds</key><integer>900</integer>
+    <key>policyAttributeMaximumFailedAuthentications</key><integer>5</integer></dict>
+    </dict></array>
+    <key>policyCategoryPasswordChange</key>
+    <array><dict>
+    <key>policyContent</key>
+    <string>policyAttributeCurrentTime &gt; policyAttributeLastPasswordChangeTime + (policyAttributeExpiresEveryNDays * 24 * 60 * 60)</string>
+    <key>policyIdentifier</key><string>tmaegis-expiry</string>
+    <key>policyParameters</key>
+    <dict><key>policyAttributeExpiresEveryNDays</key><integer>365</integer></dict>
+    </dict></array>
+    <key>policyCategoryPasswordContent</key>
+    <array>
+    <dict>
+    <key>policyContent</key>
+    <string>policyAttributePassword matches '.{15,}'</string>
+    <key>policyIdentifier</key><string>tmaegis-minlength</string>
+    <key>policyParameters</key>
+    <dict><key>minimumLength</key><integer>15</integer></dict>
+    </dict>
+    <dict>
+    <key>policyContent</key>
+    <string>policyAttributePassword in policyAttributePasswordHistory = 0</string>
+    <key>policyIdentifier</key><string>tmaegis-history</string>
+    <key>policyParameters</key>
+    <dict><key>policyAttributePasswordHistoryDepth</key><integer>24</integer></dict>
+    </dict>
+    </array>
+    </dict>
+    </plist>
+    EOPLIST
+    /usr/bin/pwpolicy -getaccountpolicies > "$TMA_BK/pwpolicy.$TMA_TS.bak" 2>/dev/null
+    /usr/bin/pwpolicy -setaccountpolicies "$t"; rc=$?
+    /bin/rm -f "$t"; exit $rc
+  guidance: "Profile (preferred): com.apple.mobiledevice.passwordpolicy maxFailedAttempts = <integer><value≤5></integer>. Terminal: sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy \"maxFailedLoginAttempts=<value≤5>\" ; sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy \"maxFailedLoginAttempts=5\"."

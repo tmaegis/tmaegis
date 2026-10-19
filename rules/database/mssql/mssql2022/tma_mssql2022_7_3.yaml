@@ -1,0 +1,19 @@
+id: TMA-MSSQL2022-7.3
+title: Ensure Database Backups are Encrypted
+description: Ensure Database Backups are Encrypted Databases may contain sensitive data. Backups of this data allow the data to easily leave the Enterprise and secure environments. Encrypting the backup makes accessing the data much more difficult.
+target: mssql
+level: 2
+severity: medium
+tags:
+- backup
+- encryption
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 7.3 Ensure Database Backups are Encrypted
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM msdb.dbo.backupset b INNER JOIN sys.databases d ON b.database_name = d.name WHERE b.key_algorithm IS NULL AND b.encryptor_type IS NULL AND d.is_encrypted = 0;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: SQL Server backups need to 'Back up to a new media set', not 'Back up to the existing media set' in order to allow for encryption. The backup option to Encrypt Backup can be implemented after a Certificate or Asymmetric key has been applied to the SQL Server for this purpose. Alternatively, encrypt the database with TDE. This automatically encrypts the backups as well. See 7.5

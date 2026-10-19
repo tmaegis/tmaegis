@@ -1,0 +1,23 @@
+id: TMA-OPENSHIFT-VIRT-1.9
+title: Ensure kubevirt cache directory permission is set to 755 or more restrictive
+description: 'Setting the kubevirt private directory to 755 or more restrictive limits access to security related administrative functionality to approved administrators. Audit: Passes when /var/run/kubevirt-private in every virt-handler pod is mode 755 or more restrictive; a pod where the directory does not exist is not applicable. Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- file-permissions
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.9 Ensure kubevirt cache directory permission is set to 755 or more restrictive
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; bad=0; n=0; for pod in $(oc get pod -n openshift-cnv -l kubevirt.io=virt-handler --no-headers -o custom-columns=":metadata.name" 2>/dev/null); do n=$((n+1)); m=$(oc exec -n openshift-cnv "$pod" -- sh -c '[ -e /var/run/kubevirt-private ] && stat -c %a /var/run/kubevirt-private || echo absent' 2>/dev/null); case "$m" in absent) ;; [0-7][0-7][0-7]|[0-7][0-7][0-7][0-7]) [ $((8#$m & ~8#755 & 8#7777)) -eq 0 ] || bad=1;; *) bad=1;; esac; done; [ "$n" -gt 0 ] || exit 1; [ "$bad" -eq 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: 'Update the permissions on each virt-handller using : chmod $ oc exec <virt-handler-pod> -ti -n openshift-cnv -- chmod 755 /var/run/kubevirt-private'

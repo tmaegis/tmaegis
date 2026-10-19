@@ -1,0 +1,20 @@
+id: TMA-AKS-4.6.3
+title: The default namespace should not be used
+description: Avoid placing application workloads in the default namespace, and instead deploy them into dedicated namespaces that reflect the intended team, application, or environment boundary. In AKS, namespaces are the built-in way to logically divide cluster resources and scope access, while the default namespace exists mainly so a cluster can be used immediately without first creating a new namespace. Requires kubectl read access; fails when the default namespace holds objects other than the kubernetes Service, kube-root-ca.crt ConfigMap and default ServiceAccount.
+target: aks
+level: 2
+severity: low
+tags:
+- aks
+- policies
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.6.3 The default namespace should not be used
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods,services,configmaps,secrets,serviceaccounts,deployments,statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings -n default -o name) || exit 1
+    bad=$(printf '%s\n' "$out" | grep -v '^$' | sed 's#^\([a-z]*\)\.[^/]*/#\1/#' | grep -Evx 'service/kubernetes|configmap/kube-root-ca\.crt|serviceaccount/default')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create purpose-specific namespaces for teams, applications, and environments, then require all new resources to be deployed into those namespaces instead of default. In AKS, namespaces are the logical boundary for workload administration, so remediation should include migrating existing resources into managed namespaces, applying namespace-scoped RBAC and other controls, and reserving cluster-wide access for true platform administrators only.

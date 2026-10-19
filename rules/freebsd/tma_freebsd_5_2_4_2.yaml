@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-5.2.4.2
+title: Ensure audit log files are mode 0640 or less permissive
+description: 'Audit log files contain information about the system and system activity. Access to audit records can reveal system and configuration data to attackers, potentially compromising its confidentiality. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- audit
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 5.2.4.2 Ensure audit log files are mode 0640 or less permissive
+audit:
+  type: command
+  command: 'command -v find >/dev/null 2>&1 || exit 1; d=$(awk -F: ''/^dir:/ {print $2; exit}'' /etc/security/audit_control 2>/dev/null); [ -n "$d" ] && [ -d "$d" ] || exit 1; out=$( { find "$d" -type f \( -perm -0100 -o -perm -0020 -o -perm -0010 -o -perm -0004 -o -perm -0002 -o -perm -0001 \) -exec stat -Lf "%N %Lp" {} + ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to remove more permissive mode than 0640 from audit log files: # [ -f /etc/security/audit_control ] && find "$(awk -F ":" ''/^dir/ {print $2}'' /etc/security/audit_control | xargs)" -type f \( ! -perm 600 -a ! -perm 0400 -a ! -perm 0200 -a ! -perm 0000 -a ! -perm 0640 -a ! -perm 0440 -a ! - perm 0040 \) -exec chmod u-x,g-wx,o-rwx {} +'

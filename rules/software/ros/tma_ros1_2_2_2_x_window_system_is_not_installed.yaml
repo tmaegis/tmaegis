@@ -1,0 +1,23 @@
+id: TMA-ROS1-2.2.2
+title: Ensure X Window System is not installed
+description: The X Window System provides a Graphical User Interface (GUI) where users can have multiple windows in which to run programs and various add on. The X Windows system is typically used on workstations where users login, but not on servers where users typically do not login. The audit requires no xserver-xorg* package to be installed (dpkg-query). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: low
+tags:
+- ros
+- ros1
+- melodic
+- services
+reference: CIS ROS Melodic Benchmark v1.0.0 - 2.2.2 Ensure X Window System is not installed
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v dpkg-query >/dev/null 2>&1 || exit 1
+    x=$(dpkg-query -W -f='${Status} ${Package}\n' 'xserver-xorg*' 2>/dev/null | awk '/ installed /{print $NF}')
+    [ -z "$x" ] && echo compliant || echo "installed: $(printf '%s ' $x)"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Remove the X Windows System packages: apt purge xserver-xorg*'

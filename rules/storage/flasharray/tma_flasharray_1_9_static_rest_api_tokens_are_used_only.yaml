@@ -1,0 +1,17 @@
+id: TMA-FLASHARRAY-1.9
+title: Ensure static REST API tokens are used only when necessary and configured to expire periodically
+description: 'FlashArray supports administrators creating static API for REST API access. This should only be utilized in cases where OAuth usage is not feasible. Everpure recommends the following: ; REST API tokens can be configured to expire. If REST API tokens are configured, configure them to expire periodically. Manual review in the Purity//FA GUI or CLI (organization-specific or per-object evidence).'
+target: flasharray
+level: 1
+severity: medium
+tags:
+- flasharray
+- storage
+- access-control
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 1.9 Ensure static REST API tokens are used only when necessary and configured to expire periodically
+audit:
+  type: manual
+  command: 'From the CLI: ; Run the command pureadmin list --api-token to list all accounts and their API token status. ; Review the Created and Expires columns to identify tokens that lack an expiration date (indicated by a -) or have existed longer than the organization''s rotation policy allows. ; Verify that each token-holding account is assigned the minimum required management access policy.'
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, delete unauthorized or stale API tokens, and ensure that any newly issued tokens are configured with a strict validity period (timeout) so they expire automatically. From the GUI: ; Navigate to Settings > Access > Users and Policies. ; In the Users panel, click the Edit icon for the user you want to modify. ; To delete a token: Select Remove API Token... and click Remove to confirm. ; To rotate or create an expiring token: Select Create API Token... (or Recreate API Token... to overwrite an existing one). In the prompt, enter a validity period in the Expires In field so the token does not live indefinitely, then click Create. From the CLI:'

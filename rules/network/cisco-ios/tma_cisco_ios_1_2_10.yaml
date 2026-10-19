@@ -1,0 +1,18 @@
+id: TMA-CISCO-IOS-1.2.10
+title: Set 'exec-timeout' to less than or equal to 10 min on 'ip http'
+description: If no input is detected during the interval, the EXEC facility resumes the current connection. If no connections exist, the EXEC facility returns the terminal to the idle state and disconnects the incoming session. This prevents unauthorized users from misusing abandoned sessions. For example, if the network administrator leaves for the day and leaves a computer open with an enabled login session accessible. Fails when an HTTP(S) server is enabled without 'ip http timeout-policy idle', or when the idle value exceeds 600 seconds. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all' or 'show startup-config').
+target: cisco-ios
+level: 1
+severity: high
+tags:
+- cisco-ios
+- network
+- ntp
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.2.10 Set 'exec-timeout' to less than or equal to 10 min on 'ip http'
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^i \t\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^\-\n]|-(?:$|[^p\n]|p(?:$|[^o\n]|o(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^y\n]|y(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^d\n]|d(?:$|[^l\n]|l(?:$|[^e\n]|e(?:$|[^ \n]))))))))))))))))))))))))))))[^\n]*\n)*ip http (?:secure-)?server[ \t\r]*(?:\n(?:[ \t]*(?:$|[^i \t\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^m\n]|m(?:$|[^e\n]|e(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^\-\n]|-(?:$|[^p\n]|p(?:$|[^o\n]|o(?:$|[^l\n]|l(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^y\n]|y(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^d\n]|d(?:$|[^l\n]|l(?:$|[^e\n]|e(?:$|[^ \n]))))))))))))))))))))))))))))[^\n]*))*\n?\z)|(?:^ip http timeout-policy idle (?:60[1-9]|6[1-9]\d|[7-9]\d\d|\d{4,})\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: Configure device timeout (10 minutes or less) to disconnect sessions after a fixed idle time. ip http timeout-policy idle 600 life {nnnn} requests {nn}

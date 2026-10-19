@@ -1,0 +1,26 @@
+id: TMA-FORTIGATE-7.3.3
+title: Encrypt Log Transmission to Syslog
+description: Enable encryption for logs that are sent to FortiAnalyzer or FortiManager. PASS requires syslog mode reliable and enc-algorithm high in config log syslogd setting (the CIS text says 'syslog setting'/'reliable'; on FortiOS 7.4 these are syslogd 'mode reliable'). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: high
+tags:
+- fortigate
+- logging
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 7.3.3 Encrypt Log Transmission to Syslog
+audit:
+  type: config_regex
+  pattern: (?m)^config log syslogd setting\n(?:(?:[ \t]+[^\n]*\n)*?[ \t]+set mode reliable[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set enc-algorithm high[ \t]*$|(?:[ \t]+[^\n]*\n)*?[ \t]+set enc-algorithm high[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+set mode reliable[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    config log syslogd setting
+        set mode reliable
+        set enc-algorithm high
+    end
+    # CIS guidance:
+    Secure log transfer settings can only be configured on CLI:
+    config log syslog setting
+        set reliable enable
+        set enc-algorithm high
+    end

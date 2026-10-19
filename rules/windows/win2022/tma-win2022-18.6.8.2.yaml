@@ -1,0 +1,21 @@
+id: TMA-WIN2022-18.6.8.2
+title: Ensure 'Require Encryption' is set to 'Enabled'
+description: 'This policy setting controls whether the SMB client will require encryption. The recommended state for this setting is: Enabled. Warning: The SMB server must support and have SMB encryption enabled (requires SMB v3.0 or newer).'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.6.8.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation'' -Name ''RequireEncryption'' -ErrorAction SilentlyContinue).''RequireEncryption''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''RequireEncryption='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation' -Name 'RequireEncryption' -Value 1 -PropertyType DWord -Force | Out-Null

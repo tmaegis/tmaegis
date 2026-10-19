@@ -1,0 +1,24 @@
+id: TMA-MACOS14-2.3.4.2
+title: Ensure Time Machine Volumes Are Encrypted If Time Machine Is Enabled
+description: One of the most important security tools for data protection on macOS is FileVault. With encryption in place, it makes it difficult for an outside party to access your data if they get physical possession of the computer. One very large weakness in data protection with FileVault is the level of protection on backup volumes. If the internal drive is encrypted but the external backup volume that goes home in the same laptop bag is not, it is self-defeating. Apple tries to make this mistake easily avoided by providing a checkbox to enable encryption when setting up a Time Machine backup. Using this option does require some password management, particularly if a large drive is used with multiple computers. A unique, complex password to unlock the drive can be stored in keychains on multiple systems for ease of use. While some portable drives may contain non-sensitive data and encryption m...
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- encryption
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.3.4.2 Ensure Time Machine Volumes Are Encrypted If Time Machine Is Enabled
+audit:
+  type: command
+  command: '[ -x /usr/bin/defaults ] || exit 1
+
+    out=$(/usr/bin/defaults read /Library/Preferences/com.apple.TimeMachine.plist 2>/dev/null)
+
+    printf ''%s\n'' "$out" | /usr/bin/grep -c NotEncrypted || true'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Graphical Method: Perform the following steps to enable encryption on the Time Machine drive: 1. Open System Settings 2. Select General 3. Select Time Machine 4. Select the unencrypted drive 5. Select - to forget that drive as a destination 6. Select + to add a different drive as the destination 7. Select Set Up Disk... 8. Set Encrypt Backup to enabled 9. Enter a password in the New Password and the same password in the Re-enter Password fields 10. A password hint is required, but it is recommended that you do not use any identifying information for the password Note: In macOS 12.0 Monterey and previous, the existing Time Machine drive could have encryption added without formatting it. This is no longer possible in macOS 13.0 Ventura. If you wish to keep previous backups from the unencrypted volume, you will need to manually move those files over to the new encrypted drive.'

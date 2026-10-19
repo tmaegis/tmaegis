@@ -1,0 +1,20 @@
+id: TMA-WIN2025-17.2.2
+title: Ensure 'Audit Computer Account Management' is set to include 'Success' (DC only)
+description: 'This subcategory reports each event of computer account management, such as when a computer account is created, changed, deleted, renamed, disabled, or enabled. Events for this subcategory include: • 4741: A computer account was created. • 4742: A computer account was changed. • 4743: A computer account was deleted. The recommended state for this setting is to include: Success.'
+target: windows
+os_family:
+- windows-server-2025-dc
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 17.2.2
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9236-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9236-69ae-11d9-bed3-505054503030}' /success:enable

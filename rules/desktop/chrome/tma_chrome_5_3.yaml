@@ -1,0 +1,18 @@
+id: TMA-CHROME-5.3
+title: 'Ensure ''Set disk cache size, in bytes'' is set to ''Enabled: 250609664'''
+description: 'This setting controls the size of the cache, in bytes, used to store files on the disk. The recommended state for this setting is: Enabled: 250609664 or greater NOTE The value specified in this setting isn''t a hard boundary but rather a suggestion to the caching system; any value below a few megabytes is too small and will be rounded up to a reasonable minimum. Rationale: Having enough disk space for browser cache is important for a computer investigation and for investigators such as Computer Forensics Analysts to be able to retrieve pertinent information to the investigation. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DiskCacheSize (REG_DWORD); compliant when it is 250609664. Remediation writes 250609664 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 5.3 Ensure ''Set disk cache size, in bytes'' is set to ''Enabled: 250609664'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DiskCacheSize'' -ErrorAction SilentlyContinue).''DiskCacheSize''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(250609664) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DiskCacheSize' -Value 250609664 -PropertyType DWord -Force | Out-Null

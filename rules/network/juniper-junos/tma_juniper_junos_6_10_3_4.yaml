@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.10.3.4
+title: Ensure XNM-SSL SSLv3 Support is Not Set
+description: If the XNM-SSL service is configured, SSLv3 should not be enabled. JUNOScript can be configured to use SSL/TLS transport to prevent the exposure of sensitive data and authentication details on the network. If configured the XNM-SSL service will provide services on port TCP/3220. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.3.4 Ensure XNM-SSL SSLv3 Support is Not Set
+audit:
+  type: config_regex
+  pattern: (?m)^set system services xnm-ssl sslv3-support\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! XNM-SSL SSLv3 Support can be disabled by issuing the following command from the hierarchy;
+    delete system services xnm-ssl sslv3-support

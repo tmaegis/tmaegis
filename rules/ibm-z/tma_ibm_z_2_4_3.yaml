@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.4.3
+title: Ensure that access to SURROGAT resources is controlled
+description: Surrogate users have the ability to submit jobs on behalf of another user (the execution user) without specifying the execution user's password. Jobs submitted by surrogate users run with the identity of the execution user. Failure to control surrogate users could result in unauthorized personnel accessing sensitive resources. This exposure may threaten the integrity and availability of the operating system environment and compromise the confidentiality of customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.4.3 Ensure that access to SURROGAT resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that SURROGAT appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that SURROGAT appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that SURROGAT appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the SURROGAT entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify That any profile ... (full steps: CIS section 2.4.3)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(SURROGAT) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(SURROGAT) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(SURROGAT) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER command: RALTER SURROGAT <profile> + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(SURROGAT) To remove a non-compliant access list entry use the RACF PERMIT command: PERMIT <profile> CLASS(SURROGAT) + DELETE ID(<non-compliant>) SETROPTS REFRESH RACLIST(SURROGAT) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when making changes to GAC entries. To disable GAC for a class you will need to use both
+    RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the class: RDELETE GLOBAL <class> SETROPTS REFRESH GLOBAL(<class>) SETROPTS NOGLOBAL(<class>)'

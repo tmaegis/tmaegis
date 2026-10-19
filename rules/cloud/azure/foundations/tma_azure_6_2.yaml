@@ -1,0 +1,17 @@
+id: TMA-AZURE-6.2
+title: Ensure that Resource Locks are set for Mission-Critical Azure Resources
+description: Resource Manager Locks provide a way for administrators to lock down Azure resources to prevent deletion of, or modifications to, a resource. These locks sit outside of the Role Based Access Controls (RBAC) hierarchy and, when applied, will place restrictions on the resource for all users. These locks are very useful when there is an important resource in a subscription that users should not be able to delete or change. Locks can help prevent accidental and malicious changes or deletion. While an automated assessment procedure exists for this recommendation, the assessment status remains manual. Determining resources that require resource locks depends on the context and requirements of each organization and environment. As an administrator, it may be necessary to lock a subscription, resource group, or resource to prevent other users in the organization from accidentally deleting or...
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 6.2 Ensure that Resource Locks are set for Mission-Critical Azure Resources
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Navigate to the specific Azure Resource or Resource Group. 2. Click on Locks. 3. Ensure the lock is defined with name and description, with type Read-only or Delete as appropriate. Audit from Azure CLI Review the list of all locks set currently: az lock list --resource-group <resourcegroupname> --resource-name <resourcename> --namespace <Namespace> --resource-type <type> --parent "" Audit from PowerShell Run the following command to list all resources and loop through those resources to check for applied locks. Requires Az PowerShell Module (not supported in Graph PowerShell at this time). Connect-AzAccount $resources = Get-AzResource $complianceResults = @() foreach ($resource in $resources) { $locks = Get-AzResourceLock -ResourceName $resource.Name ` -ResourceType $resource.ResourceType ` -ResourceGroupName $resource.ResourceGroupName foreach ($lock in $locks) { $isCompliant = $false if ($lock.Properties.Level -eq "CanNotDelete" -or $lock.Properties.Level
+    -eq "ReadOnly") { $isCompliant = $true } $complianceResults += [PSCustomObject]@{ ResourceName = $resource.Name ResourceGroup = $resource.ResourceGroupName ResourceType = $resource.ResourceType Lock...'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Navigate to the specific Azure Resource or Resource Group. 2. For each mission critical resource, click on Locks. 3. Click Add. 4. Give the lock a name and a description, then select the type, Read-only or Delete as appropriate. 5. Click OK. Remediate from Azure CLI To lock a resource, provide the name of the resource, its resource type, and its resource group name. az lock create --name <LockName> --lock-type <CanNotDelete/Read-only> -- resource-group <resourceGroupName> --resource-name <resourceName> --resource- type <resourceType> Remediate from PowerShell Get-AzResourceLock -ResourceName <Resource Name> -ResourceType <Resource Type> -ResourceGroupName <Resource Group Name> -Locktype <CanNotDelete/Read- only>

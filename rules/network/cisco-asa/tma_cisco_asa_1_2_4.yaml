@@ -1,0 +1,21 @@
+id: TMA-CISCO-ASA-1.2.4
+title: Ensure 'Unused Interfaces' is disable
+description: Disables the unused interfaces. Shutting down the unused interfaces is a complement to physical security. In fact, an attacker connecting physically to an unused port of the security appliance can use the interface to gain access to the device if the relevant interface has not been disabled ... Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.2.4 Ensure 'Unused Interfaces' is disable
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. - Step 1: Run the following command to check if there are unsused ports that have not been disabled. hostname#sh int ip brief | in __down Example: This first command lists all the interfaces Corp-FW# show int ip brief Interface IP-Address OK? Method Status Protocol GigabitEthernet0/1 unassigned YES unset up up GigabitEthernet0/1.201 172.16.61.1 YES CONFIG up up GigabitEthernet0/1.202 172.16.62.171 YES CONFIG up up GigabitEthernet1/0 unassigned YES unset administratively down down GigabitEthernet1/1 unassigned YES unset ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Identify the physical name <interface_physical_name> of the unused interfaces that are not disabled
+    - Step 2: For each of the identified interfaces, run the following command
+    interface <interface_physical_name>
+    shutdown

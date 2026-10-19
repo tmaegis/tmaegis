@@ -1,0 +1,16 @@
+id: TMA-TDSQL-12.7
+title: Ensure ZooKeeper Orphan Node Cleanup Is Configured
+description: 'TDSQL creates many task/alert/state ZNodes in ZooKeeper. Abnormal exits or network jitter can produce orphan nodes, and long-term accumulation causes: ZK memory bloat, affecting overall availability Residual alert/task nodes leaking historical sensitive information Historical credential/password fields remaining readable long-term TDSQL provides two cleanup mechanisms: <clear_zknode value="15"/> - cleans up ordinary ...'
+target: tdsql
+level: 1
+severity: low
+tags:
+- tdsql
+- zookeeper
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 12.7 Ensure ZooKeeper Orphan Node Cleanup Is Configured
+audit:
+  type: manual
+  command: '# Check scheduler.xml grep -E ''(clear_zknode|alarm_zknode)'' /path/to/tdsql/conf/scheduler.xml # Check for residual historical nodes in ZK (should not exceed recent counts) zkCli.sh -server <zk_ip>:<port> ls /tdsql/job ls /tdsql/alarm'
+remediation:
+  type: iac_patch
+  command: <!-- Enable orphan node cleanup (retain 15 days) --> <clear_zknode value="15"/> <!-- Enable alert node cleanup (24-hour expiration, checked hourly) --> <alarm_zknode open_clear="1" expire_time="86400" check_interval="3600"/>

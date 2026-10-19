@@ -1,0 +1,33 @@
+id: TMA-ORACLE-DB-4.2
+title: Ensure No Custom 'ORACLE_MAINTAINED' Users Exist
+description: Oracle-maintained accounts should not be created. The ORACLE_MAINTAINED flag is used to identify such accounts. Only users provided by Oracle should have this flag set to Y. Custom database users should not be assigned this designation. Uses the benchmark list of expected Oracle-maintained accounts for 23ai; newer APEX schema versions must be added to the list. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- authentication
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.2 Ensure No Custom 'ORACLE_MAINTAINED' Users Exist
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from cdb_users c
+    where c.oracle_maintained = 'Y'
+    and c.username not in (
+      'ANONYMOUS','APEX_LISTENER','APEX_PUBLIC_USER','APEX_REST_PUBLIC_USER','APEX_230200','APEX_240100','APEX_PUBLIC_ROUTER',
+      'APPQOSSYS','AUDSYS','CTXSYS','DBSFWUSER','DBSNMP','DGPDB_INT','DIP','DVF','DVSYS','FLOWS_FILES','GGSHAREDCAP','GGSYS',
+      'GSMADMIN_INTERNAL','GSMCATUSER','GSMROOTUSER','GSMUSER','LBACSYS','MDDATA','MDSYS','OJVMSYS','OLAPSYS','OUTLN',
+      'REMOTE_SCHEDULER_AGENT','SYS','SYSBACKUP','SYSDG','SYSKM','SYSRAC','SYSTEM','SYS$UMF','VECSYS','WMSYS','XDB','XS$NULL');
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'To remediate this setting, perform the following steps: <Export the User> DROP USER <USERNAME>; <Recreate the user as non-Oracle-maintained user using import utilities>'

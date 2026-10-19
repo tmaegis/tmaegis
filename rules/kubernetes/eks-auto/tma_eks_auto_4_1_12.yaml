@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-4.1.12
+title: Minimize access to the service account token creation
+description: Access to service account token creation in EKS Auto Mode should be limited to tightly controlled administrative or platform identities. Service accounts are a core Kubernetes identity type in EKS, projected service account tokens are used by workloads to authenticate, and Pods that do not need Kubernetes API access can avoid unnecessary token exposure by disabling automatic token mounting. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.1.12 Minimize access to the service account token creation
+audit:
+  type: manual
+  command: Begin by confirming that service account token creation in EKS Auto Mode is limited to identities with an approved administrative or workload identity need. Review token issuance through native Kubernetes RBAC, not through access entries, because access entries govern IAM principal access to the Kubernetes API while service account tokens remain Kubernetes credentials used by workloads and service accounts.
+remediation:
+  type: iac_patch
+  command: Review all Role and ClusterRole definitions for access to the serviceaccounts/token subresource, and remove that permission from any user, group, CI/CD identity, or workload service account that does not have a documented operational requirement. In EKS, service account token issuance remains a Kubernetes RBAC concern, while IAM principal access to the Kubernetes API is managed separately through access entries and associated access policies. Token creation rights should remain limited to tightly controlled administrative or platform identities, because projected service account tokens are usable Kubernetes credentials and can also participate in workload identity flows such as EKS Pod Identity, or any remaining IRSA configuration already in use.

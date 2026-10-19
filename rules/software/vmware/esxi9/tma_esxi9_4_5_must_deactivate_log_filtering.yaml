@@ -1,0 +1,38 @@
+id: TMA-ESXI9-4.5
+title: Host must deactivate log filtering
+description: Log filtering can be employed to diminish the frequency of repetitive log entries and to preclude specific log events entirely. By employing the Syslog.global.logFilters configuration parameter, one can stipulate filtering criteria, which when met, will cause the designated log events to be excluded from the system logs. The audit reads Syslog.global.logFiltersEnable with esxcli and requires false (0). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 4.5 Host must deactivate log filtering
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Syslog/global/logFiltersEnable 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/Syslog/global/logFiltersEnable: no integer value'; exit 1 ;; esac
+    if [ "$v" -eq 0 ]; then echo compliant; else echo "/Syslog/global/logFiltersEnable = $v (expected false/0)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Syslog/global/logFiltersEnable -i 0
+  guidance: "1. Disable log filtering 2. execute command: esxcli system syslog config logfilter set -- log-filtering-enabled=false 3. execute: Get-VMHost | Get-AdvancedSetting -Name \"Syslog.global.logFiltersEnable\" passing value is: False"

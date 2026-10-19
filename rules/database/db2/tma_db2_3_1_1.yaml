@@ -1,0 +1,34 @@
+id: TMA-DB2-3.1.1
+title: Require Explicit Authorization for Cataloging (CATALOG_NOAUTH)
+description: Db2 can be configured to allow users that do not possess the SYSADM authority to catalog and uncatalog databases and nodes. It is recommended that the CATALOG_NOAUTH parameter be set to NO. Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance's configuration.
+target: db2
+level: 1
+severity: medium
+tags:
+- db2
+- database
+- instance
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 3.1.1 Require Explicit Authorization for Cataloging (CATALOG_NOAUTH)
+audit:
+  type: command
+  command: 'out=$(db2 get dbm cfg 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''{ if (match($0, /\([A-Z0-9_]+\) *=/)) { k = substr($0, RSTART + 1, RLENGTH); sub(/\).*/, "", k); v = $0; sub(/^[^=]*=/, "", v); gsub(/[ \t]/, "", v); c[k] = v } } END { if (c["CATALOG_NOAUTH"] == "NO") print "compliant"; else print "noncompliant: " c["CATALOG_NOAUTH"] }'''
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v db2 >/dev/null 2>&1 || exit 0
+    db2 update dbm cfg using CATALOG_NOAUTH NO
+  guidance: "Perform the following to require explicit authorization to catalog and uncatalog databases and nodes. 1. Attach to the Db2 instance db2 => attach to <db2instance> 2. Run the following command: db2 => update database manager configuration using catalog_noauth no"

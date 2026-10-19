@@ -1,0 +1,76 @@
+! Synthetic sample: Arista EOS running-config (hardened). Not a secure template.
+! Command: show running-config
+!
+hostname sw-edge-01
+dns domain example.com
+ip name-server vrf MGMT 192.0.2.53
+!
+service routing protocols model multi-agent
+!
+ntp server vrf MGMT 192.0.2.123 prefer
+!
+logging vrf MGMT host 192.0.2.50
+logging buffered 64000 informational
+!
+!
+vrf instance MGMT
+!
+vlan 1
+   state suspend
+!
+vlan 10
+   name USERS
+!
+no aaa root
+!
+enable secret sha512 $6$REDACTED$FAKEHASHFAKEHASHFAKEHASHFAKEHASH
+!
+username admin privilege 15 role network-admin secret sha512 $6$REDACTED$FAKEHASHFAKEHASHFAKEHASH
+username emergency privilege 15 role network-admin secret sha512 $6$REDACTED$FAKEHASHFAKEHASHFAKEHASH
+!
+management security
+   password encryption reversible aes-256-gcm
+   password minimum length 12
+   minimum length 12
+!
+tacacs-server host 192.0.2.60 vrf MGMT key 7 REDACTED
+!
+aaa group server tacacs+ TACGRP
+   server 192.0.2.60 vrf MGMT
+!
+aaa authentication login default group TACGRP local
+aaa authorization exec default group TACGRP local
+aaa authorization commands all default group TACGRP local
+aaa accounting commands all default start-stop group TACGRP
+!
+snmp-server vrf MGMT
+no snmp-server vrf default
+snmp-server contact noc@example.com
+snmp-server group NMS v3 priv
+snmp-server user nmsuser NMS v3 auth sha REDACTED priv aes REDACTED
+!
+management console
+   idle-timeout 5
+!
+management ssh
+   idle-timeout 10
+   authentication mode keyboard-interactive
+   vrf MGMT
+      no shutdown
+!
+management telnet
+   shutdown
+!
+banner login
+Authorized use only. Activity is monitored.
+EOF
+!
+interface Management1
+   vrf MGMT
+   ip address 198.51.100.10/24
+!
+interface Ethernet1
+   description uplink
+   switchport mode trunk
+!
+end

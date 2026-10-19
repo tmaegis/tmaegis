@@ -1,0 +1,25 @@
+id: TMA-F5-BIGIP-4.2
+title: Ensure 'Idle timeout' is less than or equal to 10 minutes for SSH connections
+description: 'To set an idle timeout for SSH sessions PASS requires sys sshd inactivity-timeout between 1 and 600 seconds. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- management
+reference: CIS F5 Networks Benchmark v1.0.0 - 4.2 Ensure 'Idle timeout' is less than or equal to 10 minutes for SSH connections
+audit:
+  type: config_regex
+  pattern: (?m)^sys sshd \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+inactivity-timeout (?:[1-9]\d?|[1-5]\d\d|600)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys sshd inactivity-timeout 600
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to tmsh by typing the following command:
+    tmsh
+    2-To configure an automatic logout idle time (10 minutes) for SSH sessions, use the following command syntax:
+    modify /sys sshd inactivity-timeout 600
+    3-Save the change by typing the following command:
+    save /sys config

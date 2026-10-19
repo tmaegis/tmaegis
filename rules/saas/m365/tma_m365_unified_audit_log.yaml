@@ -1,0 +1,17 @@
+id: TMA-M365-UNIFIED-AUDIT-LOG
+title: Ensure Microsoft 365 unified audit log search is enabled
+description: 'The unified audit log is the primary record of user and admin activity across Exchange, SharePoint, Entra ID and Teams. Requires an already-connected Exchange Online session: Install-Module ExchangeOnlineManagement; Connect-ExchangeOnline (View-Only Organization Management is sufficient). The audit throws if no session exists.'
+target: m365
+level: 1
+severity: high
+tags:
+- m365
+- logging
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - Audit / Microsoft 365 audit log search (verify section number for your release)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-ConnectionInformation -ErrorAction SilentlyContinue) -or -not (Get-ConnectionInformation)) { throw ''Not connected: run Connect-ExchangeOnline first'' }; $c = Get-AdminAuditLogConfig -ErrorAction Stop; if ($c.UnifiedAuditLogIngestionEnabled -eq $true) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true (or Microsoft Purview portal > Audit > Start recording user and admin activity).

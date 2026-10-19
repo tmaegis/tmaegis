@@ -1,0 +1,23 @@
+id: TMA-WIN2019-2.3.10.9
+title: 'Ensure ''Network access: Remotely accessible registry paths and sub-paths'' is configured'
+description: 'This policy setting determines which registry paths and sub-paths will be accessible over the network, regardless of the users or groups listed in the access control list (ACL) of the winreg registry key. The recommended state for this setting is: System\CurrentControlSet\Control\Print\Printers System\CurrentControlSet\Services\Eventlog Software\Microsoft\OLAP Server Software\Microsoft\Windows NT\CurrentVersion\Print Software\Microsoft\Windows NT\CurrentVersion\Windows System\CurrentControlSet\Control\ContentIndex System\CurrentControlSet\Control\Terminal Server System\CurrentControlSet\Contro'
+target: windows
+os_family:
+- windows-server-2019-dc
+- windows-server-2019-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 2.3.10.9
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedPaths'' -Name ''Machine'' -ErrorAction SilentlyContinue).''Machine''; if (-not ((@($v) | Where-Object { $_ } | ForEach-Object { $_.ToLower() } | Sort-Object) -join '','') -eq ''software\microsoft\olap server,software\microsoft\windows nt\currentversion\perflib,software\microsoft\windows nt\currentversion\print,software\microsoft\windows nt\currentversion\windows,system\currentcontrols et\services\eventlog,system\currentcontrolset\control\contentinde x,system\currentcontrolset\control\print\printers,system\currentcontrolset\control\terminal server,system\currentcontrolset\control\terminal server\defaultuserconfiguration,system\currentcontrolset\control\terminal server\userconfig,system\currentcontrolset\ser vices\wins,system\currentcontrolset\services\certsvc,system\currentcontrolset\services\sysmonlog'') { $bad += ''Machine='' + $v }; if ($bad.Count
+    -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedPaths')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedPaths' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedPaths' -Name 'Machine' -Value @('System\CurrentControlSet\Control\Print\Printers','System\CurrentControlS et\Services\Eventlog','Software\Microsoft\OLAP Server','Software\Microsoft\Windows NT\CurrentVersion\Print','Software\Microsoft\Windows NT\CurrentVersion\Windows','System\CurrentControlSet\Control\ContentInde x','System\CurrentControlSet\Control\Terminal Server','System\CurrentControlSet\Control\Terminal Server\UserConfig','System\CurrentControlSet\Control\Terminal Server\DefaultUserConfiguration','Software\Microsoft\Windows NT\CurrentVersion\Perflib','System\CurrentControlSet\Services\SysmonLog','System\CurrentControlSet\Services\CertSvc','System\CurrentControlSet\Ser
+    vices\WINS') -PropertyType MultiString -Force | Out-Null

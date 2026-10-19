@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.75
+title: 'Ensure ''Configure InPrivate mode availability'' is set to ''Enabled: InPrivate mode disabled'''
+description: 'This policy setting controls whether Edge InPrivate mode is available or even forced for the user. The recommended state for this setting is: Enabled: InPrivate mode disabled. Rationale: Disabling InPrivate mode for Microsoft Edge will ensure that browsing data is recorded on the system which may be important for forensics. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\Edge:InPrivateModeAvailability (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: edge
+level: 1
+severity: medium
+tags:
+- edge
+- browser
+- cis-l1
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.75 Ensure ''Configure InPrivate mode availability'' is set to ''Enabled: InPrivate mode disabled'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''InPrivateModeAvailability'' -ErrorAction SilentlyContinue).''InPrivateModeAvailability''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'InPrivateModeAvailability' -Value 1 -PropertyType DWord -Force | Out-Null

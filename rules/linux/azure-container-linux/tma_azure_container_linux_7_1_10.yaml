@@ -1,0 +1,18 @@
+id: TMA-AZURE-CONTAINER-LINUX-7.1.10
+title: Ensure access to /etc/security/opasswd is configured
+description: '/etc/security/opasswd and it''s backup /etc/security/opasswd.old hold user''s previous passwords if pam_unix or pam_pwhistory is in use on the system Audit: Passes when /etc/security/opasswd and /etc/security/opasswd.old, if present, have mode 600 or more restrictive and are owned by root:root.'
+target: azure-container-linux
+level: 1
+severity: medium
+tags:
+- azure-container-linux
+- file-permissions
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 7.1.10 Ensure access to /etc/security/opasswd is configured
+audit:
+  type: command
+  shell: bash
+  command: bad=0; for f in /etc/security/opasswd /etc/security/opasswd.old; do [ -e $f ] || continue; m=$(stat -Lc %a $f); [ $((8#$m & 8#177)) -eq 0 ] && [ "$(stat -Lc %u:%g $f)" = 0:0 ] || bad=1; done; [ $bad -eq 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to remove excess permissions, set owner, and set group on /etc/security/opasswd and /etc/security/opasswd.old if they exist: # [ -e "/etc/security/opasswd" ] && chmod u-x,go-rwx /etc/security/opasswd # [ -e "/etc/security/opasswd" ] && chown root:root /etc/security/opasswd # [ -e "/etc/security/opasswd.old" ] && chmod u-x,go-rwx /etc/security/opasswd.old # [ -e "/etc/security/opasswd.old" ] && chown root:root /etc/security/opasswd.old'

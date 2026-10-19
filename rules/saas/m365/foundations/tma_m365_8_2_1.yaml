@@ -1,0 +1,17 @@
+id: TMA-M365-8.2.1
+title: Ensure external domains are restricted in the Teams admin center
+description: 'This policy controls whether external domains are allowed, blocked or permitted based on an allowlist or denylist. When external domains are allowed, users in your organization can chat, add users to meetings, and use audio video conferencing with users in external organizations. The recommended state is Off on the Global (Org-wide default) policy. Unrestricted external federation allows any Teams user from any organization to initiate contact with your users, making them susceptible to social engineering, phishing, and malware delivery via Teams chat. Restricting external domains to an allowlist or blocking them entirely eliminates this unsolicited contact vector. Real-world attacks and exploits delivered via Teams over external access channels include: - DarkGate malware - Social engineering / phishing attacks by "Midnight Blizzard" - GIFShell - Username enumeration'
+target: m365
+level: 2
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 8.2.1 Ensure external domains are restricted in the Teams admin center
+audit:
+  type: manual
+  command: 'Note: The focus of this control at a minimum is the Global (Org-wide default) policy. If the organization-wide setting is configured to Allow only specific external domains or Block all external domains, then this is also considered a passing state due to its increased restrictiveness. To audit using the UI: 1. Navigate to Microsoft Teams admin center https://admin.teams.microsoft.com/. 2. Expand External collaboration and select External access. 3. Open the Policies tab. 4. Click on the Global (Org-wide default) settings policy. 5. Verify that Manage external domains for this policy is set to Off. To audit using PowerShell: 1. Connect to Teams PowerShell using Connect-MicrosoftTeams 2. Run the following command: Get-CsExternalAccessPolicy -Identity Global 3. Verify that EnableFederationAccess is False. Organization settings: Optional passing state 1. Navigate to Microsoft Teams admin center https://admin.teams.microsoft.com/. 2. Expand External collaboration and select External
+    access. 3. Open the Organization settings tab. 4. Verify that Manage external domains for this organization is set to one of the following: o Off o On with Allow or block external domains set to Allow on...'
+remediation:
+  type: iac_patch
+  command: 'Note: Configuring this setting at the organization level in Organization settings to either Off, Block all external domains or Allow only specific external domains is also a compliant remediation for this control. To remediate using the UI: 1. Navigate to Microsoft Teams admin center https://admin.teams.microsoft.com/. 2. Expand External collaboration and select External access. 3. Open the Policies tab. 4. Click on the Global (Org-wide default) settings policy. 5. Set Manage external domains for this policy to Off. 6. Click Save. To remediate using PowerShell: 1. Connect to Teams PowerShell using Connect-MicrosoftTeams 2. Run the following command to configure the Global (Org-wide default) policy. Set-CsExternalAccessPolicy -Identity Global -EnableFederationAccess $false'

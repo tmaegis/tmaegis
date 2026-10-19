@@ -1,0 +1,41 @@
+id: TMA-UBUNTU2004-1.1.1.7
+title: Ensure squashfs kernel module is not available
+description: The squashfs filesystem type is a compressed read-only Linux filesystem embedded in small footprint systems. A squashfs image can be used without having to first decompress the image.
+target: linux
+os_family:
+- ubuntu-20.04
+level: 2
+severity: low
+tags:
+- cis-converted
+- kernel
+- linux
+- modules
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 1.1.1.7
+audit:
+  type: command
+  shell: bash
+  command: m=squashfs; found=$(find /lib/modules/$(uname -r)/kernel /usr/lib/modules/$(uname -r)/kernel -path "*/squashfs*" 2>/dev/null | head -n1); if [ -z "$found" ]; then echo compliant; exit 0; fi; lsmod | awk '{print $1}' | grep -Fxq -- "${m//-/_}" && { echo "$m is loaded"; exit 0; }; cfg=$(modprobe --showconfig 2>/dev/null); printf '%s\n' "$cfg" | grep -Pq -- "^\h*blacklist\h+${m//-/_}\b" || { echo "$m is not blacklisted"; exit 0; }; printf '%s\n' "$cfg" | grep -Pq -- "^\h*install\h+${m//-/_}\h+(/usr)?/bin/(true|false)\b" || { echo "$m install is not disabled"; exit 0; }; echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=squashfs
+    mkdir -p /etc/modprobe.d
+    f=/etc/modprobe.d/60-$m.conf
+    printf 'install %s /bin/false\nblacklist %s\n' "$m" "$m" > "$f"
+    modprobe -r "$m" 2>/dev/null; rmmod "$m" 2>/dev/null; true
+  guidance: "Run the following commands to unload the squashfs kernel module: # modprobe -r squashfs 2>/dev/null # rmmod squashfs 2>/dev/null Perform the following to disable the squashfs kernel module: Create a file ending in .conf with install squashfs /bin/false in the /etc/modprobe.d/ directory Example: # printf '\\n%s\\n' \"install squashfs /bin/false\" >> squashfs.conf Create a file ending in .conf with blacklist squashfs in the /etc/modprobe.d/ directory Example: # printf '\\n%s\\n' \"blacklist squashfs\" >> squashfs.conf"

@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-9.4
+title: Ensure that RESTRICTED users cannot access UNIX files to which they are not explicitly permitted
+description: 'A user with the RESTRICTED attribute cannot access RACF protected resources by default mechanisms: the universal access of a profile (UACC), ID(*) in an access list, or the global access table. However, this restriction does not automatically apply to UNIX files. RESTRICTED users may be able to access information they are not intended to have, by virtue of a file''s other permission bits.'
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 9.4 Ensure that RESTRICTED users cannot access UNIX files to which they are not explicitly permitted
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that UNIXPRIV appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that UNIXPRIV appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that UNIXPRIV appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the UNIXPRIV entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering the RESTRICTED.FILESYS.ACCESS resource Request reports generated ... (full steps: CIS section 9.4)'
+remediation:
+  type: iac_patch
+  command: 'To activate the UNIXPRIV class use the RACF SETROPTS command: SETROPTS CLASSACT(UNIXPRIV) To enable generic profile checking for the UNIXPRIV class use the RACF SETROPTS command: SETROPTS GENERIC(UNIXPRIV) To RACLIST the UNIXPRIV class use the RACF SETROPTS command: SETROPTS RACLIST(UNIXPRIV) To create a UNIXPRIV profile use the RACF RDEFINE command: RDEFINE UNIXPRIV RESTRICTED.FILESYS.ACCESS + UACC(NONE) + AUDIT(ALL(READ)) + DATA(''PREVENT ACCESS VIA UNIX OTHER FOR RESTRICTED USER IDS'') SETROPTS REFRESH RACLIST(UNIXPRIV) To modify the UACC, WARN, or AUDIT settings for a profile use the RACF RALTER command: RALTER UNIXPRIV RESTRICTED.FILESYS.ACCESS + UACC(NONE) + AUDIT(ALL(READ)) + NOWARNING SETROPTS REFRESH RACLIST(UNIXPRIV) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used when
+    making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the ... (see CIS section 9.4)'

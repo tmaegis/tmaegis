@@ -1,0 +1,20 @@
+id: TMA-AKS-AUTOMATIC-4.5.3
+title: The default namespace should not be used
+description: Avoid placing application workloads in the default namespace, and instead deploy them into dedicated namespaces that reflect the intended team, application, or environment boundary. Namespaces are the built in way to logically divide cluster resources and limit access, while the default namespace exists mainly so a cluster can be used immediately without first creating a new namespace. Requires kubectl read access; fails when the default namespace holds objects other than the kubernetes Service, kube-root-ca.crt ConfigMap and default ServiceAccount.
+target: aks-automatic
+level: 2
+severity: low
+tags:
+- aks-automatic
+- policies
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.5.3 The default namespace should not be used
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods,services,configmaps,secrets,serviceaccounts,deployments,statefulsets,daemonsets,jobs,cronjobs,ingresses,roles,rolebindings -n default -o name) || exit 1
+    bad=$(printf '%s\n' "$out" | grep -v '^$' | sed 's#^\([a-z]*\)\.[^/]*/#\1/#' | grep -Evx 'service/kubernetes|configmap/kube-root-ca\.crt|serviceaccount/default')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create dedicated namespaces for teams, applications, and environments, then require all new resources to be deployed into those namespaces instead of default. Namespaces are the logical boundary for workload administration, so remediation should include recreating existing resources in dedicated namespaces or AKS managed namespaces where used, applying RBAC and other controls within the required namespace, and reserving access throughout the cluster for true platform administrators only. Because the namespace field cannot be changed for most existing Kubernetes objects, recreate the resources in the destination namespace, validate the application, and then remove the original resources from default. Assign the Azure built in policy with Audit first, then use Deny after application resources have been migrated and approved exceptions have been addressed.

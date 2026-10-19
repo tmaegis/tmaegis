@@ -1,0 +1,29 @@
+id: TMA-FORTISWITCH-1.5.3.1
+title: Ensure hostname is set
+description: Changes the device default hostname. FAILs if the hostname is still the factory default (the serial number). Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: low
+tags:
+- fortiswitch
+- hardening
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.5.3.1 Ensure hostname is set
+audit:
+  type: config_regex
+  pattern: (?m)^config system global\n(?:[ \t]+[^\n]*\n)*?[ \t]+set hostname "?S\d{3}[A-Z0-9]{9,}"?[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system global
+        set hostname "FSW-IDF1-01"
+    end
+    # CIS guidance:
+    In CLI, set the hostname to 'New_FSW1' as follows:
+    config system global
+        set hostname "New_FSW1"
+    end
+    In GUI
+    1) Go to 'System' > 'Config' > 'Hostname'
+    2) Update the field 'New Hostname' with the new hostname
+    3) Click 'Update'

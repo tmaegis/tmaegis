@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-1.2.3
+title: Ensure user propagation is controlled
+description: Batch jobs that are user-submitted to the operating system should inherit the user ID of the submitter. This will identify the batch job with the user for the purpose of accessing resources. Jobs submitted without the USER operand specified on the JOB statement which run under a user ID other than the user submitting the job present a security violation in that the issuer of the job will inherit the authority of the user ID and may allow ...
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.2.3 Ensure user propagation is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that PROPCNTL appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that PROPCNTL appears. Request reports generated using IRRDBU00 output that will allow you to: Verify that all user IDs that require propagation control have a dedicated profile in the PROPCNTL class.'
+remediation:
+  type: iac_patch
+  command: 'To activate the PROPCNTL class use the RACF SETROPTS command: SETROPTS CLASSACT(PROPCNTL) To RACLIST the PROPCNTL class use the RACF SETROPTS command: SETROPTS RACLIST(PROPCNTL) To create a PROPCNTL profile use the RACF RDEFINE and SETROPTS commands: RDEFINE PROPCNTL <user-id> SETROPTS REFRESH RACLIST(PROPCNTL) Note: 1. For a profile in the PROPCNTL class, RACF checks only for the presence or absence of a profile in this class. If a profile exists for a particular user ID, user ID propagation does not occur for that user ID. 2. RACF performs no logging and issues no messages for profiles in the PROPCNTL class. 3. PROPCNTL profiles only control propagation for local jobs. If the installation uses &RACLNDE for its remote nodes, only the PROPCNTL profiles are necessary. For more information on the use of &RACLNDE, see Defining nodes as local input sources. If the installation uses NODES profiles, it must also use them to control propagation (see Controlling user ID propagation in
+    an NJE environment). 4. If you have controlled a user ID using the PROPCNTL class, and that user wants to submit a batch job to run from that user ID, the JOB statement must ... (see CIS section 1.2.3)'

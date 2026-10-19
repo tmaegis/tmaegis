@@ -1,0 +1,77 @@
+# Synthetic sample: FortiSwitch "show full-configuration" (hardened). Not a secure template.
+config system global
+    set hostname "sw-access-01"
+    set admin-ssh-port 2222
+    set admintimeout 5
+    set admin-lockout-threshold 3
+    set admin-lockout-duration 300
+    set pre-login-banner "Authorized access only."
+    set post-login-banner "Activity is logged."
+end
+config system web
+    set https-port 8443
+    set https-ssl-versions tlsv1-3
+end
+config system dns
+    set primary 192.0.2.53
+end
+config system ntp
+    set ntpsync enable
+end
+config system password-policy
+    set status enable
+    set apply-to admin-password
+    set minimum-length 14
+    set min-lower-case-letter 1
+    set min-upper-case-letter 1
+    set min-number 1
+    set min-non-alphanumeric 1
+end
+config system interface
+    edit "mgmt"
+        set ip 198.51.100.11 255.255.255.0
+        set allowaccess ping https ssh
+    next
+end
+config system admin
+    edit "secadmin"
+        set accprofile "super_admin"
+        set trusthost1 198.51.100.0 255.255.255.0
+        set password ENC REDACTED
+    next
+end
+config system snmp sysinfo
+    set status enable
+end
+config system snmp community
+end
+config system snmp user
+    edit "nmsuser"
+        set security-level auth-priv
+        set auth-proto sha256
+        set auth-pwd ENC REDACTED
+        set priv-proto aes256
+        set priv-pwd ENC REDACTED
+        set events cpu-high mem-low
+    next
+end
+config system local-in-policy
+    edit 1
+        set intf "mgmt"
+        set srcaddr 198.51.100.0/24
+        set action accept
+    next
+end
+config switch vlan
+    edit 10
+        set description "USERS"
+        set dhcp-snooping enable
+        set arp-inspection enable
+    next
+end
+config log syslogd setting
+    set status enable
+    set server "192.0.2.50"
+    set mode reliable
+    set enc-algorithm high
+end

@@ -1,0 +1,31 @@
+id: TMA-VMWARE-7.12
+title: Virtual machines must remove unnecessary USB/XHCI devices
+description: 'Removing unnecessary devices from virtual machines minimizes the attack surface and reduces potential pathways for data exfiltration or unauthorized data capture. This practice aligns with the principle of least functionality, ensuring that VMs have only the essential components required to perform their designated functions. Expected: usb.present / usb_xhci.present absent or "FALSE". The audit parses every .vmx file under /vmfs/volumes/ on the host and lists the VMs that do not comply; it passes when none are found (or no VMs exist). Runs in the ESXi Shell (busybox sh) as root.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- virtual-machine
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 7.12 Virtual machines must remove unnecessary USB/XHCI devices
+audit:
+  type: command
+  command: |-
+    command -v find >/dev/null 2>&1 || exit 1
+    out=$(find /vmfs/volumes/ -maxdepth 3 -type f -name '*.vmx' 2>/dev/null | while IFS= read -r f; do
+      awk -v KEYRE='^usb(_xhci)?[.]present$' -v MODE='not' -v VAL='TRUE' 'BEGIN { re = tolower(KEYRE) }
+    { line = $0; sub(/^[ \t]+/, "", line); i = index(line, "="); if (i == 0) next
+      k = tolower(substr(line, 1, i - 1)); sub(/[ \t]+$/, "", k)
+      v = substr(line, i + 1); sub(/^[ \t]*"?/, "", v); sub(/"?[ \t\r]*$/, "", v); v = tolower(v)
+      if (k ~ re) { seen = 1; if (MODE == "not" && v == tolower(VAL)) bad = bad " " k "=" v
+                    else if (MODE != "not" && MODE != "ge" && v != tolower(VAL)) bad = bad " " k "=" v
+                    else if (MODE == "ge" && (v + 0) < (VAL + 0)) bad = bad " " k "=" v } }
+    END { if ((MODE == "eq" || MODE == "ge") && !seen) bad = " " KEYRE " not set"
+          if (bad != "") print FILENAME ":" bad }' "$f"
+    done)
+    [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 25
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To disconnect all USB devices from VMs, run the following PowerCLI command: # Remove all USB Devices attached to VMs Get-VM | Get-USBDevice | Remove-USBDevice The VM will need to be powered off for this change to take effect.'

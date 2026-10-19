@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.5.1.3
+title: Ensure password expiration warning days is 7 or more
+description: 'The warnpassword parameter in /etc/login.conf allows an administrator to notify users that their password will expire in a defined number of days. It is recommended that the warnpassword parameter be set to 7 or more days. Providing a warning that a password will expire gives users time to think of a secure password. Users caught unaware may choose a simple password or write it down where it may be discovered. Audit: the first :warnpassword= in /etc/login.conf must be 7d / 1w or more.'
+target: freebsd
+level: 1
+severity: low
+tags:
+- freebsd
+- password-policy
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.1.3 Ensure password expiration warning days is 7 or more
+audit:
+  type: command
+  command: '[ -r /etc/login.conf ] || exit 1; v=$(grep -E "^[[:space:]]*:warnpassword=" /etc/login.conf | head -n 1 | sed "s/.*warnpassword=\([0-9]*[a-z]*\).*/\1/"); n=${v%%[a-z]*}; u=${v#$n}; case "$u" in d) m=7;; w) m=1;; *) m=-1;; esac; [ -n "$n" ] && [ "$m" -ge 0 ] && [ "$n" -ge "$m" ] && echo compliant || echo "warnpassword=$v"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set the warnpassword parameter to 7d in /etc/login.conf for the default class: :warnpassword=7d:'

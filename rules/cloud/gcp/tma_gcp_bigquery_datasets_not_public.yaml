@@ -1,0 +1,17 @@
+id: TMA-GCP-BIGQUERY-DATASETS-NOT-PUBLIC
+title: Ensure BigQuery datasets are not anonymously or publicly accessible
+description: Granting allUsers or allAuthenticatedUsers on a dataset exposes its tables to anyone. No dataset ACL in the active project may reference those principals. Uses the bq tool from the Cloud SDK. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 1
+severity: critical
+tags:
+- gcp
+- bigquery
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - BigQuery - datasets not publicly accessible (verify section number for your release)
+audit:
+  type: command
+  command: "ds=$(bq --headless ls -n 10000 --format=json 2>/dev/null) || exit 1\nids=$(printf '%s\\n' \"$ds\" | grep -o '\"datasetId\": *\"[^\"]*\"' | sed 's/.*\"\\([^\"]*\\)\"$/\\1/')\nbad=0\nfor d in $ids; do\n  acl=$(bq --headless show --format=json \"$d\" 2>/dev/null) || exit 1\n  if printf '%s\\n' \"$acl\" | grep -Eq '\"(allUsers|allAuthenticatedUsers)\"'; then echo \"public: $d\"; bad=1; fi\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Remove allUsers / allAuthenticatedUsers entries from the dataset access list (bq show --format=prettyjson <ds> > acl.json, edit, bq update --source acl.json <ds>), and enforce domain-restricted sharing (constraints/iam.allowedPolicyMemberDomains).

@@ -1,0 +1,25 @@
+id: TMA-ARUBA-CX-1.3.1
+title: NTP Authentication
+description: This sequence describes configuring NTP authentication. PASS requires ntp authentication and at least one ntp authentication-key. Audited against AOS-CX 'show running-config' output (saved in full); context blocks such as 'password complexity' or 'cli-session' are matched by their indented member lines.
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- authentication
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.3.1 NTP Authentication
+audit:
+  type: config_regex
+  pattern: (?m)(?:^ntp authentication[ \t]*$(?s:.*?)^ntp authentication-key \d+ \S+|^ntp authentication-key \d+ \S+(?s:.*?)^ntp authentication[ \t]*$)
+remediation:
+  type: iac_patch
+  command: |-
+    ntp authentication
+    ntp authentication-key 1 md5 <ntpauthkey>
+    ntp server 10.10.10.10 key-id 1 prefer
+    ntp vrf mgmt
+    # CIS guidance:
+    ntp authentication
+    ntp authentication-key 1 md5 <ntpauthkey>
+    ntp server 10.10.10.10 prefer
+    ntp vrf mgmt

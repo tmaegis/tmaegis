@@ -1,0 +1,22 @@
+id: TMA-F5-BIGIP-4.8
+title: Ensure access SSH to CLI interface is restricted to needed IP addresses only
+description: 'To limit ssh access to trusted IPs only PASS requires sys sshd allow to be a list of addresses (not ALL). Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: high
+tags:
+- f5-bigip
+- management
+reference: CIS F5 Networks Benchmark v1.0.0 - 4.8 Ensure access SSH to CLI interface is restricted to needed IP addresses only
+audit:
+  type: config_regex
+  pattern: (?m)^sys sshd \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+allow \{ (?:[0-9a-fA-F.:/\-]+ )+\}[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys sshd allow replace-all-with { 10.0.0.0/255.255.255.0 }
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to the Configuration utility.
+    2-Go to System > Platform.
+    3-For SSH IP Allow, select Specify Range and then enter the IP addresses or address ranges for the remote systems allowed to use SSH to communicate with this system.

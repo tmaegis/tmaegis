@@ -1,0 +1,21 @@
+id: TMA-ARISTA-EOS-1.1.2
+title: Control Plane ACL
+description: 'A default control plane ACL is provided and applied to the system control-plane. The default control-place ACL is read-only, but you can create and assign a different ACL to the system control-plane if customization is needed. However, it is strongly recommended to use the default control-plane ACL as a template for any custom ACL that you may apply to ensure protocol and management operations function correctly. The default control plane ACL filters all IP traffic inbound and outbound on any management interface. SSH, Telnet, NTP, SNMP, IP protocols, and logging/matching on management traffic are done by this ACL. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: arista-eos
+level: 1
+severity: high
+tags:
+- arista-eos
+- network
+- hardening
+reference: CIS Arista EOS Benchmark v1.0.0 - 1.1.2 Control Plane ACL
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Run the following command to check that either your custom ACL or the default ACL is applied switch#show running-config all section system control-plane system control-plane ip access-group custom-control-plane-acl in ip access-group default-control-plane-acl vrf MGMT in switch# The control plane ACL is referenced by the ip[v6] access-group <ACLNAME> in configuration.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Apply a control plane ACL to the default vrf and all non default vrfs
+    system control-plane
+    ip access-group custom-control-plane-acl in
+    ip access-group custom-control-plane-acl vrf MGMT in

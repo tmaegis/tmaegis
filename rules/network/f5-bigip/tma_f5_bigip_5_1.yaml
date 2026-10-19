@@ -1,0 +1,22 @@
+id: TMA-F5-BIGIP-5.1
+title: Ensure redundant NTP servers are configured appropriately
+description: 'To ensure redundant NTP servers are configured. PASS requires at least two NTP servers in sys ntp. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- time
+reference: CIS F5 Networks Benchmark v1.0.0 - 5.1 Ensure redundant NTP servers are configured appropriately
+audit:
+  type: config_regex
+  pattern: (?m)^sys ntp \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+servers \{ \S+ \S+[^\n]*\}[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys ntp servers replace-all-with { ntp1.example.com ntp2.example.com }
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to the Configuration utility.
+    2-Navigate to System > Configuration > Device
+    3-Click NTP : add trusted NTP servers IP addresses .

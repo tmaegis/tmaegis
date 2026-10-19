@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.4
+title: Ensure that Linux kernel capabilities are restricted within containers
+description: Containers should run with the minimum Linux capabilities; the benchmark specifically asks for NET_RAW to be dropped unless required. Flags containers whose CapDrop contains neither ALL nor NET_RAW (review CapAdd separately). The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.4 Ensure that Linux kernel capabilities are restricted within containers
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{range .HostConfig.CapDrop}}{{.}},{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk 'toupper($0) !~ /(^| |,)(CAP_)?(ALL|NET_RAW),/ {print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Run containers with --cap-drop=ALL (or at least --cap-drop=NET_RAW) and add back only required capabilities with --cap-add.

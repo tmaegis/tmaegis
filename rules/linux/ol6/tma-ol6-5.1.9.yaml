@@ -1,0 +1,37 @@
+id: TMA-OL6-5.1.9
+title: Ensure at is restricted to authorized users
+description: If at is installed in the system, configure /etc/at.allow to allow specific users to use these services. If /etc/at.allow does not exist, then /etc/at.deny is checked. Any user not specifically defined in those files is allowed to use at. By removing the file, only users in /etc/at.allow are allowed to use at.
+target: linux
+os_family:
+- ol-6
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 6 Benchmark v2.0.0 - 5.1.9
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v stat >/dev/null 2>&1 || { echo "step1: stat not installed"; return 1; }; o=$(bash -c ''stat /etc/at.deny'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''stat: cannot stat `/etc/at.deny''"''"'': No such file or directory'' || { echo step1: missing ''stat: cannot stat `/etc/at.deny''"''"'': No such file or directory''; return 1; }; command -v stat >/dev/null 2>&1 || { echo "step2: stat not installed"; return 1; }; o=$(bash -c ''stat /etc/at.allow'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)'' || { echo step2: missing ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    rm -f /etc/at.deny
+    touch /etc/at.allow
+    if [ -e /etc/at.allow ]; then chown 0:0 /etc/at.allow; chmod 600 /etc/at.allow; fi
+  guidance: "Run the following command to remove /etc/at.deny: # rm /etc/at.deny Run the following command to create /etc/at.allow # touch /etc/at.allow Run the following commands to set the owner and permissions on /etc/at.allow: # chown root:root /etc/at.allow # chmod u-x,og-rwx /etc/at.allow"

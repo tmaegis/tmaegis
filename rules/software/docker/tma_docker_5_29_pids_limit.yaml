@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.29
+title: Ensure that the PIDs cgroup limit is used
+description: Without a PIDs cgroup limit a fork bomb in one container can exhaust host process slots. Flags containers whose PidsLimit is unset, 0 or -1. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.29 Ensure that the PIDs cgroup limit is used
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{.HostConfig.PidsLimit}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '$2=="<nil>" || $2=="0" || $2=="-1"{print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Redeploy with --pids-limit (e.g. --pids-limit=100; compose: ''pids_limit: 100'') or set "default-pids-limit" in daemon.json.'

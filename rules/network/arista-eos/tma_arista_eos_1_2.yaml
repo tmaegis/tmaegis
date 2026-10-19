@@ -1,0 +1,20 @@
+id: TMA-ARISTA-EOS-1.2
+title: Enable AES-GCM Encryption of EOS Secrets
+description: AES-GCM has been added as a method for storing symmetric secrets in EOS. This applies to secrets that must be used to remote systems, as found in NTP, TACACS+, and other places. A new secret type "8a", which stands for AES-256-GCM encryption type, has been introduced. Secrets can either be entered in type 0, plaintext, and automatically converted or entered directly as type 8a. The default method of storing shared secrets is to obfuscate them in the running configuration. This obfuscation mean secrets can be easily reversed by copying the configuration out of the box. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: high
+tags:
+- arista-eos
+- network
+- aaa
+reference: CIS Arista EOS Benchmark v1.0.0 - 1.2 Enable AES-GCM Encryption of EOS Secrets
+audit:
+  type: config_regex
+  pattern: (?m)^[ \t]+password encryption reversible aes-256-gcm\b
+remediation:
+  type: iac_patch
+  command: |-
+    conf
+    management security
+    password encryption reversible aes-256-gcm

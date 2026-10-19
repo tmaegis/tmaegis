@@ -1,0 +1,21 @@
+id: TMA-WIN2022-2.3.17.7
+title: 'Ensure ''User Account Control: Switch to the secure desktop when prompting for elevation'' is set to ''Enabled'''
+description: 'This policy setting controls whether the elevation request prompt is displayed on the interactive user''s desktop or the secure desktop. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-server-2022-dc
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 2.3.17.7
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'' -Name ''PromptOnSecureDesktop'' -ErrorAction SilentlyContinue).''PromptOnSecureDesktop''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''PromptOnSecureDesktop='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name 'PromptOnSecureDesktop' -Value 1 -PropertyType DWord -Force | Out-Null

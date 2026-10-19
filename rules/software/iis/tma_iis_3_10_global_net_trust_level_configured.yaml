@@ -1,0 +1,19 @@
+id: TMA-IIS-3.10
+title: Ensure global .NET trust level is configured
+description: 'An application''s trust level determines the permissions that are granted by the ASP.NET code access security (CAS) policy. CAS defines two trust categories: full trust and partial trust. An application that has full trust permissions may access all resource types on a server and perform privileged operations, while applications that run with partial trust have varying levels of operating permissions and access to ... The global .NET trust level (root web.config) must be Medium (Low and Minimal are stricter and also accepted); the default Full fails. PowerShell 5.1 with the WebAdministration module; run elevated.'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- aspnet
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.10 Ensure global .NET trust level is configured
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $c = Get-WebConfiguration -Filter 'system.web/trust' -PSPath 'MACHINE/WEBROOT'; if ([string]$c.level -in @('Medium', 'Low', 'Minimal')) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT' -Filter system.web/trust -Name level -Value Medium

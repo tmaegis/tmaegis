@@ -1,0 +1,18 @@
+id: TMA-IBMCLOUD-VPC-SG-NO-ADMIN-FROM-ANY
+title: Ensure no VPC security groups allow inbound 0.0.0.0/0 to port 22 or 3389
+description: SSH and RDP open to the Internet are brute-forced continuously. In the targeted region, no inbound rule of any VPC security group may allow remote 0.0.0.0/0 or ::/0 to tcp 22/3389 or all protocols (requires the vpc-infrastructure plugin). Read-only ibmcloud CLI calls using the current CLI session and targeted region (ibmcloud login, or IBMCLOUD_API_KEY); JSON output is parsed with grep/sed/awk. A missing CLI, plugin or session fails the check.
+target: ibmcloud
+level: 1
+severity: high
+tags:
+- ibmcloud
+- network
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - Networking - VPC security groups restrict SSH/RDP from 0.0.0.0/0 (verify section number for your release)
+audit:
+  type: command
+  command: "sgs=$(ibmcloud is security-groups --output json 2>/dev/null) || exit 1\nbad=0\nfor g in $(printf '%s\\n' \"$sgs\" | awk '{ o = gsub(/\\{/, \"{\"); c = gsub(/\\}/, \"}\") } d == 1 && /\"id\"[[:space:]]*:/ { s = $0; sub(/^[^:]*:[[:space:]]*\"/, \"\", s); sub(/\".*/, \"\", s); print s } { d += o - c }'); do\n  rules=$(ibmcloud is security-group-rules \"$g\" --output json 2>/dev/null) || exit 1\n  n=$(printf '%s\\n' \"$rules\" | awk '\nfunction v(s) { sub(/^[^:]*:[[:space:]]*/, \"\", s); gsub(/[\",[:space:]]/, \"\", s); return s }\n{ o = gsub(/\\{/, \"{\"); c = gsub(/\\}/, \"}\") }\nd == 0 && o > 0 { dir = \"\"; pr = \"\"; pmin = \"\"; pmax = \"\"; cidr = \"\"; inr = 0 }\nd == 1 && /\"remote\"[[:space:]]*:/ { inr = 1 }\nd == 1 && /\"direction\"[[:space:]]*:/ { dir = v($0) }\nd == 1 && /\"protocol\"[[:space:]]*:/ { pr = v($0) }\nd == 1 && /\"port_min\"[[:space:]]*:/ { pmin = v($0) }\nd == 1 && /\"port_max\"[[:space:]]*:/ { pmax = v($0) }\ninr && /\"cidr_block\"[[:space:]]*:/ { cidr\
+    \ = v($0) }\n{ d += o - c }\nd == 1 && c > 0 { inr = 0 }\nd == 0 && c > 0 { if (dir == \"inbound\" && (cidr == \"0.0.0.0/0\" || cidr == \"::/0\") && (pr == \"all\" || pr == \"tcp\") && (pmin == \"\" || (pmin + 0 <= 22 && pmax + 0 >= 22) || (pmin + 0 <= 3389 && pmax + 0 >= 3389))) n++ }\nEND { print n + 0 }')\n  [ \"$n\" -eq 0 ] || { echo \"open admin port: $g\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ibmcloud is security-group-rule-delete <sg> <rule> (or security-group-rule-update --remote <admin-cidr>) for the offending rules; use a bastion / VPN for administration.

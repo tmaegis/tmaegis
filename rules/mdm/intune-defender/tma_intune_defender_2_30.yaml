@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.30
+title: Ensure 'Days Until Aggressive Catchup Quick Scan' is set to '7' days
+description: 'This policy setting configures the number of days after the last scan (of any type) before an aggressive Quick Scan is automatically triggered. The recommended state for this setting is: 7 days. Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.30 Ensure 'Days Until Aggressive Catchup Quick Scan' is set to '7' days
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\PolicyManager'' -Name ''DaysUntilAggressiveCatchupQuickScan'' -ErrorAction SilentlyContinue).''DaysUntilAggressiveCatchupQuickScan''; if (-not ($null -ne $v -and @(7) -contains [int64]$v)) { $bad += ''DaysUntilAggressiveCatchupQuickScan='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to 7 days. Defender\Days Until Aggressive Catchup Quick Scan

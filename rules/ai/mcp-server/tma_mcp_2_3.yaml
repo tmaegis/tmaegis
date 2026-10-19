@@ -1,0 +1,19 @@
+id: TMA-MCP-2.3
+title: Ensure authentication propagates through proxies to request- scoped SSE responses
+description: Under the 2026-07-28 revision, each JSON-RPC request on the Streamable HTTP transport is sent as its own HTTP POST, and the server answers with either a single JSON response or a request-scoped Server-Sent Events stream that carries any request-related notifications and then the final response. There is no standalone GET stream and no Last-Event-ID resumption. A request-scoped SSE stream is not resumable, so closing or dropping it cancels that request. If the client retries, the retry is a new HTTP POST authenticated independently. When the MCP server is reached through one or more proxies, every hop preserves the authentication requirement, so an unauthenticated request cannot reach a streamed response. Misconfigured gateways can strip or cache credentials, causing either an authentication failure or credential leakage. A stripped credential is an availability failure, the request is...
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 2.3 Ensure authentication propagates through proxies to request- scoped SSE responses
+audit:
+  type: manual
+  command: 'Send a tools/call request to the endpoint that returns a request-scoped SSE stream, through the same proxy path production clients use, once without a credential and once with a valid one. Confirm the unauthenticated request is rejected, the authenticated request is accepted, and the authenticated response is an SSE stream. Substitute the streaming endpoint URL, the approved protocol version, a safe streaming tool and its arguments, and a valid bearer token: URL="<STREAMING_ENDPOINT_URL>" VER="<APPROVED_PROTOCOL_VERSION>" TOOL="<SAFE_STREAMING_TOOL>" ARGS=''<SAFE_STREAMING_TOOL_ARGS_JSON>'' TOKEN="<VALID_BEARER_TOKEN>" BODY=$(jq -nc --arg v "$VER" --arg t "$TOOL" --argjson a "$ARGS" ''{jsonrpc:"2.0",id:31,method:"tools/call",params:{name:$t,arguments:$a,_meta:{"io.mod elcontextprotocol/protocolVersion":$v,"io.modelcontextprotocol/clientInfo":{name:"cis -benchmark-audit",version:"1.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'' 2>/dev/null) NAME_HDR=$TOOL case $TOOL
+    in *[!-A-Za-z0-9._~]*|"") NAME_HDR="=?base64?$(printf ''%s'' "$TOOL" | base64 | tr -d ''\r\n'')?=" ;; esac if [ -z "$BODY" ]; then echo "ERROR: probe build failed, check that ARGS is valid JSON" else NO=$(curl -sS -...'
+remediation:
+  type: iac_patch
+  command: 'Configure each proxy hop to forward the Authorization header to the upstream for both the initial stream and any reconnect, and to pass the SSE response through without buffering so the stream is not held or broken. Because a reconnect is a new POST, the same rule covers it, and there is no separate resumption path. The following nginx example is illustrative. Other proxies use their own header-forwarding directives: proxy_set_header Authorization $http_authorization; proxy_pass_request_headers on; proxy_buffering off; proxy_read_timeout 3600s; Pin proxy and client or server versions known to handle streaming authentication correctly, and re-run the Audit after any proxy upgrade.'

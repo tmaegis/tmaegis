@@ -1,0 +1,55 @@
+id: TMA-BOTTLEROCKET-2.1.1.1
+title: Ensure chrony is configured
+description: chrony is a daemon which implements the Network Time Protocol (NTP). It is designed to synchronize system clocks across a variety of systems and use a source that is highly accurate. The audit runs apiclient get settings.ntp.time-servers (at least one server) and systemctl is-active chronyd (active). Run tmaegis on the host through the admin container root shell (sudo sheltie).
+target: bottlerocket
+level: 1
+severity: medium
+tags:
+- bottlerocket
+- services
+reference: CIS Bottlerocket Benchmark v1.0.0 - 2.1.1.1 Ensure chrony is configured
+audit:
+  type: command
+  command: |-
+    out=$(apiclient get settings.ntp.time-servers 2>/dev/null) || exit 1
+    printf '%s' "$out" | tr -d ' \n' | grep -Eq '"time-servers":\["[^"]+' || { echo 'no NTP time-servers configured'; exit 1; }
+    s=$(systemctl is-active chronyd 2>/dev/null)
+    [ "$s" = active ] && echo compliant || echo "chronyd: ${s:-unknown}"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    c=; for f in /etc/chrony.conf /etc/chrony/chrony.conf; do [ -f "$f" ] && c=$f && break; done
+    [ -n "$c" ] || { tma_pkg_install chrony; for f in /etc/chrony.conf /etc/chrony/chrony.conf; do [ -f "$f" ] && c=$f && break; done; }
+    [ -n "$c" ] || exit 0
+    if ! grep -Eqs '^[[:space:]]*(server|pool)[[:space:]:]' "$c" "$(dirname "$c")"/conf.d/*.conf "$(dirname "$c")"/sources.d/*.sources /etc/chrony.d/*.conf /etc/chrony.d/*.sources; then
+      tma_bak "$c"
+      printf '\n# added by tmaegis; override with TMA_NTP_POOL\npool %s iburst\n' "${TMA_NTP_POOL:-2.pool.ntp.org}" >> "$c"
+      u=$(tma_unit chronyd.service chrony.service) && systemctl try-restart "$u"
+    fi
+    true
+  guidance: "Configure additional time servers as needed. The following command would add \"2.pool.ntp.org\" to the list of time servers. # apiclient apply <<EOF [settings.ntp] time-servers = [ \"2.pool.ntp.org\" ] EOF If chrony is not running, update to a version of the OS with the correct service configuration."

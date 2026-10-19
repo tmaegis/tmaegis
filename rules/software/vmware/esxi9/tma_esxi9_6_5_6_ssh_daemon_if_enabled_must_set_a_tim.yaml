@@ -1,0 +1,43 @@
+id: TMA-ESXI9-6.5.6
+title: Host SSH daemon, if enabled, must set a timeout interval on idle sessions
+description: Implementing a timeout interval on idle SSH sessions ensures that any inactive session gets disconnected after a certain period, improving the security posture. The total timeout duration is calculated by multiplying the timeout count by the idle timeout interval. The audit reads /etc/ssh/sshd_config and requires ClientAliveInterval to be set to a non-zero number of seconds; confirm it matches the approved value. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- services
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 6.5.6 Host SSH daemon, if enabled, must set a timeout interval on idle sessions
+audit:
+  type: command
+  command: |-
+    f=/etc/ssh/sshd_config; [ -r "$f" ] || exit 1
+    v=$(awk 'tolower($1)=="clientaliveinterval" {print $2; exit}' "$f")
+    case "$v" in ''|*[!0-9]*) echo 'ClientAliveInterval ${v:-not set}'; exit 1 ;; esac
+    [ "$v" -gt 0 ] && echo compliant || echo 'ClientAliveInterval is 0'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    f=/etc/ssh/sshd_config
+    [ -f "$f" ] || exit 0
+    k=clientaliveinterval; v=200
+    cp -p "$f" "$f.tmaegis.bak" 2>/dev/null
+    # the audit and sshd both honour the FIRST occurrence, so drop old lines and put ours first
+    { printf '%s %s\n' "$k" "$v"; grep -viE "^[[:space:]]*$k[[:space:]]" "$f.tmaegis.bak"; } > "$f.tma.new" && cat "$f.tma.new" > "$f"
+    rm -f "$f.tma.new"; true
+  guidance: "To remediate this recommendation, set ClientAliveInterval to the approved number of seconds. Restart SSH if enabled and validate timeout behavior together with ClientAliveCountMax."

@@ -1,0 +1,30 @@
+id: TMA-SUPPLY-CHAIN-CODEOWNERS
+title: Ensure a CODEOWNERS file defines code owners for the repository
+description: CODEOWNERS assigns accountable reviewers to code paths; combined with branch protection requiring code-owner review it prevents unreviewed changes to sensitive areas (CI workflows, build scripts, infrastructure). The audit looks for CODEOWNERS in .github/, the root, docs/ or .gitlab/ with at least one owner entry. Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.
+target: supply-chain
+level: 1
+severity: medium
+tags:
+- supply-chain
+- source-code
+- code-review
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Source Code - code changes require review by code owners (verify section number for your release)
+audit:
+  type: command
+  command: 'top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1
+
+    cd "$top" || exit 1
+
+    f=$(git ls-files -- .github/CODEOWNERS CODEOWNERS docs/CODEOWNERS .gitlab/CODEOWNERS 2>/dev/null) || exit 1
+
+    f=$(printf ''%s\n'' "$f" | head -n 1)
+
+    if [ -z "$f" ]; then echo "no CODEOWNERS file committed"; exit 0; fi
+
+    n=$(grep -vE ''^[[:space:]]*(#|$)'' "$f" | grep -c ''@'' || true)
+
+    if [ "$n" -gt 0 ]; then echo compliant; else echo "$f has no owner entries"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add .github/CODEOWNERS (GitLab: CODEOWNERS or .gitlab/CODEOWNERS) mapping paths to teams, e.g. ''* @org/maintainers'' and ''/.github/ @org/security'', and enable ''Require review from Code Owners'' in branch protection.'

@@ -1,0 +1,19 @@
+id: TMA-AWS-COMPUTE-3.1
+title: Ensure Amazon ECS task definitions using 'host' network mode do not allow privileged or root user access to the host
+description: 'Ensure that Amazon ECS task definitions using host network mode do not allow privileged or root user access. This protects the host container instance from unauthorized access and privilege escalation. Note: This recommendation assumes that only the latest active revision of a task definition is in use. If older revisions are in use, apply the audit and remediation procedures to those revisions as needed. Combining host networking mode with privileged or root user access significantly increases the risk of container breakout, where a compromised container can gain control of the host system.'
+target: aws
+level: 1
+severity: high
+tags:
+- access-control
+- aws
+- cloud
+- compute
+- network
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 3.1 Ensure Amazon ECS task definitions using 'host' network mode do not allow privileged or root user access to the host
+audit:
+  type: manual
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. If Network mode is set to host, click JSON. 6. For each element under containerDefinitions, ensure that privileged is set to false or is absent, and ensure that user is not set to root or is absent. 7. Repeat steps 1-6 for each task definition. From Command Line: Run the following command to list task definitions: aws ecs list-task-definitions For the latest revision of a task definition, run the following command: aws ecs describe-task-definition --task-definition <task-definition-arn> If networkMode is set to host, ensure that for each element under containerDefinitions, privileged is set to false or is absent, and ensure that user is not set to root or is absent. Repeat for each task definition.'
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. Login to the ECS console using https://console.aws.amazon.com/ecs/. 2. In the left panel, click Task definitions. 3. Click the name of a task definition. 4. Click on the latest active revision of the task definition. 5. Click Create new revision. 6. Click Create new revision with JSON. 7. For each element under containerDefinitions, set privileged to false, or remove "privileged": true. 8. For each element under containerDefinitions, set user to an appropriate non-root user, or remove "user": "root". 9. Click Create. 10. Repeat steps 1-9 for each task definition requiring remediation. Note: When a task definition is updated, running tasks launched from the previous task definition remain unchanged. Updating a running task requires redeploying it with the new task definition.'

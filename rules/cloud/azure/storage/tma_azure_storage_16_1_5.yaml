@@ -1,0 +1,18 @@
+id: TMA-AZURE-STORAGE-16.1.5
+title: Ensure the shared access signature (SAS) expiration policy action is set to 'Block'
+description: 'A shared access signature (SAS) expiration policy on a storage account defines an action that is taken when a SAS is created or used with a validity interval that exceeds the configured upper limit (or that has no signed start). The action is one of two values: Log (the default) records the out-of-policy SAS for auditing but still allows it, while Block denies the out-of-policy SAS. This recommendation ensures the action is set to Block so that the configured maximum SAS validity is enforced rather than only logged. With the default Log action, out-of-policy SAS remain fully usable and the expiration policy is advisory only. Setting the action to Block makes the storage account reject out-of-policy SAS at request time, so a leaked or over-long SAS cannot be used beyond the organization''s maximum validity. This converts the SAS expiration policy from a monitoring signal into an enforce...'
+target: azure
+level: 2
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.1.5 Ensure the shared access signature (SAS) expiration policy action is set to 'Block'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Settings, select Configuration. 3. Under Shared access signature (SAS) expiration policy, confirm the expiration action is set to Block. Audit from Azure CLI For each storage account, confirm that sasPolicy.expirationAction is Block: az storage account show \ --name <storage-account> \ --resource-group <resource-group> \ --query "sasPolicy.expirationAction" \ --output tsv Audit from PowerShell For each storage account, confirm that the SasPolicy.ExpirationAction property is Block: (Get-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account>).SasPolicy.ExpirationAction'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Settings, select Configuration. 3. Ensure Shared access signature (SAS) expiration policy is Enabled with an Upper limit for SAS expiry interval set (see the related Level 1 recommendation). 4. Set the expiration action to Block. 5. Select Save. Remediate from Azure CLI az storage account update \ --name <storage-account> \ --resource-group <resource-group> \ --sas-exp <days>.<hours>:<minutes>:<seconds> \ --sas-expiration-action Block Remediate from PowerShell Set-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account> -SasExpirationPeriod <days>.<hours>:<minutes>:<seconds> - SasExpirationAction Block

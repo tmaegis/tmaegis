@@ -1,0 +1,40 @@
+id: TMA-ORACLE-DB-2.2.11
+title: Ensure 'SQLNET.CRYPTO_CHECKSUM_SERVER' Is Set To 'REQUIRED'
+description: 'The SQLNET.CRYPTO_CHECKSUM_SERVER parameter specifies the checksum behavior for the server when connecting to a client. This setting enables the server to enforce cryptographic checksums, which verify the integrity of data transmitted during client- server interactions. Oracle networking already performs checksumming, so additional cryptographic checksumming is usually of limited value. A ... The last uncommented setting in sqlnet.ora must equal REQUIRED (case-insensitive, spaces ignored). Default: accepted Reads the file from $TNS_ADMIN, or $ORACLE_HOME/network/admin when TNS_ADMIN is unset (Linux/UNIX hosts); fails when neither directory exists.'
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- network
+- encryption
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.2.11 Ensure 'SQLNET.CRYPTO_CHECKSUM_SERVER' Is Set To 'REQUIRED'
+audit:
+  type: command
+  command: 'd="${TNS_ADMIN:-${ORACLE_HOME:?ORACLE_HOME not set}/network/admin}"; [ -d "$d" ] || { echo "missing $d"; exit 1; }; f="$d/sqlnet.ora"; [ -f "$f" ] || { echo "noncompliant: $f not found"; exit 0; }; v=$(grep -Ei ''^[[:space:]]*SQLNET\.CRYPTO_CHECKSUM_SERVER[[:space:]]*='' "$f" | tail -n 1 | sed ''s/^[^=]*=//'' | tr -d '' \t\r'' | tr ''[:lower:]'' ''[:upper:]''); [ "$v" = "REQUIRED" ] && echo compliant || echo "noncompliant: ${v:-not set}"'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    d="${TNS_ADMIN:-${ORACLE_HOME:?ORACLE_HOME not set}/network/admin}"
+    [ -d "$d" ] || exit 1
+    for n in sqlnet.ora; do f="$d/$n"; [ -f "$f" ] || { [ "$n" = sqlnet.ora ] && : > "$f" || continue; }
+      cp -p "$f" "$f.tmaegis.bak"
+      { grep -viE '^[[:space:]]*SQLNET.CRYPTO_CHECKSUM_SERVER[[:space:]]*=' "$f.tmaegis.bak"; echo 'SQLNET.CRYPTO_CHECKSUM_SERVER=REQUIRED'; } > "$f.tma.new" && cat "$f.tma.new" > "$f"; rm -f "$f.tma.new"
+    done; true
+  guidance: "To remediate this recommendation, set SQLNET.CRYPTO_CHECKSUM_SERVER to REQUIRED. SQLNET.CRYPTO_CHECKSUM_SERVER=REQUIRED"

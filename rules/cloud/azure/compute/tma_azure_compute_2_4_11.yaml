@@ -1,0 +1,17 @@
+id: TMA-AZURE-COMPUTE-2.4.11
+title: Ensure managed identities are configured
+description: Managed identities from Microsoft Entra ID allow function app deployment slots to securely access other Azure services without the need to provision or rotate any secrets. This recommendation applies to function apps using the Consumption, Premium, or Dedicated (App Service) plans, which support deployment slots. Using managed identities with function app deployment slots eliminates the need to store and manage credentials to access Azure resources.
+target: azure
+level: 1
+severity: medium
+tags:
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.4.11 Ensure managed identities are configured
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Identity. 6. Ensure that in the System assigned pane, the Status is set to On, and an Object (principal) ID is displayed, or that in the User assigned pane, a managed identity is listed. 7. Repeat steps 1-6 for each function app and deployment slot. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to list deployment slots: az functionapp deployment slot list --resource-group <resource-group-name> -- name <function-app-name> For each deployment slot, ensure that identity contains type set to SystemAssigned, UserAssigned, or both.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Identity. 6. To add a system assigned managed identity: 1. In the System assigned pane, under Status, click On. 2. Click Save. 3. Click Yes. 7. To add a user assigned managed identity: 1. In the User assigned pane, click Add. 2. Use the filter box to search for a managed identity. 3. Select the identity. 4. Click Add. 8. Repeat steps 1-7 for each function app and deployment slot requiring remediation. Remediate from PowerShell For each deployment slot requiring remediation, run the following command to assign a system-assigned managed identity: Set-AzWebAppSlot -ResourceGroupName <resource-group-name> -Name <function- app-name> -Slot <deployment-slot-name> -AssignIdentity $true'

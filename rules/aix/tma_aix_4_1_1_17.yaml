@@ -1,0 +1,17 @@
+id: TMA-AIX-4.1.1.17
+title: Ensure access is configured for commands referenced by crontab entries
+description: This script checks the permissions of all the root crontab entries, to ensure that they are owned and writable by the root user only. All root crontab entries must be owned and writable by the root user only. If a script had group or world writable access, it could be replaced or edited with malicious content, which would then subsequently run on the system with root authority.
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.1.17 Ensure access is configured for commands referenced by crontab entries
+audit:
+  type: manual
+  command: 'From the command prompt, execute the following script: crontab -l |egrep -v ''^#'' |awk ''{print $6}'' |grep "^/" |sort -u | while read CMD do # first examine the complete command, and later parse the command for it''s directory components. CMD=${CMD:-$(pwd)} while [[ -a ${CMD} ]] do [[ "$(ls -ld ${CMD})" = @([-d]???????w? *) ]] && print " WARNING ${CMD} is world writable" [[ "$(ls -ld ${CMD})" = @([-d]????w???? *) ]] && print " WARNING ${CMD} is group writable" [[ "$(ls -ld ${CMD} |awk ''{print $3}'')" != @(root|bin) ]] && print " WARNING ${CMD} is not owned ... (full steps: CIS section 4.1.1.17)'
+remediation:
+  type: iac_patch
+  command: 'Ensure that all root crontab entries are owned and writable by root only. The script below traverses up each individual directory path, ensuring that all directories are not group/world writable and that they are owned by the root or bin user: crontab -l |egrep -v ''^#'' |awk ''{print $6}'' |grep "^/" |sort -u | while read CMD do CMD=${CMD:-$(pwd)} while [[ -a ${CMD} ]] do [[ "$(ls -ld ${CMD})" = @([-d]???????w? *) ]] && print " WARNING ${CMD} is world writable" [[ "$(ls -ld ${CMD})" = @([-d]????w???? *) ]] && print " WARNING ${CMD} is group writable" [[ "$(ls -ld ${CMD} |awk ''{print $3}'')" != @(root|bin) ]] && print " WARNING ${CMD} is not owned by root or bin" CMD=${CMD%/*} done done NOTE: Review the output and manually change the directories, if possible. Directories which are group and/or world writable or not owned by root are marked with "WARNING" To manually change permissions on the files or directories: To remove group writable access: chmod g-w <name> To remove world
+    writable access: chmod o-w <name> To remove both group and world writable access: chmod go-w <name> To change the owner of a file or directory: chown <new user> <name>'

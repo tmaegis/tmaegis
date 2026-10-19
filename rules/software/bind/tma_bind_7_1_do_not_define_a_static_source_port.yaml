@@ -1,0 +1,28 @@
+id: TMA-BIND-7.1
+title: Do Not Define a Static Source Port
+description: BIND can be configured to always use the same source port when communicating with other DNS servers. This capability is made possible through the query-source port option, and the query-source-v6 port option. It is recommended that the source port be omitted if the query-source option is used, or that the port be specified as a *, so that the port will not be a static port ... The audit fails when any query-source or query-source-v6 statement sets a fixed port (port * / port 0 is allowed). The audit parses the effective configuration printed by named-checkconf -p (all include files resolved) from /etc/named.conf (RHEL; chroot /var/named/chroot is detected) or /etc/bind/named.conf (Debian/Ubuntu).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 7.1 Do Not Define a Static Source Port
+audit:
+  type: command
+  command: |-
+    if [ -f /var/named/chroot/etc/named.conf ]; then out=$(named-checkconf -t /var/named/chroot -p /etc/named.conf 2>/dev/null) || exit 1
+    else conf=/etc/named.conf; [ -f "$conf" ] || conf=/etc/bind/named.conf
+      out=$(named-checkconf -p "$conf" 2>/dev/null) || exit 1; fi
+    flat=$(printf '%s\n' "$out" | tr '\t\n' '  ' | tr -s ' ')
+    opts=$(printf '%s\n' "$out" | awk '/^options[ \t]*\{/{f=1} f{print} f&&/^\};/{exit}' | tr '\t\n' '  ' | tr -s ' ')
+    bad=$(printf '%s\n' "$flat" | grep -Eo 'query-source(-v6)? [^;]*;' | grep -E ' port [1-9][0-9]*')
+    [ -z "$bad" ] && echo compliant || { echo 'static query source port:'; printf '%s\n' "$bad"; }
+  expected_output: compliant
+  requires_file:
+  - /etc/named.conf
+  - /etc/bind/named.conf
+remediation:
+  type: iac_patch
+  command: Either remove the port specification from the query-source or the query-source-v6 option or use an * for the port number.

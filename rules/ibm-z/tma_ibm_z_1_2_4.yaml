@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-1.2.4
+title: Ensure that started tasks defined with the TRUSTED attribute are justified
+description: The TRUSTED attribute allows a started task to bypass RACF checking. It is vital that this attribute is not granted to unauthorized started tasks which could then obtain unauthorized access to the system. Unauthorized started tasks obtaining unauthorized access to the system could result in the compromise of the confidentiality, integrity, and availability of the operating system, RACF, or customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.2.4 Ensure that started tasks defined with the TRUSTED attribute are justified
+audit:
+  type: manual
+  command: 'Request the following DSMON report: FUNCTION SYSTEM RACSPT Review the report and for any profiles that have YES in the TRUSTED column: Verify that the TRUSTED attribute assignment is justified. Note: Examples of TRUSTED assignment justification includes, but is not limited to: The started task or address space creates or accesses a wide variety of unpredictably named data sets. Insufficient authority to an accessed resource might risk an unsuccessful IPL or other critical system functionality error. It is listed as a requirement by the product documentation or vendor.'
+remediation:
+  type: iac_patch
+  command: 'To remove the TRUSTED from a STARTED profile use the RACF RALTER and SETROPTS commands: RALTER STARTED <profile> + STDATA(NOTRUSTED) SETROPTS REFRESH RACLIST(STARTED) IBM provides guidance on z/OS started tasks and address spaces that require TRUSTED in the MVS Initialization and Tuning Reference, linked in the additional information section.'

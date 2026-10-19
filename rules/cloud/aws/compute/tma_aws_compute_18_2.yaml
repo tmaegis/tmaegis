@@ -1,0 +1,17 @@
+id: TMA-AWS-COMPUTE-18.2
+title: Ensure ECR repositories have lifecycle policies configured
+description: 'ECR lifecycle policies automatically expire old or untagged images based on age or count rules. Without lifecycle policies, repositories accumulate unlimited image versions over time, including untagged intermediate builds, old releases with known vulnerabilities, and images containing previously hardcoded secrets that have since been rotated. Stale images present security risk in two ways: they can be accidentally deployed (reintroducing patched vulnerabilities), and they preserve a historical record of application security weaknesses accessible to anyone with repository read access. Lifecycle policies ensure repositories retain only recent, relevant images and automatically remove images that should no longer be available.'
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 18.2 Ensure ECR repositories have lifecycle policies configured
+audit:
+  type: manual
+  command: '1. List all ECR repositories in the region: aws ecr describe-repositories --region $AWS_REGION \ --query ''repositories[].repositoryName'' --output table 2. For each of the repositories returned above, check whether it has a lifecycle policy: aws ecr get-lifecycle-policy --repository-name <repo-name> --region $AWS_REGION - The repository Fails if the command returns LifecyclePolicyNotFoundException.'
+remediation:
+  type: iac_patch
+  command: 'For each repository that Failed the audit, apply a lifecycle policy. The example below expires untagged images after 14 days and keeps only the last 30 tagged versions: aws ecr put-lifecycle-policy --repository-name <repo-name> --region $AWS_REGION \ --lifecycle-policy-text ''{ "rules": [ { "rulePriority": 1, "description": "Expire untagged images after 14 days", "selection": { "tagStatus": "untagged", "countType": "sinceImagePushed", "countUnit": "days", "countNumber": 14 }, "action": {"type": "expire"} }, { "rulePriority": 2, "description": "Keep only last 30 tagged images", "selection": { "tagStatus": "tagged", "tagPrefixList": ["v"], "countType": "imageCountMoreThan", "countNumber": 30 }, "action": {"type": "expire"} } ] }'''

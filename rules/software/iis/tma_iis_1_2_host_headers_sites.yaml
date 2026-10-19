@@ -1,0 +1,19 @@
+id: TMA-IIS-1.2
+title: Ensure 'Host headers' are on all sites
+description: 'Host headers provide the ability to host multiple websites on the same IP address and port. It is recommended that host headers be configured for all sites. Note: Wildcard host headers are now supported. Every http binding must include a host name (IP:port:host); bindings such as *:80: fail. PowerShell 5.1 with the WebAdministration module; run elevated.'
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- network
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 1.2 Ensure 'Host headers' are on all sites
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $bad = @(Get-WebBinding | Where-Object { $_.protocol -eq 'http' -and ($_.bindingInformation -split ':')[2] -eq '' }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebBinding -Name '<site>' -BindingInformation '*:80:' -PropertyName HostHeader -Value '<fqdn>'

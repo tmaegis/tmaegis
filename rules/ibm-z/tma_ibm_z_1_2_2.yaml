@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-1.2.2
+title: Ensure that the STARTED resource class is used to assign user IDs to started tasks
+description: Started procedures have system generated job statements that do not contain the user, group, or password statements. To enable the started procedure to access the same protected resources that users and groups access, started procedures must have an associated user ID. If a user ID is not associated with the started procedure, the started procedure will not have access to the resources.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- accounts
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.2.2 Ensure that the STARTED resource class is used to assign user IDs to started tasks
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that STARTED appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that STARTED appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that STARTED appears. Request the following DSMON report: FUNCTION SYSTEM RACSPT Review the FROM PROFILES IN THE STARTED CLASS: section. Verify that no entries contain: -USER NOT SPECIFIED, ICHRIN03 WILL BE USED- Request IRRUT100 cross reference output and ... (full steps: CIS section 1.2.2)'
+remediation:
+  type: iac_patch
+  command: 'Notes: 1. RACF cannot be initialized if ICHRIN03 is not present so even when a catch-all ** profile in the STARTED class is used to assign user IDs, a dummy ICHRIN03 is shipped with and installed by RACF. 2. For installations that have an existing ICHRIN03 in place and want to migrate to using the STARTED class, a sample REXX exec is provided in member ICHSPTCV in SYS1.SAMPLIB to process the output of the RACF DSMON program and build RACF RDEFINE commands to replicate current ICHRIN03 entries. 3. It is recommended that a minimal set of STC definitions be maintained in the ICHRIN03, such that an IPL can be completed and the system can be brought up in cases of RACF failure. To activate the STARTED class use the RACF SETROPTS command: SETROPTS CLASSACT(STARTED) To enable generic profile checking for the STARTED class use the RACF SETROPTS command: SETROPTS GENERIC(STARTED) To RACLIST the STARTED class use the RACF SETROPTS command: SETROPTS RACLIST(STARTED) To create dedicated
+    IDs for the STDATA segment use the RACF ADDGROUP, ADDUSER, and CONNECT commands: ADDGROUP STCGRP + OWNER(<group>) + SUPGROUP(<group>) + DATA(''CATCH-ALL STC PROFILE GROUP'') ADDUSER ... (see CIS section 1.2.2)'

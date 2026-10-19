@@ -1,0 +1,27 @@
+id: TMA-ORACLE-DB-4.8
+title: Ensure That Database Link Passwords Are Using The Latest Encryption
+description: In Oracle databases prior to version 23ai, encrypted passwords for database links are stored in the PASSWORDX column, which can be decrypted. Oracle 23ai enhances security by storing encrypted database link passwords in the SPARE1 column, making decryption significantly more difficult. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: medium
+tags:
+- oracle-db
+- database
+- oracle
+- encryption
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.8 Ensure That Database Link Passwords Are Using The Latest Encryption
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from containers("SYS"."LINK$") v where v.passwordx is not null;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: After upgrading to Oracle 23ai, drop and recreate the database link to ensure that passwords are encrypted using the latest method.

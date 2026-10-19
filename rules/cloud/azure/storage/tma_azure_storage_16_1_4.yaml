@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-16.1.4
+title: Ensure that a shared access signature (SAS) expiration policy is configured
+description: Shared access signature (SAS) tokens grant delegated, time-bound access to data in a storage account. A SAS expiration policy is a storage-account-level setting that specifies a recommended upper limit (a maximum validity period) for the lifetime of those SAS tokens. When the policy is enabled, Azure evaluates every new SAS against the limit and either records (the default Log action) or rejects (the Block action) any SAS whose requested expiry exceeds it. This recommendation ensures that a SAS expiration policy is configured on the storage account so that a maximum SAS token validity is defined. SAS tokens grant time-bound, delegated access to storage data, and a leaked or over- shared token remains usable until it expires. Without an expiration policy, tokens can be minted with arbitrarily long lifetimes, widening the window in which a compromised token can be abused. Defining an ac...
+target: azure
+level: 1
+severity: medium
+tags:
+- access-control
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.1.4 Ensure that a shared access signature (SAS) expiration policy is configured
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Settings, select Configuration. 3. Locate Shared access signature (SAS) expiration policy and confirm it is set to Enabled. 4. Confirm that a value is specified for Upper limit for SAS expiry interval (the maximum SAS validity period). Audit from Azure CLI For each storage account, run the following and confirm that sasPolicy is present and that sasExpirationPeriod is non-null. An empty or null sasPolicy indicates that no expiration policy is configured. az storage account show \ --name <storage-account> \ --resource-group <resource-group> \ --query "{SasPolicy:sasPolicy}" Audit from PowerShell For each storage account, run the following and confirm that the SasExpirationPeriod property is populated. (Get-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account>).SasPolicy Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open
+    a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Defini...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Settings, select Configuration. 3. Set Shared access signature (SAS) expiration policy to Enabled. If the control is unavailable, rotate both account access keys once (see Additional Information), then return here. 4. Under Upper limit for SAS expiry interval, specify the maximum SAS validity period appropriate for your organization, in days.hours:minutes:seconds format. 5. Optionally set the expiration action to Block to enforce the limit; the default Log action only records out-of-policy SAS. 6. Select Save. Remediate from Azure CLI For each storage account, run the following, substituting the desired maximum validity period (in days.hours:minutes:seconds format) and action (Log or Block): az storage account update \ --name <storage-account> \ --resource-group <resource-group> \ --sas-exp <days>.<hours>:<minutes>:<seconds> \ --sas-expiration-action <Log|Block> Remediate from PowerShell
+    For each storage account, run the following: Set-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account> -SasExpirationPeriod <days>.<hours>:<minutes>:<seconds> - SasExpirationAction <...'

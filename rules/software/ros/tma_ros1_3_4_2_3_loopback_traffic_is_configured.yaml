@@ -1,0 +1,28 @@
+id: TMA-ROS1-3.4.2.3
+title: Ensure loopback traffic is configured
+description: 'Configure the loopback interface to accept traffic. Configure all other interfaces to deny traffic to the loopback network (127.0.0.0/8 for IPv4 and ::1/128 for IPv6). Applies when ufw is installed: the audit requires the six loopback allow/deny rules in ufw status verbose (order is not verified). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.2.3 Ensure loopback traffic is configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    out=$(ufw status verbose 2>/dev/null | tr -s ' ') || exit 1
+    bad=0
+    for r in 'Anywhere on lo ALLOW IN Anywhere' 'Anywhere DENY IN 127.0.0.0/8' 'Anywhere (v6) on lo ALLOW IN Anywhere (v6)' 'Anywhere (v6) DENY IN ::1' 'Anywhere ALLOW OUT Anywhere on lo' 'Anywhere (v6) ALLOW OUT Anywhere (v6) on lo'; do
+      printf '%s\n' "$out" | grep -Fxq -- "$r" || { echo "missing rule: $r"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/sbin/ufw
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to implement the loopback rules: # ufw allow in on lo # ufw deny in from 127.0.0.0/8 # ufw deny in from ::1'

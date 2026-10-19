@@ -1,0 +1,37 @@
+id: TMA-SAFARI-6.1
+title: Ensure 'Warn when visiting a fraudulent website' is 'Enabled'
+description: "Safari can be configured to alert the user that the site they are visiting is known to be malicious. It is recommended that this capability be enabled. Rationale: Users will be alerted about known malicious web sites, thus decreasing the probability of a user\u2019s browser or system being exploited by known malware or phishing site. Audit reads WarnAboutFraudulentWebsites from the com.apple.Safari preference domain of the account running the scan (the PDF checks the same token in com.apple.Safari.plist; manual check: Follow the below steps and verify that Warn when visiting a fraudulent website is Enabled: 1. Click Safari. 2. Click Preferences. 3. Click Security. 4. Verify Warn when visiting a fraudulent website i). Safari is sandboxed, so the reading process needs Full Disk Access on macOS 10.14+. A missing key exits non-zero and is reported as FAIL even where the built-in default is compliant. Values forced by a configuration profile live in /Library/Managed Preferences\
+  \ and are not read here."
+target: safari
+level: 1
+severity: medium
+tags:
+- safari
+- browser
+- cis-l1
+reference: CIS macOS Safari Benchmark v2.0.0 - 6.1 Ensure 'Warn when visiting a fraudulent website' is 'Enabled'
+audit:
+  type: command
+  command: out=$(defaults read com.apple.Safari WarnAboutFraudulentWebsites 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '1'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    # Same account that runs the audit (it reads the scanning user's own preference domain).
+    defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true
+    killall cfprefsd 2>/dev/null || true
+    [ "$(defaults read com.apple.Safari WarnAboutFraudulentWebsites 2>/dev/null)" = 1 ] || { echo "Safari WarnAboutFraudulentWebsites not 1" >&2; exit 1; }
+  guidance: "Follow the below steps to set Warn when visiting a fraudulent website to Enabled: 1. Click Safari. 2. Click Preferences. 3. Click AutoFill. 4. Check the Warn when visiting a fraudulent website checkbox. Or deploy a configuration profile for com.apple.Safari setting WarnAboutFraudulentWebsites = true, or as the logged-in user run: defaults write com.apple.Safari WarnAboutFraudulentWebsites -bool true and restart Safari."

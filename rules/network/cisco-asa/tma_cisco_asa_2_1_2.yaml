@@ -1,0 +1,24 @@
+id: TMA-CISCO-ASA-2.1.2
+title: Ensure 'EIGRP authentication' is enabled
+description: Enables the authentication of EIGRP neighbor before routing information is received from the neighbor. Enabling the routing protocol authentication prevents against attackers who can send wrong routing information in order to redirect traffic to their network or send malformed packets in order to saturate and to exhaust the control plane. Passes when EIGRP is not configured; otherwise fails if no interface sets 'authentication mode eigrp <as> md5'. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 2
+severity: high
+tags:
+- cisco-asa
+- network
+- aaa
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 2.1.2 Ensure 'EIGRP authentication' is enabled
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^m\n]|m(?:$|[^o\n]|o(?:$|[^d\n]|d(?:$|[^e\n]|e(?:$|[^ \n]| (?:$|[^e\n]|e(?:$|[^i\n]|i(?:$|[^g\n]|g(?:$|[^r\n]|r(?:$|[^p\n]|p(?:$|[^ \n]))))))))))))))))))))))))))[^\n]*\n)*[ \t]*router eigrp [^\n]*(?:\n(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n]| (?:$|[^m\n]|m(?:$|[^o\n]|o(?:$|[^d\n]|d(?:$|[^e\n]|e(?:$|[^ \n]| (?:$|[^e\n]|e(?:$|[^i\n]|i(?:$|[^g\n]|g(?:$|[^r\n]|r(?:$|[^p\n]|p(?:$|[^ \n]))))))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the interface <interface_name> used by the firewall to receive EIGRP routing updates and the EIGRP Autonomous System number <as_number>
+    - Step 2: Agree with the neighbor device on the authencation key <key_value> and determine an authentication key ID <key_id>
+    - Step 3: Run the following to enable RIP authentication
+    interface <interface_name>
+    authentication mode eigrp <as_number> md5
+    authentication key eigrp <as_number> <key_value> key-id <key_id>

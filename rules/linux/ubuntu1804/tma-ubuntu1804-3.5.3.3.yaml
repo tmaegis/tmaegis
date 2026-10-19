@@ -1,0 +1,21 @@
+id: TMA-UBUNTU1804-3.5.3.3
+title: Ensure base chains exist
+description: Chains are containers for rules. They exist in two kinds, base chains and regular chains. A base chain is an entry point for packets from the networking stack, a regular chain may be used as jump target and is used for better rule organization.
+target: linux
+os_family:
+- ubuntu-18.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 18.04 LTS Benchmark v2.0.1 ARCHIVE - 3.5.3.3
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v nft >/dev/null 2>&1 || { echo "step1: nft not installed"; return 1; }; o=$(bash -c ''nft list ruleset | grep ''"''"''hook input''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''type filter hook input priority 0;'' || { echo step1: missing ''type filter hook input priority 0;''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command -v nft >/dev/null 2>&1 || { echo "step2: nft not installed"; return 1; }; o=$(bash -c ''nft list ruleset | grep ''"''"''hook forward''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''type filter hook forward priority 0;'' || { echo step2: missing ''type filter hook forward priority 0;''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step3: grep not installed"; return 1; }; command -v
+    nft >/dev/null 2>&1 || { echo "step3: nft not installed"; return 1; }; o=$(bash -c ''nft list ruleset | grep ''"''"''hook output''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''type filter hook output priority 0;'' || { echo step3: missing ''type filter hook output priority 0;''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to create the base chains: # nft create chain inet <table name> <base chain name> { type filter hook <(input|forward|output)> priority 0 \; } Example: # nft create chain inet filter input { type filter hook input priority 0 \; } # nft create chain inet filter forward { type filter hook forward priority 0 \; } # nft create chain inet filter output { type filter hook output priority 0 \; }'

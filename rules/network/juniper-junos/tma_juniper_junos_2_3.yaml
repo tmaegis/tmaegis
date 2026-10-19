@@ -1,0 +1,19 @@
+id: TMA-JUNIPER-JUNOS-2.3
+title: Ensure "Protect RE" Firewall filter includes Rate-Limiting for Management Services terms
+description: 'Policers should be applied to Management Services. Junos supports a wide range of Management, Monitoring and Automation Services, making it an extremely flexible and adaptable platform. However, as with any computer system, the more services that are offered and the more hosts to which they are available, the ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 2.3 Ensure "Protect RE" Firewall filter includes Rate-Limiting for Management Services terms
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options available for Management Service selection, management subnets and filter design, it is not possible to automatically score this recommendation. "Protect RE" Firewall Filters should be set for ingress traffic on all Loopback interfaces as discussed in Recommendation 2.1 Ensure "Protect RE" Firewall Filter is set for inbound traffic to the Routing Engine for IPv4 (inet) and IPv6 (inet6) as necessary.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! A full discussion of Firewall Filters is beyond the scope of this Benchmark. It is important to ensure that Firewall Filters include terms to match and accept all of your required Routing Protocols, Management Services and any other services used on your Junos Device. As noted elsewhere, it is strongly recommended that changes to Firewall Filters applied to the Loopback interface always be applied using commit confirmed so that the change will be automatically rolled back should the administrator lose connection after committing the change. In this example we will add Rate-Limiting to the Management Services terms configured in Recommendation 2.2 Ensure "Protect RE" Firewall Filter includes explicit terms for all Management Services Draft using the following commands from the hierarchy: First we need to create the two 'policer' definitions, which can be re-used in multiple terms of filters. mwhite@SRX1# set policer limit-10m if-exceeding bandwidth-limit 10m mwhite@SRX1# set policer limit-10m if-exceeding burst-size-limit 625k mwhite@SRX1# set policer limit-10m then discard mwhite@SRX1# set policer limit-1m if-exceeding bandwidth-limit 1m mwhite@SRX1# set policer limit-1m if-exceeding burst-size-limit 15k mwhite@SRX1# set policer limit-1m then discard These policers set a bandwidth-limit of 10Mb/s and 1Mb/s respectively, with an appropriate burst-size set on each proportional to the configured limit to allow bursts to briefly exceed the limit and smooth the impact of the policer on the service. The limit-10m policer is then applied to both the AcceptSSH and AcceptHTTPS
+    ! ... see the benchmark for the full procedure

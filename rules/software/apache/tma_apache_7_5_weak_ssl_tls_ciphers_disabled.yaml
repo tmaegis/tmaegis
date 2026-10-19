@@ -1,0 +1,24 @@
+id: TMA-APACHE-7.5
+title: Ensure Weak SSL/TLS Ciphers Are Disabled
+description: Disable weak SSL ciphers using the SSLCipherSuite, and SSLHonorCipherOrder directives. The SSLCipherSuite directive specifies which ciphers are allowed in the negotiation with the client. While the SSLHonorCipherOrder causes the server's preferred ciphers to be used instead of the clients' specified preferences. The effective SSLCipherSuite (last one at server level and in each virtual host) is expanded with the local openssl ciphers -v; no resulting suite may be NULL/anonymous, EXPORT, RC4 or <= 56-bit, and SSLHonorCipherOrder must be On. Fails when no SSLCipherSuite is configured. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: apache
+level: 1
+severity: high
+tags:
+- apache
+- tls
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 7.5 Ensure Weak SSL/TLS Ciphers Are Disabled
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; eff(){ printf '%s\n' "$cfg" | awk -v k="$1" '{l=tolower($0)} l~/^<virtualhost/{vh=1; next} l~/^<\/virtualhost>/{if(v!="") print v; v=""; vh=0; next} tolower($1)==tolower(k){if(vh)
+    v=$0; else g=$0} END{if(g!="") print g}'; }; s=$(eff SSLCipherSuite | awk 'tolower($1)=="sslciphersuite"{v=(NF>=3 && ($2=="SSL"||$2=="TLSv1.3"))?$3:$2; if(NF>=3 && $2=="TLSv1.3") next; gsub(/"/,"",v); print v}'); [ -n "$s" ] || { echo noncompliant; exit 0; }; command -v openssl >/dev/null || exit 1; bad=0; while IFS= read -r v; do o=$(openssl ciphers -v "$v" 2>/dev/null) || { bad=1; continue; }; printf '%s\n' "$o" | awk '$2!="TLSv1.3" && ($5~/None|RC4|\(40\)|\(56\)|DES\(56\)/ || $4~/None/ || $1~/EXP|NULL|ADH|AECDH/)' | grep -q . && bad=1; done <<< "$s"; eff SSLHonorCipherOrder | awk 'tolower($1)=="sslhonorcipherorder"{n++; if(tolower($2)!="on") b=1} END{exit !(n>0 && !b)}' || bad=1; [ "$bad" = 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: SSLHonorCipherOrder On and SSLCipherSuite ALL:!EXP:!NULL:!LOW:!SSLv2:!RC4:!aNULL at server level and in every TLS virtual host. Then run apachectl configtest and reload Apache.

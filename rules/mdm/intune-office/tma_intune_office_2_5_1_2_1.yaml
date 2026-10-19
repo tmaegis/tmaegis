@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.1.2.1
+title: Ensure 'Do not allow users to change permissions on folders' is set to 'Enabled'
+description: 'This policy setting prevents users from changing their mail folder permissions. If this policy setting is enabled, Outlook users cannot change permissions on folders; the settings on the Permissions tab are disabled. Enabling this policy setting does not affect existing permissions, and users can still change permissions by sending a sharing message. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) disableeditpermissions that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.1.2.1 Ensure 'Do not allow users to change permissions on folders' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\options\folders'') -Name ''disableeditpermissions'' -ErrorAction SilentlyContinue).''disableeditpermissions''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':disableeditpermissions='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Outlook 2016\Account Settings\Exchange\Do not allow users to change permissions on folders'

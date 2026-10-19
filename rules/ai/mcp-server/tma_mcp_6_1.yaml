@@ -1,0 +1,18 @@
+id: TMA-MCP-6.1
+title: Ensure model context is minimized and MIME handling is honored
+description: The server sends only the minimum context necessary for the model to complete the current operation. Where the server requests a model generation through sampling, that request travels inside an InputRequiredResult under the multi round-trip request pattern. The includeContext parameter defaults to none, with the thisServer and allServers values deprecated, so a compliant request does not pull in server or cross-server context unless the operator opts in. Content filters and size constraints are applied to resource content before it is placed in a sampling payload or forwarded directly to a model provider. Arbitrary or unvalidated bytes are not injected into text context, and where image or audio context is intentionally supported, it is validated and passed as the provider's typed image or audio representation (base64 data with a mimeType) rather than as text. Secrets, credentials, a...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 6.1 Ensure model context is minimized and MIME handling is honored
+audit:
+  type: manual
+  command: 'Inspect model-context payloads, whether sent through sampling or forwarded directly to a model provider, and confirm each carries only the content needed for the operation, contains no raw or unvalidated bytes in text fields, and contains no credentials or secrets. Set MAX_CONTEXT_BYTES to the configured maximum payload size, then run the following command, which reads each log line as JSON, selects the sampling- payload records, and fails any that exceed the maximum: LOG="<MCP_AUDIT_LOG>" MAX_CONTEXT_BYTES="<MAX_CONTEXT_BYTES>" if [ ! -r "$LOG" ]; then echo "ERROR: audit log \"$LOG\" not found or not readable (set MCP_AUDIT_LOG)" else sizes=$(jq -rR ''(fromjson? // null) as $o | select($o != null and $o.event == "sampling_payload") | ($o.payload_bytes // empty)'' "$LOG" 2>/dev/null | sort -nr) if [ -z "$sizes" ]; then echo "REVIEW: no sampling_payload events in log (nothing to assess, or the deployment integrates a model provider directly and the direct-provider path must be
+    inspected instead)" elif printf ''%s'' "$MAX_CONTEXT_BYTES" | grep -q ''<MAX_CONTEXT_BYTES>''; then echo "sampling_payload sizes (bytes), largest first:" printf ''%s\n'' "$sizes" | head echo "REVIEW: set MAX_CONTEX...'
+remediation:
+  type: iac_patch
+  command: Configure the server middleware to filter context to the minimum needed for the operation, and to scrub secrets and personally identifiable information before forwarding. Keep unvalidated bytes out of text context, and pass intentional image or audio content as the provider's typed representation. Enforce a maximum context payload size, coordinated with the deployment's request and response body-size limits. Because sampling is deprecated as of the 2026-07-28 revision, apply the same minimization and scrubbing to any context sent to a model provider through a direct integration. This is server middleware and configuration, so there is no portable command.

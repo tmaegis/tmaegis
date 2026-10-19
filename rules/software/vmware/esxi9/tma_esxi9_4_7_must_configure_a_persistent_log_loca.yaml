@@ -1,0 +1,21 @@
+id: TMA-ESXI9-4.7
+title: Host must configure a persistent log location for all locally stored audit records
+description: Configuring a persistent log location for locally stored audit records on ESXi hosts is critical to ensure audit continuity. When the "/scratch" directory is linked to "/tmp/scratch", only a day's worth of records are retained, and they are reinitialized upon each reboot, creating a security risk. The audit reads Syslog.global.auditRecord.storageDirectory with esxcli and requires a datastore path (/vmfs/volumes/... or [datastore] ...); the default /scratch location fails. Do not use a vSAN datastore. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 4.7 Host must configure a persistent log location for all locally stored audit records
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Syslog/global/auditRecord/storageDirectory 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^ *String Value: *//p' | head -n 1)
+    if case "$v" in /vmfs/volumes/?*|\[*\]*) true ;; *) false ;; esac; then echo compliant; else echo "/Syslog/global/auditRecord/storageDirectory = '$v' (expected a persistent datastore path)"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure a persistent datastore location with: esxcli system auditrecords local set \ -- directory=/vmfs/volumes/<Datastore-UUID>/audit/<hostname> then esxcli system auditrecords local enable verify compliance with: esxcli system auditrecords get compliant results = Audit Record Storage Active: true Audit Record Storage Directory: /vmfs/volumes/<Datastore-UUID>/audit/<hostname>'

@@ -1,0 +1,18 @@
+id: TMA-SHAREPOINT-2.2
+title: Ensure the SharePoint farm service account (database access account) is configured with the minimum privileges for the local server.
+description: The SharePoint farm service account (database access account) must be configured with the minimum privileges for the local server. Prints the number of local groups on this server, other than WSS_RESTRICTED_WPG, WSS_ADMIN_WPG and WSS_WPG, that directly contain the farm service account (expected 0). Only direct membership is evaluated; nested domain groups need manual review. Run on every farm server. Run on a SharePoint farm server as a farm administrator; the audit loads the Microsoft.SharePoint.PowerShell snap-in and fails if it cannot.
+target: sharepoint
+level: 1
+severity: high
+tags:
+- sharepoint
+- service-accounts
+- least-privilege
+reference: CIS Microsoft SharePoint 2019 Benchmark v1.0.0 - 2.2 Ensure the SharePoint farm service account (database access account) is configured with the minimum privileges for the local server.
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.SharePoint.PowerShell -ErrorAction Stop }; if (-not (Get-Command Get-SPFarm -ErrorAction SilentlyContinue)) { throw 'SharePoint cmdlets are not available' }; $acct = "$((Get-SPFarm -ErrorAction Stop).DefaultServiceAccount.Name)"; if ($acct -notmatch '\\') { throw 'farm account not found' }; $dom, $sam = $acct.Split('\', 2); $re = '/' + [regex]::Escape($dom) + '/' + [regex]::Escape($sam) + '$'; $allowed = @('WSS_RESTRICTED_WPG','WSS_ADMIN_WPG','WSS_WPG'); $pc = [ADSI]("WinNT://" + $env:COMPUTERNAME + ",computer"); $bad = @($pc.Children | Where-Object { $_.SchemaClassName -eq 'group' } | Where-Object { $allowed -notcontains "$($_.Name)" } | Where-Object { $paths = @($_.Invoke('Members') | ForEach-Object { $_.GetType().InvokeMember('ADsPath', 'GetProperty', $null, $_, $null) }); @($paths | Where-Object { $_ -match $re }).Count -gt 0 }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove the farm account from every local group except WSS_RESTRICTED_WPG, WSS_ADMIN_WPG and WSS_WPG (Server Manager > Local Users and Groups, or Remove-LocalGroupMember -Group <group> -Member <DOMAIN\farmaccount>), and remove any other rights/services assigned to it.

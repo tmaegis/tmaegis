@@ -1,0 +1,23 @@
+id: TMA-CISCO-NXOS-3.1.2.1
+title: Configure BGP to Log Neighbor Changes
+description: 'Logging changes to the BGP peering relationships is recommended. Any logged changes will in the best case indicate a service issue due to standard operational issues (connectivity issues and so on) or in the worst case, could indicate malicious activity attempting to subvert the peering relationship and/or the routing table. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- logging
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.2.1 Configure BGP to Log Neighbor Changes
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The "show running-config bgp" command will list out the full BGP configuration. For each BGP neighbor stanza, ensure that the "log-neighbor-changes" command is present. switch# sho run bgp !Command: show running-config bgp !Running configuration last done at: Wed May 20 11:47:06 2020 !Time: Wed May 20 11:47:10 2020 version 9.3(3) Bios:version feature bgp router bgp 65520 router-id 10.10.10.10 neighbor 10.10.10.11 remote-as 65521 log-neighbor-changes Logging events triggered by BGP sessions being established or dropped are shown ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! In each "neigbor" stanza of the BGP configuration, add the command "log-neighbor-changes"
+    router bgp <asn>
+    router-id <local ip, preferably a loopback>
+    neighbor <neighbor ip address>
+    remote-as <neighbor asn>
+    log-neighbor-changes In addition, the events below should be configured in any log or SIEM solution to generate an alert for investigation. A good keyword to alert on is "ADJCHANGE" 2020 May 20 11:54:18 CISNXOS9 %BGP-5-ADJCHANGE: bgp- [7984] (default) neighbor 10.10.10.11 Up 2020 May 20 13:08:15 CISNXOS9 %BGP-5-ADJCHANGE: bgp- [7984] (default) neighbor 10.10.10.11 Down - sent: holdtimer expired error

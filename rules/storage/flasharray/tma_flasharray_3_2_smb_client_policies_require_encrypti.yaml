@@ -1,0 +1,18 @@
+id: TMA-FLASHARRAY-3.2
+title: Ensure SMB client policies require encryption, restrict client access, and disable anonymous access
+description: 'SMB Client Policies are used to control access to any given file system export over any version of the SMB protocol. They can set properties such as SMB encryption requirements, and read-only vs. read-write based on client network identity. Fails when an SMB client rule uses the * client, does not require SMB encryption, or allows anonymous access. Note: a * client in any exported rule list (NFS included) also fails this check. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "purepolicy smb rule list --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: high
+tags:
+- flasharray
+- storage
+- file-services
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 3.2 Ensure SMB client policies require encryption, restrict client access, and disable anonymous access
+audit:
+  type: config_regex
+  pattern: (?im)(?:\bclient[ \t]*[=:]?[ \t]*\*(?:\s|$)|smb[ _-]?encryption[ _-]?required[ \t]*[=:]?[ \t]*false|anonymous[ _-]?access[ _-]?allowed[ \t]*[=:]?[ \t]*true)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, update your SMB client policy rules to constrain client IPs, require SMB encryption, and ensure anonymous access remains disabled. From the GUI: ; Navigate to Storage > Policies. ; In the Export Policies panel, click the name of the SMB policy to modify. ; In the Rules panel, click the + (Create Rule) icon to add a new, secure rule. (Note: Modifying existing SMB rules via the GUI is done by adding a new rule and removing the non-compliant one). ; Set the Client field to a specific IP subnet (e.g., 192.168.10.0/24). ; Ensure the SMB Encryption Required toggle is enabled (blue). ; Ensure the Anonymous Access Allowed toggle is disabled (gray).'

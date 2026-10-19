@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.3.27.6
+title: Ensure 'Allow VBA to load typelib references by path from untrusted intranet locations' is set to 'Disabled'
+description: 'This policy setting permits VBA to load typelib references by explicit path read from the project data if that path points to an intranet location that is not explicitly in the system trusted sites list. If this policy setting is enabled, VBA will treat intranet paths like local machine paths, and therefore VBA will attempt to search for unregistered references in intranet locations that are not local machine or in the system''s trusted sites list. The recommended state for this setting is: Disabled. Audit: reads the registry value(s) allowvbaintranetreferences that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.3.27.6 Ensure 'Allow VBA to load typelib references by path from untrusted intranet locations' is set to 'Disabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\vba\security'') -Name ''allowvbaintranetreferences'' -ErrorAction SilentlyContinue).''allowvbaintranetreferences''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':allowvbaintranetreferences='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Disabled: Microsoft Office 2016\Security Settings\Allow VBA to load typelib references by path from untrusted intranet locations'

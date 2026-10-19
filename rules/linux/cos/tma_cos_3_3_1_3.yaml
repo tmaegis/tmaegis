@@ -1,0 +1,16 @@
+id: TMA-COS-3.3.1.3
+title: Ensure IPv6 outbound and established connections are configured
+description: Configure the firewall rules for new outbound, and established IPv6 connections. If rules are not in place for new outbound, and established connections all packets will be dropped by the default policy preventing network usage.
+target: cos
+level: 2
+severity: low
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 3.3.1.3 Ensure IPv6 outbound and established connections are configured
+audit:
+  type: manual
+  command: 'Run the following command and verify all rules for new outbound, and established connections match site policy: # ip6tables -L -v -n'
+remediation:
+  type: iac_patch
+  command: 'Configure iptables in accordance with site policy. The following commands will implement a policy to allow all outbound connections and all established connections: # ip6tables -A OUTPUT -p tcp -m state --state NEW,ESTABLISHED -j ACCEPT # ip6tables -A OUTPUT -p udp -m state --state NEW,ESTABLISHED -j ACCEPT # ip6tables -A OUTPUT -p icmp -m state --state NEW,ESTABLISHED -j ACCEPT # ip6tables -A INPUT -p tcp -m state --state ESTABLISHED -j ACCEPT # ip6tables -A INPUT -p udp -m state --state ESTABLISHED -j ACCEPT # ip6tables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT'

@@ -1,0 +1,43 @@
+id: TMA-FORTISWITCH-1.6.1.2
+title: Remove default admin user and create one with other name
+description: Before deploying any new Fortinet, it is important to change the password of the default admin account. It is also recommended that you change even the user name of the default admin account. However, since you cannot change the user name of an account that is currently in use, a second administrator account must be created in order to do this. FAILs if the default 'admin' account still exists. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: critical
+tags:
+- fortiswitch
+- authentication
+reference: CIS FortiSwitch Benchmark v1.0.0 - 1.6.1.2 Remove default admin user and create one with other name
+audit:
+  type: config_regex
+  pattern: (?m)^config system admin\n(?:[ \t]+[^\n]*\n)*?[ \t]+edit "admin"[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config system admin
+        edit "mycompanyadmin"
+            set accprofile "super_admin"
+            set password <password>
+        next
+    end
+    (log in as mycompanyadmin, then)
+    config system admin
+        delete "admin"
+    end
+    # CIS guidance:
+    First create another local admin account, for example mycompanyadmin.
+    config system admin
+        edit "mycompanyadmin"
+            set accprofile "tier_1"
+            set password ......
+            set accprofile "super_admin"
+        end
+    Verify if the newly created login works by opening another CLI session, do not logout of your current session. Once validated, logout with the default local admin account and use the CLI session with mycompanyadmin to delete the default local admin account. Please make sure there are no references in the configuration to the account (groups, etc.)
+    config system admin
+        delete "admin"
+    end
+    To change the default password in the GUI:
+    System > Admin > Administrators and click on "Edit" under the "admin" user. Create New admin account (mycompanyadmin):
+    System > Admin > Administrators and clicking on "Add Administrator". Verify if you can login with that account via another browser session (eg. incognito mode). Remove default admin user:
+    System > Admin > Administrators and selecting "admin" and clicking on the "Delete" button.

@@ -1,0 +1,18 @@
+id: TMA-M365-2.1.4
+title: Ensure Safe Attachments policy is enabled
+description: The Safe Attachments policy helps protect users from malware in email attachments by scanning attachments for viruses, malware, and other malicious content. When an email attachment is received by a user, Safe Attachments will scan the attachment in a secure environment and provide a verdict on whether the attachment is safe or not. Enabling Safe Attachments policy helps protect against malware threats in email attachments by analyzing suspicious attachments in a secure, cloud-based environment before they are delivered to the user's inbox. This provides an additional layer of security and can prevent new or unseen types of malware from infiltrating the organization's network.
+target: m365
+level: 2
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.1.4 Ensure Safe Attachments policy is enabled
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand E-mail & Collaboration > Policies & rules. 3. On the Policies & rules page select Threat policies. 4. Under Policies select Safe Attachments. 5. Inspect the highest priority policy. 6. Verify that Users and domains and Included recipient domains are in scope for the organization. 7. Verify that Safe Attachments detection response: is set to Block - Block current and future messages and attachments with detected malware. 8. Verify that Quarantine Policy is set to AdminOnlyAccessPolicy. 9. Verify that the policy is not disabled. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Get-SafeAttachmentPolicy | ft Identity,Enable,Action,QuarantineTag 3. Inspect the highest priority safe attachments policy and ensure the properties and values match the below: Enable : True Action : Block QuarantineTag : AdminOnlyAccessPolicy
+    Note: To view the priority for a policy the Get-SafeAttachmentRule must be used. Built-in policies will always have a priority of lowest while presets like strict and standard can be viewed wit...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand E-mail & Collaboration > Policies & rules. 3. On the Policies & rules page select Threat policies. 4. Under Policies select Safe Attachments. 5. Click + Create. 6. Create a Policy Name and Description, and then click Next. 7. Select all valid domains and click Next. 8. Select Block. 9. Quarantine policy is AdminOnlyAccessPolicy. 10. Leave Enable redirect unchecked. 11. Click Next and finally Submit. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. To change an existing policy modify the example below and run the following PowerShell command: Set-SafeAttachmentPolicy -Identity ''Example policy'' -Action ''Block'' - QuarantineTag ''AdminOnlyAccessPolicy'' -Enable $true 3. Or, edit and run the below example to create a new safe attachments policy. New-SafeAttachmentPolicy -Name "CIS 2.1.4" -Enable $true -Action ''Block'' - QuarantineTag
+    ''AdminOnlyAccessPolicy'' New-SafeAttachmentRule -Name "CIS 2.1.4 Rule" -SafeAttachmentPolicy "CIS 2.1.4" -RecipientDomainIs ''exampledomain[.]com'' Note: Policy targets such as users and domains should include doma...'

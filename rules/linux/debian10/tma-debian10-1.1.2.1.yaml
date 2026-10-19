@@ -1,0 +1,21 @@
+id: TMA-DEBIAN10-1.1.2.1
+title: Ensure /tmp is a separate partition
+description: The /tmp directory is a world-writable directory used for temporary storage by all users and some applications.
+target: linux
+os_family:
+- debian-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS Debian Linux 10 Benchmark v2.0.0 ARCHIVE - 1.1.2.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /tmp >/dev/null 2>&1; then echo compliant; else echo /tmp' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For specific configuration requirements of the /tmp mount for your environment, modify /etc/fstab or tmp.mount unit file: Using /etc/fstab: Configure /etc/fstab as appropriate: Example: tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0 -OR- Using a tmp.mount unit file: Run the following command to create the tmp.mount file is the correct location: # cp -v /usr/share/systemd/tmp.mount /etc/systemd/system/ Edit /etc/systemd/system/tmp.mount to configure the /tmp mount: Example: # SPDX-License-Identifier: LGPL-2.1+ # # This file is part of systemd. # # systemd is free software; you can redistribute it and/or modify it # under the terms of the GNU Lesser General Public License as pub…'

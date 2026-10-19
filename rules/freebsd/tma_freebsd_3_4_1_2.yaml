@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-3.4.1.2
+title: Ensure a single firewall utility is in use
+description: 'FreeBSD ships with multiple firewall utilities, providing uses with options to best suit their environment. This section provides guidance to ensure that only one firewall utility is implemented. The use of more than one firewall utility may produce unexpected results. Audit: exactly one of firewall_enable (ipfw), ipfilter_enable or pf_enable must be YES.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- network
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 3.4.1.2 Ensure a single firewall utility is in use
+audit:
+  type: command
+  command: command -v sysrc >/dev/null 2>&1 || exit 1; n=0; for k in firewall_enable ipfilter_enable pf_enable; do v=$(sysrc -q -n $k 2>/dev/null); case "$v" in [Yy][Ee][Ss]|[Tt][Rr][Uu][Ee]|[Oo][Nn]|1) n=$((n+1));; esac; done; [ "$n" -eq 1 ] && echo compliant || echo "$n firewall utilities enabled"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following script to ensure that a single firewall utility is in use on the system. If more than one firewall utility was found to be running then all other services except the desired one should be stopped and disabled. For ipfilter run: # service ipfilter stop # service ipfilter disable For ipfw run: # service firewall stop # service firewall disable For pf run: # service pf stop # service pf disable'

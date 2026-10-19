@@ -1,0 +1,20 @@
+id: TMA-POSTGRES-5.4
+title: Ensure login via "host" TCP/IP Socket is configured correctly
+description: 'A large number of authentication METHODs are available for hosts connecting using TCP/IP sockets, including: ; trust ; reject ; md5 ; scram-sha-256 ; password ; gss ; sspi ; ident ; pam ; ldap ; radius ; cert ; oauth METHODs trust, password, and ident are not to be used for remote logins.'
+target: postgres
+level: 1
+severity: high
+tags:
+- postgres
+- database
+- authentication
+- pg_hba
+- tls
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 5.4 Ensure login via "host" TCP/IP Socket is configured correctly
+audit:
+  type: manual
+  command: 'Review ''host'' lines in pg_hba.conf (SELECT * FROM pg_hba_file_rules WHERE type LIKE ''host%'';). Test psql ''host=<server> user=postgres sslmode=disable'' and sslmode=require locally and remotely: only intended encrypted, password-authenticated (scram-sha-256) logins may succeed.'
+remediation:
+  type: iac_patch
+  command: Use hostssl lines with scram-sha-256 for required users/networks and hostnossl ... reject for the rest, e.g. hostssl all postgres 0.0.0.0/0 scram-sha-256 and hostnossl all postgres 0.0.0.0/0 reject, then SELECT pg_reload_conf();

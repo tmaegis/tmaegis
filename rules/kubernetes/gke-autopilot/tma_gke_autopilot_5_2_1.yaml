@@ -1,0 +1,20 @@
+id: TMA-GKE-AUTOPILOT-5.2.1
+title: Use a custom least privilege node service account for GKE Autopilot
+description: Use a custom least privilege IAM service account for GKE Autopilot nodes instead of the Compute Engine default service account. The node service account should have only the IAM permissions required for GKE system tasks, logging, monitoring, and approved image pulls. GKE recommends using a custom node service account because the Compute Engine default service account might have broader permissions than GKE requires. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke-autopilot
+level: 2
+severity: medium
+tags:
+- gke-autopilot
+- managed-services
+- rbac
+reference: CIS Google Kubernetes Engine (GKE) Autopilot Benchmark v2.0.0 - 5.2.1 Use a custom least privilege node service account for GKE Autopilot
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(nodeConfig.serviceAccount)') || exit 1
+    if [ -n "$v" ] && [ "$v" != default ] && ! printf '%s' "$v" | grep -q -- '-compute@developer\.gserviceaccount\.com$'; then echo compliant; else echo "noncompliant: nodeConfig.serviceAccount=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new GKE Autopilot clusters, create a custom IAM service account for nodes and grant only the permissions required for GKE node operation. At minimum, grant roles/container.defaultNodeServiceAccount on the project. gcloud iam service-accounts create $NODE_SERVICE_ACCOUNT_NAME \ --project $PROJECT_ID gcloud projects add-iam-policy-binding $PROJECT_ID \ --member=serviceAccount:$NODE_SERVICE_ACCOUNT \ --role=roles/container.defaultNodeServiceAccount Create the Autopilot cluster with the custom node service account.

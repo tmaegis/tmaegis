@@ -1,0 +1,19 @@
+id: TMA-DB2-7.1.4
+title: Ensure Audit is Enabled Within the Instance
+description: 'Auditing is crucial for securing and discovering issues within your databases. Auditing can help trigger events for changes to data objects, table DML, and user access. ''db2audit describe'' must report Audit active: "TRUE". Run as SYSADM (instance owner). Run as the instance owner (or with sqllib/db2profile sourced) so the db2 CLP reads this instance''s configuration.'
+target: db2
+level: 1
+severity: high
+tags:
+- db2
+- database
+- logging
+- audit
+reference: CIS IBM Db2 12.1 Benchmark v1.0.0 - 7.1.4 Ensure Audit is Enabled Within the Instance
+audit:
+  type: command
+  command: 'out=$(db2audit describe 2>/dev/null) || exit 1; if printf ''%s\n'' "$out" | grep -Eiq ''Audit active: *"TRUE''; then echo compliant; else echo noncompliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Issue the following command to activate instance level auditing: $ db2audit start'

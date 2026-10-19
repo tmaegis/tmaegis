@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-2.16
+title: Ensure no login exists with the name 'sa'
+description: The sa login (e.g. principal) is a widely known and often widely used SQL Server account. Therefore, there should not be a login called sa even when the original sa login (principal_id = 1) has been renamed. Enforcing this control reduces the probability of an attacker executing brute force attacks against a well-known principal name.
+target: mssql
+level: 1
+severity: medium
+tags:
+- logging
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.16 Ensure no login exists with the name 'sa'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.server_principals WHERE name = 'sa';"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Execute the appropriate ALTER statement below based on the principal_id returned for the login named sa. Replace the <different_name> value within the below syntax and execute to rename the sa login. USE [master] GO -- If principal_id = 1 or the login owns database objects, rename the sa login ALTER LOGIN [sa] WITH NAME = <different_name>; GO

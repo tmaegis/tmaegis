@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.7.11
+title: 'Ensure ''Point and Print Restrictions: When installing drivers for a new connection'' is set to ''Enabled: Show warning and elevation prompt'''
+description: 'This policy setting controls whether computers will show a warning and a security elevation prompt when users create a new printer connection using Point and Print. The recommended state for this setting is: Enabled: Show warning and elevation prompt. Note: On August 10, 2021, Microsoft announced a Point and Print Default Behavior Change which modifies the default Point and Print driver installation and update behavior to require Administrator privileges. This is documented in KB5005652— Manage new Point and Print default driver installation behavior (CVE-2021-34481). This change overrides all'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.7.11
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers\PointAndPrint'' -Name ''NoWarningNoElevationOnInstall'' -ErrorAction SilentlyContinue).''NoWarningNoElevationOnInstall''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''NoWarningNoElevationOnInstall='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers\PointAndPrint')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers\PointAndPrint' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Printers\PointAndPrint' -Name 'NoWarningNoElevationOnInstall' -Value 0 -PropertyType DWord -Force | Out-Null

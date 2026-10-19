@@ -1,0 +1,22 @@
+id: TMA-CISCO-IOSXR-1.3.2
+title: Disable TCP and UDP small servers
+description: 'TCP and UDP small servers are servers (daemons, in Unix parlance) that run in the router which are useful for diagnostics. TCP Small Servers The TCP small servers are: Echo: Echoes back whatever you type through the telnet x.x.x.x echo command. Chargen: Generates a stream of ASCII data. Use the telnet x.x.x.x chargen command. Discard: Throws away whatever you type. CIS marks this Manual; automated as a config-line check. Audited against the hierarchical output of ''show running-config'' (run ''terminal length 0'' first; not ''show running-config formal'').'
+target: cisco-iosxr
+level: 1
+severity: medium
+tags:
+- cisco-iosxr
+- network
+- hardening
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.3.2 Disable TCP and UDP small servers
+audit:
+  type: config_regex
+  pattern: (?m)^service ipv[46] (?:tcp|udp)-small-servers\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Disable TCp and UDP small services
+    no service ipv4 tcp-small-servers max-servers 10
+    no service ipv4 udp-small-servers max-servers 10
+    commit

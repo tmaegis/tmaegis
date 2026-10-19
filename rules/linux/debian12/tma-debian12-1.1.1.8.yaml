@@ -1,0 +1,41 @@
+id: TMA-DEBIAN12-1.1.1.8
+title: Ensure udf kernel module is not available
+description: The udf filesystem type is the universal disk format used to implement ISO/IEC 13346 and ECMA-167 specifications. This is an open vendor filesystem type for data storage on a broad range of media. This filesystem type is necessary to support writing DVDs and newer optical disc formats.
+target: linux
+os_family:
+- debian-12
+level: 2
+severity: low
+tags:
+- cis-converted
+- kernel
+- linux
+- modules
+reference: CIS Debian Linux 12 Benchmark v2.0.0 - 1.1.1.8
+audit:
+  type: command
+  shell: bash
+  command: m=udf; found=$(find /lib/modules/$(uname -r)/kernel /usr/lib/modules/$(uname -r)/kernel -path "*/udf*" 2>/dev/null | head -n1); if [ -z "$found" ]; then echo compliant; exit 0; fi; lsmod | awk '{print $1}' | grep -Fxq -- "${m//-/_}" && { echo "$m is loaded"; exit 0; }; cfg=$(modprobe --showconfig 2>/dev/null); printf '%s\n' "$cfg" | grep -Pq -- "^\h*blacklist\h+${m//-/_}\b" || { echo "$m is not blacklisted"; exit 0; }; printf '%s\n' "$cfg" | grep -Pq -- "^\h*install\h+${m//-/_}\h+(/usr)?/bin/(true|false)\b" || { echo "$m install is not disabled"; exit 0; }; echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=udf
+    mkdir -p /etc/modprobe.d
+    f=/etc/modprobe.d/60-$m.conf
+    printf 'install %s /bin/false\nblacklist %s\n' "$m" "$m" > "$f"
+    modprobe -r "$m" 2>/dev/null; rmmod "$m" 2>/dev/null; true
+  guidance: "Unload and disable the udf kernel module. 1. Run the following commands to unload the udf kernel module: # modprobe -r udf 2>/dev/null # rmmod udf 2>/dev/null 2. Perform the following to disable the udf kernel module: Create a file ending in .conf with install udf /bin/false in the /etc/modprobe.d/ directory Example: # printf '%s\\n' \"\" \"install udf /bin/false\" >> /etc/modprobe.d/60-udf.conf Create a file ending in .conf with blacklist udf in the /etc/modprobe.d/ directory Example: # printf '%s\\n' \"\" \"blacklist udf\" >> /etc/modprobe.d/60-udf.conf"

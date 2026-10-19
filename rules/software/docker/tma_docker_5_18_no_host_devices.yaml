@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.18
+title: Ensure that host devices are not directly exposed to containers
+description: Host devices passed with --device give the container direct access to hardware, bypassing isolation. Flags containers with any HostConfig.Devices entry. The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.18 Ensure that host devices are not directly exposed to containers
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}} {{len .HostConfig.Devices}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk '$2+0>0{print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Redeploy without --device unless strictly required; if required, grant the minimum permissions (e.g. --device=/dev/xyz:/dev/xyz:r).

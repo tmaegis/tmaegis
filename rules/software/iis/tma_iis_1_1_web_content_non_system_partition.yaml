@@ -1,0 +1,19 @@
+id: TMA-IIS-1.1
+title: Ensure 'Web content' is on non-system partition
+description: Web resources published through IIS are mapped via Virtual Directories to physical locations on disk. It is recommended to map all Virtual Directories to a non-system disk volume. Fails when any site or virtual directory physicalPath is on the system drive. PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- filesystem
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 1.1 Ensure 'Web content' is on non-system partition
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $sd = $env:SystemDrive; $bad = @(Get-Website | Where-Object { [Environment]::ExpandEnvironmentVariables($_.physicalPath) -like "$sd*" }) + @(Get-WebVirtualDirectory | Where-Object { [Environment]::ExpandEnvironmentVariables($_.physicalPath) -like "$sd*" }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: 'Move content to a non-system volume (e.g. D:\inetpub) and update each site/virtual directory: Set-ItemProperty IIS:\Sites\<site> -Name physicalPath -Value <path>.'

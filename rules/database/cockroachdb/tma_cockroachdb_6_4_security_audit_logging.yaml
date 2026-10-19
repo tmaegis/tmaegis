@@ -1,0 +1,18 @@
+id: TMA-COCKROACHDB-6.4
+title: Ensure Security Audit Logging Is Enabled
+description: CockroachDB provides comprehensive audit logging capabilities to track security- relevant events including user authentication, privilege changes, and access to sensitive data. Role-based audit logging allows administrators to configure which users, roles, or statements should be logged, while sensitive access logging can track access to specific tables or databases containing sensitive information. Runs cockroach sql with --certs-dir ${COCKROACH_CERTS_DIR:-/var/lib/cockroach/certs} (a root or admin client certificate must be in it); the target node comes from COCKROACH_HOST (default localhost:26257) or COCKROACH_URL. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when sql.log.user_audit holds at least one audit rule; review that the rules cover privileged roles (admin, root) or ALL, and that the SENSITIVE_ACCESS channel is written to a protected sink.
+target: cockroachdb
+level: 1
+severity: high
+tags:
+- cockroachdb
+- logging
+- audit
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 6.4 Ensure Security Audit Logging Is Enabled
+audit:
+  type: sql_query
+  command: 'out=$(cockroach sql --certs-dir="${COCKROACH_CERTS_DIR:-/var/lib/cockroach/certs}" --format=csv --execute "SHOW CLUSTER SETTING sql.log.user_audit;" 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''NR > 1 && /[^[:space:]"]/ {n++} END {print n ? "compliant" : "empty"}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET CLUSTER SETTING sql.log.user_audit = 'ALL ALL'; (or one 'admin ALL' / 'root ALL' line per privileged role), and route the SENSITIVE_ACCESS, USER_ADMIN and PRIVILEGES channels to protected log sinks.

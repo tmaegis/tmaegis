@@ -1,0 +1,17 @@
+id: TMA-POWERPLATFORM-SHARE-EVERYONE
+title: Ensure makers cannot share canvas apps with Everyone
+description: Sharing with Everyone exposes apps (and their connections' data) to the whole tenant, including guests. Requires Microsoft.PowerApps.Administration.PowerShell and an authenticated session (Add-PowerAppsAccount) as a Power Platform administrator; the audit throws if the module is missing.
+target: power-platform
+level: 1
+severity: medium
+tags:
+- power-platform
+- sharing
+reference: CIS Microsoft Dynamics 365 Power Platform Benchmark v1.0.1 - Sharing canvas apps with Everyone (no dedicated CIS benchmark exists for Power Platform)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-TenantSettings -ErrorAction SilentlyContinue)) { throw ''Microsoft.PowerApps.Administration.PowerShell is not loaded: run Add-PowerAppsAccount first'' }; $s = Get-TenantSettings -ErrorAction Stop; if ($s.powerPlatform.powerApps.disableShareWithEveryone -eq $true) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: $s = Get-TenantSettings; $s.powerPlatform.powerApps.disableShareWithEveryone = $true; Set-TenantSettings -RequestBody $s

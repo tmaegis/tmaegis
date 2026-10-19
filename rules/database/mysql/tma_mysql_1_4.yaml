@@ -1,0 +1,18 @@
+id: TMA-MYSQL-1.4
+title: Verify That the MYSQL_PWD Environment Variable is Not in Use
+description: MySQL can read a default database password from an environment variable called MYSQL_PWD. Avoiding use of this environment variable can better safeguard the confidentiality of MySQL credentials. Run as root; counts processes whose environment contains MYSQL_PWD (including the scanner itself if it was given MYSQL_PWD).
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- credentials
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 1.4 Verify That the MYSQL_PWD Environment Variable is Not in Use
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; n=$(grep -lsaz ''^MYSQL_PWD='' /proc/[0-9]*/environ 2>/dev/null | wc -l); echo "$n"'
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Find the processes (grep -lsaz ^MYSQL_PWD= /proc/*/environ) and change the users/scripts that export MYSQL_PWD to use an option file readable only by the user, mysql_config_editor or certificate-based authentication.

@@ -1,0 +1,18 @@
+id: TMA-EDGE-1.4.11
+title: 'Ensure ''Default idle detection setting'' is set to ''Enabled: Do not allow any site to detect the user''s idle state'' or ''Enabled: Ask every time a site wants to detect the user''s idle state'''
+description: "This policy setting controls whether websites can use the Idle Detection API to detect when the user is idle. The recommended state for this setting is: Enabled: Do not allow any site to detect the user's idle state (BlockIdleDetection) or Enabled: Ask every time a site wants to detect the user's idle state (AskIdleDetection). Rationale: The Idle Detection API exposes information about a user's activity state \u2014 including whether the user is away from their device or the screen is locked \u2014 to any website that requests it. Audit reads the Group Policy registry value and prints 'compliant', 'unset' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge:DefaultIdleDetectionSetting (REG_DWORD); compliant when it is 2 or 3. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it."
+target: edge
+level: 2
+severity: low
+tags:
+- edge
+- browser
+- cis-l2
+reference: 'CIS Microsoft Edge Benchmark v5.0.0 - 1.4.11 Ensure ''Default idle detection setting'' is set to ''Enabled: Do not allow any site to detect the user''s idle state'' or ''Enabled: Ask every time a site wants to detect the user''s idle state'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'' -Name ''DefaultIdleDetectionSetting'' -ErrorAction SilentlyContinue).''DefaultIdleDetectionSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2,3) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultIdleDetectionSetting' -Value 2 -PropertyType DWord -Force | Out-Null

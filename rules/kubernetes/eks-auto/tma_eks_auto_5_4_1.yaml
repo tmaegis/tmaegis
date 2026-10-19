@@ -1,0 +1,26 @@
+id: TMA-EKS-AUTO-5.4.1
+title: Enable private EKS API access and restrict public access to approved CIDRs
+description: This recommendation reduces exposure of the EKS Kubernetes API server endpoint without requiring a private only design. The intended end state is that private endpoint access is enabled, and if the public endpoint remains enabled, public access is restricted to approved CIDR ranges instead of being open to all internet addresses. This preserves approved administration paths while reducing unnecessary internet exposure. Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE. Private access must be on and any public endpoint must not allow 0.0.0.0/0.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- managed-services
+- rbac
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.4.1 Enable private EKS API access and restrict public access to approved CIDRs
+audit:
+  type: command
+  command: |-
+    out=$(aws eks describe-cluster --name "${EKS_CLUSTER:?set EKS_CLUSTER}" --query 'cluster.resourcesVpcConfig.[endpointPrivateAccess,endpointPublicAccess,join(`
+    `,publicAccessCidrs || `[]`)]' --output text) || exit 1
+    set -- $out
+    priv=$1; pub=$2; cidrs=${3:-}
+    if [ "$priv" != True ]; then echo "noncompliant: endpointPrivateAccess=$priv"
+    elif [ "$pub" = True ] && { [ -z "$cidrs" ] || printf '%s' "$cidrs" | grep -q '0\.0\.0\.0/0'; }; then echo "noncompliant: public endpoint open to $cidrs"
+    else echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: • Replace 203.0.113.5/32 with the approved administrator, VPN, automation, or egress CIDR range. • Add only the CIDR ranges required for approved access paths. • After the update completes, rerun the audit command. • Confirm private access is enabled. • Confirm public access is enabled only as intended. • Confirm the public CIDR list does not include unrestricted ranges such as 0.0.0.0/0 or ::/0. • Remember that EKS API endpoint access remains a cluster endpoint configuration setting, even when EKS Auto Mode automates other cluster networking functions.

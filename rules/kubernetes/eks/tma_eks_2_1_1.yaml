@@ -1,0 +1,24 @@
+id: TMA-EKS-2.1.1
+title: Enable EKS control plane logging
+description: Enable control plane logging in Amazon EKS to provide visibility into the operation of the managed Kubernetes control plane and activity processed through its core components. Control plane logs create a persistent record of administrative activity, authentication events, scheduling behavior, and other platform operations to support monitoring, troubleshooting, investigation, and accountability. Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE. All five control plane log types must be enabled.
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- control-plane
+- logging
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 2.1.1 Enable EKS control plane logging
+audit:
+  type: command
+  command: |-
+    out=$(aws eks describe-cluster --name "${EKS_CLUSTER:?set EKS_CLUSTER}" --query 'cluster.logging.clusterLogging[?enabled==`true`].types[]' --output text) || exit 1
+    ok=1
+    for t in api audit authenticator controllerManager scheduler; do
+      printf '%s\n' $out | grep -qx "$t" || { echo "noncompliant: $t logging disabled"; ok=0; }
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'From Console: 1. For each EKS Cluster in each region; 2. Go to Amazon Elastic Kubernetes Service > Clusters > CLUSTER_NAME > Observability > Control plane logs 3. Click Manage to enable or disable logging. 4. Ensure that one or more options are toggled to Enabled and Save Changes. o API server: Enabled o Audit: Enabled o Authenticator: Enabled o Controller manager: Enabled o Scheduler: Enabled 5. Click ''Save Changes''. From the AWS CLI: 1. For each EKS Cluster in each region: aws eks update-cluster-config \ --name $CLUSTER_NAME \ --region $REGION_CODE \ --logging ''{"clusterLogging":[{"types":["api","audit","authenticator","controllerManage r","scheduler"],"enabled":true}]}'''

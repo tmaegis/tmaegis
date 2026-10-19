@@ -1,0 +1,101 @@
+! Synthetic sample: Cisco IOS XE running-config (hardened). Not a secure template.
+! Command: show running-config
+version 17.9
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+service tcp-keepalives-in
+service tcp-keepalives-out
+no service pad
+no service dhcp
+!
+hostname edge-sw-01
+!
+boot-start-marker
+boot-end-marker
+!
+aaa new-model
+aaa authentication login default group tacacs+ local
+aaa authentication enable default group tacacs+ enable
+aaa accounting exec default start-stop group tacacs+
+aaa accounting commands 15 default start-stop group tacacs+
+aaa accounting connection default start-stop group tacacs+
+aaa accounting network default start-stop group tacacs+
+aaa accounting system default start-stop group tacacs+
+!
+enable secret 9 $9$REDACTED$FAKEHASHFAKEHASHFAKEHASHFAKEHASH
+!
+login block-for 120 attempts 3 within 60
+login on-failure log
+login on-success log
+!
+ip domain name example.com
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 3
+no ip source-route
+no ip bootp server
+ip admission auth-proxy-banner http ^CAuthorized access only^C
+no ip http server
+no ip http secure-server
+no cdp run
+ip tftp source-interface Loopback0
+ip tacacs source-interface Loopback0
+!
+archive
+ log config
+  logging enable
+!
+logging buffered 64000
+logging console critical
+logging host 192.0.2.50
+logging source-interface Loopback0
+!
+ntp authenticate
+ntp authentication-key 1 md5 REDACTED
+ntp trusted-key 1
+ntp source Loopback0
+ntp server 192.0.2.123 key 1
+!
+banner exec ^C
+Authorized access only.
+^C
+banner login ^C
+Authorized access only. Activity is logged.
+^C
+banner motd ^C
+Authorized access only.
+^C
+!
+snmp-server group NMS v3 priv
+snmp-server user nmsuser NMS v3 auth sha REDACTED priv aes 128 REDACTED
+snmp-server enable traps snmp authentication linkdown linkup coldstart
+snmp-server host 192.0.2.51 version 3 priv nmsuser
+!
+tacacs server TAC1
+ address ipv4 192.0.2.60
+ key 7 REDACTED
+!
+username emergency privilege 15 secret 9 $9$REDACTED$FAKEHASHFAKEHASHFAKEHASHFAKEHASH
+!
+interface Loopback0
+ ip address 198.51.100.1 255.255.255.255
+!
+interface GigabitEthernet0/1
+ description uplink
+ no ip proxy-arp
+!
+line con 0
+ exec-timeout 5 0
+ login authentication default
+line aux 0
+ no exec
+ exec-timeout 5 0
+ transport output none
+line vty 0 4
+ access-class MGMT-ACL in
+ exec-timeout 5 0
+ login authentication default
+ transport input ssh
+!
+end

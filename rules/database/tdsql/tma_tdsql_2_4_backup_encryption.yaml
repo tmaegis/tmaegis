@@ -1,0 +1,17 @@
+id: TMA-TDSQL-2.4
+title: Ensure Backup Data Is Encrypted
+description: 'Backup data should be encrypted at rest for all backup types: physical backup (XtraBackup), logical backup (mydumper), and ZooKeeper data backup.'
+target: tdsql
+level: 2
+severity: high
+tags:
+- tdsql
+- backup
+- encryption
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 2.4 Ensure Backup Data Is Encrypted
+audit:
+  type: manual
+  command: 'Confirm backups are encrypted: the xtrabackup/mydumper command lines carry --aesencrypt (ps -ef | grep -E "xtrabackup|mydumper" | grep -- --aesencrypt) and OSS backup metadata shows aesencrypt=1; local backup volumes use LUKS (lsblk -f | grep -i crypt); COS/S3 targets enforce server-side encryption. Unencrypted backups are a finding.'
+remediation:
+  type: iac_patch
+  command: 'TDSQL provides AES + cluster-key based backup encryption at the backup layer (-- aesencrypt and --cluster_identify command-line arguments). To enable it: 1. Modify the cluster backup policy in the OSS management platform to enable backup encryption: <!-- scheduler.xml backup section --> <backup increment_flag="1" increment_interval_day="1" mydumper="0" xtrabackup="1" aesencrypt="1" /> 2.'

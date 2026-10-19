@@ -1,0 +1,27 @@
+id: TMA-CHECKPOINT-2.1.6
+title: Ensure DNS server is configured
+description: Gaia uses the Domain Name Service (DNS) to translate host names into IP addresses. To enable DNS lookups, you must specify the primary DNS server for your system. You can also specify secondary and tertiary DNS servers. When resolving host names, the system consults the primary name server. If a failure or time-out occurs, the system consults the secondary name server, and if necessary, the tertiary. PASS requires a primary DNS server (add secondary and tertiary as well). Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: low
+tags:
+- checkpoint
+- hardening
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 2.1.6 Ensure DNS server is configured
+audit:
+  type: config_regex
+  pattern: (?m)^set dns primary \S+
+remediation:
+  type: iac_patch
+  command: |-
+    set dns primary <IP>
+    set dns secondary <IP>
+    set dns tertiary <IP>
+    save config
+    # CIS guidance:
+    Run the following command to set DNS server. CLI:
+    set dns primary <IP_Address>
+    set dns secondary <IP_Address>
+    set dns tertiary <IP_Address>
+    GUI:
+    Navigate to Network Management > Hosts and DNS > DNS Set Primary, secondary and tertiary DNS server address.

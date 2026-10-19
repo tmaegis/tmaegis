@@ -1,0 +1,20 @@
+id: TMA-AZURE-DB-3.4
+title: Ensure `Public Network Access` is `Disabled`
+description: Setting public networks to disabled prevents requests from the public internet. Allowlisting secures Azure Cosmos DB from the public internet and prevents unauthorized access requests.
+target: azure
+level: 2
+severity: low
+tags:
+- access-control
+- azure
+- cloud
+- database
+- network
+reference: CIS Microsoft Azure Database Services Benchmark v2.0.0 - 3.4 Ensure `Public Network Access` is `Disabled`
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Select or search for Azure CosmosDB. 2. Select your Azure CosmosDB Account. 3. In the left column expand > Settings. 4. Select Networking. 5. Determine in the second row if Public Network Access is set to All Networks. Audit from Powershell 1. Run the following Powershell command with identifying information for your environment. Get-AzCosmosDBAccount -Name <cosmosdbaccountname> -ResourceGroupName <resourcegroupname> | Select-Object -Property "PublicNetworkAccess", "IpRules", "IpRangeFilter" 2. Determine from left to right, if public network access is enabled, which IpRules are set, and which IP Ranges are allowlisted. All must be accurate for your environment for proper functionality. Audit From Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions
+    - Policy ID: 797b37f7-06b8-444c-b1ad-fc62867f335a - Name: ''Azure Cosmos DB should disable public network access'''
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Select or search for Azure CosmosDB. 2. Select your Azure CosmosDB Account. 3. In the left column expand > Settings. 4. Select Networking. 5. Under Public Access select the radial button Disabled. 6. Select Save Remediate from Powershell 1. Run the following Powershell as many times as you need with the public network information for your environment to allowlist your ip addresses with CIDR notation, e.g. 0.0.0.0/0. These must also not be private IP addresses. Update-AzCosmosDBAccount -name <cosmosdbaccountname> -ResourceGroupName <resourcegroupname> -IPRule <IPRange> 2. Once all your IP addresses are allowlisted, run the following Powershell command with identifying information for your environment. Update-AzCosmosDBAccount -name <cosmosdbaccountname> -ResourceGroupName <resourcegroupname> -PublicNetworkAccess 'Disabled'

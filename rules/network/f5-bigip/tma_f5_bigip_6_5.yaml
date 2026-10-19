@@ -1,0 +1,25 @@
+id: TMA-F5-BIGIP-6.5
+title: Ensure that Remote Syslog Servers are configured
+description: 'To ensure that logs are sent to external servers PASS requires at least one remote syslog server (sys syslog remote-servers ... host). Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 1
+severity: medium
+tags:
+- f5-bigip
+- logging
+reference: CIS F5 Networks Benchmark v1.0.0 - 6.5 Ensure that Remote Syslog Servers are configured
+audit:
+  type: config_regex
+  pattern: (?m)^sys syslog \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+remote-servers \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+host \S+
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify sys syslog remote-servers add { remotesyslog1 { host 10.0.0.50 remote-port 514 } }
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to the Configuration utility.
+    2-Go to System > Logs > Configuration > Remote Logging.
+    3-For Remote IP, enter the destination syslog server IP address, or FQDN. (DNS server configuration required)
+    4-For Remote Port, enter the remote syslog server UDP port (default is 514).
+    5-Select Add.
+    6-Select Update.

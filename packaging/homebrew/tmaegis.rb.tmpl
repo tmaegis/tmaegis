@@ -1,0 +1,40 @@
+# Homebrew formula template. Rendered by packaging/render.sh into a tap (tmaegis/homebrew-tap).
+class Tmaegis < Formula
+  desc "Open-source CIS hardening and compliance engine"
+  homepage "https://www.tmaegis.dev"
+  version "@VERSION@"
+  license "MPL-2.0"
+
+  on_macos do
+    on_arm do
+      url "https://github.com/tmaegis/tmaegis/releases/download/v@VERSION@/tmaegis_@VERSION@_darwin_arm64.tar.gz"
+      sha256 "@SHA_DARWIN_ARM64@"
+    end
+    on_intel do
+      url "https://github.com/tmaegis/tmaegis/releases/download/v@VERSION@/tmaegis_@VERSION@_darwin_amd64.tar.gz"
+      sha256 "@SHA_DARWIN_AMD64@"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "https://github.com/tmaegis/tmaegis/releases/download/v@VERSION@/tmaegis_@VERSION@_linux_arm64.tar.gz"
+      sha256 "@SHA_LINUX_ARM64@"
+    end
+    on_intel do
+      url "https://github.com/tmaegis/tmaegis/releases/download/v@VERSION@/tmaegis_@VERSION@_linux_amd64.tar.gz"
+      sha256 "@SHA_LINUX_AMD64@"
+    end
+  end
+
+  def install
+    bin.install "tmaegis"
+    # The CLI looks for ../share/tmaegis/rules relative to the binary.
+    pkgshare.install "rules", "plugins", "samples"
+    doc.install "README.md", "LICENSE", "NOTICE", "TRADEMARK.md", "config.example.yaml"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/tmaegis --version")
+  end
+end

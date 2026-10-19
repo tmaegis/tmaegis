@@ -1,0 +1,18 @@
+id: TMA-MARIADB-4.9
+title: Enable data-at-rest encryption in MariaDB
+description: 'Data-at-rest encryption protects the privacy of your information, prevents data breaches and helps meet regulatory requirements. Fails when any *ENCRYPT* server variable is OFF, or InnoDB reports no tablespaces or any unencrypted tablespace in INNODB_TABLESPACES_ENCRYPTION. Backup encryption is not checked. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 2
+severity: medium
+tags:
+- mariadb
+- database
+- encryption
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 4.9 Enable data-at-rest encryption in MariaDB
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT IF((SELECT COUNT(*) FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE '%ENCRYPT%' AND VARIABLE_VALUE = 'OFF') = 0 AND (SELECT COUNT(*) FROM information_schema.INNODB_TABLESPACES_ENCRYPTION) > 0 AND (SELECT COUNT(*) FROM information_schema.INNODB_TABLESPACES_ENCRYPTION WHERE ENCRYPTION_SCHEME = 0) = 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure a key management plugin (e.g. file_key_management with an encrypted key file under /etc/mysql/encryption, mysql:mysql, mode 640), then under [mariadbd] set innodb_encrypt_tables=ON, innodb_encrypt_log=ON, innodb_encrypt_temporary_tables=ON, encrypt_binlog=ON, encrypt_tmp_files=ON, encrypt_tmp_disk_tables=ON, aria_encrypt_tables=ON, innodb_encryption_threads=4; restart, and encrypt backups (e.g. mariabackup | openssl enc).

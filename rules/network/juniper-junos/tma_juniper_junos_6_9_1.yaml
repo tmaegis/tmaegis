@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.9.1
+title: Ensure a complex Root Password is Set
+description: A complex Root Password should be set for the system. Due to the importance of the Root user account, which has full control of the JUNOS system and underlying Unix OS, a complex password should be employed to help prevent attackers employing 'brute force' or 'dictionary' attacks to gain full control of the ... Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- aaa
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.9.1 Ensure a complex Root Password is Set
+audit:
+  type: config_regex
+  pattern: (?m)^set system root-authentication encrypted-password \S
+remediation:
+  type: iac_patch
+  command: |-
+    ! Root Authentication must be configured prior to the first commit on a new system. A Root password may be set from the CLI using either of the two methods below, from the hierarchy. To enter a new Root Password in plain text type:
+    set system root-authentication plain-text-password You will be prompted to enter the new Password twice and, if the Passwords match, JUNOS will add a SHA1 hash of the Password to the configuration. Alternatively, if you are copying the configuration from an existing JUNOS system (using the same hashing algorithm) or template, you may apply an existing hash of the Root password:
+    set system root-authentication encrypted-password "<hash>"

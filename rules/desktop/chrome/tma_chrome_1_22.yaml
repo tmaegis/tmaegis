@@ -1,0 +1,19 @@
+id: TMA-CHROME-1.22
+title: Ensure 'Import autofill form data from default browser on first run' is set to 'Disabled'
+description: 'This setting controls whether users are allowed to import autofill data from other browsers into Google Chrome. If you set this setting to Disabled, users will be unable to perform an import of autofill data during Google Chrome run. This will also prevent users from importing data after Google Chrome has been set up. The recommended state for this setting is: Disabled (0) Rationale: Allowing autofill data to be imported could potentially allow sensitive data such as personally identifiable information (PII) from a non-secured source into Google Chrome. Considering that storage of sensitive data should be handled with care, disabling this setting is recommended. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:ImportAutofillFormData (REG_DWORD); compliant when it is 0. Remediation writes 0 locally; in a domain set it through
+  the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: low
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 1.22 Ensure 'Import autofill form data from default browser on first run' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''ImportAutofillFormData'' -ErrorAction SilentlyContinue).''ImportAutofillFormData''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(0) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ImportAutofillFormData' -Value 0 -PropertyType DWord -Force | Out-Null

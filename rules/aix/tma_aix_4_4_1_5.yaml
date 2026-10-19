@@ -1,0 +1,17 @@
+id: TMA-AIX-4.4.1.5
+title: Ensure NFS exports use allow lists
+description: 'Only allow explicitly defined host access to NFS exported filesystems and directories. The NFS server should be configured to only allow explicitly defined hosts to mount filesystems from the server. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 2
+severity: medium
+tags:
+- aix
+- network
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.4.1.5 Ensure NFS exports use allow lists
+audit:
+  type: command
+  command: command -v showmount >/dev/null 2>&1 || exit 1; n=$(showmount -e 2>/dev/null | grep -c "(everyone)"); echo "$n"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Ensure that all exports defined in /etc/exports have explicit client access options which clearly define the host or hosts allowed access: Review the content of /etc/exports and that all exports have explicit access lists: showmount -e | grep "(everyone)" Ensure that each NFS export has an explicit access line, for example, modify: /export/repo (everyone) to: /export/repo x071 The option -c is used to specify clients permitted access: chnfsexp -d /export/repo -c x071'

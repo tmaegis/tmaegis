@@ -1,0 +1,54 @@
+id: TMA-ROS1-6.2.5
+title: Ensure users' home directories permissions are 750 or more restrictive
+description: While the system administrator can establish secure permissions for users' home directories, the users can easily override these. The audit requires interactive users' home directories to be mode 750 or more restrictive. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.2.5 Ensure users' home directories permissions are 750 or more restrictive
+audit:
+  type: command
+  shell: bash
+  command: |-
+    users=$(awk -F: '($1 !~ /^(halt|sync|shutdown)$/ && $7 !~ /(nologin|false)$/) {print $1":"$6}' /etc/passwd) || exit 1
+    bad=$(printf '%s\n' "$users" | while IFS=: read -r u d; do [ -d "$d" ] || continue; m=$(stat -Lc '%a' "$d"); [ $(( 8#$m & 027 )) -eq 0 ] || echo "$d ($u) mode $m"; done)
+    [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    vs=$(awk -F/ '/^\// && $NF != "nologin"' /etc/shells)
+    # "user home" for interactive users whose home is a plain user directory
+    tma_homes() { while IFS=: read -r u p uid gid c h sh; do
+      case "$u" in +*|-*) continue;; esac
+      printf '%s\n' "$vs" | grep -qxF -- "$sh" || continue
+      case "$h" in /|""|/bin*|/sbin*|/usr*|/etc*|/proc*|/sys*|/dev*|/boot*|/run*|/var/run*) continue;; esac
+      echo "$u $h"; done < /etc/passwd; }
+    tma_homes | while read -r u h; do
+      if [ ! -d "$h" ]; then
+        case "$h" in /home/*|/root) ;; *) continue;; esac
+        mkdir -p "$h" && chown "$u:$(id -gn "$u")" "$h" && chmod 0750 "$h"
+        continue
+      fi
+      [ "$(stat -Lc %U "$h")" = "$u" ] || chown "$u" "$h"
+      mo=$(stat -Lc %a "$h"); chmod "$(printf '%o' $((8#$mo & ~8#027 & 8#7777)))" "$h"
+    done
+    true
+  guidance: "Making global modifications to user home directories without alerting the user community can result in unexpected outages and unhappy users. Therefore, it is recommended that a monitoring policy be established to report user file permissions and determine the action to be taken in accordance with site policy."

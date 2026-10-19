@@ -1,0 +1,17 @@
+id: TMA-TDSQL-1.9
+title: Ensure Appropriate System Resource Limits Are Configured
+description: Operating system resource limits (ulimits) should be properly configured for TDSQL processes, particularly the number of open file descriptors, maximum processes, and memory locking. Passes when /etc/security/limits.conf or limits.d sets hard nofile and nproc limits of at least 65535 for the tdsql user (the benchmark baseline). For systemd-managed components also confirm LimitNOFILE/LimitNPROC in the unit.
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- os
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.9 Ensure Appropriate System Resource Limits Are Configured
+audit:
+  type: command
+  command: 'out=$(cat /etc/security/limits.conf /etc/security/limits.d/*.conf 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk ''$1 == "tdsql" && $2 == "hard" && $3 == "nofile" && ($4 == "unlimited" || $4 + 0 >= 65535) {f++} $1 == "tdsql" && $2 == "hard" && $3 == "nproc" && ($4 == "unlimited" || $4 + 0 >= 65535) {p++} END {print (f && p) ? "compliant" : "noncompliant"}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add to /etc/security/limits.conf: tdsql soft nofile 65535; tdsql hard nofile 65535; tdsql soft nproc 65535; tdsql hard nproc 65535; tdsql soft memlock unlimited; tdsql hard memlock unlimited; then restart the components.'

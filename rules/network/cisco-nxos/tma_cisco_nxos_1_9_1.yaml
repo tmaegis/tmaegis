@@ -1,0 +1,21 @@
+id: TMA-CISCO-NXOS-1.9.1
+title: Configure SNMPv3
+description: The Simple Network Management Protocol (SNMP) is an application-layer protocol that provides a message format for communication between SNMP managers and agents. SNMP provides a standardized framework and a common language used for the monitoring and management of devices in a network. SNMPv3 provides secure access to devices by a combination of authenticating and encrypting frames over the network. SNMPv3 provides for both security models and security levels. A security model is an authentication strategy that is set up for a user and the role in which the user resides. A security level is the permitted level of security within a security model. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- snmp
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.9.1 Configure SNMPv3
+audit:
+  type: config_regex
+  pattern: (?m)^snmp-server globalEnforcePriv\b
+remediation:
+  type: iac_patch
+  command: |-
+    ! Create SNMPv3 Users (and groups if needed). Ensure that SHA hashes are used rather than MD5. Also ensure that appropriate authorization levels are set ("network-admin" is shown below):
+    snmp-server user SNMPv3_UserName network-admin auth sha 0x12624c4dcb90cffeb43a1177324f547d priv 0x12624c4dcb90cffeb43a1177324f547d localizedkey To set SNMP to version 3, add the "version" parameter to the snmp-server command (note that SNMPv3 users and groups need to be configured first):
+    snmp-server host 1.2.3.4 traps version 3 priv <SNMPv3_UserName> To enforce encryption for all SNMPv3 Users. This can be done by individual user, but it's recommended to enforce it globally:
+    snmp-server globalEnforcePriv

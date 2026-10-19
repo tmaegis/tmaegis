@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.10.73.1
+title: Ensure 'Allow Recall to be enabled' is set to 'Disabled'
+description: 'This policy setting controls whether the Recall optional component is available for end users to enable on the system. Microsoft Recall periodically captures screenshots of the system display, creating a searchable timeline of activity including apps, documents, and websites. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.10.73.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI'' -Name ''AllowRecallEnablement'' -ErrorAction SilentlyContinue).''AllowRecallEnablement''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowRecallEnablement='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsAI' -Name 'AllowRecallEnablement' -Value 0 -PropertyType DWord -Force | Out-Null

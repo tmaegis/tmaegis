@@ -1,0 +1,18 @@
+id: TMA-M365-5.2.2.2
+title: Ensure multifactor authentication is enabled for all users
+description: 'Enable multifactor authentication for all users in the Microsoft 365 tenant. Users will be prompted to authenticate with a second factor upon logging in to Microsoft 365 services. The second factor is most commonly a text message to a registered mobile phone number where they type in an authorization code, or with a mobile application like Microsoft Authenticator. Note: Since 2024, Microsoft has been rolling out mandatory multifactor authentication. Multifactor authentication requires an individual to present a minimum of two separate forms of authentication before access is granted. Multifactor authentication provides additional assurance that the individual attempting to gain access is who they claim to be. With multifactor authentication, an attacker would need to compromise at least two different authentication mechanisms, increasing the difficulty of compromise and thus reducing...'
+target: m365
+level: 1
+severity: high
+tags:
+- auth
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.2 Ensure multifactor authentication is enabled for all users
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify All users is included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify All resources (formerly ''All cloud apps'') is selected with no exclusions. o Under Grant verify Grant Access and either Require multifactor authentication or Require authentication strength is checked. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. For each policy returned, verify the following criteria: o Conditions.Users.IncludeUsers is All o
+    Conditions.Applications.IncludeApplications is All o GrantControls.BuiltInControls contains mfa OR GrantControls.AuthenticationStrength.id is defined o State is enabled 3. Compliance is met when at least one...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Click New policy. o Under Users or agents (Preview) include All users. o Under Target resources include All resources (formerly ''All cloud apps'') and do not create any exclusions. ▪ Under Exclude exclude any break-glass accounts. o Under Grant select Grant Access and check either Require multifactor authentication or Require authentication strength. o Click Select at the bottom of the pane. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On.'

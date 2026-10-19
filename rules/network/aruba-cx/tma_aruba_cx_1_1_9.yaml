@@ -1,0 +1,22 @@
+id: TMA-ARUBA-CX-1.1.9
+title: Verifying Telnet Server is Disabled
+description: 'AOS-CX system includes a telnet server. Telnet is considered insecure primarily because it transmits all data, including usernames and passwords, in plaintext, meaning it''s not encrypted. This leaves it vulnerable to several security risks: Eavesdropping: Anyone with access to the network traffic can intercept and read the data transmitted during a Telnet session, including sensitive information like login credentials. Credential Sniffing: Attackers can easily capture plaintext usernames and passwords by observing Telnet traffic. FAILs if a ''telnet server'' line is present for any VRF. Audited against AOS-CX ''show running-config'' output (saved in full); context blocks such as ''password complexity'' or ''cli-session'' are matched by their indented member lines.'
+target: aruba-cx
+level: 1
+severity: high
+tags:
+- aruba-cx
+- management
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 1.1.9 Verifying Telnet Server is Disabled
+audit:
+  type: config_regex
+  pattern: (?m)^telnet server\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    no telnet server vrf <vrf>
+    # CIS guidance:
+    to disable Telnet server:
+    no telnet server vrf <vrf>
+    All active TELNET sessions on the VRF will be terminated. Do you want to continue (y/n)? y

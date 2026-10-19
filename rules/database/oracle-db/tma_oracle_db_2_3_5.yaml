@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-2.3.5
+title: Review Undocumented (Underscore) Parameters Not Set To 'DEFAULT' Values
+description: 'Oracle allows the use of undocumented (also known as hidden) parameters, which are primarily intended for internal or diagnostic purposes. Undocumented parameter values should not be set or changed from their default values, unless explicitly instructed by Oracle Support for internal or diagnostic purposes. Default: Undocumented parameters do not always have officially defined default values. Oracle does not guarantee backward compatibility for them across ...'
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 2.3.5 Review Undocumented (Underscore) Parameters Not Set To 'DEFAULT' Values
+audit:
+  type: manual
+  command: SELECT DECODE(V.CON_ID,0,'ENTIRE-'||SYS_CONTEXT('USERENV','DB_NAME'), 1,'ROOTONLY-'||SYS_CONTEXT('USERENV','DB_NAME'), CON_ID_TO_CON_NAME(V.CON_ID)) AS CONTAINERNAME, UPPER(NAME), UPPER(V.VALUE) FROM GV$SYSTEM_PARAMETER V WHERE SUBSTR(NAME,1,1) = '_' AND ISDEFAULT = 'FALSE'; To be compliant with this recommendation, the output of this command should be NULL. If the output of this command is not NULL, then review the output for applicability of undocumented parameters for your organization.
+remediation:
+  type: iac_patch
+  command: To remediate this setting, execute the following SQL statement and restart the instance if required. ALTER SYSTEM SET <undocumented_parameter>=<Default value> SCOPE=SPFILE;

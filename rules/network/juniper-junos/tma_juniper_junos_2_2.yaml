@@ -1,0 +1,24 @@
+id: TMA-JUNIPER-JUNOS-2.2
+title: Ensure "Protect RE" Firewall Filter includes explicit terms for all Management Services
+description: 'The Firewall Filter used to protect the Junos Device should include explicit terms for all Management, Automation and Monitoring Services used. Junos supports a wide range of Management, Monitoring and Automation Services, making it an extremely flexible and adaptable platform. However, as with any computer system, the more services that are offered and the more hosts to which they are available, the ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 2.2 Ensure "Protect RE" Firewall Filter includes explicit terms for all Management Services
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options available for Management Service selection, management subnets and filter design, it is not possible to automatically score this recommendation. "Protect RE" Firewall Filters should be set for ingress traffic on all Loopback interfaces as discussed in Recommendation 2.1 Ensure "Protect RE" Firewall Filter is set for inbound traffic to the Routing Engine for IPv4 (inet) and IPv6 (inet6) as necessary.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! A full discussion of Firewall Filters is beyond the scope of this Benchmark. It is important to ensure that Firewall Filters include terms to match and accept all of your required Routing Protocols, Management Services and any other services used on your Junos Device. As noted elsewhere, it is strongly recommended that changes to Firewall Filters applied to the Loopback interface always be applied using commit confirmed so that the change will be automatically rolled back should the administrator lose connection after committing the change. To create a IPv4 firewall filter enter the following command from the hierarchy.
+    edit firewall family inet
+    edit firewall family inet filter <filter name>
+    edit firewall family inet filter <filter name> term <term name>
+    set firewall family inet filter <filter name> term <term name> from <match conditions>
+    set firewall family inet filter <filter name> term <term name> then <action> An IPv6 firewall filter, if required, can be configured under the family inet6 from the same hierarchy. Once a suitable filter has been configured, it must be applied to the Loopback interface, using the following command from the hierarchy:
+    ! ... see the benchmark for the full procedure

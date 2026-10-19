@@ -1,0 +1,19 @@
+id: TMA-IIS-3.11
+title: Ensure X-Powered-By Header is removed
+description: The x-powered-by headers specify the underlying technology used by the webserver. No X-Powered-By custom header may be configured at server level or for any site. PowerShell 5.1 with the WebAdministration module; run elevated. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- information-disclosure
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.11 Ensure X-Powered-By Header is removed
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT/APPHOST') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { @(Get-WebConfiguration -Filter 'system.webServer/httpProtocol/customHeaders/add' -PSPath $_ | Where-Object { $_.name -eq 'X-Powered-By' }).Count -gt 0 }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Remove-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter system.webServer/httpProtocol/customHeaders -Name . -AtElement @{name='X-Powered-By'}

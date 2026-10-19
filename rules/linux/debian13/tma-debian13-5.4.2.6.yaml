@@ -1,0 +1,57 @@
+id: TMA-DEBIAN13-5.4.2.6
+title: Ensure root user umask is configured
+description: 'The user file-creation mode mask (umask) is used to determine the file permission for newly created directories and files. In Linux, the default permissions for any newly created directory is 0777 (rwxrwxrwx), and for any newly created file it is 0666 (rw-rw- rw-). The umask modifies the default Linux permissions by restricting (masking) these permissions. The umask is not simply subtracted, but is processed bitwise. Bits set in the umask are cleared in the resulting file mode. umask can be set with either Octal or Symbolic values: • Octal (Numeric) Value - Represented by either three or four '
+target: linux
+os_family:
+- debian-13
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 13 Benchmark v1.1.0 - 5.4.2.6
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { o=$(bash -c ''grep -Psi -- ''"''"''^\h*umask\h+((\d{1,2}(\d[^7]|[^2- 7]\d)\b)|(u=[rwx]{1,3},)?(((g=[rx]?[rx]?w[rx]?[rx]?\b)(,o=[rwx]{1,3})?)|((g=[ wrx]{1,3},)?o=[wrx]{1,3}\b)))''"''"'' /root/.profile /root/.bashrc'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # make every umask line in the given files at least 027
+    tma_umask_fix() { for f in "$@"; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      grep -Eqi '^[[:space:]]*umask[[:space:]]' "$f" || continue
+      t=$(mktemp); ch=0
+      while IFS= read -r line || [ -n "$line" ]; do
+        if [[ $line =~ ^([[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+)0*([0-7]{1,4})([[:space:]#].*)?$ ]]; then
+          v=$((8#${BASH_REMATCH[2]})); n=$((v | 8#027))
+          if [ "$n" != "$v" ]; then line="${BASH_REMATCH[1]}$(printf '%03o' $n)${BASH_REMATCH[3]}"; ch=1; fi
+        elif [[ $line =~ ^[[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+[ugoa]*= ]] && [[ $line =~ (g=[rwx]*w|o=[rwx]*[rwx]) ]]; then
+          line="umask 027"; ch=1
+        fi
+        printf '%s\n' "$line" >> "$t"
+      done < "$f"
+      if [ $ch = 1 ]; then tma_bak "$f"; cat "$t" > "$f"; fi
+      rm -f "$t"
+    done; }
+    tma_umask_fix /root/.bash_profile /root/.bashrc /root/.profile
+    true
+  guidance: "Edit /root/.profile and /root/.bashrc and either: • remove, comment out, or update any line with umask. - OR - • update any line that includes umask to a value of 0027 or more restrictive. Example: umask 027 Note: the Recommendation \"Ensure default user umask is configured\" includes guidance to set the default umask"

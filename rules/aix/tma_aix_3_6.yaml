@@ -1,0 +1,17 @@
+id: TMA-AIX-3.6
+title: Ensure no files or directories without an owner and a group exist
+description: 'Administrators may delete users or groups from the system and neglect to remove all files and/or directories owned by those users or groups. A new user or group who is assigned a deleted user''s user ID or group ID may then end up "owning" a deleted user or group''s files, and thus have more access on the system than was intended. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 3.6 Ensure no files or directories without an owner and a group exist
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / \( -fstype jfs -o -fstype jfs2 \) \( -type d -o -type f \) \( -nouser -o -nogroup \) -ls ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set ownership and group ownership of these files and/or directories to an active user on the system: # /usr/bin/chown <owner> <file> # /usr/bin/chgrp <group> <file> OR - Remove the file/directory: # [[ -f <file> ]] && /usr/bin/rm -f <file> # [[ -d <file> ]] && /usr/bin/rmdir <file>'

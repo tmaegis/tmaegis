@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-4.4
+title: Lock Out Accounts if Not Currently in Use
+description: If users with database accounts will not be using the database for some time, disabling the account will reduce the risk of attacks or inappropriate account usage.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- authentication
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 4.4 Lock Out Accounts if Not Currently in Use
+audit:
+  type: manual
+  command: Run SELECT rolname FROM pg_catalog.pg_roles WHERE rolname !~ '^pg_' AND rolcanlogin; and compare with the accounts currently in use. Inactive accounts must not appear in the output.
+remediation:
+  type: iac_patch
+  command: Lock unused accounts with ALTER ROLE <role> NOLOGIN; (re-enable with LOGIN when needed) or drop them.

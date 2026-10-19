@@ -1,0 +1,21 @@
+id: TMA-EKS-AUTO-4.2.1
+title: Prevent workloads from running privileged containers
+description: Prevent application workloads from running privileged containers in EKS Auto Mode by enforcing Pod Security Standards through Pod Security Admission or an equivalent admission policy engine. Restrict privileged workloads to only approved system or platform namespaces with a documented operational requirement. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.
+target: eks-auto
+level: 1
+severity: critical
+tags:
+- eks-auto
+- policies
+- pod-security
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.2.1 Prevent workloads from running privileged containers
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($4=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure Pod Security Admission on workload namespaces so privileged containers are denied when new pods are created. For this control, baseline is sufficient to block privileged containers, but restricted is the stronger setting for workload namespaces when the applications can meet the additional pod hardening requirements. EKS pod security documentation shows these controls being applied through namespace labels and explains that multiple modes can be used together for enforcement, warning, and audit visibility. Label each workload namespace to enforce restricted, or use baseline where restricted would break valid workloads. Add warn and audit labels during rollout so violations are visible to users and audit logs while enforcement blocks new noncompliant pods. Set the variable $NAMESPACE to the namespace name being updated.

@@ -1,0 +1,28 @@
+id: TMA-ORACLE-DB-4.1
+title: Ensure All Default Passwords Are Changed
+description: Default passwords should not be used by Oracle database users. Leaving default passwords unchanged can create significant security vulnerabilities by allowing unauthorized access to the database. Counts every account listed in CDB_USERS_WITH_DEFPWD, locked or not, as the benchmark does. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects to the CDB root with 'sqlplus -S / as sysdba' (OS authentication) so CDB_/GV$ views cover all open PDBs.
+target: oracle-db
+level: 1
+severity: critical
+tags:
+- oracle-db
+- database
+- oracle
+- authentication
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 4.1 Ensure All Default Passwords Are Changed
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on define off
+    select count(*) from cdb_users_with_defpwd a, cdb_users c
+    where a.username = c.username and a.con_id = c.con_id;
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'To reset the account with NO AUTHENTICATION, execute the following SQL statement in CDB: ALTER USER <USERNAME> NO AUTHENTICATION; Notes: ; As per Oracle Support Document 2173962.1, newly created database may list SYS and SYSTEM in CBA_USERS_WITH_DEFPWD even if they were set with non- default passwords. Running ALTER USER with the same password will correctly recognize these accounts as non-default. ; If remote_password_file is set to NONE, changing the SYS password via ALTER USER is not possible. In this case, update remote_password_file to EXCLUSIVE before modifying the SYS password.'

@@ -1,0 +1,35 @@
+id: TMA-FORTIGATE-2.5.2
+title: Ensure "Monitor Interfaces" for High Availability devices is enabled
+description: Configure Interface Monitoring within High Availability settings. Interface Monitoring should be enabled on all critical interfaces. PASS requires at least one monitored interface in config system ha. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- high-availability
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.5.2 Ensure "Monitor Interfaces" for High Availability devices is enabled
+audit:
+  type: config_regex
+  pattern: (?m)^config system ha\n(?:[ \t]+[^\n]*\n)*?[ \t]+set monitor "[^\n]*[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system ha
+        set monitor "port6" "port7"
+    end
+    # CIS guidance:
+    To remediate from GUI:
+    1. Go to System > HA.
+    2. Under "Monitor Interfaces" select all applicable interfaces.
+    3. Select "OK". To validate from CLI:
+    config system ha
+        set monitor "port6" "port7"
+        show  ###To Review changes to monitored interfaces before
+    applying config system ha
+    set group-name "FGT-HA"
+    set mode a-p
+    set password ENC
+    enrwD467hJmO6j6YW/l6FEOa1YNVYdo8Z5mCcTDEKUFpOVXcNYnPBmQDGX//ViXk6TkwNH0il5aJr /fZY25lq+husndQHZVWp2LIlXmCv/n81U43nkZUWaIKvqkellGFbhv0/IHoOLzQPCsVcBbyrsgopr YMvh6w7F06+nRriBtMNQxpiTE+12xAHz7lA3EoYZzf8A==
+    set override disable
+    set monitor "port6" "port7"
+    end

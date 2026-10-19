@@ -1,0 +1,26 @@
+id: TMA-EKS-3.2.8
+title: Ensure serverTLSBootstrap and RotateKubeletServerCertificate are enabled
+description: In EKS, these settings are about the kubelet’s serving certificate, which is the certificate the kubelet presents from its HTTPS endpoint to callers. serverTLSBootstrap controls whether the kubelet uses the Kubernetes certificates API to bootstrap that serving certificate, while RotateKubeletServerCertificate keeps the related rotation support enabled when feature gates are managed. Reads every node's effective kubelet configuration through the API server (kubectl get --raw /api/v1/nodes/<node>/proxy/configz); requires kubectl with nodes/proxy access. RotateKubeletServerCertificate must not be false (it defaults to true).
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- worker-node
+- kubelet
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 3.2.8 Ensure serverTLSBootstrap and RotateKubeletServerCertificate are enabled
+audit:
+  type: command
+  command: |-
+    nodes=$(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}') || exit 1
+    [ -n "$nodes" ] || exit 1
+    ok=1
+    for n in $nodes; do
+      c=$(kubectl get --raw "/api/v1/nodes/$n/proxy/configz") || exit 1
+      if ! { printf '%s' "$c" | grep -Eq '"serverTLSBootstrap":true' && ! printf '%s' "$c" | grep -Eq '"RotateKubeletServerCertificate":false'; }; then echo "noncompliant: $n"; ok=0; fi
+    done
+    if [ "$ok" -eq 1 ]; then echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: If the audit shows serverTLSBootstrap is false, the kubelet is not entering the Kubernetes certificates API workflow for its serving certificate and the node should be treated as noncompliant. If RotateKubeletServerCertificate is false, or becomes unset because custom feature gates were supplied without re-including it, the related server certificate rotation support is not being preserved. If either field is missing, first confirm the configz response is complete, because Kubernetes identifies that endpoint as the view of the kubelet’s final actuated configuration. In EKS, remediation should be performed through the supported node provisioning or node update workflow, not by directly editing the kubelet config file on the host, because AWS applies durable node behavior through launch templates, merged user data, and managed node replacement workflows.

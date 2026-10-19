@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-4.5.2.1
+title: Ensure default group for the root account is GID 0
+description: 'The usermod command can be used to specify which group the root account belongs to. This affects permissions of files that are created by the root account. Using GID 0 for the root account helps prevent root -owned files from accidentally becoming accessible to non-privileged users. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.2.1 Ensure default group for the root account is GID 0
+audit:
+  type: command
+  command: 'awk -F: ''$1=="root"{print $1":"$4}'' /etc/passwd'
+  expected_output: root:0
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set the root user''s default group ID to 0: # pw usermod -g 0 root'

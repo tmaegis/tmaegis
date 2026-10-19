@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-1.5
+title: Ensure Websphere Liberty Server Output is not set to the default value
+description: The user ID that the WebSphere Liberty server process runs under should not have write access to its own configuration files. The WebSphere Liberty server process requires write access to certain runtime files such as temporary caches and logs, but those files can be written to a different location than the configuration files, and permissions can be set separately for those two locations. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 1
+severity: medium
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 1.5 Ensure Websphere Liberty Server Output is not set to the default value
+audit:
+  type: manual
+  command: Ensure the existence of the WLP_OUTPUT_DIR variable in the server.env file. This environment variable is used to specify an alternative location for server generated output such as logs, the workarea directory, and other generated files. The variable should point to an output directory that is different from the server's configuration directory. The user ID of the WebSphere Liberty server process should have write access to the output directory but only read access to the configuration directory. For more information about server.env please see here. ...
+remediation:
+  type: iac_patch
+  command: 'Create the server.env file if it does not exist. For more information about server.env please see here. Define WLP_OUTPUT_DIR in the server.env file: WLP_OUTPUT_DIR=/<server-writeable directory>/ Ensure that the WebSphere Liberty server process user ID has write access to the WLP_OUTPUT_DIR directory. Ensure that the WebSphere Liberty server process user ID does not have write access to the ${server.config.dir} directory.'

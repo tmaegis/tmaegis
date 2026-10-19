@@ -1,0 +1,56 @@
+id: TMA-CHROME-1.29
+title: Ensure 'URLs for which local IPs are exposed in WebRTC ICE candidates' is set to 'Disabled'
+description: 'This setting specifies a list of URLs or patterns for which local IP addresses will be exposed by WebRTC. The recommended state for this setting is: Disabled (0) NOTE: This setting, if Enabled, weakens the protection of local IPs if needed by administrators. Rationale: Enabling this setting and allowing exposure of IP addresses can allow an attacker to gather information about the internal network that could potentially be utilized to breach and traverse a network. The policy is Disabled when it is not present: the audit prints ''absent'' when the list key HKLM\SOFTWARE\Policies\Google\Chrome\WebRtcLocalIpsAllowedUrls is missing or empty, otherwise the configured entries.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 1.29 Ensure 'URLs for which local IPs are exposed in WebRTC ICE candidates' is set to 'Disabled'
+audit:
+  type: registry
+  command: '$l = @((Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\WebRtcLocalIpsAllowedUrls'' -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike ''PS*'' } | ForEach-Object { "$($_.Value)" }); if ($l.Count -eq 0) { ''absent'' } else { ''configured: '' + ($l -join '', '') }'
+  expected_output: absent
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    $tmaBk = Join-Path $env:ProgramData 'TMAegis\backup'
+    function Backup-TmaKey([string]$p) {
+      try {
+        if (Test-Path -LiteralPath $p) {
+          $k = $p -replace '^Registry::', ''
+          New-Item -ItemType Directory -Force -Path $tmaBk | Out-Null
+          $f = Join-Path $tmaBk (($k -replace '[\\/:*?"<>|]', '_') + '.reg')
+          if (-not (Test-Path -LiteralPath $f)) { & reg.exe export $k $f | Out-Null }
+        }
+      } catch { }
+    }
+    function Set-TmaReg([string]$p, [string]$n, $v, [string]$t) {
+      Backup-TmaKey $p
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      New-ItemProperty -LiteralPath $p -Name $n -Value $v -PropertyType $t -Force | Out-Null
+    }
+    function Remove-TmaValue([string]$p, [string]$n) {
+      if ((Test-Path -LiteralPath $p) -and ($null -ne (Get-ItemProperty -LiteralPath $p -Name $n -ErrorAction SilentlyContinue))) {
+        Backup-TmaKey $p
+        Remove-ItemProperty -LiteralPath $p -Name $n -Force
+      }
+    }
+    function Remove-TmaKey([string]$p) {
+      if (Test-Path -LiteralPath $p) { Backup-TmaKey $p; Remove-Item -LiteralPath $p -Recurse -Force }
+    }
+    function Set-TmaList([string]$p, [string[]]$items, [bool]$replace) {
+      Backup-TmaKey $p
+      if ($replace) { Remove-TmaKey $p }
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      $have = @((Get-ItemProperty -LiteralPath $p -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Value)" })
+      $n = [int](@((Get-Item -LiteralPath $p).GetValueNames()) | ForEach-Object { $x = 0; if ([int]::TryParse($_, [ref]$x)) { $x } else { 0 } } | Measure-Object -Maximum).Maximum
+      foreach ($i in $items) {
+        if ($have -notcontains $i) { $n++; New-ItemProperty -LiteralPath $p -Name "$n" -Value $i -PropertyType String -Force | Out-Null }
+      }
+    }
+    Remove-TmaKey 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\WebRtcLocalIpsAllowedUrls'
+  guidance: "Configure through Group Policy: Computer Configuration\\Policies\\Administrative Templates\\Google\\Google Chrome\\URLs for which local IPs are exposed in WebRTC ICE candidates = Disabled. Locally, remove the policy entries at HKLM\\SOFTWARE\\Policies\\Google\\Chrome\\WebRtcLocalIpsAllowedUrls after reviewing them."

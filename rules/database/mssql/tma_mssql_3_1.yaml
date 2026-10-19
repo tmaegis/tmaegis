@@ -1,0 +1,18 @@
+id: TMA-MSSQL-3.1
+title: Ensure 'Server Authentication' Property is set to 'Windows Authentication Mode'
+description: 'Use Windows Authentication to validate attempted connections. 1 = Windows Authentication mode, 0 = mixed mode. Default: Windows Authentication Mode Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- authentication
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 3.1 Ensure 'Server Authentication' Property is set to 'Windows Authentication Mode'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CAST(SERVERPROPERTY('IsIntegratedSecurityOnly') AS int);"
+  expected_output: '1'
+remediation:
+  type: iac_patch
+  command: 'Perform either the GUI or T-SQL method shown: GUI Method 1. Open SQL Server Management Studio. 2. Open the Object Explorer tab and connect to the target SQL Server instance. 3. Right click the instance name and select Properties. 4. Select the Security page from the left menu. 5. Set the Server authentication setting to Windows Authentication Mode. T-SQL Method Run the following T-SQL in a Query Window: USE [master] GO EXEC xp_instance_regwrite N''HKEY_LOCAL_MACHINE'', N''Software\Microsoft\MSSQLServer\MSSQLServer'', N''LoginMode'', REG_DWORD, 1 GO Restart the SQL Server service for the change to take effect.'

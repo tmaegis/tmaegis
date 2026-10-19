@@ -1,0 +1,16 @@
+id: TMA-TDSQL-1.8
+title: Ensure Unnecessary System Services Are Disabled on TDSQL Hosts
+description: TDSQL hosts should run only the necessary services. Unnecessary services increase the attack surface.
+target: tdsql
+level: 2
+severity: low
+tags:
+- tdsql
+- os
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.8 Ensure Unnecessary System Services Are Disabled on TDSQL Hosts
+audit:
+  type: manual
+  command: Run systemctl list-unit-files --type=service --state=enabled and ss -tlnp on every TDSQL host. Only TDSQL components (mysqld, oss_server, scheduler, zookeeper, gateway/proxy, agents) and required OS services may be enabled or listening; services such as cups, avahi-daemon, bluetooth or telnet are a finding.
+remediation:
+  type: iac_patch
+  command: '# Disable unnecessary services systemctl disable --now cups avahi-daemon bluetooth telnet.socket'

@@ -1,0 +1,18 @@
+id: TMA-FLASHARRAY-3.1
+title: Ensure NFS export policies restrict client access and enforce secure authentication (no wildcards, root squash, no sys auth)
+description: 'NFS Export Policies are used to control access to any given file system export over any version of the NFS protocol. They can set properties such as permitted authentication mechanisms, allowance of root access from clients, and read-only vs. read-write based on client network identity. Fails when an NFS export rule uses the * client, auth_sys security or no-root-squash; confirm krb5i/krb5p and explicit client subnets. Note: a * client in any exported rule list (SMB included) also fails this check. The audit is a config_regex check against a text export of the Purity//FA CLI, supplied with --device-config. Capture it over SSH with the --nvp (name=value) output option, for example: ssh pureuser@<array> "purepolicy nfs rule list --nvp" > flasharray.txt (one file may hold the output of all commands used by this pack).'
+target: flasharray
+level: 1
+severity: high
+tags:
+- flasharray
+- storage
+- file-services
+reference: CIS Everpure FlashArray Purity 6.9.x Benchmark v1.0.0 - 3.1 Ensure NFS export policies restrict client access and enforce secure authentication (no wildcards, root squash, no sys auth)
+audit:
+  type: config_regex
+  pattern: (?im)(?:\bclient[ \t]*[=:]?[ \t]*\*(?:\s|$)|\bauth_sys\b|\bno-root-squash\b)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: 'To align with the security recommendations, update your NFS export policy rules to constrain client IPs, enforce root squash, and require Kerberos security. From the GUI: ; Navigate to Storage > Policies. ; In the Export Policies panel, click the name of the NFS policy to modify. ; In the Rules panel, click the + (Create Rule) icon to add a new, secure rule. (Note: Modifying existing NFS rules via the GUI is done by adding a new rule and removing the non-compliant one). ; Set the Client field to a specific IP subnet (e.g., 192.168.10.0/24). ; Select root-squash for the Access level. ; Select NFSv4 for the Version. ; Select krb5p (or krb5i) for Security, and ensure auth_sys is unchecked.'

@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.5.1
+title: 'Ensure ''Configure native messaging blocklist'' is set to ''Enabled: *'''
+description: 'Allows you to specify which native messaging hosts that should not be loaded. Disabled (0): Google Chrome will load all installed native messaging hosts. The recommended state for this setting is: Enabled with a value of * NOTE: This needs to be handled carefully. If an extension is enabled, yet can''t communicate with its backend code, it could behave in strange ways which results in helpdesk tickets + support load. Rationale: For consistency with Plugin and Extension policies, native messaging should be blocklisted by default, requiring explicit administrative approval of applications for allowlisting. An example of an application that uses native messaging is the 1Password password manager. List policy: numbered REG_SZ values under HKLM\SOFTWARE\Policies\Google\Chrome\NativeMessagingBlocklist. Compliant when one entry equals ''*''; ''unset'' when the list is empty. Remediation appends the entry under the next free number.'
+target: chrome
+level: 2
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l2
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.5.1 Ensure ''Configure native messaging blocklist'' is set to ''Enabled: *'''
+audit:
+  type: registry
+  command: '$l = @((Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\NativeMessagingBlocklist'' -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike ''PS*'' } | ForEach-Object { "$($_.Value)" }); if ($l.Count -eq 0) { ''unset'' } elseif ($l -contains ''*'') { ''compliant'' } else { ''non-compliant: '' + ($l -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $k = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\NativeMessagingBlocklist'; if (-not (Test-Path -Path $k)) { New-Item -Path $k -Force | Out-Null }; $props = @((Get-ItemProperty -Path $k).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' }); if (@($props | Where-Object { "$($_.Value)" -eq '*' }).Count -eq 0) { $n = 1; while (@($props | Where-Object { $_.Name -eq "$n" }).Count -gt 0) { $n++ }; New-ItemProperty -Path $k -Name "$n" -Value '*' -PropertyType String -Force | Out-Null }

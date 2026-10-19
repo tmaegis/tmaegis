@@ -1,0 +1,25 @@
+id: TMA-PALOALTO-6.3
+title: Ensure an anti-spyware profile is configured to block on specified spyware severity levels, categories, and threats
+description: 'If a single rule exists within the anti-spyware profile, configure it to block on Critical, High, and Medium spyware severity level, any category, and any threat. If multiple rules exist within the anti-spyware profile, ensure all spyware categories, threats, and severity levels (Critical, High, and Medium) are set to be blocked. Additional rules may exist for packet capture or exclusion purposes. PASS requires an anti-spyware profile rule with action reset-both; confirm it covers severity critical, high and medium, category any and threat-name any. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: high
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 6.3 Ensure an anti-spyware profile is configured to block on specified spyware severity levels, categories, and threats
+audit:
+  type: config_regex
+  pattern: (?m)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?profiles spyware (?:"[^"\n]*"|\S+) rules (?:"[^"\n]*"|\S+) action reset-both[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set profiles spyware <profile> rules block-crit-high-med severity [ critical high medium ]
+    set profiles spyware <profile> rules block-crit-high-med category any
+    set profiles spyware <profile> rules block-crit-high-med threat-name any
+    set profiles spyware <profile> rules block-crit-high-med action reset-both
+    commit
+    # CIS guidance:
+    Navigate to Objects > Security Profiles > Anti-Spyware. Click on existing profile in used or create a new profile.
+    Navigate to Signature Policies tab. Add new policy by giving it a name Policy Name. Set a Policy Name exists within the anti-spyware profile that is configured to perform the reset-both on Critical, High, and Medium Severity level, any Category, and any Threat Name.

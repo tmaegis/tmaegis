@@ -1,0 +1,17 @@
+id: TMA-AIX-4.4.1.6
+title: Ensure access by root over nfs is disabled or blocked
+description: 'For each NFS export, ensure that the anon aka root_squash option is set to -2 or -1. Each NFS export on the server should have the anon=-2 option set. With this (default) value root (euid==0) is seen as the account nobody. When anon=0 the remote root user has root access on the NFS mount. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- accounts
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.4.1.6 Ensure access by root over nfs is disabled or blocked
+audit:
+  type: command
+  command: command -v lsnfsexp >/dev/null 2>&1 || exit 1; out=$( { lsnfsexp | grep -v "anon=-1" | grep anon= ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To change this value for all failing NFS exported filesystems: lsnfsexp | grep -v ''anon=-1'' | grep anon= | while read fs rest; do chnfsexp -d ${fs} -a -2 done The command chnfsexp re-exports the file or directory with the new settings active.'

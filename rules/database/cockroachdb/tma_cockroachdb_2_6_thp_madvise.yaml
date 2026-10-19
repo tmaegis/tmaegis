@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-2.6
+title: Configure Transparent Huge Pages (THP) to madvise to Avoid Increased Memory Usage
+description: Linux Transparent Huge Pages (THP) is a kernel feature that automatically manages large memory pages to improve performance for some workloads. However, for databases such as CockroachDB, this behavior can cause unpredictable latency spikes, increased memory fragmentation, and excessive CPU overhead due to THP defragmentation. Cockroach Labs recommends configuring THP to madvise instead of the default always mode. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when madvise is the selected (bracketed) Transparent Huge Pages mode.
+target: cockroachdb
+level: 1
+severity: low
+tags:
+- cockroachdb
+- os
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 2.6 Configure Transparent Huge Pages (THP) to madvise to Avoid Increased Memory Usage
+audit:
+  type: command
+  command: out=$(cat /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -o '\[[a-z]*\]'
+  expected_output: '[madvise]'
+remediation:
+  type: iac_patch
+  command: echo madvise > /sys/kernel/mm/transparent_hugepage/enabled (and defrag), then persist it at boot (kernel parameter transparent_hugepage=madvise or a systemd unit).

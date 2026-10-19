@@ -1,0 +1,16 @@
+id: TMA-IBMCLOUD-7.1.4
+title: Ensure IBM Cloud Kubernetes Service cluster has image pull secrets enabled
+description: To pull container images from a registry, your IBM Cloud Kubernetes Service cluster uses a special type of Kubernetes secret - an imagePullSecret. This image pull secret stores the credentials to access a container registry. By default, your cluster is set up to pull images from only your account's namespaces in IBM Cloud Container Registry and deploy containers from these images to the default Kubernetes namespace in your cluster. IBM Cloud Kubernetes Service clusters pull container images from container registries to run containers. If the registry is private, the cluster needs credentials to pull images from it. Because IBM Cloud Kubernetes Service and IBM Cloud Container Registry are often used in tandem, it is important to have image pull secrets for IBM Cloud Container Registry enabled in your cluster.
+target: ibmcloud
+level: 1
+severity: medium
+tags:
+- cloud
+- ibmcloud
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - 7.1.4 Ensure IBM Cloud Kubernetes Service cluster has image pull secrets enabled
+audit:
+  type: manual
+  command: '1. Login to your VPC cluster and check the image pull secrets by running: kubectl get secrets -n default | grep "icr-io" 2. As image pull secrets are automatically added to clusters at creation time, if no icr secrets are listed, the person who created the cluster might not have had the required permissions to IBM Cloud Container Registry.'
+remediation:
+  type: iac_patch
+  command: '1. Run the following command to create an IBM Cloud IAM service ID for the cluster, create a policy for the service ID that assigns the Reader service access role in IBM Cloud Container Registry, and then create an API key for the service ID. The API key is then stored in a Kubernetes image pull secret. Note: This process happens automatically when you create a cluster, but sometimes errors can occur during the cluster creation process. ibmcloud ks cluster pull-secret apply --cluster <cluster_name_or_ID> 2. Verify that the image pull secrets are created in your cluster. kubectl get secrets | grep icr-io'

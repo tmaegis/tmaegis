@@ -1,0 +1,27 @@
+id: TMA-ROS-DISCOVERY-RANGE
+title: Ensure ROS 2 discovery is limited to the local host
+description: 'By default ROS 2 multicasts DDS discovery to the whole subnet, exposing every topic and service to other machines. Humble/Iron use ROS_LOCALHOST_ONLY=1; Jazzy and later use ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST (or OFF). The audit inspects /proc/<pid>/environ of running processes containing ROS_DISTRO (run as root) and fails if none is found or any process allows wider discovery. Multi-host robots that must discover peers should instead use SUBNET with ROS_STATIC_PEERS and SROS2, and document the exception.'
+target: ros
+level: 2
+severity: medium
+tags: [ros, ros2, dds, network]
+reference: CIS-style ROS 2 hardening guidance - Restrict DDS discovery scope (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: command
+  command: |-
+    found=0; bad=0
+    for e in /proc/[0-9]*/environ; do
+      env=$( (tr '\0' '\n' < "$e") 2>/dev/null ) || continue
+      case "$env" in *ROS_DISTRO=*) ;; *) continue ;; esac
+      found=1
+      pid=${e#/proc/}; pid=${pid%/environ}
+      if printf '%s\n' "$env" | grep -Eqx 'ROS_AUTOMATIC_DISCOVERY_RANGE=(LOCALHOST|OFF)'; then continue; fi
+      if printf '%s\n' "$env" | grep -qx 'ROS_LOCALHOST_ONLY=1' && ! printf '%s\n' "$env" | grep -q '^ROS_AUTOMATIC_DISCOVERY_RANGE='; then continue; fi
+      echo "pid $pid: discovery not limited to localhost"; bad=1
+    done
+    [ "$found" -eq 1 ] || { echo "no running ROS 2 processes found"; exit 1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Jazzy+: set ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST (optionally ROS_STATIC_PEERS for known peers). Humble/Iron: set ROS_LOCALHOST_ONLY=1. Apply in the launch environment of every node and restart them.'

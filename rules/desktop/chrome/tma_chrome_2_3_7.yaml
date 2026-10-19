@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.3.7
+title: Ensure 'Control availability of extensions unpublished on the Chrome Web Store' Is Disabled
+description: 'This policy disables any extensions in Google Chrome that were downloaded from the Chrome Web Store and are now unpublished. The policy can be configured to either: - Enabled (0): Allow unpublished extensions - Disabled (1): Disable unpublished extensions If the value for ExtensionUnpublishedAvailability is not changed from the default, it will behave as it is enabled. Rationale: Disabling unpublished extensions will remove the ability to run any extensions that are no longer being updated or patched. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:ExtensionUnpublishedAvailability (REG_DWORD); compliant when it is 1. Remediation writes 1 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: medium
+tags:
+- chrome
+- browser
+- cis-l1
+reference: CIS Google Chrome Benchmark v3.0.0 - 2.3.7 Ensure 'Control availability of extensions unpublished on the Chrome Web Store' Is Disabled
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''ExtensionUnpublishedAvailability'' -ErrorAction SilentlyContinue).''ExtensionUnpublishedAvailability''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(1) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'ExtensionUnpublishedAvailability' -Value 1 -PropertyType DWord -Force | Out-Null

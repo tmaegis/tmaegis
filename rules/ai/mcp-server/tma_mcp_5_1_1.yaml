@@ -1,0 +1,20 @@
+id: TMA-MCP-5.1.1
+title: Ensure tool schemas and argument types are validated
+description: The server validates every tool input and output against the tool's advertised schema at the server middleware layer before the tool executes. Validation uses the JSON Schema dialect each schema declares in $schema, defaulting to 2020-12 when none is declared. A tools/call request that fails the CallToolRequest structure is a protocol error. A well-formed call whose arguments fail the tool's input schema is surfaced as a tool execution error in a normal result with isError set to true, not as a -32602 protocol error. Where a tool declares an outputSchema, the server returns structured results that conform to it. The server sanitizes the whole tool schema, including tool names, parameter names, descriptions, and outputs, not only inputSchema. The validator accepts the full schema vocabulary the 2026-07-28 revision permits, including composition keywords, conditionals, and internal $ref...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 5.1.1 Ensure tool schemas and argument types are validated
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_5_1_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 5.1.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add a validation middleware layer that runs before tool dispatch and validates every tool call's arguments against the tool's input schema under the dialect the schema declares. Return a schema-violating call as a tool execution error in a normal result with isError set true, and reject a structurally malformed tools/call request as a protocol error. Where a tool declares an outputSchema, validate the structured result against it before returning. Sanitize all schema fields, meaning tool names, parameter names, descriptions, and outputs, not only inputSchema, before they reach the model or downstream use. Tighten schemas to strict types, disallow additionalProperties where appropriate, and mark required fields. Configure the validator so it does not auto- dereference external $ref URIs, and bound schema depth and validation time. This is server middleware and configuration, and the exact validator is implementation-specific, for example ajv for TypeScript servers, so there is
+    no portable command.

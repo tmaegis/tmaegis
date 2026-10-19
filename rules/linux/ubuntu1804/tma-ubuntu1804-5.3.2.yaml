@@ -1,0 +1,20 @@
+id: TMA-UBUNTU1804-5.3.2
+title: Ensure lockout for failed password attempts is configured
+description: Lock out users after n unsuccessful consecutive login attempts. The first sets of changes are made to the PAM configuration files. The second set of changes are applied to the program specific PAM configuration file. The second set of changes must be applied to each program that will lock out users. Check the documentation for each secondary program for instructions on how to configure them to work with PAM.  deny=n - n represents the number of failed attempts before the account is locked  unlock_time=n - n represents the number of seconds before the account is unlocked  audit - Will log th
+target: linux
+os_family:
+- ubuntu-18.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 18.04 LTS Benchmark v2.0.1 ARCHIVE - 5.3.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; o=$(bash -c ''grep "pam_tally2" /etc/pam.d/common-auth'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''auth required pam_tally2.so onerr=fail audit silent deny=5 unlock_time=900'' || { echo step1: missing ''auth required pam_tally2.so onerr=fail audit silent deny=5 u''; return 1; }; o=$(bash -c ''grep -E "pam_(tally2|deny)\.so" /etc/pam.d/common-account'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''account requisite pam_deny.so'' || { echo step2: missing ''account requisite pam_deny.so''; return 1; }; printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''account required pam_tally2.so'' || { echo step2: missing ''account required pam_tally2.so''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit the /etc/pam.d/common-auth file and add the auth line below: auth required pam_tally2.so onerr=fail audit silent deny=5 unlock_time=900 Edit the /etc/pam.d/common-account file and add the account lines bellow: account requisite pam_deny.so account required pam_tally.so Note: If a user has been locked out because they have reached the maximum consecutive failure count defined by deny= in the pam_tally2.so module, the user can be unlocked by issuing the command /sbin/pam_tally2 -u <username> --reset. This command sets the failed count to 0, effectively unlocking the user. Notes: BUG In pam_tally2.so To work around this issue you have to add pam_tally2 to the account section account requir…'

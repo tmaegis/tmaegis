@@ -1,0 +1,26 @@
+id: TMA-SUPPLY-CHAIN-DEPENDENCY-UPDATES
+title: Ensure automated dependency update tooling (Dependabot or Renovate) is configured
+description: Automated update PRs keep dependencies and CI actions patched against published vulnerabilities and make lockfile changes reviewable. The audit looks for .github/dependabot.yml or a Renovate configuration (renovate.json[5], .renovaterc[.json], .github/ or .gitlab/renovate.json). Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.
+target: supply-chain
+level: 1
+severity: medium
+tags:
+- supply-chain
+- dependencies
+- patching
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Dependencies - monitor and update third-party dependencies (verify section number for your release)
+audit:
+  type: command
+  command: 'top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1
+
+    cd "$top" || exit 1
+
+    files=$(git ls-files 2>/dev/null) || exit 1
+
+    n=$(printf ''%s\n'' "$files" | grep -cxE ''\.github/dependabot\.ya?ml|(\.github/|\.gitlab/)?renovate\.json5?|\.renovaterc(\.json5?)?'' || true)
+
+    if [ "$n" -gt 0 ]; then echo compliant; else echo "no Dependabot or Renovate configuration committed"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add .github/dependabot.yml with an update entry per ecosystem (including package-ecosystem: github-actions and docker), or a renovate.json extending config:recommended; enable Dependabot security updates in repository settings.'

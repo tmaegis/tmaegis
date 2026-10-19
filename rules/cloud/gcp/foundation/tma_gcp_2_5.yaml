@@ -1,0 +1,19 @@
+id: TMA-GCP-2.5
+title: Ensure Log Metric Filter and Alerts Exist for Project Ownership Assignments/Changes
+description: 'In order to prevent unnecessary project ownership assignments to users/service- accounts and further misuses of projects and resources, all roles/Owner assignments should be monitored. Members (users/Service-Accounts) with a role assignment to primitive role roles/Owner are project owners. The project owner has all the privileges on the project the role belongs to. These are summarized below: - All viewer permissions on all GCP Services within the project - Permissions for actions that modify the state of all GCP services within the project - Manage roles and permissions for a project and all resources within the project - Set up billing for a project Granting the owner role to a member (user/Service-Account) will allow that member to modify the Identity and Access Management (IAM) policy. Therefore, grant the owner role only if the member has a legitimate purpose to manage the IAM po...'
+target: gcp
+level: 1
+severity: high
+tags:
+- cloud
+- gcp
+- logging
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 2.5 Ensure Log Metric Filter and Alerts Exist for Project Ownership Assignments/Changes
+audit:
+  type: manual
+  command: 'From Google Cloud Console Ensure that the prescribed log metric is present: 1. Go to Logging/Log-based Metrics by visiting https://console.cloud.google.com/logs/metrics. 2. In the User-defined Metrics section, ensure that at least one metric <Log_Metric_Name> is present with filter text: (protoPayload.serviceName="cloudresourcemanager.googleapis.com") AND (ProjectOwnership OR projectOwnerInvitee) OR (protoPayload.serviceData.policyDelta.bindingDeltas.action="REMOVE" AND protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/owner") OR (protoPayload.serviceData.policyDelta.bindingDeltas.action="ADD" AND protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/owner") Ensure that the prescribed Alerting Policy is present: 3. Go to Alerting by visiting https://console.cloud.google.com/monitoring/alerting. 4. Under the Policies section, ensure that at least one alert policy exists for the log metric above. Clicking on the policy should show that it is configured with
+    a condition. For example, Violates when: Any logging.googleapis.com/user/<Log Metric Name> stream is above a threshold of zero(0) for greater than zero(0) seconds means that the alert will trigger for any...'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Console Create the prescribed log metric: 1. Go to Logging/Logs-based Metrics by visiting https://console.cloud.google.com/logs/metrics and click "CREATE METRIC". 2. Click the down arrow symbol on the Filter Bar at the rightmost corner and select Convert to Advanced Filter. 3. Clear any text and add: (protoPayload.serviceName="cloudresourcemanager.googleapis.com") AND (ProjectOwnership OR projectOwnerInvitee) OR (protoPayload.serviceData.policyDelta.bindingDeltas.action="REMOVE" AND protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/owner") OR (protoPayload.serviceData.policyDelta.bindingDeltas.action="ADD" AND protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/owner") 4. Click Submit Filter. The logs display based on the filter text entered by the user. 5. In the Metric Editor menu on the right, fill out the name field. Set Units to 1 (default) and the Type to Counter. This ensures that the log metric counts the number of log entries
+    matching the advanced logs query. 6. Click Create Metric. Create the display prescribed Alert Policy: 1. Identify the newly created metric under the section User-defined Metrics at https://console.cloud.goo...'

@@ -1,0 +1,19 @@
+id: TMA-MCP-4.2.2
+title: Ensure MCP stdio server subprocess environment is restricted to the minimum required variables
+description: When spawning stdio MCP server subprocesses, the host constructs the subprocess environment from a documented allowlist of required variables rather than inheriting the full parent environment. Only variables required for the server's declared functionality, as documented in the capability baseline, are forwarded, and all others are excluded by default. The allowlist is a per-server configuration artifact, reviewed whenever the server's capability baseline changes. stdio servers run as subprocesses, and when a process spawns a child the operating system passes down the full parent environment by default unless the caller supplies a restricted one, so a server inherits the spawning process's complete environment. This is runtime behavior of the host and the operating system, not something MCP defines. On developer workstations and CI hosts that environment commonly holds sensitive valu...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 4.2.2 Ensure MCP stdio server subprocess environment is restricted to the minimum required variables
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_4_2_2"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 4.2.2"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Configure the host spawn logic to pass only the variables on each server''s documented allowlist to that stdio subprocess, rather than inheriting the parent environment. This is host spawn-configuration, and the allowlist is a per-server artifact. Maintain the allowlist with the minimum required variables for each server, one valid environment-variable name per line and nothing else. The following creates the allowlist file the audit reads: cat > <ALLOWLIST_FILE> <<''EOF'' MCP_API_TOKEN MCP_LOG_LEVEL PATH EOF This command creates the allowlist artifact only and does not change the running subprocess environment, so the Audit verdict flips from FAIL to PASS only after the host spawn logic is configured to pass exactly the allowlisted variables, a step with no single portable command. Review the allowlist whenever the server''s capability baseline changes, and document which secrets each server requires.'

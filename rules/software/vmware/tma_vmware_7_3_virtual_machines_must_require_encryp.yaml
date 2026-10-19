@@ -1,0 +1,17 @@
+id: TMA-VMWARE-7.3
+title: Virtual machines must require encryption for Fault Tolerance
+description: 'Requiring encryption for Fault Tolerance in virtual machines is critical for ensuring secure data transmission between primary and secondary VMs, especially in environments where sensitive data is processed. While the default setting ''opportunistic'' may result in encryption due to widespread AES-NI support in vSphere-compatible hardware, enforcing the ''required'' setting for ... Manual review: the check needs vCenter/PowerCLI, firmware or guest access, or an organization-specific value.'
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- virtual-machine
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 7.3 Virtual machines must require encryption for Fault Tolerance
+audit:
+  type: manual
+  command: 'The following PowerCLI command may be used: (Get-VM -Name $VM).ExtensionData.Config.FtEncryptionMode'
+remediation:
+  type: iac_patch
+  command: 'The following PowerCLI command may be used: $VMview = Get-VM -Name $VM | Get-View $ConfigSpec = New-Object VMware.Vim.VirtualMachineConfigSpec $ConfigSpec.FtEncryptionMode = New-object VMware.Vim.VirtualMachineConfigSpecEncryptedFtModes $ConfigSpec.FtEncryptionMode = "ftEncryptionRequired" $VMview.ReconfigVM_Task($ConfigSpec)'

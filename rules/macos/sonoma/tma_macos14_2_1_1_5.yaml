@@ -1,0 +1,19 @@
+id: TMA-MACOS14-2.1.1.5
+title: Audit Freeform Sync to iCloud
+description: Starting with macOS 13.1 Apple has made FreeForm, a collaboration tool, available for macOS, iOS and iPadOS. This application allows for extensive whiteboard creation and sharing using iCloud. Organizations may want to audit the use of Freeform iCloud sharing of internally created boards. Internally created whiteboards may not be authorized to share to external contacts through iCloud.
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.1.1.5 Audit Freeform Sync to iCloud
+audit:
+  type: manual
+  command: 'Graphical Method: Perform the following steps to verify if iCloud Freeform sync is enabled: 1. Open System Settings 2. Select General 3. Select Device Management 4. Verify that an installed profile has Disallow iCloud Freeform Sync set to your organization''s requirement Terminal Method: Run the following command to verify that a profile is installed that disables Freeform Sync: % /usr/bin/sudo /usr/bin/osascript -l JavaScript << EOS $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.applicationaccess'')\ .objectForKey(''allowCloudFreeform'').js EOS The output should match your organization''s requirement'
+remediation:
+  type: iac_patch
+  command: 'Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.applicationaccess 2. The key to include is allowCloudFreeform 3. The key must be set to <<true/false>/>'

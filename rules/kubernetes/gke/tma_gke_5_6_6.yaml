@@ -1,0 +1,17 @@
+id: TMA-GKE-5.6.6
+title: Apply least privilege firewall rules to GKE worker nodes
+description: Apply least privilege VPC firewall rules and firewall policies to GKE worker nodes to restrict ingress and egress traffic to approved sources, destinations, ports, and protocols. Firewall rules should target only the intended GKE nodes by using appropriate network tags, service accounts, or other approved targeting methods. The benchmark marks this recommendation Manual.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+- network
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.6.6 Apply least privilege firewall rules to GKE worker nodes
+audit:
+  type: manual
+  command: 'Review the GKE cluster and identify the VPC network, subnet, node pool network tags, and node service accounts used by the cluster. These values are used to determine which VPC firewall rules or firewall policies apply to the GKE worker nodes. gcloud container clusters describe $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --format json | jq ''{ network: .network, subnetwork: .subnetwork, nodePools: [ .nodePools[] | { name: .name, tags: (.config.tags // []), serviceAccount: .config.serviceAccount } ] }'' • Expected output: Firewall rules that apply to the cluster VPC ...'
+remediation:
+  type: iac_patch
+  command: Apply least privilege firewall controls to GKE worker nodes by reducing broad ingress and egress access while preserving required cluster functionality. Firewall rules should be targeted carefully so they protect the intended node pools without unintentionally affecting unrelated VM instances in the same VPC. • Update GKE worker node firewall rules so only approved sources, destinations, ports, and protocols are allowed. • Target firewall rules to the specific GKE node tags or node service accounts used by the cluster. Avoid rules that apply broadly to the entire VPC unless there is a documented requirement. • Remove or replace overly permissive rules, especially rules that allow broad ingress from 0.0.0.0/0, unnecessary management ports, broad NodePort ranges, or unrestricted egress.

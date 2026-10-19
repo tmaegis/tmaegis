@@ -1,0 +1,42 @@
+id: TMA-BIND-2.3
+title: Lock the BIND User Account
+description: The user account under which BIND runs should not have a valid password, but should be locked. The audit reads /etc/shadow (root) and requires the password field of the named (or bind) account to start with ! or * (locked, what passwd -S reports as LK/L).
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.3 Lock the BIND User Account
+audit:
+  type: command
+  command: |-
+    [ -r /etc/shadow ] || exit 1
+    bad=0; n=0
+    for u in named bind; do
+      p=$(awk -F: -v u=$u '$1==u{print $2; f=1} END{if(!f) print "-"}' /etc/shadow)
+      [ "$p" = - ] && continue; n=1
+      case "$p" in '!'*|'*'*) ;; *) echo "$u account is not locked"; bad=1 ;; esac
+    done
+    [ "$n" -eq 1 ] || { echo 'no named/bind account in /etc/shadow'; exit 1; }
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    for u in named bind; do grep -q "^$u:" /etc/shadow 2>/dev/null && passwd -l "$u"; done; true
+  guidance: "To remediate, lock the named account using the password command with the lock option as shown below. # passwd -l named Locking password for user named. passwd: Success"

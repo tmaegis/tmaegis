@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.2.4.7.2.1.1
+title: Ensure 'Always prevent untrusted Microsoft Query files from opening' is set to 'Enabled'
+description: 'This policy setting controls whether Microsoft Query files (.iqy, oqy, .dqy, and .rqy) in an untrusted location are prevented from opening. Using Microsoft Query, users can connect to external data sources, select data from those external sources, import that data into worksheets, and refresh it to keep worksheet data synchronized with the data in the external sources. Note: This policy setting only applies to subscription versions of Office, such as Microsoft 365 Apps for enterprise. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) enableblockunsecurequeryfiles that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.2.4.7.2.1.1 Ensure 'Always prevent untrusted Microsoft Query files from opening' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\excel\security\external content'') -Name ''enableblockunsecurequeryfiles'' -ErrorAction SilentlyContinue).''enableblockunsecurequeryfiles''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $_.PSChildName + '':enableblockunsecurequeryfiles='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled. Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content\Always prevent untrusted Microsoft Query files from opening

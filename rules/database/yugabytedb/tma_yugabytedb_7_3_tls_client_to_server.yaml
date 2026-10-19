@@ -1,0 +1,18 @@
+id: TMA-YUGABYTEDB-7.3
+title: 'Ensure TLS is enabled and configured correctly: client to server'
+description: YugabyteDB clusters can be configured to use client-to-server encryption to protect data in transit between YugabyteDB servers and clients, tools, and APIs. When enabled, Transport Layer Security (TLS), the successor to the deprecated Secure Sockets Layer (SSL), is used to ensure data protection for YSQL and YCQL only. Note that there is no planned support for YEDIS. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Reads the YB-TServer GFlags from the web UI at ${YB_TSERVER_WEB:-127.0.0.1:9000}/varz; run it against every TServer. Passes when YSQL SHOW ssl returns on and the TServer GFlags (from ${YB_TSERVER_WEB:-127.0.0.1:9000}/varz) have use_client_to_server_encryption=true and allow_insecure_connections=false.
+target: yugabytedb
+level: 1
+severity: high
+tags:
+- yugabytedb
+- tls
+- encryption
+reference: 'CIS YugabyteDB Benchmark v2.0.0 - 7.3 Ensure TLS is enabled and configured correctly: client to server'
+audit:
+  type: sql_query
+  command: ssl=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SHOW ssl" 2>/dev/null) || exit 1; out=$(curl -sf "http://${YB_TSERVER_WEB:-127.0.0.1:9000}/varz?raw=1" 2>/dev/null) || exit 1; if [ "$ssl" = on ] && printf '%s\n' "$out" | grep -qE -- '--use_client_to_server_encryption=true([^[:alnum:]_]|$)' && printf '%s\n' "$out" | grep -qE -- '--allow_insecure_connections=false([^[:alnum:]_]|$)'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Start every YB-TServer with --use_client_to_server_encryption=true --allow_insecure_connections=false --certs_for_client_dir=<dir> (rolling restart) and configure clients with sslmode=verify-full / YCQL TLS.

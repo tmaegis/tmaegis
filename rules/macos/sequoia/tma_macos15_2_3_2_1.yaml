@@ -1,0 +1,34 @@
+id: TMA-MACOS15-2.3.2.1
+title: Ensure Set Time and Date Automatically Is Enabled
+description: 'Correct date and time settings are required for authentication protocols, file creation, modification dates, and log entries. Note: If your organization has internal time servers, enter them here. Enterprise mobile devices may need to use a mix of internal and external time servers. If multiple servers are required, use the Date & Time System Preference with each server separated by a space.'
+target: macos
+level: 1
+severity: medium
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.3.2.1 Ensure Set Time and Date Automatically Is Enabled
+os_family:
+- macos-15
+audit:
+  type: command
+  command: /usr/sbin/systemsetup -getusingnetworktime 2>/dev/null
+  expected_output: 'Network Time: On'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/sbin/systemsetup -setusingnetworktime on
+  guidance: "Terminal: sudo /usr/sbin/systemsetup -setnetworktimeserver <your.time.server> ; sudo /usr/sbin/systemsetup -setusingnetworktime on ; sudo /usr/sbin/systemsetup -setnetworktimeserver time.apple.com. GUI: System Settings > General > Date & Time > Set Set time and date automatically to enabled."

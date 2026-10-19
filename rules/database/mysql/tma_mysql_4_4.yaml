@@ -1,0 +1,18 @@
+id: TMA-MYSQL-4.4
+title: Harden Usage for 'local_infile' on MySQL Clients
+description: 'The local_infile parameter dictates whether files located on the MySQL client''s computer can be loaded or selected via LOAD DATA INFILE or SELECT local_file. Checks the server-side branch of the benchmark (local_infile = 0); if LOAD DATA LOCAL is required, use clients 8.0.21+ with --load-data-local-dir and accept the finding as an exception. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: medium
+tags:
+- mysql
+- database
+- configuration
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 4.4 Harden Usage for 'local_infile' on MySQL Clients
+audit:
+  type: sql_query
+  command: out=$(mysql -NBe "SELECT IF(@@global.local_infile = 0, 'compliant', 'noncompliant')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: sql_exec
+  command: mysql -e "SET PERSIST local_infile = 0"

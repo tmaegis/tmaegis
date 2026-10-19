@@ -1,0 +1,17 @@
+id: TMA-MSSQL2022-3.12
+title: Ensure the 'SYSADMIN' Role is Limited to Administrative or Built-in Accounts
+description: 'The SYSADMIN role is the highest privileged server-level role in SQL Server database engine. Moreover, by design built-in accounts by default are granted permission to this server-level role by Microsoft design so database engine works as expected. The following virtual accounts / Service SIDs are default members of SYSADMIN: NT SERVICE\SQLWriter NT SERVICE\Winmgmt NT SERVICE\MSSQLSERVER (Used by the SQL database engine service) NT SERVICE\SQLSERVERAGENT(Used by the SQL Agent service) This means that the service accounts for the SQL Database Engine and SQL Agent does not need to, and should not have , their specific service accounts added to the SYSADMIN group seperately, as it is not needed. The built-in database sa account and service accounts are automatically created during SQL Server installation are required to be granted SYSADMIN role. DBA’s can create accounts with SYSADMIN ro...'
+target: mssql
+level: 1
+severity: high
+tags:
+- iam
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 3.12 Ensure the 'SYSADMIN' Role is Limited to Administrative or Built-in Accounts
+audit:
+  type: manual
+  command: 'Execute this SQL query to find current service accounts running your SQL Server Engine with SYSADMIN role permission: SELECT distinct(name),type_desc FROM master.sys.server_principals a , sys.dm_server_services b WHERE IS_SRVROLEMEMBER (''sysadmin'',name) = 1 and a.name=b.service_account; Execute this SQL query to list all SQL Server instance principles with SYSADMIN role granted to them: SELECT distinct(name),type_desc FROM master.sys.server_principals WHERE IS_SRVROLEMEMBER (''sysadmin'',name) = 1 AND name not in ( ''NT SERVICE\SQLWriter'', ''NT SERVICE\Winmgmt'', ''NT SERVICE\MSSQLSERVER'', ''NT SERVICE\SQLSERVERAGENT'' ); If any un-allowed accounts have SYSADMIN role, this is a fail.'
+remediation:
+  type: iac_patch
+  command: 'Remove any un-allowed SQL Server accounts which are granted SYSADMIN role using this query: ALTER SERVER ROLE SYSADMIN DROP MEMBER <account>;'

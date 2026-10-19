@@ -1,0 +1,44 @@
+id: TMA-ROS1-1.1.21
+title: Ensure sticky bit is set on all world-writable directories
+description: Setting the sticky bit on world writable directories prevents users from deleting or renaming files in that directory that are not owned by them. The audit searches local filesystems for world-writable directories without the sticky bit and requires none. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.1.21 Ensure sticky bit is set on all world-writable directories
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v findmnt >/dev/null 2>&1 || exit 1
+    mps=$(findmnt -rn -l -o TARGET,FSTYPE | awk '$2 !~ /^(nfs|nfs4|cifs|smb3|smbfs|fuse|proc|sysfs|tmpfs|devtmpfs|devpts|cgroup|cgroup2|pstore|securityfs|debugfs|tracefs|configfs|bpf|mqueue|hugetlbfs|autofs|binfmt_misc|efivarfs|overlay|squashfs|nsfs|ramfs|fusectl|rpc_pipefs)$/ {print $1}')
+    out=$(for m in $mps; do find "$m" -xdev -type d \( -perm -0002 -a \! -perm -1000 \) -print 2>/dev/null; done | sort -u | head -n 50)
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out"; echo 'world-writable directories without the sticky bit'; }
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    STICKY_ONLY=1
+    findmnt -Dkerno fstype,target 2>/dev/null | awk '($1 !~ /^[[:space:]]*(nfs|proc|cifs|smb|vfat|iso9660|efivarfs|selinuxfs|ncpfs|sysfs|devtmpfs|tmpfs|devpts|cgroup|overlay)/ && $2 !~ /^(\/run|\/tmp|\/var\/tmp|\/proc|\/sys|\/dev)(\/|$)/){print $2}' | while read -r mnt; do
+      find "$mnt" -mount -xdev \( -path '*/containers/storage/*' -o -path '*/containerd/*' -o -path '*/kubelet/*' -o -path '/sys/*' -o -path '/snap/*' -o -path '/boot/efi/*' \) -prune -o -type d -perm -0002 ! -perm -1000 -exec chmod +t {} + 2>/dev/null
+      [ "$STICKY_ONLY" = 1 ] || find "$mnt" -mount -xdev \( -path '*/containers/storage/*' -o -path '*/containerd/*' -o -path '*/kubelet/*' -o -path '/sys/*' -o -path '/snap/*' -o -path '/boot/efi/*' \) -prune -o -type f -perm -0002 -exec chmod o-w {} + 2>/dev/null
+    done
+    true
+  guidance: "Run the following command to set the sticky bit on all world writable directories: # df --local -P | awk '{if (NR!=1) print $6}' | xargs -I '{}' find '{}' -xdev -type d \\( -perm -0002 -a ! -perm -1000 \\) 2>/dev/null | xargs -I '{}' chmod a+t '{}'"

@@ -1,0 +1,18 @@
+id: TMA-AWS-DB-8.4
+title: Ensure Amazon Keyspaces tables have Point-in-Time Recovery (PITR) enabled
+description: Ensure that Amazon Keyspaces tables have Point-in-Time Recovery (PITR) enabled. When PITR is enabled, Amazon Keyspaces automatically creates continuous backups of table data, allowing tables to be restored to any point in time within the last 35 days. This protection is applied at the table level and provides defense against accidental writes, deletions, and other data loss scenarios. Enabling PITR on Amazon Keyspaces tables provides continuous, automatic backup protection without requiring manual snapshot management or impacting table performance or availability. In the event of accidental data corruption, malicious writes, or system failures, PITR allows rapid recovery to any second within the last 35 days, significantly reducing data loss exposure and recovery time.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- crypto
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 8.4 Ensure Amazon Keyspaces tables have Point-in-Time Recovery (PITR) enabled
+audit:
+  type: manual
+  command: 'List PITR status for all tables in a keyspace: aws keyspaces get-table \ --keyspace-name <keyspace-name> \ --table-name <table-name> - If the value of pointInTimeRecovery = DISABLED, this means PITR is turned off'
+remediation:
+  type: iac_patch
+  command: 'Enable PITR on a specific table: aws keyspaces update-table \ --keyspace-name <keyspace-name> \ --table-name <table-name> \ --point-in-time-recovery status=ENABLED - This command enables PITR on the specified table in the keyspace. - The change takes effect immediately with no performance impact.'

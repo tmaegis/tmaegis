@@ -1,0 +1,19 @@
+id: TMA-CHECKPOINT-2.5.3
+title: Ensure Client Authentication is secured.
+description: Client Authentication allows a user and device to authenticate to the firewall and inherit pre-configured firewall rules for a set amount of time. By default, these connections are unencrypted yet can travel over unsecured networks. It is recommended that all Client Authentication connections be made using the HTTPS configuration. This both uniquely identifies the gateway and keeps the authentication credentials from being copied when going over the network.
+target: checkpoint
+level: 1
+severity: high
+tags:
+- checkpoint
+- authentication
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 2.5.3 Ensure Client Authentication is secured.
+audit:
+  type: manual
+  command: 'On the gateway, check $FWDIR/conf/fwauthd.conf in expert mode: the line ''259 fwssd in.aclientd wait 259'' (Telnet client authentication) must be commented out or absent, and the line ''900 fwssd in.ahclientd wait 900'' must carry ''ssl:defaultCert'' so HTTP client authentication uses HTTPS.'
+remediation:
+  type: iac_patch
+  command: |-
+    Comment out or remove the following line from $FWDIR/conf/fwauthd.conf file, or disable the telnet service listening on port 259 by default, write a rule that prevents connections to the daemon in the rulebase.
+    #259    fwssd       in.aclientd     wait    259
+    Edit the following line to include SSL setting in $FWDIR/conf/fwauthd.conf file. 900     fwssd       in.ahclientd    wait    900 ssl:defaultCert

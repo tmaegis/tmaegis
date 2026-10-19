@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.45
+title: 'Ensure ''Schedule Scan Day'' is set to ''Enabled: 0'' or higher, but not ''8'''
+description: 'This policy setting configures the day of the week to perform a scheduled scan. The recommended state for this setting is: Enabled: 0 (Every Day) or higher, but not 8 (No Scheduled Scan). This setting can be configured with the following values: • (0x0) Every Day • (0x1) Sunday • (0x2) Monday • (0x3) Tuesday • (0x4) Wednesday • (0x5) Thursday • (0x6) Friday • (0x7) Saturday • (0x8) No Scheduled Scan Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.45 Ensure ''Schedule Scan Day'' is set to ''Enabled: 0'' or higher, but not ''8'''
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Scan'' -Name ''ScheduleDay'' -ErrorAction SilentlyContinue).''ScheduleDay''; if (-not ($null -ne $v -and @(0,1,2,3,4,5,6,7) -contains [int64]$v)) { $bad += ''ScheduleDay='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Enabled: 0 or higher, but not 8: Defender\Schedule Scan Day To establish the recommended configuration via Endpoint Security Blade: 1. Navigate to Endpoint Security 2. Click Antivirus 3. Click Create Profile 4. Select Windows for the Platform and Microsoft Defender Antivirus for Profile 5. Name the profile 6. Configure Schedule Scan Day to Enabled: 0 or higher, but not 8'

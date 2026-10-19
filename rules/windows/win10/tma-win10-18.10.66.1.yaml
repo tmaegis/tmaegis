@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.66.1
+title: Ensure 'Disable all apps from Microsoft Store' is set to 'Disabled'
+description: 'This setting configures the launch of all apps from the Microsoft Store that came pre- installed or were downloaded. The recommended state for this setting is: Disabled. Note: This policy setting only applies to Windows 10 or later Enterprise and Education editions. Note #2: The name of this setting and the Enabled/Disabled values are incorrectly worded – logically, the title implies that configuring it to Enabled will disable all apps from the Microsoft Store, and configuring it to Disabled will enable all apps from the Microsoft Store. The opposite is true (and is consistent with the GPME he'
+target: windows
+os_family:
+- windows-10
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.66.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore'' -Name ''DisableStoreApps'' -ErrorAction SilentlyContinue).''DisableStoreApps''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DisableStoreApps='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore' -Name 'DisableStoreApps' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,26 @@
+id: TMA-GITHUB-1.5.5
+title: Ensure scanners are in place for open-source vulnerabilities in used packages
+description: 'Detect, prevent and monitor known open-source vulnerabilities in packages that are being used. Open-source vulnerabilities might exist before one starts to use a package, but they are also discovered over time. New attacks and vulnerabilities are announced every now and then. Dependabot alerts must be enabled on the repository (GET vulnerability-alerts returns 204) and the organization must not have dependabot_alerts_enabled_for_new_repositories false. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 2
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.5.5 Ensure scanners are in place for open-source vulnerabilities in used packages
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    O=${GH_ORG:-${R%%/*}}
+    gh api "repos/$R/vulnerability-alerts" --silent >/dev/null 2>&1 || { echo "Dependabot alerts disabled: $R"; exit 0; }
+    d=$(gh api "orgs/$O" --jq '.dependabot_alerts_enabled_for_new_repositories' 2>/dev/null) || d=null
+    [ "$d" = false ] && echo "Dependabot alerts not enabled by default for new repositories" || echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Organization Settings > Code security: enable Dependabot alerts for all repositories and by default for new ones (or apply a code security configuration that enables them).'

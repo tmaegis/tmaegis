@@ -1,0 +1,21 @@
+id: TMA-PALOALTO-7.1
+title: Ensure application security policies exist when allowing traffic from an untrusted zone to a more trusted zone
+description: 'When permitting traffic from an untrusted zone, such as the Internet or guest network, to a more trusted zone, such as a DMZ segment, create security policies specifying which specific applications are allowed. **Enhanced Security Recommendation: ** Require specific application policies when allowing any traffic, regardless of the trust level of a zone. Do not rely solely on port permissions. This may require SSL interception, and may also not be possible in all environments.'
+target: paloalto
+level: 2
+severity: medium
+tags:
+- paloalto
+- threat-prevention
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 7.1 Ensure application security policies exist when allowing traffic from an untrusted zone to a more trusted zone
+audit:
+  type: manual
+  command: 'Navigate to Policies > Security. For all Security Policies that transit from a less trusted to a more trusted interface, that the appropriate Application and Service values are set. For instance, for a web server exposed to the internet from a DMZ: Source tab: Zone set to OUTSIDE / Address set to Any Destination tab: Zone set to DMZ / Address set to [DMZ Host Object] Application tab: set to web-browsing Service/URL Category tab: set Service to ether: application-default or: service-http and/or service-https **Enhanced Security Recommendation: ** Assess this setting ... (Full steps: CIS 7.1.)'
+remediation:
+  type: iac_patch
+  command: |-
+    Navigate to Policies > Security. For all Security Policies that transit from a less trusted to a more trusted interface, set the Application and Service values to match the exposed application. For instance, for a web server exposed to the internet from a DMZ: Source tab: Zone set to OUTSIDE / Address set to Any Destination tab: Zone set to DMZ / Address set to [DMZ Host Object] Application tab: set to web-browsing Service/URL Category tab:
+    set Service to ether:
+    application-default or:
+    service-http and/or service-https
+    **Enhanced Security Recommendation: ** Set these values for Policies on all Interfaces, for traffic in all directions. For each Security Policy, set the Application and Service values to match the exposed application.

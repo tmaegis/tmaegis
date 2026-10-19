@@ -1,0 +1,23 @@
+id: TMA-DOCKER-2.7
+title: Ensure devicemapper storage driver is not used
+description: The devicemapper storage driver is deprecated and has known performance and stability problems. The audit reads the storage driver from docker info.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- daemon
+- storage
+reference: CIS Docker Benchmark v1.9.0 - 2.7 Ensure devicemapper storage driver is not used
+audit:
+  type: command
+  command: d=$(docker info --format '{{.Driver}}') || exit 1; [ "$d" = devicemapper ] && echo "$d" || echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: 'Migrate to the overlay2 storage driver ("storage-driver": "overlay2" in /etc/docker/daemon.json), re-pull or rebuild images and restart the Docker daemon.'

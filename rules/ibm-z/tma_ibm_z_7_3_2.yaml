@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-7.3.2
+title: Ensure that the CSFKEYS class is active
+description: The CSFKEYS SAF class is used to protect access to key material stored in an ICSF Key Data Set. Users can be permitted or restricted from access key material by enabling profiles within the CSFKEYS class.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 7.3.2 Ensure that the CSFKEYS class is active
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that CSFKEYS appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that: The CSFKEYS entry has: o -- GLOBAL INACTIVE -- or -- NO ENTRIES -- Request reports generated using IRRDBU00 output that will allow you to: Verify that all profiles in the CSFKEYS class: Have UACC of NONE Are not in WARNING mode AUDIT a minimum of FAILURES(READ)'
+remediation:
+  type: iac_patch
+  command: 'To activate the CSFKEYS class use the RACF SETROPTS command: SETROPTS CLASSACT(CSFKEYS) To modify the UACC setting for a profile use the RACF RALTER command: RALTER CSFKEYS <profile> + UACC(NONE) + AUDIT(FAILURES(READ)) + NOWARNING'

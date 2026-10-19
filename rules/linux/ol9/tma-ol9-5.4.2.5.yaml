@@ -1,0 +1,42 @@
+id: TMA-OL9-5.4.2.5
+title: Ensure root path integrity
+description: The PATH variable for the root user determines the directories the shell searches for executables when root runs a command that is not given as an absolute path. Its integrity depends on the ownership, permissions, and composition of the directories it lists.
+target: linux
+os_family:
+- ol-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Oracle Linux 9 Benchmark v3.0.0 - 5.4.2.5
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_pmask=\"0022\"\n   l_root_path=\"$(su - root -c '\"'\"'printf \"%s\" \"$PATH\"'\"'\"')\"\n   grep -q  -- \"::\" <<< \"$l_root_path\" && echo \" - root'\"'\"'s PATH contains an empty directory (::)\"\n   grep -Pq -- \":\\h*$\" <<< \"$l_root_path\" && echo \" - root'\"'\"'s PATH ends with a trailing colon (:)\"\n   grep -Pq -- '\"'\"'(^\\h*|:)\\.(:|\\h*$)'\"'\"' <<< \"$l_root_path\" && echo \" - root'\"'\"'s PATH contains the current working directory (.)\"\n   IFS=\":\" read -ra a_path_loc <<< \"$l_root_path\"\n   for l_path in \"${a_path_loc[@]}\"; do\n      if [ -d \"$l_path\" ]; then\n         while IFS=: read -r l_fmode l_fown; do\n            [ \"$l_fown\" != \"root\" ] && echo \" - Directory \\\"$l_path\\\" is owned by \\\"$l_fown\\\" (should be owned by root)\"\n            [ $(( l_fmode & l_pmask )) -gt 0 ] && echo \" - Directory \\\"$l_path\\\" is mode \\\"$l_fmode\\\" (should be 0755 or more restrictive)\"\n      \
+    \   done <<< \"$(stat -Lc '\"'\"'%#a:%U'\"'\"' \"$l_path\")\"\n      else\n         echo \" - \\\"$l_path\\\" is not an existing directory\"\n      fi\n   done\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=$(sudo -Hiu root env 2>/dev/null | sed -n 's/^PATH=//p'); [ -n "$p" ] || p=$PATH
+    printf '%s\n' "$p" | tr ':' '\n' | while read -r dir; do
+      [ -n "$dir" ] && [ "$dir" != . ] && [ -d "$dir" ] || continue
+      chown root "$dir" 2>/dev/null
+      chmod go-w "$dir" 2>/dev/null
+    done
+    true
+  guidance: "For each non-compliant item identified by the audit, correct root's PATH as follows. Edit the shell initialization file that sets root's PATH (for example /root/.bash_profile, /root/.bashrc, or the relevant file under /etc/profile.d/) and remove any current-working- directory (.) entry, any empty entry (::), and any trailing colon (:). For each directory in root's PATH that is not owned by root, run the following command to set its owner to root: # chown root <directory> For each directory in root's PATH that is writable by group or other, run the following command to remove those permissions so the mode is 0755 or more restrictive: # chmod 0755 <directory> For each PATH entry that does not …"

@@ -1,0 +1,26 @@
+id: TMA-CISCO-NXOS-3.2.1.1
+title: Configure RA Guard
+description: 'The IPv6 RA Guard feature provides support for allowing the network administrator to block or reject unwanted or rogue RA guard messages that arrive at the network device platform. RAs are used by devices to announce themselves on the link. The IPv6 RA Guard feature analyzes these RAs and filters out RAs that are sent by unauthorized devices. Packets are classified into one of three DHCP type messages. If a packet arriving from DHCP server is a Relay Forward or a Relay Reply, only the device role is checked. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.2.1.1 Configure RA Guard
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Use the command "sho ipv6 nd raguard policy" to audit for this configuration. Ensure that a valid RA Guard Policy is applied to all routed VLANs, unless this causes some operational issue. switch# sho ipv6 nd raguard policy Policy RAGuardPol01 configuration: trusted-port device-role router hop-limit minimum 3 managed-config-flag on other-config-flag on router-preference maximum high Policy RAGuardPol01 is applied on the following targets: Target Type Policy Feature Target range vlan 10 VLAN RAGuardPol01 RA guard vlan all Notes: The ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! In the example below, the RA Guard policy is created, then applied to a VLAN. Example
+    ipv6 nd raguard policy RAGuardPol01
+    device-role router
+    hop-limit minimum 3
+    managed-config-flag on
+    other-config-flag on
+    router-preference maximum high
+    trusted-port Configuring RA Guard on an interface Example
+    vlan configuration 10 switch(config-if) ipv6 nd raguard attach-policy RAGuardPol01

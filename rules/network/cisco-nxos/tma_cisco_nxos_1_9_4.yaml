@@ -1,0 +1,21 @@
+id: TMA-CISCO-NXOS-1.9.4
+title: Ensure Read Write privileges are not configured for SNMP
+description: 'SNMP RW (Read-Write) access allows stations with Management access to both read and write SNMP MIB objects. SNMP is typically used for monitoring specific operational characteristics of the switch. These tasks typically only require read access. Permitting RW (Read-Write) access permits SNMP to modify some SNMP values. CIS marks this Manual; automated: fails on any community in the network-admin group or with rw. Audited against the output of ''show running-config'' (run ''terminal length 0'' first; do not use ''show running-config all'', which adds default values).'
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- snmp
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.9.4 Ensure Read Write privileges are not configured for SNMP
+audit:
+  type: config_regex
+  pattern: (?m)^snmp-server community \S+ (?:group network-admin|rw)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Only use RO groups for SNMPv2. The most common implementation is "network-operator", because if you use the legacy syntax:
+    snmp-server community <some complex string> ro the switch will translate this to the new syntax, using "network-operator" group
+    snmp-server community <some complex string> group network-operator

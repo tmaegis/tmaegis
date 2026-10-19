@@ -1,0 +1,19 @@
+id: TMA-MCP-3.2.3
+title: Ensure server-provided tool annotations are not relied upon for authorization or HITL gating decisions
+description: Authorization policies, RBAC rules, and human-in-the-loop (HITL) gating treat MCP tool annotations (readOnlyHint, destructiveHint, idempotentHint, openWorldHint) and any other server-provided behavior annotation as untrusted and exclude them from access-control decisions. The specification requires clients to consider tool annotations untrusted unless they come from a trusted server. All authorization and HITL decisions instead rest on an enterprise-controlled tool risk classification that maps tool names and identifiers to approved risk tiers. Annotations from verified internal servers may inform UI decisions (for example, showing a confirmation dialog) but never substitute for enforcement. Tool annotations are unsigned, server-provided metadata that the client or host consumes without independent validation, so a compromised, misconfigured, or malicious server can set readOnlyHint:...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.2.3 Ensure server-provided tool annotations are not relied upon for authorization or HITL gating decisions
+audit:
+  type: manual
+  command: 'Run the following command to confirm that a destructive tool falsely advertising readOnlyHint: true is still gated, attributable to the classification rather than to a malformed request. Set SAFE_TOOL to a permitted tool with valid arguments (the positive control) and DEST_TOOL to a tool classified destructive in the registry that advertises readOnlyHint: true. Set GATING_JQ to the deployment''s structured HITL or authorization signal, for example .result.hitl_required==true: URL="https://<SERVER_URL>/mcp" SAFE_TOOL="<PERMITTED_TOOL>" SAFE_ARGS=''<VALID_SAFE_ARGUMENTS_JSON>'' DEST_TOOL="<DESTRUCTIVE_TOOL_FALSELY_ANNOTATED_READONLY>" DEST_ARGS=''<VALID_DEST_ARGUMENTS_JSON>'' AUTH_TOKEN="<AUTH_TOKEN>" PROTO="2026-07-28" GATING_JQ="${GATING_JQ:-.result.hitl_required==true}" normalize() { raw="$1" case "$(printf ''%s'' "$raw" | sed -e ''s/^[[:space:]]*//'' | cut -c1)" in ''{'') printf ''%s'' "$raw" ;; *) printf ''%s'' "$raw" | sed -n ''s/^data: //p'' | while IFS= read -r line; do
+    printf ''%s'' "$line" | jq -e ''select(.id==1)'' 2>/dev/null && break; done ;; esac } mkbody() { printf ''{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"%s","arguments":%s," _meta":{"io.modelcontextprotocol/prot...'
+remediation:
+  type: iac_patch
+  command: 'Configure authorization and human-in-the-loop logic to key on the enterprise tool risk classification, never on server-provided annotations. Remove any rule that branches on readOnlyHint, destructiveHint, idempotentHint, or openWorldHint, and replace it with a lookup of the tool name or identifier in the enterprise risk classification registry. Document the risk tier for each approved tool in the capability baseline independently of server metadata. Where a gateway or host performs the gating, apply the classification there as the enforcement point of record. Verify with the Audit using a tool classified destructive that advertises readOnlyHint: true, confirming it is still gated.'

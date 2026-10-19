@@ -1,0 +1,24 @@
+id: TMA-GITLAB-4.3.4
+title: Ensure webhooks of the repository are secured
+description: Use secured webhooks to reduce the possibility of malicious payloads. Webhooks are used for triggering an HTTP request based on an action made in the platform. Typically, package registries feature webhooks when a package receives an update. Since webhooks are an HTTP POST request, they can be malformed if not secured over SSL. To prevent a potential hack and compromise of the webhook or to the registry or web server excepting the request, use only secured webhooks.
+target: gitlab
+level: 1
+severity: high
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 4.3.4 Ensure webhooks of the repository are secured
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For each webhook in use, change it to secured (over HTTPS).

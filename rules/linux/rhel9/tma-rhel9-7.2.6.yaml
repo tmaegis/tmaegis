@@ -1,0 +1,20 @@
+id: TMA-RHEL9-7.2.6
+title: Ensure no duplicate user names exist
+description: Although the useradd program will not let you create a duplicate user name, it is possible for an administrator to manually edit the /etc/passwd file and change the username.
+target: linux
+os_family:
+- rhel-9
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 9 Benchmark v3.0.0 - 7.2.6
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   while read -r l_count l_user; do\n      if [ \"$l_count\" -gt 1 ]; then\n         echo -e \"Duplicate User: \\\"$l_user\\\" Users: \\\"$(awk -F: '\"'\"'($1 == n) { print $1 }'\"'\"' n=$l_user /etc/passwd | xargs)\\\"\"\n      fi\n   done < <(cut -f1 -d\":\" /etc/passwd | sort -n | uniq -c)\n}' 2>&1); [ -z \"$o\" ] || { echo \"step1: $o\" | head -c 300; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Based on the Audit Procedure output, for each duplicated user name, determine which entry is correct and make each user name unique. Use vipw to safely edit the user database and either remove the redundant entry or rename it to a unique user name: # vipw File ownerships will reflect the change automatically as long as each account has a unique UID.'

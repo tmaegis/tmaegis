@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.2.2
+title: Ensure that access to IEASYMUP resources is controlled
+description: Ensure that the System level symbolic (IEASYMUP) resources are defined to the FACILITY resource class and protected. Failure to control access to IEASYMUP resources in use could result in unauthorized personnel modifying sensitive z/OS symbolics. This exposure may threaten the integrity and availability of the operating system environment.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.2.2 Ensure that access to IEASYMUP resources is controlled
+audit:
+  type: manual
+  command: 'Issue the following TSO command: SETROPTS LIST Review the command output in the ACTIVE CLASSES = section. Verify that FACILITY appears. Review the command output in the GENERIC PROFILE CLASSES = section. Verify that FACILITY appears. Review the command output in the SETR RACLIST CLASSES = section. Verify that FACILITY appears. Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the FACILITY entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering resources prefixed with IEASYMUP Request reports generated using ... (full steps: CIS section 2.2.2)'
+remediation:
+  type: iac_patch
+  command: 'To activate RACF classes use the RACF SETROPTS command: SETROPTS CLASSACT(FACILITY) To enable generic profile checking for a RACF class use the RACF SETROPTS command: SETROPTS GENERIC(FACILITY) To RACLIST a RACF class use the RACF SETROPTS command: SETROPTS RACLIST(FACILITY) To create a FACILITY profile use the RACF RDEFINE, PERMIT, and SETROPTS commands: RDEFINE FACILITY IEASYMUP.** + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + DATA(''SYSTEM LEVEL SYMBOLICS'') PERMIT IEASYMUP.** CLASS(FACILITY) + ACCESS(UPDATE) ID(STGADMIN SYSPROG) SETROPTS REFRESH RACLIST(FACILITY) To modify the UACC, WARN, or AUDIT settings for a general resource profile use the RACF RALTER and SETROPTS commands: RALTER FACILITY IEASYMUP.** + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + NOWARNING SETROPTS REFRESH RACLIST(FACILITY) To remove a non-compliant access list entry use the RACF PERMIT and SETROPTS commands: PERMIT IEASYMUP.** CLASS(FACILITY) + DELETE ID(<non-compliant>) SETROPTS REFRESH
+    RACLIST(FACILITY) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH ... (see CIS section 2.2.2)'

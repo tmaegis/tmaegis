@@ -1,0 +1,23 @@
+id: TMA-AKS-4.1.5
+title: Ensure that default service accounts are not actively used
+description: 'Ensure that default service accounts are not actively used by verifying that application and automation pods in AKS do not rely on the namespace default service account when a dedicated service account should be used instead. Confirm that workloads explicitly specify the intended serviceAccountName, the default service account is not bound to unnecessary Kubernetes RBAC permissions, and it is not being used as the identity boundary for workloads ... Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Fails when a default service account does not set automountServiceAccountToken: false or is bound to a Role/ClusterRole.'
+target: aks
+level: 1
+severity: high
+tags:
+- aks
+- policies
+- rbac
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.1.5 Ensure that default service accounts are not actively used
+audit:
+  type: command
+  command: |-
+    sa=$(kubectl get serviceaccounts -A -o go-template='{{range .items}}{{if eq .metadata.name "default"}}{{.metadata.namespace}} {{.automountServiceAccountToken}}{{"\n"}}{{end}}{{end}}') || exit 1
+    rb=$(kubectl get rolebindings,clusterrolebindings -A -o go-template='{{range .items}}{{$b:=.metadata.name}}{{$bn:=.metadata.namespace}}{{range .subjects}}{{if eq .kind "ServiceAccount"}}{{if eq .name "default"}}{{if .namespace}}{{.namespace}}{{else}}{{$bn}}{{end}} {{$b}}{{"\n"}}{{end}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$sa" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex && $2!="false" {print "automount: " $1}')
+    bad2=$(printf '%s\n' "$rb" | awk -v ex='^(kube-system|kube-public|kube-node-lease|gatekeeper-system|azure-arc)$' 'NF && $1 !~ ex {print "binding: " $0}')
+    if [ -z "$bad$bad2" ]; then echo compliant; else printf '%s\n%s\n' "$bad" "$bad2" | grep . | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Apply the following steps to replace default service-account usage with dedicated, least-privileged workload identities in AKS: • Update workloads to explicitly set a dedicated serviceAccountName instead of inheriting the namespace default service account. • Remove unnecessary RoleBinding and ClusterRoleBinding assignments from the default service account, and keep any remaining access minimal and namespace-scoped. • Set automountServiceAccountToken to false where Kubernetes API access is not required to prevent default token auto-mounting. • Review both the ServiceAccount and Pod settings for automountServiceAccountToken, and treat the Pod value as authoritative when both are defined. • For workloads that need Azure resource access, use Microsoft Entra Workload ID with explicit workload configuration instead of the namespace default service account.'

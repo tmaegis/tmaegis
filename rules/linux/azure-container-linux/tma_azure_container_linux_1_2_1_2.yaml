@@ -1,0 +1,16 @@
+id: TMA-AZURE-CONTAINER-LINUX-1.2.1.2
+title: Ensure repo_gpgcheck is globally activated
+description: The repo_gpgcheck option, found in the main section of the /etc/dnf/dnf.conf and individual /etc/yum.repos.d/* files, will perform a GPG signature check on the repodata. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: azure-container-linux
+level: 2
+severity: low
+tags:
+- azure-container-linux
+- manual-review
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 1.2.1.2 Ensure repo_gpgcheck is globally activated
+audit:
+  type: manual
+  command: 'Global configuration Run the following command: grep ^repo_gpgcheck /etc/dnf/dnf.conf Verify that repo_gpgcheck is set to 1 Per repository configuration Configuration in /etc/yum.repos.d/ takes precedence over the global configuration. As an example, to list all the configured repositories, excluding "fedoraproject.org", that specifically disables repo_gpgcheck, run the following command: # REPO_URL="fedoraproject.org" # for repo in $(grep -l "repo_gpgcheck=0" /etc/yum.repos.d/* ); do if ! grep "${REPO_URL}" "${repo}" &>/dev/null; ...'
+remediation:
+  type: iac_patch
+  command: 'Global configuration Edit /etc/dnf/dnf.conf and set repo_gpgcheck=1 in the [main] section. Example: [main] repo_gpgcheck=1 Per repository configuration First check that the particular repository support GPG checking on the repodata. Edit any failing files in /etc/yum.repos.d/* and set all instances starting with repo_gpgcheck to 1.'

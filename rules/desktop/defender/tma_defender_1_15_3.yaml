@@ -1,0 +1,19 @@
+id: TMA-DEFENDER-1.15.3
+title: 'Ensure ''Specify threat alert levels at which default action should not be taken when detected'' is set to ''Enabled: High: 2 or 3'''
+description: "This policy setting configures which automatic remediation action Microsoft Defender Antivirus will take for each threat alert level detection. Valid threat alert levels are: - 1 = Low - 2 = Medium - 4 = High - 5 = Severe Valid remediation action values are: - 2 = Quarantine - 3 = Remove - 6 = Ignore Threat alert levels are added under \"options\" for this setting. Each entry must be listed as a name value pair. Rationale: By default, Defender uses the action embedded in each threat\u2019s malware signature (clean, quarantine, remove, etc.). Configuring this setting ensures the same action is always taken, regardless of how Microsoft classifies a specific threat. Audit reads the Group Policy registry value and prints 'compliant', 'unset' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Threats\\ThreatSeverityDefaultAction:4 (REG_SZ); compliant when it is 2 or 3. Remediation writes 2\
+  \ locally; in a domain set it through the ADMX so Group Policy does not revert it."
+target: defender
+level: 1
+severity: medium
+tags:
+- defender
+- antivirus
+- cis-l1
+reference: 'CIS Microsoft Defender Antivirus Benchmark v1.0.0 - 1.15.3 Ensure ''Specify threat alert levels at which default action should not be taken when detected'' is set to ''Enabled: High: 2 or 3'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Threats\ThreatSeverityDefaultAction'' -Name ''4'' -ErrorAction SilentlyContinue).''4''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(''2'',''3'') -contains "$v")) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Threats\ThreatSeverityDefaultAction'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name '4' -Value '2' -PropertyType String -Force | Out-Null

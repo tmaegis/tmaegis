@@ -1,0 +1,21 @@
+id: TMA-CISCO-IOS-1.1.5
+title: Set 'login authentication for 'ip http'
+description: If account management functions are not automatically enforced, an attacker could gain privileged access to a vital element of the network security architecture. Configure the device to enforce authentication for the HTTP server (ip http) by defining a valid login method. This ensures that only authorized users can access the device's web-based management interface. Fails only when the HTTP or HTTPS server is enabled and no 'ip http authentication' line exists; passes when both servers are disabled. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all' or 'show startup-config').
+target: cisco-ios
+level: 1
+severity: high
+tags:
+- cisco-ios
+- network
+- logging
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.1.5 Set 'login authentication for 'ip http'
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:[ \t]*(?:$|[^i \t\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n])))))))))))))))))))))))[^\n]*\n)*ip http (?:secure-)?server[ \t\r]*(?:\n(?:[ \t]*(?:$|[^i \t\n]|i(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^t\n]|t(?:$|[^t\n]|t(?:$|[^p\n]|p(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^e\n]|e(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^ \n])))))))))))))))))))))))[^\n]*))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure management lines to require login using the default or a named AAA authentication list. This configuration must be set individually for all line types.
+    ip http secure-server
+    ip http authentication {default | _aaa_list_name_}

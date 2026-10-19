@@ -1,0 +1,21 @@
+id: TMA-WIN2016-17.6.4
+title: Ensure 'Audit Removable Storage' is set to 'Success and Failure'
+description: This policy setting allows you to audit user attempts to access file system objects on a removable storage device. A security audit event is generated only for all objects for all types of access requested. If you configure this policy setting, an audit event is generated each time an account accesses a file system object on a removable storage. Success audits record successful attempts and Failure audits record unsuccessful attempts. If you do not configure this policy setting, no audit event is generated when an account accesses a file system object on a removable storage. The recommended st
+target: windows
+os_family:
+- windows-server-2016-dc
+- windows-server-2016-ms
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2016 Benchmark v4.0.0 - 17.6.4
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce9245-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce9245-69ae-11d9-bed3-505054503030}' /success:enable /failure:enable

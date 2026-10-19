@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-6.4
+title: Set Default Screen Lock for GNOME Users
+description: 'The timeout parameter dictates the invocation of a password-protected screen saver after a specified time of keyboard and mouse inactivity, specific to the xscreensaver application used in the GNOME windowing environment. As a screensaver timeout provides protection for a desktop that has not been locked by the user upon his/her departure, to help prevent session hijacking, this value should be set as appropriate to the needs of the user. Audit: XScreenSaver defaults must set timeout 0:10:00, lockTimeout 0:00:00 and lock True (compliant when the desktop is not installed).'
+target: solaris
+level: 1
+severity: medium
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.4 Set Default Screen Lock for GNOME Users
+audit:
+  type: command
+  command: f=/usr/share/X11/app-defaults/XScreenSaver; [ -f "$f" ] || { echo compliant; exit 0; }; r=compliant; grep -q "^\*timeout:[[:blank:]]*0:10:00" "$f" || r="timeout"; grep -q "^\*lockTimeout:[[:blank:]]*0:00:00" "$f" || r="lockTimeout"; grep -q "^\*lock:[[:blank:]]*True" "$f" || r="lock"; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: # cd /usr/share/X11/app-defaults # cp XScreenSaver XScreenSaver.orig # awk ''/^\*timeout:/ { $2 = "0:10:00" } /^\*lockTimeout:/ { $2 = "0:00:00" } /^\*lock:/ { $2 = "True" } { print }'' xScreenSaver > xScreenSaver.CIS # mv xScreenSaver.CIS xScreenSaver'

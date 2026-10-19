@@ -1,0 +1,19 @@
+id: TMA-AWS-EUC-2.17
+title: Ensure WorkSpaces API requests flow through a VPC Endpoint
+description: For any WorkSpaces API requests setup the connection through an interface endpoint in your VPC. Utilizing a VPC interface endpoint for WorkSpaces API requests keeps the communication within the AWS network.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- euc
+- network
+reference: CIS AWS End User Compute Services Benchmark v1.2.0 - 2.17 Ensure WorkSpaces API requests flow through a VPC Endpoint
+audit:
+  type: manual
+  command: 'Perform the steps to determine if WorkSpaces is using a VPC endpoint for API From the Command line: 1. Run the WorkSpaces `describe-workspace-budles'' command aws workspaces describe-workspace-bundles --endpoint-url VPC_Endpoint_ID.workspaces.Region.vpce.amazonaws.com 2. Example output of that command: --endpoint-name Endpoint_Name --body "Endpoint_Body" --content-type "Content_Type" Output_File Confirm the --endpoint-name is equal to the VPC Endpoint that you have created. If the endpoint name does not match what you created or is blank, refer to the remediation below.'
+remediation:
+  type: iac_patch
+  command: Perform the steps below if you need to create a VPC interface endpoint. From the Console 1. Log in to the VPC console at https://console.aws.amazon.com/vpc/ 2. In the left pane, click Endpoints 3. Click Create Endpoint. 4. For Service category, ensure that AWS services is selected. 5. For Service Name, choose Workspaces. For Type, ensure that it indicates Interface. 6. Complete the following information. - For VPC, select a VPC in which to create the endpoint. - For Subnets, select the subnets (Availability Zones) in which to create the endpoint network interfaces. Not all Availability Zones may be supported for all AWS services. - To enable private DNS for the interface endpoint, for Enable Private DNS Name, select the check box. - For Security group, select the security groups to associate with the endpoint network interfaces. 8. Click Create endpoint From the Command line 1. Run the create-vpc-endpoint command aws ec2 create-vpc-endpoint --vpc-id vpc-ec43eb89 --vpc-endpoint-type
+    Interface --service-name com.amazonaws.us-east-1.elasticloadbalancing -- subnet-id subnet-abababab --security-group-id sg-1a2b3c4d In the output that's returned, take note of the DnsName fields. You c...

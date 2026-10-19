@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.66.3
+title: Ensure 'Turn off the offer to update to the latest version of Windows' is set to 'Enabled'
+description: 'Enables or disables the Microsoft Store offer to update to the latest version of Windows. The recommended state for this setting is: Enabled.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.66.3
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore'' -Name ''DisableOSUpgrade'' -ErrorAction SilentlyContinue).''DisableOSUpgrade''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''DisableOSUpgrade='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\WindowsStore' -Name 'DisableOSUpgrade' -Value 1 -PropertyType DWord -Force | Out-Null

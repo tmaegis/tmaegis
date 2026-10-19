@@ -1,0 +1,66 @@
+# Signs the Windows release archives with SignPath (https://signpath.io) and re-publishes them with fresh checksums.
+# Inert until the repository variable SIGNPATH_ORGANIZATION_ID and the secret SIGNPATH_API_TOKEN exist
+# (set up after SignPath Foundation accepts the project, see docs/RELEASING.md).
+name: Sign Windows builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to sign, e.g. v0.1.0 (run after the Release and Desktop workflows finished)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sign-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    if: github.repository == 'tmaegis/tmaegis' && vars.SIGNPATH_ORGANIZATION_ID != ''
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.inputs.tag }}
+    steps:
+      - name: Download the unsigned Windows archives
+        run: |
+          mkdir -p unsigned
+          gh release download "$TAG" -R "$GITHUB_REPOSITORY" -p '*_windows_*.zip' -D unsigned
+          ls -l unsigned
+      - uses: actions/upload-artifact@v4
+        id: upload
+        with:
+          name: unsigned-windows
+          path: unsigned/*.zip
+      - uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'tmaegis' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: windows-zip
+          github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+      - name: Replace the archives and regenerate checksums.txt
+        run: |
+          set -euo pipefail
+          # The signed artifact may come back as one wrapper zip around the release zips; unpack it if so.
+          for w in signed/*.zip; do
+            if unzip -l "$w" | grep -qE '\.zip$'; then unzip -oq "$w" -d signed/inner && rm "$w"; fi
+          done
+          [ -d signed/inner ] && mv signed/inner/*.zip signed/
+          ls -l signed
+          for f in signed/*.zip; do
+            n=$(basename "$f")
+            unzip -tq "$f"
+            gh release upload "$TAG" "$f" -R "$GITHUB_REPOSITORY" --clobber
+            echo "uploaded signed $n"
+          done
+          mkdir -p all && gh release download "$TAG" -R "$GITHUB_REPOSITORY" -D all --clobber \
+            -p '*.zip' -p '*.tar.gz' -p '*.deb' -p '*.rpm'
+          (cd all && sha256sum * > checksums.txt)
+          gh release upload "$TAG" all/checksums.txt -R "$GITHUB_REPOSITORY" --clobber

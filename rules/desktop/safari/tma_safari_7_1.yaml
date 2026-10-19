@@ -1,0 +1,36 @@
+id: TMA-SAFARI-7.1
+title: Ensure 'Cookies and website data' is set to 'Allow from websites I visit'
+description: 'This setting Allow from websites I visit allows all first-party cookies and blocks all third-party cookies. Rationale: Blocking third party cookies can help protect a user''s privacy by eliminating some tracking cookies. Audit reads BlockStoragePolicy from the com.apple.Safari preference domain of the account running the scan (the PDF checks the same token in com.apple.Safari.plist; manual check: Follow the below steps and verify that Cookies and website data is set to Allow from websites I visit: 1. Click Safari. 2. Click Preferences. 3. Click Privacy. 4. Verify Cookies and website data is se). Safari is sandboxed, so the reading process needs Full Disk Access on macOS 10.14+. A missing key exits non-zero and is reported as FAIL even where the built-in default is compliant. Values forced by a configuration profile live in /Library/Managed Preferences and are not read here.'
+target: safari
+level: 1
+severity: low
+tags:
+- safari
+- browser
+- cis-l1
+reference: CIS macOS Safari Benchmark v2.0.0 - 7.1 Ensure 'Cookies and website data' is set to 'Allow from websites I visit'
+audit:
+  type: command
+  command: out=$(defaults read com.apple.Safari BlockStoragePolicy 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '3'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    # Same account that runs the audit (it reads the scanning user's own preference domain).
+    defaults write com.apple.Safari BlockStoragePolicy -int 3
+    killall cfprefsd 2>/dev/null || true
+    [ "$(defaults read com.apple.Safari BlockStoragePolicy 2>/dev/null)" = 3 ] || { echo "Safari BlockStoragePolicy not 3" >&2; exit 1; }
+  guidance: "Follow the below steps to set Cookies and website data to Allow from websites I visit: 1. Click Safari. 2. Click Preferences. 3. Click Privacy. 4. Set Cookies and website data to Allow from websites I visit. Or deploy a configuration profile for com.apple.Safari setting BlockStoragePolicy = 3, or as the logged-in user run: defaults write com.apple.Safari BlockStoragePolicy -int 3 and restart Safari."

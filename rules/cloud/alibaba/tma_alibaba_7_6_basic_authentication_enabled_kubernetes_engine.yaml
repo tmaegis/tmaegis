@@ -1,0 +1,16 @@
+id: TMA-ALIBABA-7.6
+title: Ensure Basic Authentication is not enabled on Kubernetes Engine Clusters
+description: 'Basic authentication allows a user to authenticate to the cluster with a username and password and it is stored in plain text without any encryption. Disabling Basic authentication will prevent attacks like brute force. Its recommended to use either client certificate or RAM for authentication. When disabled, you will still be able to authenticate to the cluster with client certificate or RAM. A client certificate is a base 64-encoded public certificate used by clients to authenticate to the cluster endpoint ... Reported as a manual review item: the benchmark audit needs console review or organisational judgement.'
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- ack
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 7.6 Ensure Basic Authentication is not enabled on Kubernetes Engine Clusters
+audit:
+  type: manual
+  command: '1. ssh into any master node in cluster 2. Make sure the basic-auth-file not exist in apiserver manifest with below command: cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep basic-auth-file Expected state: 1. ssh into any master node in cluster 2. Make sure the basic-auth-file not exist in apiserver manifest with below command: cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep basic-auth-file 3. If you found basic-auth-file existing in apiserver manitfest, please override the manifest file with new manifest content to not include the basic-auth-file and then restart ...'
+remediation:
+  type: iac_patch
+  command: '1. ssh into any master node in cluster 2. Make sure the basic-auth-file not exist in apiserver manifest with below command: cat /etc/kubernetes/manifests/kube-apiserver.yaml | grep basic-auth-file 3. If you found basic-auth-file existing in apiserver manitfest, please override the manifest file with new manifest content to not include the basic-auth-file and then restart the apiserver, you need repeat the action on all of the master nodes'

@@ -1,0 +1,27 @@
+id: TMA-CISCO-NXOS-3.1.4.4
+title: Configure HSRP protections
+description: 'HSRP is a valuable redundancy protocol, but like many protocols discussed in this document can be attacked and compromised. HSRP Authentication is recommended to protect against such attacks. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 1
+severity: medium
+tags:
+- cisco-nxos
+- network
+- routing
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.4.4 Configure HSRP protections
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The "show running-config hsrp" shows all HSRP configurations. Ensure that MD5 authentication is configured for each HSRP configuration. switch# sho run hsrp !Command: show running-config hsrp !Running configuration last done at: Wed May 20 17:24:20 2020 !Time: Wed May 20 17:25:33 2020 version 9.3(3) Bios:version feature hsrp interface Vlan1 hsrp version 2 hsrp 1 authentication md5 key-chain HSRP-KEYCHAIN name HSRPVLAN1 preempt priority 110 ip 10.10.10.1'
+remediation:
+  type: iac_patch
+  command: |-
+    ! First, enable HSRP
+    feature hsrp set the HSRP version to "2" to allow for MD5 encryption (per interface)
+    int vlan 1
+    hsrp version 2 Finally, configure the remainder of that interfaces HSRP setup. The key command is of course the "authentication md5" clause
+    hsrp 1
+    authentication md5 key-chain <HSRP-KEYCHAIN>
+    name HSRPVLAN1
+    preempt
+    priority 110
+    ip 10.10.10.1

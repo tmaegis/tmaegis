@@ -1,0 +1,18 @@
+id: TMA-GKE-4.1.7
+title: Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+description: Roles and ClusterRoles with bind, escalate, or impersonate permissions should be granted only to tightly controlled administrative or platform identities with a documented need. These permissions can allow a subject to expand effective access beyond normal RBAC assignments and should not be included in general user, workload, or automation roles. The benchmark marks this recommendation Manual.
+target: gke
+level: 1
+severity: high
+tags:
+- gke
+- policies
+- rbac
+- file-permissions
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 4.1.7 Limit use of the Bind, Impersonate and Escalate permissions in the Kubernetes cluster
+audit:
+  type: manual
+  command: Review Role and ClusterRole objects that grant bind, escalate, or impersonate, then trace those roles through RoleBinding and ClusterRoleBinding objects to identify the users, groups, and service accounts that receive the permissions. These verbs should be limited to documented administrative or platform use cases because bind and escalate can grant permissions beyond the caller’s current access, while impersonate can allow API requests as another subject. RBAC permissions are additive, so unnecessary access should be identified and removed.
+remediation:
+  type: iac_patch
+  command: Replace bind, escalate, and impersonate access with narrowly defined RBAC permissions that support only the approved administrative, platform, or automation function. Remove these verbs from general user, workload, and service account roles unless there is a valid requirement. Review changes before removal to avoid disrupting controllers, operators, CI/CD workflows, or access review processes. • Remove bind, escalate, and impersonate from Roles and ClusterRoles where they are not explicitly required • Replace broad access with least privilege rules that define the exact API groups, resources, verbs, and namespace scope required • Avoid granting RBAC modification permissions such as bind, escalate, create, update, or patch on rbac.authorization.k8s.io resources to service accounts unless specifically justified • Move required elevated access to tightly controlled administrative or ...

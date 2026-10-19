@@ -1,0 +1,37 @@
+id: TMA-VMWARE-1.12
+title: Host integrated hardware management controller must deactivate internal networking
+description: Many servers have integrated hardware management controllers with the ability to present virtual network interfaces to ESXi as a management interface. These approaches create potential backdoors for access and are used by adversaries to circumvent network-based/perimeter firewalls, in either direction, and avoid observation by IDS/IPS/threat analysis tools. The audit runs esxcfg-advcfg -g /Net/BMCNetworkEnable and requires 0. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 2
+severity: low
+tags:
+- vmware
+- esxi
+- hardware
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 1.12 Host integrated hardware management controller must deactivate internal networking
+audit:
+  type: command
+  command: |-
+    out=$(esxcfg-advcfg -g /Net/BMCNetworkEnable 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '{print $NF; exit}')
+    [ "$v" = 0 ] && echo compliant || echo "BMCNetworkEnable = $v"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcfg-advcfg >/dev/null 2>&1 || exit 0
+    esxcfg-advcfg -s 0 /Net/BMCNetworkEnable
+  guidance: "To disable ESXi BMC internal networking: 1. execute esxcfg-advcfg -s 0 /Net/BMCNetworkEnable 2. execute esxcfg-advcfg -g /Net/BMCNetworkEnable Looking for: Value of BMCNetworkEnable is 0"

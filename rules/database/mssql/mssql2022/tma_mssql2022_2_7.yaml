@@ -1,0 +1,19 @@
+id: TMA-MSSQL2022-2.7
+title: Ensure 'Remote Admin Connections' Server Configuration Option is set to '0'
+description: The remote admin connections option controls whether a client application on a remote computer can use the Dedicated Administrator Connection (DAC). The Dedicated Administrator Connection (DAC) lets an administrator access a running server to execute diagnostic functions or Transact-SQL statements, or to troubleshoot problems on the server, even when the server is locked or running in an abnormal state and not responding to a SQL Server Database Engine connection. In a cluster scenario, the administrator may not actually be logged on to the same node that is currently hosting the SQL Server instance and thus is considered "remote". Therefore, this setting should usually be enabled (1) for SQL Server failover clusters; otherwise, it should be disabled (0) which is the default.
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 2.7 Ensure 'Remote Admin Connections' Server Configuration Option is set to '0'
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT CASE WHEN CAST(SERVERPROPERTY('IsClustered') AS int) = 1 THEN 'compliant' WHEN EXISTS (SELECT 1 FROM sys.configurations WHERE name = 'remote admin connections' AND CAST(value AS int) = 0 AND CAST(value_in_use AS int) = 0) THEN 'compliant' ELSE 'noncompliant' END;"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; EXEC sp_configure 'show advanced options', 1; RECONFIGURE; EXEC sp_configure 'remote admin connections', 0; RECONFIGURE; EXEC sp_configure 'show advanced options', 0; RECONFIGURE;"
+  guidance: "Run the following T-SQL command on non-clustered installations: EXECUTE sp_configure 'remote admin connections', 0; RECONFIGURE; GO"

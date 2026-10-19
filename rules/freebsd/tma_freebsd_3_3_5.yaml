@@ -1,0 +1,56 @@
+id: TMA-FREEBSD-3.3.5
+title: Ensure source routed packets are not accepted
+description: 'In networking, source routing allows a sender to partially or fully specify the route packets take through a network. In contrast, non-source routed packets travel a path determined by routers in the network. In some cases, systems may not be routable or reachable from some locations (e.g. private addresses vs. Audit: running kernel values (sysctl -n) must be net.inet.ip.accept_sourceroute=0; confirm they are persisted in /etc/sysctl.conf.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- network
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 3.3.5 Ensure source routed packets are not accepted
+audit:
+  type: command
+  command: command -v sysctl >/dev/null 2>&1 || exit 1; r=compliant; v=$(sysctl -nq net.inet.ip.accept_sourceroute 2>/dev/null); [ "$v" = 0 ] || r="net.inet.ip.accept_sourceroute=$v"; echo "$r"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    tma_sysctl() {
+      n=$1; v=$2; opt=$3
+      cur=$(sysctl -nq "$n" 2>/dev/null)
+      if [ -z "$cur" ]; then [ "$opt" = 1 ] || echo "sysctl $n not available" >&2; return 0; fi
+      sysctl "$n=$v" >/dev/null 2>&1 || echo "could not set $n" >&2
+      tma_setkv /etc/sysctl.conf "$n" "$v"
+    }
+    tma_sysctl net.inet.ip.accept_sourceroute 0 0
+  guidance: "Set net.inet.ip.accept_sourceroute=0 in /etc/sysctl.conf (or a file under /etc/sysctl.conf.d) and apply with: sysctl net.inet.ip.accept_sourceroute=0"

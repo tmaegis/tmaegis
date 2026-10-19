@@ -1,0 +1,25 @@
+id: TMA-ROS1-3.4.3.3
+title: Ensure base chains exist
+description: 'Chains are containers for rules. They exist in two kinds, base chains and regular chains. A base chain is an entry point for packets from the networking stack, a regular chain may be used as jump target and is used for better rule organization. Applies when nftables is installed: the audit requires base chains for the input, forward and output hooks. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- network
+reference: CIS ROS Melodic Benchmark v1.0.0 - 3.4.3.3 Ensure base chains exist
+audit:
+  type: command
+  shell: bash
+  command: |-
+    r=$(nft list ruleset 2>/dev/null) || exit 1
+    bad=0; for h in input forward output; do printf '%s\n' "$r" | grep -q "hook $h" || { echo "no base chain for hook $h"; bad=1; }; done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/nftables.conf
+remediation:
+  type: iac_patch
+  command: 'Run the following command to create the base chains: # nft create chain inet <table name> <base chain name> { type filter hook <(input|forward|output)> priority 0 \; } Example: # nft create chain inet filter input { type filter hook input priority 0 \; } # nft create chain inet filter forward { type filter hook forward priority 0 \; } # nft create chain inet filter output { type filter hook output priority 0 \; }'

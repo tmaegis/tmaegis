@@ -1,0 +1,17 @@
+id: TMA-AKS-AUTOMATIC-4.4.2
+title: Consider external secret storage
+description: Consider external secret storage for AKS workloads by storing sensitive values in Azure Key Vault and retrieving them at runtime through the Azure Key Vault provider for Secrets Store CSI Driver instead of treating Kubernetes Secret objects in the cluster as the primary secret system. The benchmark marks this recommendation Manual.
+target: aks-automatic
+level: 2
+severity: medium
+tags:
+- aks-automatic
+- policies
+- secrets
+reference: CIS Azure Kubernetes Service Automatic (AKS Automatic) Benchmark v1.0.0 - 4.4.2 Consider external secret storage
+audit:
+  type: manual
+  command: Audit secrets management by confirming that sensitive values are stored externally, delivered to pods through the AKS supported secret path, and rotated without relying on manual redeployments. Microsoft’s current AKS guidance centers on Azure Key Vault, the Azure Key Vault provider for Secrets Store CSI Driver, and mounted secret delivery with autorotation support. • Verify secrets are primarily stored in Azure Key Vault, not embedded in code, manifests, or pipelines.
+remediation:
+  type: iac_patch
+  command: Move sensitive application secrets that are appropriate for external storage out of Kubernetes native storage and deployment artifacts and into Azure Key Vault. Deliver those secrets to pods at runtime through the Azure Key Vault provider for Secrets Store CSI Driver. Pair the CSI driver with Microsoft Entra Workload ID using the Workload Identity and OIDC issuer capabilities preconfigured by AKS Automatic. The add on managed identity may be used when appropriate. Use mounted secret files as the primary consumption path and enable autorotation where secret freshness matters. Retain Kubernetes Secret objects only where required for Kubernetes functions or an approved synchronization pattern. • Inventory secrets currently stored in code, manifests, pipelines, or standalone Kubernetes Secret objects and identify sensitive application secrets appropriate for migration to Key Vault.

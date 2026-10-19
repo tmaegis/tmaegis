@@ -1,0 +1,19 @@
+id: TMA-AZURE-7.8
+title: Ensure that Virtual Network Flow Log Retention Days is Set to Greater than or Equal to 90
+description: Ensure that virtual network flow logs are retained for greater than or equal to 90 days. Virtual network flow logs provide critical visibility into traffic patterns. Logs can be used to check for anomalies and give insight into suspected breaches.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- logging
+- network
+reference: CIS Microsoft Azure Foundations Benchmark v6.0.0 - 7.8 Ensure that Virtual Network Flow Log Retention Days is Set to Greater than or Equal to 90
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Network Watcher. 2. Under Logs, select Flow logs. 3. Click Add filter. 4. From the Filter drop-down menu, select Flow log type. 5. From the Value drop-down menu, check Virtual network only. 6. Click Apply. 7. Click the name of a virtual network flow log. 8. Under Storage Account, ensure that Retention days is set to 0, 90, or a number greater than 90. If Retention days is set to 0, the logs are retained indefinitely with no retention policy. 9. Repeat steps 7 and 8 for each virtual network flow log. Audit from Azure CLI Run the following command to list network watchers: az network watcher list Run the following command to list the name and retention policy of flow logs in a network watcher: az network watcher flow-log list --location <location> --query [*].[name,retentionPolicy] For each flow log, ensure that days is set to 0, 90, or a number greater than 90. If days is set to 0, the logs are retained indefinitely with no retention policy. Repeat
+    for each network watcher.'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Network Watcher. 2. Under Logs, select Flow logs. 3. Click Add filter. 4. From the Filter drop-down menu, select Flow log type. 5. From the Value drop-down menu, check Virtual network only. 6. Click Apply. 7. Click the name of a virtual network flow log. 8. Under Storage Account, set Retention days to 0, 90, or a number greater than 90. If Retention days is set to 0, the logs are retained indefinitely with no retention policy. 9. Repeat steps 7 and 8 for each virtual network flow log requiring remediation. Remediate from Azure CLI Run the following command update the retention policy for a flow log in a network watcher, setting retention to 0, 90, or a number greater than 90: az network watcher flow-log update --location <location> --name <flow-log> -- retention <number-of-days> Repeat for each virtual network flow log requiring remediation.'

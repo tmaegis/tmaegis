@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-4.4
+title: Ensure excessive DML privileges are revoked
+description: DML (insert, update, delete) operations at the table level should be restricted to only authorized users. YugabyteDB manages table-level DML permissions via the GRANT statement.
+target: yugabytedb
+level: 1
+severity: medium
+tags:
+- yugabytedb
+- privileges
+reference: CIS YugabyteDB Benchmark v2.0.0 - 4.4 Ensure excessive DML privileges are revoked
+audit:
+  type: manual
+  command: In each database list users (\du+ *) and tables (\dt *.*) and review table grants (\dp or information_schema.role_table_grants). Any user holding INSERT, UPDATE, DELETE or TRUNCATE on tables it does not need for its role is a finding; revoke with REVOKE <priv> ON <table> FROM <user>.
+remediation:
+  type: iac_patch
+  command: If a given database user has been granted excessive DML privileges for a given database table, those privileges should be revoked immediately using the REVOKE YSQL command. Continuing with the example above, remove unauthorized grants for appreader user using the REVOKE statement and verify the Boolean values are now false. yugabyte=# REVOKE INSERT, UPDATE, DELETE ON TABLE customer FROM appreader;

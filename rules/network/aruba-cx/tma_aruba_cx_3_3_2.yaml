@@ -1,0 +1,49 @@
+id: TMA-ARUBA-CX-3.3.2
+title: SSDP
+description: The Simple Service Discovery Protocol (SSDP) is an application layer protocol and one of the key protocols that implement Universal Plug and Play (UPnP). SSDP enables network devices to discover and advertise network services by sending multicast discovery and advertisement messages to multicast IPv4 group address 239.255.255.250:1900 or multicast IPv6 group address FF0x::C.
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- hardening
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.3.2 SSDP
+audit:
+  type: manual
+  command: If SSDP is not used, confirm a VLAN ACL or policy drops UDP 1900 to 239.255.255.250 ('show run' / 'show ip multicast-static-route all-vrfs').
+remediation:
+  type: iac_patch
+  command: |-
+    The following example shows a typical static multicast route: [Incoming interface, Source, Group] > [Set of downstream interfaces] - ip multicast-static-route <incoming-interface-name> {<source-address | any>} <group-address> [<outgoing-interface-name>] vrf <vrf-name> If the SSDP service is not enabled in the network, best practices is to disable SSDP either through VLAN ACLs or through a policy, as shown in the following examples:
+    ACL -
+    access-list ip <drop_ssdp_acl>
+    10 deny udp any 239.255.255.250 eq 1900
+    vlan <id>
+    apply access-list ip <drop_ssdp_acl> in
+    interface <interface-id>
+    no shutdown
+    no routing
+    vlan access <id>
+    interface vlan <id>
+    ip address <ip-address>
+    ip igmp enable
+    ip pim-sparse enable
+    router pim
+    enable
+    Policy -
+    class ip <drop_class>
+    10 match any any 239.255.255.250
+    policy <drop_ssdp_policy>
+    10 class ip <drop_class> action drop
+    vlan <id>
+    apply policy <drop_ssdp_policy> in
+    interface <interface-id>
+    no shutdown
+    no routing
+    vlan access <id>
+    interface vlan <id>
+    ip address <ip-address>
+    ip igmp enable
+    ip pim-sparse enable
+    router pim
+    enable

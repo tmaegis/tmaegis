@@ -1,0 +1,25 @@
+id: TMA-ROS1-1.5.1
+title: Ensure permissions on bootloader config are configured
+description: The grub configuration file contains information on boot settings and passwords for unlocking boot options. The grub configuration is usually grub.cfg stored in /boot/grub/. The audit requires /boot/grub/grub.cfg owned by root:root with no group or other permissions. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.5.1 Ensure permissions on bootloader config are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    [ -e /boot/grub/grub.cfg ] || { echo '/boot/grub/grub.cfg not found'; exit 1; }
+    set -- $(stat -Lc '%a %u %g' /boot/grub/grub.cfg) || exit 1
+    m=$((8#$1)); [ $((m & ~8#0700)) -eq 0 ] || { echo "/boot/grub/grub.cfg mode $1 exceeds 0700"; exit 1; }
+    [ "$2" = 0 ] || { echo "/boot/grub/grub.cfg uid $2"; exit 1; }
+    case " 0 " in *" $3 "*) echo compliant ;; *) echo "/boot/grub/grub.cfg gid $3" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to set permissions on your grub configuration: # chown root:root /boot/grub/grub.cfg # chmod og-rwx /boot/grub/grub.cfg'

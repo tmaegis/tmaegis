@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-10.7
+title: Turn off session facade recycling
+description: 'The RECYCLE_FACADES can specify if a new facade will be created for each request. If a new facade is not created there is a potential for information leakage from other sessions. -Dorg.apache.catalina.connector.RECYCLE_FACADES=true must be set. Searches uncommented lines of $CATALINA_HOME/bin/catalina.sh and setenv.sh (HOME and BASE) plus the running Tomcat command line. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored. CIS marks this recommendation Manual; the automated check implements its audit procedure.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- hardening
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 10.7 Turn off session facade recycling
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; src=$( { for f in "$H/bin/catalina.sh" "$H/bin/setenv.sh" "$B/bin/setenv.sh"; do [ -r "$f" ] && grep -v '^[[:space:]]*#' "$f"; done; ps -eo args 2>/dev/null | grep '[o]rg\.apache\.catalina\.startup\.Bootstrap'; } ); printf '%s\n' "$src" | grep -q 'org\.apache\.catalina\.connector\.RECYCLE_FACADES=true' && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Add CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.catalina.connector.RECYCLE_FACADES=true" to $CATALINA_BASE/bin/setenv.sh. Restart Tomcat afterwards.

@@ -1,0 +1,21 @@
+id: TMA-AMZN2023-1.1.2.1
+title: Ensure /tmp is a separate partition
+description: The /tmp directory is a world-writable directory used for temporary storage by all users and some applications.
+target: linux
+os_family:
+- amzn-2023
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS Amazon Linux 2023 Benchmark v1.0.0 - 1.1.2.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /tmp >/dev/null 2>&1; then echo compliant; else echo /tmp' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'First ensure that systemd is correctly configured to ensure that /tmp will be mounted at boot time. # systemctl unmask tmp.mount For specific configuration requirements of the /tmp mount for your environment, modify /etc/fstab. Example of using tmpfs with specific mount options: tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0 Example of using a volume or disk with specific mount options. The source location of the volume or disk will vary depending on your environment. <device> /tmp <fstype> defaults,nodev,nosuid,noexec 0 0'

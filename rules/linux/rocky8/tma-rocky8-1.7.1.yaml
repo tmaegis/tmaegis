@@ -1,0 +1,94 @@
+id: TMA-ROCKY8-1.7.1
+title: Ensure /etc/motd is configured
+description: 'The contents of the /etc/motd file are displayed to users after login and function as a message of the day for authenticated users. Unix-based systems have typically displayed information about the OS release and patch level upon logging in to the system. This information can be useful to developers who are developing software for a particular OS platform. If mingetty(8) supports the following options, they display operating system information: \m - machine architecture \r - operating system release \s - operating system name \v - operating system version'
+target: linux
+os_family:
+- rocky-8
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 8 Benchmark v3.0.0 - 1.7.1
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   a_files=()\n   for l_file in /etc/motd{,.d/*}; do\n      if grep -Psqi -- \"(\\\\\\v|\\\\\\r|\\\\\\m|\\\\\\s|\\b$(grep ^ID= /etc/os-release | cut -d= -f2 | sed -e '\"'\"'s/\"//g'\"'\"')\\b)\" \"$l_file\"; then\n         l_output2=\"$l_output2\\n - File: \\\"$l_file\\\" includes system information\"\n      else\n         a_files+=(\"$l_file\")\n      fi\n   done\n   if [ \"${#a_files[@]}\" -gt 0 ]; then\n      echo -e \"\\n-  ** Please review the following files and verify their contents follow local site policy **\\n\"\n      printf '\"'\"'%s\\n'\"'\"' \"${a_files[@]}\"\n   elif [ -z \"$l_output2\" ]; then\n      echo -e \"- ** No MOTD files with any size were found. Please verify this conforms to local site policy ** -\"\n   fi\n   if [ -z \"$l_output2\" ]; then\n      l_output=\" - No MOTD files include system information\"\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n$l_output\\n\"\n\
+    \   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$(date +%Y%m%d%H%M%S)"; return 0; }
+    tma_ini_set() { # file section key value
+      local f=$1 s=$2 k=$3 v=$4
+      [ -e "$f" ] || { mkdir -p "$(dirname "$f")"; : > "$f"; }
+      tma_bak "$f"
+      awk -v s="$s" -v k="$k" -v v="$v" '
+        function flush() { if (insec && !done) { print k "=" v; done=1 } }
+        /^[[:space:]]*\[/ { flush(); insec = ($0 ~ "^[[:space:]]*\\[" s "\\][[:space:]]*$"); print; next }
+        insec && $0 ~ "^[[:space:]]*" k "[[:space:]]*=" { if (!done) { print k "=" v; done=1 } ; next }
+        { print }
+        END { flush(); if (!done) { print "[" s "]"; print k "=" v } }' "$f" > "$f.tma" && cat "$f.tma" > "$f"; rm -f "$f.tma"
+    }
+    tma_grub_regen() {
+      if command -v update-grub >/dev/null 2>&1; then update-grub
+      elif command -v grub2-mkconfig >/dev/null 2>&1; then
+        if [ -f /boot/grub2/grub.cfg ]; then grub2-mkconfig -o /boot/grub2/grub.cfg
+        else for c in /boot/efi/EFI/*/grub.cfg; do [ -f "$c" ] && grub2-mkconfig -o "$c"; done; fi
+      elif command -v grub-mkconfig >/dev/null 2>&1; then
+        [ -f /boot/grub/grub.cfg ] && grub-mkconfig -o /boot/grub/grub.cfg
+      fi; return 0
+    }
+    tma_cmdline_rm() { # names of kernel args (name or name=value) to drop from the grub defaults
+      local a f c k n
+      for a in "$@"; do
+        for f in /etc/default/grub /etc/default/grub.d/*.cfg; do
+          [ -f "$f" ] || continue
+          grep -Eq "^[[:space:]]*GRUB_CMDLINE_LINUX" "$f" || continue
+          tma_bak "$f"
+          sed -i -E "/^[[:space:]]*GRUB_CMDLINE_LINUX/{ :a; s/([\"' ])${a}(=[^\"' ]*)?([ \"'])/\1\3/; ta; s/  +/ /g; s/ ([\"'])\$/\1/ }" "$f"
+        done
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --remove-args="$a" >/dev/null 2>&1
+      done
+      if command -v grub2-editenv >/dev/null 2>&1; then
+        k=$(grub2-editenv - list 2>/dev/null | sed -n 's/^kernelopts=//p')
+        if [ -n "$k" ]; then n=$k; for a in "$@"; do n=$(printf '%s' "$n" | sed -E "s/(^| )${a}(=[^ ]*)?( |\$)/ /g"); done
+          [ "$n" != "$k" ] && grub2-editenv - set "kernelopts=$n"; fi
+      fi
+      for c in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
+        [ -f "$c" ] || continue
+        for a in "$@"; do sed -i -E "/^[[:space:]]*(linux|kernelopts)/ s/(^|[ =])${a}(=[^ ]*)?( |\$)/\1\3/g" "$c"; done
+      done
+      return 0
+    }
+    tma_cmdline_set() { # name=value pairs forced into GRUB_CMDLINE_LINUX
+      local f=/etc/default/grub kv; [ -f "$f" ] || { echo "no $f"; return 0; }
+      for kv in "$@"; do
+        tma_cmdline_rm "${kv%%=*}" "${kv%%=*}=[^ \"']*" 2>/dev/null
+        tma_bak "$f"
+        if grep -Eq '^[[:space:]]*GRUB_CMDLINE_LINUX=' "$f"; then
+          sed -i -E "s/^([[:space:]]*GRUB_CMDLINE_LINUX=[\"'])(.*)([\"'])\$/\1\2 ${kv}\3/; s/=([\"']) /=\1/" "$f"
+        else printf 'GRUB_CMDLINE_LINUX="%s"\n' "$kv" >> "$f"; fi
+        command -v grubby >/dev/null 2>&1 && grubby --update-kernel ALL --args="$kv" >/dev/null 2>&1
+      done
+      return 0
+    }
+    os=$(grep -E '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
+    for f in /etc/motd /etc/motd.d/*; do [ -f "$f" ] && [ ! -L "$f" ] || continue; tma_bak "$f"
+      sed -i -E "/(\\\\v|\\\\r|\\\\m|\\\\s|\\b${os}\\b)/d" "$f"
+    done; true
+  guidance: "Edit the file found in /etc/motd.d/* with the appropriate contents according to your site policy, remove any instances of \\m , \\r , \\s , \\v or references to the OS platform - OR - - IF - the motd is not used, this file can be removed. Run the following command to remove the motd file: # rm /etc/motd Run the following script and review and/or update all returned files' contents to: • Remove all system information (\\v, \\r; \\m, \\s) • Remove any refence to the operating system • Ensure contents follow local site policy #!/usr/bin/env bash { a_files=() for l_file in /etc/motd{,.d/*}; do if grep -Psqi -- \"(\\\\\\v|\\\\\\r|\\\\\\m|\\\\\\s|\\b$(grep ^ID= /etc/os-release | cut -d= -f2 | sed -e 's/\"//g')\\b)\" \"$l_f…"

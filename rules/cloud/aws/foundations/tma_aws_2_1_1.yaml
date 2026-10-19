@@ -1,0 +1,19 @@
+id: TMA-AWS-2.1.1
+title: Ensure centralized root access in AWS Organizations
+description: Ensure centralized root access management is enabled to manage and secure root user credentials for member accounts in AWS Organizations. This allows the management account and an optional delegated administrator account to centrally delete, prevent recovery of, and if necessary, perform short-lived, scoped root-required actions in member accounts without maintaining long-term root user credentials in each account. The AWS account root user is a powerful, default administrative identity that is difficult to manage safely across many accounts. When each member account manages its own root credentials, organizations often end up with numerous long-lived root passwords, access keys, and MFA devices that are hard to inventory, rotate, and protect. Centralized root access management lets security teams remove or avoid creating root user credentials in member accounts, centrally review and...
+target: aws
+level: 2
+severity: medium
+tags:
+- access-control
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.1.1 Ensure centralized root access in AWS Organizations
+audit:
+  type: manual
+  command: 1. Sign in to the AWS Management Console with the management account. 2. In the console search bar, type Organizations and open AWS Organizations. - On the Overview page, confirm that an Organization exists and that this account is listed as the Management account. 3. In AWS Organizations, choose Services. - Confirm that AWS Identity and Access Management appears in the list of services with trusted access enabled. 4. In the console search bar, type IAM and open IAM. In the left navigation pane, choose Root access management. Check the status banner. - If you see that Root access management is enabled and the feature card shows that root credentials management is turned on for member accounts, the organization has centralized root access management enabled. - If you see Root access management is disabled with an option to Enable, centralized root access is not yet enabled. 5. (Optional) On the same Root access management page, review the Delegated administrator information (if
+    shown). - Confirm that the delegated account (if present) is a security or management-focused account, not a general workload account.
+remediation:
+  type: iac_patch
+  command: 1. Sign in to the AWS Management Console with the management account. 2. In the console search bar, type Organizations and open AWS Organizations. - On the Overview page, confirm that an Organization exists and that this account is listed as the Management account. 3. In AWS Organizations, choose Services. Locate AWS Identity and Access Management in the list and, if it is not already enabled, choose Enable trusted access and confirm. - This allows IAM to integrate with AWS Organizations to manage root access centrally. 4. In the console search bar, type IAM and open IAM. In the left navigation pane, choose Root access management. If you see Root access management is disabled, choose Enable. - In the enable dialog, confirm that you want to - "Root credentials management" and if desired - "Privileged root actions in member accounts" - In the Delegated administrator field, enter the account ID of the account that will manage root user access and take privileged actions on member
+    accounts. AWS recommends using an account intended for security or management purposes, not a general workload account. - When you enable centralized root access in the console, IAM also enables trusted ac...

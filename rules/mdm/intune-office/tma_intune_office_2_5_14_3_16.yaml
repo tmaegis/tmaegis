@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.3.16
+title: 'Ensure ''Configure Outlook object model prompt when sending mail'' is set to ''Enabled: Automatically Deny'''
+description: 'This policy setting controls what happens when an untrusted program attempts to send e-mail programmatically using the Outlook object model. When the option Automatically deny is selected, Outlook will automatically deny programmatic access requests from any program. The recommended state for this setting is: Enabled: Automatically Deny. Audit: reads the registry value(s) promptoomsend that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: medium
+tags:
+- intune-office
+- intune
+- registry
+reference: 'CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.3.16 Ensure ''Configure Outlook object model prompt when sending mail'' is set to ''Enabled: Automatically Deny'''
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''promptoomsend'' -ErrorAction SilentlyContinue).''promptoomsend''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':promptoomsend='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Automatically Deny: Microsoft Outlook 2016\Security\Security Form Settings\Outlook Security Mode > Configure Outlook object model prompt when sending mail Important: For this setting to apply, the Outlook Security Mode setting must be enabled in Microsoft Outlook 2016\Security\Security Form Settings with Use Outlook Security Group Policy selected, as set in this benchmark.'

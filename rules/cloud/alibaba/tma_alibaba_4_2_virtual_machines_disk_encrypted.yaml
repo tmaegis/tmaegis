@@ -1,0 +1,27 @@
+id: TMA-ALIBABA-4.2
+title: Ensure that 'Virtual Machine's disk' are encrypted
+description: Ensure that disk are encrypted when it is created with the creation of VM instance. ECS cloud disk encryption protects your data at rest. The cloud disk data encryption feature automatically encrypts data when data is transferred from ECS instances to disks, and decrypts data when the data is read from ... Counts disks with Status In_use (attached) and Encrypted false in every ECS region; the count must be 0. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- ecs
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 4.2 Ensure that 'Virtual Machine's disk' are encrypted
+audit:
+  type: command
+  command: |-
+    regs=$(aliyun ecs DescribeRegions 2>/dev/null) || exit 1
+    regions=$(printf '%s\n' "$regs" | sed -n 's/.*"RegionId"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    [ -n "$regions" ] || exit 1
+    bad=0
+    for r in $regions; do
+      out=$(aliyun ecs DescribeDisks --RegionId "$r" --Status In_use --Encrypted false --PageSize 10 2>/dev/null) || exit 1
+      n=$(printf '%s\n' "$out" | sed -n 's/.*"TotalCount"[[:space:]]*:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -n 1)
+      [ "${n:-0}" -eq 0 ] || { echo "unencrypted attached disks in $r: $n"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Encrypted cannot be switched on for an existing disk: create an encrypted snapshot copy / encrypted disk from a snapshot (aliyun ecs CopySnapshot --Encrypted true, CreateDisk --Encrypted true --KMSKeyId <key>), swap it in, and enable account-level default EBS encryption for new disks.'

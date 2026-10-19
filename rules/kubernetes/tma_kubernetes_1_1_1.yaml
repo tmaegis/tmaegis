@@ -1,0 +1,26 @@
+id: TMA-KUBERNETES-1.1.1
+title: Ensure that the API server pod specification file permissions are set to 600 or more restrictive
+description: Ensure that the API server pod specification file has permissions of 600 or more restrictive.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- control-plane
+- file-permissions
+- api-server
+reference: CIS Kubernetes Benchmark v2.1.0 - 1.1.1 Ensure that the API server pod specification file permissions are set to 600 or more restrictive
+audit:
+  type: command
+  command: |-
+    set -f
+    f=""; for x in /etc/kubernetes/manifests/kube-apiserver.yaml; do if [ -e "$x" ]; then f=$x; break; fi; done
+    [ -n "$f" ] || exit 1
+    p=$(stat -Lc %a "$f") || exit 1
+    if [ $((0$p & 0177)) -eq 0 ]; then echo compliant; else echo "noncompliant: $f mode $p"; fi
+  expected_output: compliant
+  requires_file:
+  - /etc/kubernetes/manifests/kube-apiserver.yaml
+remediation:
+  type: command
+  command: chmod u-x,go-rwx /etc/kubernetes/manifests/kube-apiserver.yaml

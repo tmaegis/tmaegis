@@ -1,0 +1,17 @@
+id: TMA-M365-2.1.8
+title: Ensure that SPF records are published for all Exchange Domains
+description: For each domain that is configured in Exchange, a corresponding Sender Policy Framework (SPF) record should be created. SPF records enable Exchange Online Protection and other mail systems to verify which servers are authorized to send email for a domain. This helps those systems determine whether a message is legitimate or potentially spoofed. Enforcing a -all or ~all ensures that any undocumented or unauthorized networks attempting to send on behalf of the organization are immediately rejected, reducing the risk of impersonation. If an organization does not have full visibility into where its email originates, this represents a significant security gap. For example, if an email server is sending mail from an unexpected location across the country without your knowledge, that is a serious issue. Addressing this requires a deliberate discovery process to identify all legitimate sendin...
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.1.8 Ensure that SPF records are published for all Exchange Domains
+audit:
+  type: manual
+  command: 'STEP 1: Determine the list of domains to audit Using the UI: 1. Navigate to Microsoft 365 admin center https://admin.microsoft.com 2. Expand Settings > Domains. 3. Take note of all custom domains and subdomains defined. o Exclude the (MOERA) domain *.onmicrosoft.com o Exclude the coexistence domain *.mail.onmicrosoft.com (if shown). 4. Use this list of domains in the audit procedure. Using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following: Get-AcceptedDomain | Where-Object {$_.IsCoExistenceDomain -eq $false -and $_.InitialDomain -eq $false} 3. Use this list in the audit procedure. Note: Microsoft owns the tenant''s organizational level *.onmicrosoft.com domains, so it is not necessary to create SPF records for the initial (MOERA) or the coexistence (hybrid) domain. STEP 2: Perform the Audit using PowerShell: 1. Open a PowerShell prompt. 2. Run the following for each custom domain identified in Step 1 that sends email from Exchange Online:
+    Resolve-DnsName domain1.com -Type TXT | fl Ensure the following criteria are met: 1. A valid TXT record must begin with v=spf1, which indicates it is SPF v1 (the current standard). 2. The record must be...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using a DNS provider: For each domain identified as non-compliant during the audit, make the necessary updates in your DNS provider or through your third-party SPF management service. Missing SPF Record: If a domain does not currently have an SPF record, create one similar to the example below, assuming all email is routed through Exchange Online (Microsoft 365 or Microsoft 365 GCC): # Hard fail v=spf1 include:spf.protection.outlook.com -all # Soft fail v=spf1 include:spf.protection.outlook.com ~all Additional Senders: If other authorized email services are used, add their SPF entries using the include: mechanism as needed. For example: v=spf1 include:spf.protection.outlook.com include:exampledomain.net -all'

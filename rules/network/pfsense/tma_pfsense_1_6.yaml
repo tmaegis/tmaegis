@@ -1,0 +1,25 @@
+id: TMA-PFSENSE-1.6
+title: Ensure IPv6 is disabled if not used
+description: Although IPv6 has many advantages over IPv4, not all organizations have IPv6 or dual stack configurations implemented. FAILs if Allow IPv6 is enabled (<ipv6allow> present); document an exception if IPv6 is used. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- hardening
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 1.6 Ensure IPv6 is disabled if not used
+audit:
+  type: config_regex
+  pattern: <ipv6allow(?:\s*/>|>[^<]*</ipv6allow>)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: System > Advanced > Networking: clear Allow IPv6, Save.
+    # CIS guidance:
+    In the CLI:
+    Add below in the '/etc/sysctl.conf' file and reboot.
+    - net.ipv6.conf.all.disable_ipv6=1
+    - net.ipv6.conf.default.disable_ipv6=1
+    - net.ipv6.conf.lo.disable_ipv6 = 1 In the GUI:
+    Navigate to System > Advanced > Networking Uncheck 'Allow IPv6'

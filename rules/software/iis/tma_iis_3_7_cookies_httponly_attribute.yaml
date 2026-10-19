@@ -1,0 +1,19 @@
+id: TMA-IIS-3.7
+title: Ensure 'cookies' are set with HttpOnly attribute
+description: The httpOnlyCookies attribute of the httpCookies node determines if IIS will set the HttpOnly flag on HTTP cookies it sets. The HttpOnly flag indicates to the user agent that the cookie must not be accessible by client-side script (i.e document.cookie). It is recommended that the httpOnlyCookies attribute be set to true. httpCookies httpOnlyCookies must be true in the root web.config and every site. PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: medium
+tags:
+- iis
+- session
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.7 Ensure 'cookies' are set with HttpOnly attribute
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.web/httpCookies' -PSPath $_; $c.httpOnlyCookies -ne $true }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Add <httpCookies httpOnlyCookies="true" /> inside <system.web> of each application web.config.

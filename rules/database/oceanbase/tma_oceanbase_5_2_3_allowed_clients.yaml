@@ -1,0 +1,18 @@
+id: TMA-OCEANBASE-5.2.3
+title: Only Allowed Client can Access to Cluster
+description: Specify an client whitelist of approved servers that can access to the cluster. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Oracle-mode tenant. Passes when ob_tcp_invited_nodes is an explicit IP list rather than '%'. Runs obclient against an Oracle-mode tenant using the connection options in OB_ORA_CONN (default "-h127.0.0.1 -P2881 -uSYS@oracle"); supply the password via OB_ORA_CONN (-p...) or ~/.my.cnf.
+target: oceanbase
+level: 1
+severity: high
+tags:
+- oceanbase
+- network
+- oracle-mode
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 5.2.3 Only Allowed Client can Access to Cluster
+audit:
+  type: sql_query
+  command: 'out=$(obclient ${OB_ORA_CONN:--h127.0.0.1 -P2881 -uSYS@oracle} -N -B -e "SHOW VARIABLES LIKE ''ob_tcp_invited_nodes''" 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk -F''\t'' ''$1 == "ob_tcp_invited_nodes" {v = $2; f = 1} END {gsub(/[[:space:]]/, "", v); print (f && v != "" && v != "%") ? "compliant" : "noncompliant"}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET GLOBAL ob_tcp_invited_nodes = '<ip list>'; containing only the approved client addresses.

@@ -1,0 +1,18 @@
+id: TMA-AIX-2.1
+title: Ensure system configuration is documented and verified regularly
+description: 'Maintain a listing of the system configuration showing assets configured into the system. All changes to the system configuration should be logged so that the expected configuration is documented. Regular verification of the current configuration makes it possible to identify and correct undocumented system configuration changes. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: low
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 2.1 Ensure system configuration is documented and verified regularly
+audit:
+  type: command
+  command: command -v crontab >/dev/null 2>&1 || exit 1; r=compliant; crontab -l 2>/dev/null | grep -q "/usr/sbin/lsconf -v" || r="missing lsconf -v cron job"; grep -q "syslog/inventory.log " /etc/syslog.conf 2>/dev/null || r="missing syslog/inventory.log entry in /etc/syslog.conf"; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Below may be considered an example of how to setup a regular (daily) verification of the system configuration. The actual frequency you use might differ. The keyword in the recommendation is: regular. Further, the example also shows two syslog reporting lines: one to a system file, the second to a centralized syslog service. The second entry is added as a comment because the hostname is likely not correct and/or there is not a centralized syslog server. The syslog facility local1 is used to keep these reports out of the standard syslog facilities. There is not meant to establish a requirement to use facility local1. An alternate facility can be used as per site policy. Ensure that the log directory and file exist # /usr/bin/mkdir -p /var/log/syslog # /usr/bin/touch /var/log/syslog/inventory.log If logging for local1.info events is not already configured add this to the syslog configuration: #!/usr/bin/ksh /usr/bin/egrep "^local1.info /var/log/syslog/inventory.log" /etc/syslog.conf
+    >/dev/null if [ $? != 0 ]; then print "local1.info /var/log/syslog/inventory.log rotate time 1d files 30 compress" >> /etc/syslog.conf refresh -s syslogd || startsrc -s syslogd ... (see CIS section 2.1)'

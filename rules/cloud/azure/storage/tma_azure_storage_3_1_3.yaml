@@ -1,0 +1,22 @@
+id: TMA-AZURE-STORAGE-3.1.3
+title: Ensure backup data in Backup vaults is encrypted using customer-managed keys (CMK)
+description: 'Backup vaults offer two encryption options: Microsoft-managed keys, which provide automatic encryption without user intervention, and customer-managed keys (CMK), which allow organizations to retain full control over their encryption keys for enhanced security and compliance. Using customer-managed keys (CMKs) to encrypt Backup vaults enhances security by granting organizations complete control over their encryption keys.'
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- backup
+- cloud
+- crypto
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.1.3 Ensure backup data in Backup vaults is encrypted using customer-managed keys (CMK)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Ensure Encryption Settings is set to Using ''Customer-managed keys''. 5. Repeat steps 1-4 for each Backup vault. Audit from Azure CLI Run the following command to list Backup vaults: az dataprotection backup-vault list For each Backup vault, run the following command: az dataprotection backup-vault show --resource-group <resource-group> -- vault-name <backup-vault> Ensure that under properties > securitySettings > encryptionSettings > keyVaultProperties, a key keyUri exists with the value set to a customer-managed key URI. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: d6588149-9f06-462c-a076-56aece45b5ba
+    - Name: ''[Preview]: Azure Backup Vaults should use customer-managed keys for encrypting backup data. Also an option to enforce Infra Encryption.'''
+remediation:
+  type: iac_patch
+  command: 'Note: Once encryption is configured to use a customer-managed key, this setting cannot be reversed. Remediate from Azure Portal 1. Go to Backup vaults. 2. Click the name of a Backup vault. 3. Under Manage, click Properties. 4. Under Using ''Microsoft-managed keys'', click Update. 5. Check the box next to Use your own key. 6. Under Encryption key, click the radio button next to Enter key URI to provide a known key URI, or click the radio button next to Select from Key Vault to select a key from a Key Vault. 7. If entering a key URI, provide the key URI in the text box under Key URI. 8. If selecting a key from a Key Vault, click select key from Key Vault. 1. Select Key vault or Managed HSM. 2. Select a key vault or managed HSM. 3. Select a key. 4. Click Select. 9. Select a managed identity to use for the encryption key. 10. Click Update. 11. Repeat steps 1-10 for each Backup vault. Remediate from Azure CLI For each Backup vault requiring remediation, run the following command to
+    assign a customer-managed encryption key: az dataprotection backup-vault update --resource-group <resource-group> -- vault-name <backup-vault> --cmk-encryption-key-uri <cmk-uri> --cmk- encryption-state "Enab...'

@@ -1,0 +1,19 @@
+id: TMA-MCP-10.1
+title: Ensure safe, static resources are cached with freshness limits and per-user data is never shared-cached
+description: Genuinely immutable or infrequently changing resources are cached using ETag or Last-Modified headers, which enable conditional requests, and static content carries appropriate Cache-Control directives for client-side caching. Cached entries are invalidated when a resource updates, and a relevant change notification invalidates a cached result immediately, even before its ttlMs elapses. Authorization decisions, security-sensitive resource content, and resources that vary by user identity are never held in a shared cache. This Recommendation covers two caching layers. At the HTTP layer, static resource content served over HTTP carries validators and a Cache- Control policy, and dynamic or identity-sensitive content is marked no-store or private. At the protocol layer, the 2026-07-28 revision requires the cacheable-result fields resultType, ttlMs, and cacheScope on the results of resour...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 10.1 Ensure safe, static resources are cached with freshness limits and per-user data is never shared-cached
+audit:
+  type: manual
+  command: 'Inspect the caching response headers for a sample of static and dynamic resources. Run the following command against a static resource. It reports a single verdict and rejects a resource that carries a non-shareable directive alongside caching: URL="https://<SERVER_URL>/static/<PATH>" resp=$(curl -sS -m 10 -D - -o /dev/null "$URL" 2>/dev/null) || resp="" code=$(printf ''%s\n'' "$resp" | awk ''NR==1{print $2}'') val=$(printf ''%s\n'' "$resp" | grep -Ei ''^(etag|last-modified):'' | tr -d ''\r'') cc=$(printf ''%s\n'' "$resp" | grep -Ei ''^cache-control:'' | head -1 | sed ''s/^[Cc]ache- [Cc]ontrol:[[:space:]]*//'' | tr -d ''\r'') tokens=$(printf ''%s'' "$cc" | tr '','' ''\n'' | sed ''s/^[[:space:]]*//; s/[[:space:]]*$//'' | tr ''A-Z'' ''a-z'') has_maxage=$(printf ''%s\n'' "$tokens" | grep -Eqx ''max-age=[0-9]+'' && echo 1) has_nostore=$(printf ''%s\n'' "$tokens" | grep -Eqx ''no-store'' && echo 1) has_private=$(printf ''%s\n'' "$tokens" | grep -Eqx ''private'' && echo 1) if ! printf
+    ''%s'' "$code" | grep -Eq ''^[0-9]+$''; then echo "ERROR: static resource unreachable, no attribution possible" elif [ "$code" -ge 400 ]; then echo "ERROR: static path returned $code, cannot attribute cache policy to the resource" elif [ -n "$has_no...'
+remediation:
+  type: iac_patch
+  command: 'Enable ETag or Last-Modified generation for genuinely static content, and set Cache-Control max-age values appropriate to how static each resource is, with invalidation on update. Mark all dynamic, identity-sensitive, and authorization-related responses Cache-Control: no-store. This is web-server and application configuration. Where a reverse proxy serves static content, the following nginx fragment is illustrative. It sets a validator and max-age on the static location and no-store on the dynamic location: location /static/ { etag on; add_header Cache-Control "public, max-age=3600"; } location /api/ { add_header Cache-Control "no-store" always; } At the protocol layer, set cacheScope: private on resources/list, resources/read, and other cacheable results for any per-user or identity-sensitive data. Reserve cacheScope: public for genuinely non-identity-specific data. Set ttlMs to a freshness bound appropriate to the data. Enforce per-primitive access control independently of
+    the cache scope.'

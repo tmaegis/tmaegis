@@ -1,0 +1,24 @@
+id: TMA-GITLAB-1.1.15
+title: Ensure pushing or merging of new code is restricted to specific individuals or teams
+description: Ensure that only trusted users can push or merge new code to protected branches. Requiring that only trusted users may push or merge new changes reduces the risk of unverified code, especially malicious code, to a protected branch by reducing the number of trusted users who are capable of doing such.
+target: gitlab
+level: 2
+severity: medium
+tags:
+- devsecops
+- gitlab
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.15 Ensure pushing or merging of new code is restricted to specific individuals or teams
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Prerequisites: You must have at least the Maintainer role in the group. For every code repository in use, allow only trusted and responsible users to push or merge new code by performing the following: 1. On the left sidebar, select Search or go to and find your project. 2. Select Settings > Repository. 3. Expand Protected branches. 4. Select Add protected branch. 5. From the Branch dropdown list, select the branch you want to protect. 6. From the Allowed to merge list, select a role that can merge into this branch. 7. From the Allowed to push and merge list, select a role that can push to this branch.'

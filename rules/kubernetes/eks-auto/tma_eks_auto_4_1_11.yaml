@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-4.1.11
+title: Restrict webhook configuration access to approved identities
+description: Access to ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects in EKS Auto Mode should be limited to tightly controlled cluster administrative identities. These objects define admission webhooks that intercept Kubernetes API requests before they are accepted, and they apply at cluster scope rather than namespace scope. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- policies
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 4.1.11 Restrict webhook configuration access to approved identities
+audit:
+  type: manual
+  command: Audit this control by identifying who can manage cluster ValidatingWebhookConfiguration and MutatingWebhookConfiguration resources, and confirm that webhook definitions are limited to approved admission use cases in EKS Auto Mode. Review whether cluster access is managed through access entries and associated access policies or through Kubernetes groups and native RBAC, because EKS access entries are the primary cluster access model and Kubernetes group authorization still depends on manually managed Role, ClusterRole, RoleBinding, and ClusterRoleBinding objects.
+remediation:
+  type: iac_patch
+  command: Remove permission to create, update, patch, or delete ValidatingWebhookConfiguration and MutatingWebhookConfiguration objects from broad ClusterRole and Role assignments, and rebind that access only to tightly controlled cluster identities. In EKS, use access entries and associated access policies for standard cluster access wherever possible, and reserve native Kubernetes RBAC for cases where the predefined access policies do not meet the requirement. Keep webhook configuration management limited to a small set of approved administrative identities, because these objects sit directly in the admission path and operate at cluster scope. For EKS Auto Mode, treat this as a cluster administrative permission and do not leave it reachable through broad Kubernetes group mappings or legacy ConfigMap access paths.

@@ -1,0 +1,25 @@
+id: TMA-EKS-5.4.1
+title: Restrict EKS control plane endpoint access with private access and public CIDR allowlists
+description: This recommendation is about reducing exposure of the Kubernetes API server without necessarily making it private-only. The intended end state is that private endpoint access is enabled, and if the public endpoint remains enabled, it is narrowed to a small set of trusted source CIDR ranges instead of remaining open to all internet addresses. Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE. Private access must be on and any public endpoint must not allow 0.0.0.0/0.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- managed-services
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.4.1 Restrict EKS control plane endpoint access with private access and public CIDR allowlists
+audit:
+  type: command
+  command: |-
+    out=$(aws eks describe-cluster --name "${EKS_CLUSTER:?set EKS_CLUSTER}" --query 'cluster.resourcesVpcConfig.[endpointPrivateAccess,endpointPublicAccess,join(`
+    `,publicAccessCidrs || `[]`)]' --output text) || exit 1
+    set -- $out
+    priv=$1; pub=$2; cidrs=${3:-}
+    if [ "$priv" != True ]; then echo "noncompliant: endpointPrivateAccess=$priv"
+    elif [ "$pub" = True ] && { [ -z "$cidrs" ] || printf '%s' "$cidrs" | grep -q '0\.0\.0\.0/0'; }; then echo "noncompliant: public endpoint open to $cidrs"
+    else echo compliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: By enabling private endpoint access to the Kubernetes API server, all communication between your nodes and the API server stays within your VPC. You can also limit the IP addresses that can access your API server from the internet, or completely disable internet access to the API server. With this in mind, you can update your cluster accordingly using the AWS CLI to ensure that Private Endpoint Access is enabled. If you choose to also enable Public Endpoint Access then you should also configure a list of allowable CIDR blocks, resulting in restricted access from the internet. If you specify no CIDR blocks, then the public API server endpoint is able to receive and process requests from all IP addresses by defaulting to ['0.0.0.0/0'].

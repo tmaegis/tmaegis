@@ -1,0 +1,17 @@
+id: TMA-M365-5.2.2.12
+title: Ensure the device code sign-in flow is blocked
+description: The Microsoft identity platform supports the device authorization grant, which allows users to sign in to input-constrained devices such as a smart TV, IoT device, or a printer. To enable this flow, the device has the user visit a webpage in a browser on another device to sign in. Once the user signs in, the device is able to get access tokens and refresh tokens as needed. The recommended state is to Block access for Device code flow in Conditional Access. Since August 2024, Microsoft has observed threat actors, such as Storm-2372, employing "device code phishing" attacks. These attacks deceive users into logging into productivity applications, capturing authentication tokens to gain further access to compromised accounts. To mitigate this specific attack, block authentication code flows and permit only those from devices within trusted environments, identified by specific IP addresses.
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.12 Ensure the device code sign-in flow is blocked
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify All users is included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify Resources (formerly cloud apps) includes All resources (formerly ''All cloud apps'') o Under Conditions > Authentication flows verify Configure is set to Yes and Device code flow is checked. o Under Grant verify Block access is selected. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. Filter to policies where Conditions.AuthenticationFlows.TransferMethods
+    contains deviceCodeFlow. 3. For each policy returned, verify the following criteria: o Conditions.Users.IncludeUsers is All o Conditions.Applications.IncludeApplications is All o Conditions.Authentic...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users. o Under Target resources > Resources (formerly cloud apps) include All resources (formerly ''All cloud apps''). ▪ Under Exclude exclude any break-glass accounts. o Under Conditions > Authentication flows set Configure to Yes and check Device code flow. o Click Save. o Under Grant select Block access and click Select. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to `On'

@@ -1,0 +1,17 @@
+id: TMA-TDSQL-6.2
+title: Ensure Audit and Gateway Log Limits Preserve Complete Statements
+description: audit_txsql_truncate_length limits the SQL text written by the TXSQL audit facility, while gateway.log.interface.sql_size limits the message length processed by the compute-node logging path. Both limits must be large enough to preserve complete security-relevant statements throughout the audit pipeline.
+target: tdsql
+level: 2
+severity: low
+tags:
+- tdsql
+- logging
+- audit
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 6.2 Ensure Audit and Gateway Log Limits Preserve Complete Statements
+audit:
+  type: manual
+  command: Run SHOW GLOBAL VARIABLES LIKE 'audit_txsql_truncate_length'; on the data nodes and grep -R gateway.log.interface.sql_size <tdsql>/conf/ (or check the management platform) for the compute nodes. Both must be at least 2048 bytes and large enough for the longest security-relevant statements; verify a long test statement is not truncated centrally.
+remediation:
+  type: iac_patch
+  command: 'Set the data-node limit through the instance parameter configuration: SET GLOBAL audit_txsql_truncate_length = 4096; Set gateway.log.interface.sql_size to the same or a larger value through the compute-node settings, then validate the complete record at the configured Kafka, Elasticsearch, DBbrain, or SIEM destination.'

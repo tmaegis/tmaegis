@@ -1,0 +1,16 @@
+id: TMA-YUGABYTEDB-3.1.2
+title: Ensure the filename pattern for log files is set correctly
+description: 'The log_filename setting specifies the filename pattern for log files. The value for log_filename should match your organization''s logging policy. The value is treated as a strftime pattern, so %-escapes can be used to specify time- varying file names. The supported %-escapes are similar to those listed in the Open Group''s strftime specification. Assessed manually here: the benchmark check is environment-specific and cannot be evaluated reliably by a single command.'
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.2 Ensure the filename pattern for log files is set correctly
+audit:
+  type: manual
+  command: Run SHOW log_filename; in ysqlsh (default postgresql-%Y-%m-%d_%H%M%S.log). The pattern must match your organisation log naming and retention policy (for example postgresql-%a.log for a weekly rotation set).
+remediation:
+  type: iac_patch
+  command: 'Use the yb-tserver binary and its flags to configure the YB-TServer server. Add the following GFLAG to YB-TServer: ./bin/yb-tserver --ysql_pg_conf_csv="log_filename=''postgresql-%a.log''"'

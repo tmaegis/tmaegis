@@ -1,0 +1,16 @@
+id: TMA-SOLARIS-9.21
+title: Find World Writable Files
+description: Unix-based systems support variable settings to control access to files. World-writable files are the least secure. See the chmod man page for more information. Data in world-writable files can be read, modified, and potentially compromised by any user on the system.
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- permissions
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.21 Find World Writable Files
+audit:
+  type: manual
+  command: 'Perform the following to verify that the result is as recommended: # find / \( -fstype nfs -o -fstype cachefs -o -fstype autofs -o -fstype ctfs -o -fstype mntfs -o -fstype objfs -o -fstype proc \) -prune -o -type f -perm -0002 -print No output should be returned. Note: The script above does a file traversal of all files under the "/" directory, including NFS attached file systems, so running this search command may take quite some time.'
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine the existence of any "write access" given for the "other" category (chmod o-w <filename>), and work with the owner to determine the best course of action in accordance with site policy.

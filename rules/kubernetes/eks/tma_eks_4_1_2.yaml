@@ -1,0 +1,18 @@
+id: TMA-EKS-4.1.2
+title: Ensure access to Secrets is minimized and granted only where required
+description: Verify that access to Kubernetes Secret objects in EKS is granted only to IAM principals, Kubernetes users or groups, and service accounts with a defined operational or workload need. The review should cover EKS access entries and associated access policies, Kubernetes RBAC roles and bindings, and service account permissions, with particular attention to permissions that allow get, list, or watch access to Secrets. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- rbac
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.1.2 Ensure access to Secrets is minimized and granted only where required
+audit:
+  type: manual
+  command: Start by reviewing every path that can grant access to Kubernetes Secret objects in the EKS cluster. Start with EKS access entries and associated access policies, because EKS policies can grant Kubernetes permissions without native RBAC objects, and AmazonEKSAdminViewPolicy includes permission to view Kubernetes Secrets. Then review Kubernetes RBAC, service account permissions, and any remaining legacy aws-auth mappings, because EKS can authorize access through multiple overlapping models and policy scope can be either cluster-wide or namespace-scoped.
+remediation:
+  type: iac_patch
+  command: Start by reducing every access path that allows reading Kubernetes Secret objects in the EKS cluster. Start with EKS access entries and associated access policies, because EKS policies can grant Secrets access without native RBAC objects, and policies such as AmazonEKSAdminViewPolicy, AmazonEKSSecretReaderPolicy, and broader administrative policies can expose Secrets depending on scope. Then reduce unnecessary access in Kubernetes RBAC, service accounts, and any remaining legacy aws-auth mappings, and replace broad permissions with the narrowest namespace or workload scope that still supports the required function. • Remove or narrow EKS access policy associations that expose Secrets, and prefer namespace-scoped access over cluster-wide scope wherever possible.

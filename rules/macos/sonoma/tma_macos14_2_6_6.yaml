@@ -1,0 +1,29 @@
+id: TMA-MACOS14-2.6.6
+title: Ensure FileVault Is Enabled
+description: FileVault secures a system's data by automatically encrypting its boot volume and requiring a password or recovery key to access it. FileVault should be used with a saved escrow key to ensure that the owner can decrypt their data if the password is lost. FileVault may also be enabled using command line using the fdesetup command. To use this functionality, consult the Der Flounder blog for more details (see link below under References). Encrypting sensitive data minimizes the likelihood of unauthorized users gaining access to it.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.6.6 Ensure FileVault Is Enabled
+audit:
+  type: command
+  command: 's=$(/usr/bin/fdesetup status 2>/dev/null) || exit 1
+
+    p=$(/usr/bin/osascript -l JavaScript <<''EOS''
+
+    $.NSUserDefaults.alloc.initWithSuiteName(''com.apple.MCX'').objectForKey(''dontAllowFDEDisable'').js
+
+    EOS
+
+    )
+
+    if printf ''%s'' "$s" | /usr/bin/grep -q "FileVault is On" && [ "$p" = true ]; then echo compliant; else echo "$s dontAllowFDEDisable=${p:-unset}"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Graphical Method: Perform the following steps to enable FileVault: 1. Open System Settings 2. Select Security & Privacy 3. Select Turn On... Note: This will allow you to create a recovery key for FileVault. Keep the key saved securely in case it is needed at a later date. Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.MCX 2. The key to include is dontAllowFDEDisable 3. The key must be set to <true/> Note: This profile is required to pass the audit.'

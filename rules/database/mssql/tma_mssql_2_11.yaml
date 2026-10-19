@@ -1,0 +1,18 @@
+id: TMA-MSSQL-2.11
+title: Ensure SQL Server is configured to use non-standard ports
+description: 'If installed, a default SQL Server instance will be assigned a default port of TCP:1433 for TCP/IP communication. Administrators can also manually configure named instances to use TCP:1433 for communication. TCP:1433 is a widely known SQL Server port and this port assignment should be changed. In a multi-instance scenario, each instance must be assigned its own dedicated TCP/IP port. Counts TCP port settings equal to 1433; 0 is required. Default: By default, default SQL Server instances listen on to TCP/IP traffic on TCP port 1433 and named instances use dynamic ports. Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: low
+tags:
+- mssql
+- database
+- network
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 2.11 Ensure SQL Server is configured to use non-standard ports
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; IF (SELECT value_data FROM sys.dm_server_registry WHERE value_name = 'ListenOnAllIPs') = 1 SELECT COUNT(*) FROM sys.dm_server_registry WHERE registry_key LIKE '%IPAll%' AND value_name LIKE '%Tcp%' AND value_data = '1433' ELSE SELECT COUNT(*) FROM sys.dm_server_registry WHERE value_name LIKE '%Tcp%' AND value_data = '1433';"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 1. In SQL Server Configuration Manager, in the console pane, expand SQL Server Network Configuration, expand Protocols for <InstanceName>, and then double-click the TCP/IP protocol 2. In the TCP/IP Properties dialog box, on the IP Addresses tab, several IP addresses appear in the format IP1, IP2, up to IPAll. One of these is for the IP address of the loopback adapter, 127.0.0.1. Additional IP addresses appear for each IP Address on the computer. 3. Under IPAll, change the TCP Port field from 1433 to a non-standard port or leave the TCP Port field empty and set the TCP Dynamic Ports value to 0 to enable dynamic port assignment and then click OK. 4. In the console pane, click SQL Server Services. 5. In the details pane, right-click SQL Server (<InstanceName>) and then click Restart, to stop and restart SQL Server.

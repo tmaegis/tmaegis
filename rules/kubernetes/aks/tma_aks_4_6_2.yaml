@@ -1,0 +1,17 @@
+id: TMA-AKS-4.6.2
+title: Apply Security Context to Your Pods and Containers
+description: Apply securityContext settings to pods and containers so workload runtime behavior is explicitly constrained instead of relying on image defaults or permissive cluster admission. In AKS, Microsoft’s current pod-security guidance calls out settings such as runAsNonRoot, runAsUser, runAsGroup, fsGroup, allowPrivilegeEscalation, capabilities, and seccompProfile, and AKS supports enforcing or validating these expectations through Pod Security ... The benchmark marks this recommendation Manual.
+target: aks
+level: 2
+severity: low
+tags:
+- aks
+- policies
+- pod-security
+reference: CIS Azure Kubernetes Service (AKS) Benchmark v2.0.0 - 4.6.2 Apply Security Context to Your Pods and Containers
+audit:
+  type: manual
+  command: Audit this control by reviewing workload manifests to confirm pod- and container-level securityContext settings are explicitly defined and aligned to the AKS security baseline. In current AKS guidance, securityContext is the primary manifest-level mechanism for enforcing least-privilege runtime behavior, and AKS supports validating or enforcing these settings through Pod Security Admission and Deployment Safeguards. • Review pod specs for explicit securityContext settings at the pod and container level.
+remediation:
+  type: iac_patch
+  command: 'Remediate by defining and enforcing a hardened pod/container security baseline for all application namespaces in AKS, then requiring workloads to declare the necessary securityContext fields in their manifests. In AKS, Pod Security Admission (PSA) is enabled by default and is applied with namespace labels, while Microsoft’s pod-security guidance recommends explicit settings such as non-root execution, allowPrivilegeEscalation: false, limited capabilities, and seccompProfile. For broader cluster-wide governance, AKS also supports Deployment Safeguards to warn on or deny noncompliant workload definitions at create or update time. • Apply PSA restricted or baseline labels to general application namespaces, using warn and audit first where rollout needs to be staged.'

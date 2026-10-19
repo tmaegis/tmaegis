@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-10.8
+title: Do not allow additional path delimiters
+description: 'Being able to specify different path-delimiters on Tomcat creates the possibility that an attacker can access applications that were previously blocked by a proxy like mod_proxy. Both -Dorg.apache.catalina.connector.CoyoteAdapter.ALLOW_BACKSLASH=false and -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=false must be set. Searches uncommented lines of $CATALINA_HOME/bin/catalina.sh and setenv.sh (HOME and BASE) plus the running Tomcat command line. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored. CIS marks this recommendation Manual; the automated check implements its audit procedure.'
+target: tomcat
+level: 2
+severity: low
+tags:
+- tomcat
+- hardening
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 10.8 Do not allow additional path delimiters
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; src=$( { for f in "$H/bin/catalina.sh" "$H/bin/setenv.sh" "$B/bin/setenv.sh"; do [ -r "$f" ] && grep -v '^[[:space:]]*#' "$f"; done; ps -eo args 2>/dev/null | grep '[o]rg\.apache\.catalina\.startup\.Bootstrap'; } ); printf '%s\n' "$src" | grep -q 'org\.apache\.catalina\.connector\.CoyoteAdapter\.ALLOW_BACKSLASH=false' && printf '%s\n' "$src" | grep -q 'org\.apache\.tomcat\.util\.buf\.UDecoder\.ALLOW_ENCODED_SLASH=false' && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Add -Dorg.apache.catalina.connector.CoyoteAdapter.ALLOW_BACKSLASH=false -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=false to CATALINA_OPTS in setenv.sh. Restart Tomcat afterwards.

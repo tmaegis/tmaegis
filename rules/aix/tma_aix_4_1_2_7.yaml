@@ -1,0 +1,54 @@
+id: TMA-AIX-4.1.2.7
+title: Ensure access on /var/adm/sa is configured
+description: 'The /var/adm/sa directory holds the performance data produced by the sar utility. The /var/adm/sa directory contains the report files produced by the sar utility. This directory must be secured from unauthorized access. Audit: compares `ls -ld` mode (this mode or more restrictive), owner and group with the CIS values; ACLs are not evaluated.'
+target: aix
+level: 1
+severity: medium
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 4.1.2.7 Ensure access on /var/adm/sa is configured
+audit:
+  type: command
+  command: 'r=compliant; for f in /var/adm/sa/; do if [ -e "$f" ]; then set -- $(ls -ld "$f"); s=$(printf ''%s %s %s\n'' "$1" "$3" "$4" | awk -v m=''rwxr-xr-x'' -v o=''adm'' -v g=''adm'' ''{ok=1; for(i=1;i<=9;i++) if(substr(m,i,1)=="-" && substr($1,i+1,1)!="-") ok=0; if(o!="" && $2 !~ ("^(" o ")$")) ok=0; if(g!="" && $3 !~ ("^(" g ")$")) ok=0; print (ok ? "ok" : $0)}''); [ "$s" = ok ] || r="$f: $s"; else r="$f: missing"; fi; done; echo "$r"'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    for f in /var/adm/sa/; do
+      [ -e "$f" ] || continue
+      chmod g-w,o-w "$f"
+      x=$(ls -ld "$f" | awk '{print $3}'); case "|adm|" in *"|$x|"*) ;; *) chown adm "$f";; esac
+      x=$(ls -ld "$f" | awk '{print $4}'); case "|adm|" in *"|$x|"*) ;; *) chgrp adm "$f";; esac
+    done
+  guidance: "Set the recommended ownership and permissions on /var/adm/sa: chown adm:adm /var/adm/sa chmod u=rwx,go=rx /var/adm/sa"

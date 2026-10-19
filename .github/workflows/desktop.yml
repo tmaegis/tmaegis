@@ -1,0 +1,111 @@
+# Builds TMAegis Desktop (the native-window app) on each OS and attaches it to the GitHub Release.
+# Separate from release.yml on purpose: it needs CGO and a real OS runner, and a problem here must never
+# block the command-line release. Run it by hand (workflow_dispatch) to test the build without a release.
+name: Desktop app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (without v), e.g. 0.1.0"
+        required: true
+        default: "0.1.0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'tmaegis/tmaegis'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: windows_amd64, ext: zip }
+          - { os: macos-14, name: macos_arm64, ext: zip }
+          - { os: macos-15-intel, name: macos_amd64, ext: zip }
+          - { os: ubuntu-22.04, name: linux_amd64, ext: tar.gz }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.27"
+      - name: Version
+        run: |
+          v="${{ github.event.inputs.version }}"
+          if [ -z "$v" ]; then v="${GITHUB_REF_NAME#v}"; fi
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+      - name: Build
+        env:
+          CGO_ENABLED: "1"
+        run: |
+          mkdir -p out
+          flags="-s -w -X github.com/tmaegis/tmaegis/cmd.Version=${VERSION}"
+          bin=tmaegis-desktop
+          if [ "$RUNNER_OS" = "Windows" ]; then flags="$flags -H windowsgui"; bin=tmaegis-desktop.exe; fi
+          go build -trimpath -tags desktop -ldflags "$flags" -o "out/$bin" ./cmd/tmaegis-desktop
+      - name: Package
+        run: |
+          pkg="tmaegis-desktop_${VERSION}_${{ matrix.name }}"
+          mkdir -p "stage/$pkg"
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            app="stage/$pkg/TMAegis.app/Contents"
+            mkdir -p "$app/MacOS"
+            cp out/tmaegis-desktop "$app/MacOS/"
+            cp -R rules plugins samples "$app/MacOS/"
+            cat > "$app/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleName</key><string>TMAegis</string>
+            <key>CFBundleDisplayName</key><string>TMAegis</string>
+            <key>CFBundleIdentifier</key><string>dev.tmaegis.desktop</string>
+            <key>CFBundleExecutable</key><string>tmaegis-desktop</string>
+            <key>CFBundleShortVersionString</key><string>${VERSION}</string>
+            <key>CFBundleVersion</key><string>${VERSION}</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>LSMinimumSystemVersion</key><string>11.0</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict></plist>
+          PLIST
+          else
+            cp out/tmaegis-desktop* "stage/$pkg/"
+            cp -R rules plugins samples "stage/$pkg/"
+          fi
+          cp LICENSE NOTICE TRADEMARK.md README.md "stage/$pkg/"
+          cd stage
+          if [ "${{ matrix.ext }}" = "zip" ]; then
+            if [ "$RUNNER_OS" = "Windows" ]; then 7z a -tzip "../${pkg}.zip" "$pkg" >/dev/null; else zip -qr "../${pkg}.zip" "$pkg"; fi
+          else
+            tar -czf "../${pkg}.tar.gz" "$pkg"
+          fi
+          cd ..
+          echo "ASSET=${pkg}.${{ matrix.ext }}" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ASSET }}
+          path: ${{ env.ASSET }}
+      - name: Attach to the release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # release.yml creates the release; wait for it (up to 40 minutes) instead of racing it.
+          for i in $(seq 1 80); do
+            if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then break; fi
+            sleep 30
+          done
+          gh release upload "$GITHUB_REF_NAME" "$ASSET" --clobber

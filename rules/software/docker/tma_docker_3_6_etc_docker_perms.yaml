@@ -1,0 +1,19 @@
+id: TMA-DOCKER-3.6
+title: Ensure that /etc/docker directory permissions are set to 755 or more restrictively
+description: The /etc/docker directory (holds TLS keys and daemon config) must have mode 755 or more restrictive so that it cannot be modified by non-root users. The audit flags any existing candidate path (/etc/docker) with permission bits outside 755; not applicable when none exists.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.6 Ensure that /etc/docker directory permissions are set to 755 or more restrictively
+audit:
+  type: command
+  command: for f in /etc/docker; do [ -e "$f" ] || continue; out=$(find "$f" -maxdepth 0 -perm /7022) || exit 1; [ -z "$out" ] || { echo "$f"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /etc/docker
+remediation:
+  type: command
+  command: for f in /etc/docker; do if [ -e "$f" ]; then chmod 755 "$f" || exit 1; fi; done

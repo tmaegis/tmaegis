@@ -1,0 +1,20 @@
+id: TMA-WIN11-18.9.7.2
+title: Ensure 'Prevent automatic download of applications associated with device metadata' is set to 'Enabled'
+description: 'This policy setting allows you to prevent Windows from retrieving device metadata from the Internet. The recommended state for this setting is: Enabled. Note: This will not prevent the installation of basic hardware drivers, but does prevent associated third-party utility software from automatically being installed under the context of the SYSTEM account.'
+target: windows
+os_family:
+- windows-11
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 11 Enterprise Benchmark v5.1.0 - 18.9.7.2
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceMetadata'' -Name ''PreventDeviceMetadataFromNetwork'' -ErrorAction SilentlyContinue).''PreventDeviceMetadataFromNetwork''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''PreventDeviceMetadataFromNetwork='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceMetadata')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceMetadata' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceMetadata' -Name 'PreventDeviceMetadataFromNetwork' -Value 1 -PropertyType DWord -Force | Out-Null

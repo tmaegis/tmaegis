@@ -1,0 +1,20 @@
+id: TMA-WIN2022-2.3.5.4
+title: 'Ensure ''Domain controller: LDAP server signing requirements'' is set to ''Require signing'' (DC only)'
+description: 'This policy setting determines whether the Lightweight Directory Access Protocol (LDAP) server requires LDAP clients to negotiate data signing. The recommended state for this setting is: Require signing. Note: Certain policy settings must be configured in the Default Domain Controller Policy to ensure they are applied globally to domain controllers. Exercise caution when modifying these policies, as improper changes can negatively impact the environment. Note #2: Domain member computers must have Network security: LDAP signing requirements (Section 2.3.11) set to Negotiate signing or higher. I'
+target: windows
+os_family:
+- windows-server-2022-dc
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 2.3.5.4
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NTDS\Parameters'' -Name ''LDAPServerIntegrity'' -ErrorAction SilentlyContinue).''LDAPServerIntegrity''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $bad += ''LDAPServerIntegrity='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NTDS\Parameters')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NTDS\Parameters' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NTDS\Parameters' -Name 'LDAPServerIntegrity' -Value 2 -PropertyType DWord -Force | Out-Null

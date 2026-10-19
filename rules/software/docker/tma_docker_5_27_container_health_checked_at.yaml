@@ -1,0 +1,22 @@
+id: TMA-DOCKER-5.27
+title: Ensure that container health is checked at runtime
+description: The container health status must be checked at runtime. Flags running containers that report no health status (no healthcheck configured). The audit inspects every running container (docker ps -q) and prints the offending names; a host with no running containers is compliant.
+target: docker
+level: 1
+severity: low
+tags:
+- docker
+- runtime
+reference: CIS Docker Benchmark v1.9.0 - 5.27 Ensure that container health is checked at runtime
+audit:
+  type: command
+  command: ids=$(docker ps -q) || exit 1; [ -z "$ids" ] && { echo compliant; exit 0; }; out=$(docker inspect --format '{{.Name}}{{if .State.Health}} {{.State.Health.Status}}{{end}}' $ids) || exit 1; bad=$(printf '%s\n' "$out" | awk 'NF<2 {print $1}'); [ -z "$bad" ] && echo compliant || printf '%s\n' "$bad"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: Configure a healthcheck (HEALTHCHECK in the image or --health-cmd at run time) and monitor docker inspect .State.Health.Status.

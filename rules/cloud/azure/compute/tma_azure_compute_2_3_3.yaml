@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.3.3
+title: Ensure 'Basic Authentication Publishing Credentials' are 'Disabled'
+description: Basic Authentication Publishing Credentials provides the ability to publish—or deploy to—a function app without a centralized Identity Provider. For a more effective, capable, and secure solution for Identity, Authentication, Authorization, and Accountability, a centralized Identity Provider such as Entra ID is strongly advised. Basic Authentication introduces an identity silo for privileged access to a resource and produces logging which may not provide a full chain of accountability. This can be exploited in numerous ways and represents a significant vulnerability and attack vector.
+target: azure
+level: 1
+severity: medium
+tags:
+- auth
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.3.3 Ensure 'Basic Authentication Publishing Credentials' are 'Disabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Platform settings, ensure that SCM Basic Auth Publishing Credentials and FTP Basic Auth Publishing Credentials are set to Off. 5. Repeat steps 1-4 for each function app. Audit from Azure CLI Run the following command to list function apps: az functionapp list For each function app, run the following command to get the basic authentication for FTP setting: az resource show --resource-group <resource-group-name> --name ftp -- namespace Microsoft.Web --resource-type basicPublishingCredentialsPolicies -- parent sites/<function-app-name> --query properties.allow Ensure that false is returned. For each function app, run the following command to get the basic authentication for SCM setting: az resource show --resource-group <resource-group-name> --name scm -- namespace Microsoft.Web --resource-type basicPublishingCredentialsPolicies
+    -- parent sites/<function-app-name> --query properties.allow Ensure that false is returned.'
+remediation:
+  type: iac_patch
+  command: 'CAUTION: Applying changes may cause your function app to restart. Remediate from Azure Portal 1. Go to App Services or Function App. 2. Click the name of a function app. 3. Under Settings, click Configuration. 4. In the General settings pane, under Platform settings, set SCM Basic Auth Publishing Credentials and FTP Basic Auth Publishing Credentials to Off. 5. Click Save. 6. Click Continue. 7. Repeat steps 1-6 for each function app requiring remediation. Remediate from Azure CLI For each function app requiring remediation, run the following command to disable basic authentication for FTP: az resource update --resource-group <resource-group-name> --name ftp -- namespace Microsoft.Web --resource-type basicPublishingCredentialsPolicies -- parent sites/<function-app-name> --set properties.allow=false For each function app requiring remediation, run the following command to disable basic authentication for SCM: az resource update --resource-group <resource-group-name> --name scm --
+    namespace Microsoft.Web --resource-type basicPublishingCredentialsPolicies -- parent sites/<function-app-name> --set properties.allow=false'

@@ -1,0 +1,20 @@
+id: TMA-WIN2022-18.9.26.1
+title: 'Ensure ''Configure password backup directory'' is set to ''Enabled: Active Directory'' or ''Enabled: Azure Active Directory'' (MS only)'
+description: 'This policy setting configures which directory Windows LAPS will use to back up the local admin account password. The recommended state for this setting is: Enabled: Active Directory or Enabled: Azure Active Directory. Note: Organizations that utilize third-party commercial software to manage unique & complex local Administrator passwords on domain members may opt to disregard these LAPS recommendations. Note #2: Windows LAPS does not support standalone computers - they must be joined to an Active Directory domain or Entra ID (formerly Azure Active Directory). Note #3: Windows LAPS does not su'
+target: windows
+os_family:
+- windows-server-2022-ms
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2022 Benchmark v5.1.0 - 18.9.26.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS'' -Name ''BackupDirectory'' -ErrorAction SilentlyContinue).''BackupDirectory''; if (-not ($null -ne $v -and @(1,2) -contains [int64]$v)) { $bad += ''BackupDirectory='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\LAPS' -Name 'BackupDirectory' -Value 1 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,28 @@
+id: TMA-OCI-1.12
+title: Ensure API keys are not created for tenancy administrator users
+description: Tenancy administrator users have full access to the organization's OCI tenancy. API keys associated with user accounts are used for invoking the OCI APIs via custom programs or clients like CLI/SDKs. The clients are typically used for performing day-to-day operations and should never require full tenancy access. For performing day-to-day operations tenancy administrator access is not needed. Service-level administrative users with API keys should be used to apply privileged security principle. Members of the tenancy Administrators group may not have ACTIVE API keys. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: high
+tags:
+- oci
+- iam
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 1.12 Ensure API keys are not created for tenancy administrator users
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    g=$(oci iam group list --compartment-id "$t" --all --query 'data[?name==`"Administrators"`].id | [0]' --raw-output 2>/dev/null) || exit 1
+    [ -n "$g" ] || exit 1
+    ms=$(oci iam group list-users --group-id "$g" --all --query 'data[].id' --raw-output 2>/dev/null) || exit 1
+    for u in $(printf '%s\n' "$ms" | grep -o 'ocid1\.user\.[^"]*'); do
+      n=$(oci iam user api-key list --user-id "$u" --query 'length(data[?"lifecycle-state"==`"ACTIVE"`])' --raw-output 2>/dev/null) || exit 1
+      [ "${n:-0}" -eq 0 ] || { echo "administrator with API key: $u"; bad=1; }
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Delete API keys of Administrators group members (oci iam user api-key delete) and run automation as dedicated service users or instance/resource principals with least privilege.

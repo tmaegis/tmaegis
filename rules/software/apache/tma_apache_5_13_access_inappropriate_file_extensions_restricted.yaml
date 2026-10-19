@@ -1,0 +1,16 @@
+id: TMA-APACHE-5.13
+title: Ensure Access to Inappropriate File Extensions Is Restricted
+description: 'Restrict access to inappropriate file extensions that are not expected to be a legitimate part of web sites using the FilesMatch directive. Manual review: the benchmark gives no reliable automated check for this control.'
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- features
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 5.13 Ensure Access to Inappropriate File Extensions Is Restricted
+audit:
+  type: manual
+  command: 'Perform the following steps to determine if the recommended state is implemented: 1. Verify that the FilesMatch directive that denies access to all files is present as shown in step 3 of the remediation. 2. Verify that there is another FilesMatch directive similar to the one in step 4 of the remediation, with an expression that matches the approved file extensions.'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: 1. Compile a list of existing file extension on the web server. The following find/awk command may be useful, but is likely to need some customization according to the appropriate webroot directories for your web server. Please note that the find command skips over any files without a dot (.) in the file name, as these are not expected to be appropriate web content. find */htdocs -type f -name ''*.*'' | awk -F. ''{print $NF }'' | sort -u 2. Review the list of existing file extensions, for appropriate content for the web server, remove those that are inappropriate and add any additional file extensions expected to be added to the web server in the near future. 3. Add the FilesMatch directive below which denies access to all files by default. # Block all files by default, unless specifically allowed.'

@@ -1,0 +1,17 @@
+id: TMA-GCP-6.7
+title: Ensure That Cloud SQL Database Instances Do Not Have Public IPs
+description: It is recommended to configure Second Generation Sql instance to use private IPs instead of public IPs. To lower the organization's attack surface, Cloud SQL databases should not have public IPs. Private IPs provide improved network security and lower latency for your application.
+target: gcp
+level: 2
+severity: low
+tags:
+- cloud
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 6.7 Ensure That Cloud SQL Database Instances Do Not Have Public IPs
+audit:
+  type: manual
+  command: 'From Google Cloud Console 1. Go to the Cloud SQL Instances page in the Google Cloud Console: https://console.cloud.google.com/sql/instances 2. Click on an instance name to see its configuration overview. 3. In the left-side panel, select Connections. 4. In the Networking section, ensure that Public IP is unchecked. Note: this will require that Private IP is set and a network chosen. 5. Ensure that every instance has a private IP address and no public IP address configured. From Google Cloud CLI 1. List all Cloud SQL database instances using the following command: gcloud sql instances list 2. For every instance of type instanceType: CLOUD_SQL_INSTANCE with backendType: SECOND_GEN, get detailed configuration. Ignore instances of type READ_REPLICA_INSTANCE because these instances inherit their settings from the primary instance. Also, note that first generation instances cannot be configured to have a private IP address. gcloud sql instances describe <INSTANCE_NAME> 3. Ensure that
+    the setting ipAddresses has an IP address configured of type: PRIVATE and has no IP address of type: PRIMARY. PRIMARY IP addresses are public addresses. An instance can have both a private and public addr...'
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud Console 1. Go to the Cloud SQL Instances page in the Google Cloud Console: https://console.cloud.google.com/sql/instances 2. Click the instance name to open its configuration overview. 3. Select the Connections tab. 4. Deselect the Public IP checkbox. 5. Click Save to update the instance. From Google Cloud CLI 1. For every instance remove its public IP and assign a private IP instead: gcloud sql instances patch <INSTANCE_NAME> --network=<VPC_NETWORK_NAME> --no- assign-ip 2. Confirm the changes using the following command:: gcloud sql instances describe <INSTANCE_NAME> Prevention: To prevent new SQL instances from getting configured with public IP addresses, set up a Restrict Public IP access on Cloud SQL instances Organization policy at: https://console.cloud.google.com/iam-admin/orgpolicies/sql-restrictPublicIp.'

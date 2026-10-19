@@ -1,0 +1,21 @@
+id: TMA-JUNIPER-JUNOS-6.6.7
+title: Ensure Remote Login Class for Authorization through External AAA
+description: 'External AAA servers should be utilized to provide Authorization via a single "Remote" template account. JUNOS routers ship with 4 Predefined Login Classes for user Authorization, these are: - super-user - read-only - operator - unauthorized These classes provide basic Authorization, restricting what users in each class can or cannot do, to allow organizations ... Audited against the output of ''show configuration | display set | no-more'' (set format, not the curly-brace hierarchy).'
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.6.7 Ensure Remote Login Class for Authorization through External AAA
+audit:
+  type: config_regex
+  pattern: (?m)^set system login user remote class (?:$|[^orsu\n]|o(?:$|[^p\n]|p(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^a\n]|a(?:$|[^t\n]|t(?:$|[^o\n]|o(?:$|[^r\n])))))))|r(?:$|[^e\n]|e(?:$|[^a\n]|a(?:$|[^d\n]|d(?:$|[^\-\n]|-(?:$|[^o\n]|o(?:$|[^n\n]|n(?:$|[^l\n]|l(?:$|[^y\n]))))))))|s(?:$|[^u\n]|u(?:$|[^p\n]|p(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^\-u\n]|-(?:$|[^u\n]|u(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]))))|u(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]))))))))|u(?:$|[^n\n]|n(?:$|[^a\n]|a(?:$|[^u\n]|u(?:$|[^t\n]|t(?:$|[^h\n]|h(?:$|[^o\n]|o(?:$|[^r\n]|r(?:$|[^i\n]|i(?:$|[^z\n]|z(?:$|[^e\n]|e(?:$|[^d\n]))))))))))))[^\n]*
+remediation:
+  type: iac_patch
+  command: |-
+    ! To create a new class you can issue the following commands from the hierarchy. In this example, we create a new class named 'remote', granting only view permissions, and assign the remote user to the new class. More detailed permissions will be added to these permissions
+    set system login class remote permissions [ view ] (this class should also have Idle timeouts and other options set in line with other recommendations in this section). To change the class for a user account, use the following command under the hierarchy:
+    set system login user remote class remote A full discussion of RADIUS or TACACS+ configuration and options is beyond the scope of this guide, but a simple example of using a TACACS.net server running on Windows with AD integration for a remote user is shown below. This example is taken from an anonymized real world deployment, so also includes sections to allow access to different groups of TACACS+ Clients and permissions for Cisco IOS and Netscreen devices. The most relevant section is the <Service> for service=junos-exec, where the VSAs for TACACS+ Clients running JUNOS are defined, but the entire Authorization for this Class is given for context. <Authorization> <!--CIS Example remote user Authorization from TACACS.net Authorization.xml--> <UserGroups> <!-- The UserGroup is defined elsewhere - in this case it maps to an Active Directory Group call GRP-NETOPS --> <UserGroup>GRP-NETOPS</UserGroup> </UserGroups> <ClientGroups> <!--Defines the Groups of devices this usergroup can login to --> <ClientGroup>CORE-NET</ClientGroup>
+    ! ... see the benchmark for the full procedure

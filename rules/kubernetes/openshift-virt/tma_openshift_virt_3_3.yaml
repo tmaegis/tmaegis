@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-3.3
+title: Ensure errorPolicy is not set to ignore
+description: Error policies for disks control how Input/Output (IO) errors are handled. If a read or write operation fails on the storage, an IO error occurs. Setting the error policy to ignore is not recommended because it makes it difficult to determine the root cause of any IO issues, which can lead to data loss if the data is not correctly written to the disk. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 3.3 Ensure errorPolicy is not set to ignore
+audit:
+  type: manual
+  command: 'Verify that no virtual machines are using the set to : errorPolicy ignore $ oc get vm - ojson - A | jq ''.items[] | select(.spec.template.spec.domain.devices.disks[].errorPolicy == "ignore")| .metadata.namespace + "/" + .metadata.name'''
+remediation:
+  type: iac_patch
+  command: 'Remove the or set it to (default value) or (suggested option errorPolicy stop report for Windows Shared Cluster Filesystem). For example, to remove the errorPolicy flag on the first disk (index 0) of a given VM, this command can be used: $ oc patch vm <vm-name> --type=''json'' -p=''[ {"op": "remove", "path": "/spec/template/spec/domain/devices/disks/0/errorPolicy"}, ]'' To set an errorPolicy flag to stop on every disk, this (experimental) command can be used: $ oc get vm <vm - name> - o json | jq ''.spec.template.spec.domain.devices.disks[] += {"errorPolicy":"stop"}'' | oc apply -f -'

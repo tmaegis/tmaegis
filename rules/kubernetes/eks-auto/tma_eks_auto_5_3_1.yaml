@@ -1,0 +1,17 @@
+id: TMA-EKS-AUTO-5.3.1
+title: Encrypt EKS API data with customer managed KMS keys
+description: Using customer managed KMS keys for EKS envelope encryption adds a customer controlled protection layer for Kubernetes API data stored through the EKS control plane, not only Kubernetes Secrets. This strengthens data at rest protection while allowing organizations to manage key ownership, rotation, policy, and audit visibility for the key used to protect EKS API data. The benchmark marks this recommendation Manual.
+target: eks-auto
+level: 1
+severity: high
+tags:
+- eks-auto
+- managed-services
+- secrets
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Auto Mode Benchmark v1.0.0 - 5.3.1 Encrypt EKS API data with customer managed KMS keys
+audit:
+  type: manual
+  command: Review the EKS cluster configuration and verify that EKS API data is protected with a customer managed KMS key, not only the default AWS owned envelope encryption key. For this control, the important check is whether the cluster is associated with a customer managed key for EKS envelope encryption. EKS Auto Mode supports envelope encryption for Kubernetes API data using AWS KMS, with options for AWS owned keys or customer managed keys. Review the cluster encryption configuration and confirm a customer managed KMS key ARN is associated with the cluster.
+remediation:
+  type: iac_patch
+  command: Configure the EKS Auto Mode cluster to use a customer managed KMS key for EKS envelope encryption so Kubernetes API data is protected with a customer controlled key encryption key. The key must already exist, be symmetric, support encrypt and decrypt operations, be in the same Region as the cluster, and have permissions that allow EKS to use it. The associate-encryption-config operation does not create a KMS key and does not encrypt arbitrary data directly. It associates an existing customer managed KMS key to the cluster for envelope encryption. In the EKS API, the association is still expressed with resources:["secrets"], but for current EKS envelope encryption, a customer managed key associated for Secrets is used as the key encryption key for Kubernetes API data protected by envelope encryption.

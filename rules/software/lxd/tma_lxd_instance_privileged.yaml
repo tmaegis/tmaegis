@@ -1,0 +1,23 @@
+id: TMA-LXD-INSTANCE-PRIVILEGED
+title: Ensure no LXD instance runs as a privileged container
+description: 'security.privileged=true disables the user-namespace UID mapping, so root inside the container is root on the host. The audit loops over instances from "lxc list --format csv -c n" (default project) and inspects the expanded configuration (including profiles) of each; any truthy security.privileged fails the rule.'
+target: lxd
+level: 1
+severity: critical
+tags: [lxd, containers, isolation]
+reference: CIS-style LXD hardening guidance - Unprivileged containers (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: command
+  command: |-
+    lxc info >/dev/null 2>&1 || exit 1
+    names=$(lxc list --format csv -c n 2>/dev/null) || exit 1
+    bad=0
+    for n in $names; do
+      cfg=$(lxc config show --expanded "$n" 2>/dev/null) || exit 1
+      if printf '%s\n' "$cfg" | grep -Eiq '^[[:space:]]*security\.privileged:[[:space:]]*"?(true|1|yes|on)"?[[:space:]]*$'; then echo "privileged: $n"; bad=1; fi
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each reported instance (and any profile setting it): lxc config unset <instance> security.privileged (or lxc profile unset <profile> security.privileged), then restart the instance in a maintenance window; fix file ownership inside the rootfs if the instance was created privileged.'

@@ -1,0 +1,26 @@
+id: TMA-F5-BIGIP-2.1
+title: Ensure that Remote Radius is used for Authentication Only
+description: 'To specify the authentication mechanism that F5 systems use for external (remote) users PASS requires the system-auth RADIUS configuration to use service-type authenticate-only. Audited against tmsh output with defaults shown: save the concatenated output of ''tmsh list auth password-policy all-properties'', ''tmsh list auth source all-properties'', ''tmsh list auth remote-user all-properties'', ''tmsh list auth radius all-properties'', ''tmsh list sys httpd all-properties'', ''tmsh list sys sshd all-properties'', ''tmsh list sys global-settings all-properties'', ''tmsh list cli global-settings all-properties'', ''tmsh list sys ntp'', ''tmsh list sys snmp all-properties'', ''tmsh list sys syslog'' and ''tmsh list net self all-properties''. Patterns are scoped to the named top-level block.'
+target: f5-bigip
+level: 2
+severity: high
+tags:
+- f5-bigip
+- authentication
+reference: CIS F5 Networks Benchmark v1.0.0 - 2.1 Ensure that Remote Radius is used for Authentication Only
+audit:
+  type: config_regex
+  pattern: (?m)^auth radius (?:/Common/)?system-auth \{\n(?:[ \t]+[^\n]*\n)*?[ \t]+service-type authenticate-only[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    tmsh modify auth radius system-auth service-type authenticate-only
+    tmsh save sys config
+    # CIS guidance:
+    1-Log in to the Configuration utility using the administrator account.
+    2-Navigate to System > Users > Authentication.
+    3-In the Authentication section, click Change.
+    4-Select Remote - RADIUS from the User Directory drop-down menu.
+    5-Define the RADIUS server configuration settings, including the port and shared secret settings:
+    6- For "Service Type": select "Authentication Only"
+    7-Click Finished.

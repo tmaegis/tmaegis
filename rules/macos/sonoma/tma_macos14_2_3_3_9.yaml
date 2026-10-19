@@ -1,0 +1,36 @@
+id: TMA-MACOS14-2.3.3.9
+title: Ensure Media Sharing Is Disabled
+description: Starting with macOS 10.15, Apple has provided a control which permits a user to share Apple-downloaded content on all Apple devices that are signed in with the same Apple ID. This allows users to share downloaded movies, music, or TV shows with other controlled macOS, iOS, and iPadOS devices, as well as photos with Apple TVs. With this capability, guest users can also use media downloaded on the computer. The recommended best practice is not to use the computer as a server, but to utilize Apple's cloud storage in order to download and use content stored there if content stored with Apple is used on multiple devices. https://support.apple.com/guide/mac-help/set-up-media-sharing-on-mac- mchlp13371337/mac Disabling Media Sharing reduces the remote attack surface of the system.
+target: macos
+os_family:
+- macos-14
+level: 2
+severity: low
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.3.3.9 Ensure Media Sharing Is Disabled
+audit:
+  type: command
+  command: "/usr/bin/osascript -l JavaScript <<'EOS'\nfunction run() {\n  let pref1 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.applicationaccess').objectForKey('allowMediaSharing'))\n  let pref2 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.applicationaccess').objectForKey('allowMediaSharingModification'))\n  if ( pref1 == 0 && pref2 == 0 ) {\n    return(\"true\")\n  } else {\n    return(\"false\")\n  }\n}\nEOS"
+  expected_output: 'true'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.applicationaccess" 'allowMediaSharing' -bool false
+    /usr/bin/defaults write "/Library/Preferences/com.apple.applicationaccess" 'allowMediaSharingModification' -bool false
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.preferences.sharing.SharingPrefsExtension 2. The key to include is homeSharingUIStatus 3. The key must be set to <integer>0</integer> 4. The key to also include is legacySharingUIStatus 5. The key must be set to <integer>0</integer> 6. The key to also include is mediaSharingUIStatus 7. The key must be set to <integer>0</integer>"

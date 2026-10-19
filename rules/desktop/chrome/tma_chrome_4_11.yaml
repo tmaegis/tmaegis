@@ -1,0 +1,18 @@
+id: TMA-CHROME-4.11
+title: 'Ensure ''List of types that should be excluded from synchronization'' is set to ''Enabled: passwords'''
+description: 'This setting allows you to specify data types that will be limited/excluded from uploading data to the Google Chrome synchronization service. The recommended state for this setting is: Enabled with the following text value passwords (Case Sensitive) NOTE: Other settings in addition to passwords can be included based on organizational needs. Rationale: Storing and sharing information could potentially expose sensitive information including but not limited to user passwords and login information. Allowing this synchronization could also potentially allow an end user to pull corporate data that was synchronized into the cloud to a personal machine. List policy: numbered REG_SZ values under HKLM\SOFTWARE\Policies\Google\Chrome\SyncTypesListDisabled. Compliant when one entry equals ''passwords''; ''unset'' when the list is empty. Remediation appends the entry under the next free number.'
+target: chrome
+level: 1
+severity: low
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 4.11 Ensure ''List of types that should be excluded from synchronization'' is set to ''Enabled: passwords'''
+audit:
+  type: registry
+  command: '$l = @((Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\SyncTypesListDisabled'' -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike ''PS*'' } | ForEach-Object { "$($_.Value)" }); if ($l.Count -eq 0) { ''unset'' } elseif ($l -contains ''passwords'') { ''compliant'' } else { ''non-compliant: '' + ($l -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $k = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\SyncTypesListDisabled'; if (-not (Test-Path -Path $k)) { New-Item -Path $k -Force | Out-Null }; $props = @((Get-ItemProperty -Path $k).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' }); if (@($props | Where-Object { "$($_.Value)" -eq 'passwords' }).Count -eq 0) { $n = 1; while (@($props | Where-Object { $_.Name -eq "$n" }).Count -gt 0) { $n++ }; New-ItemProperty -Path $k -Name "$n" -Value 'passwords' -PropertyType String -Force | Out-Null }

@@ -1,0 +1,70 @@
+id: TMA-DEBIAN10-4.5.5
+title: Ensure default user shell timeout is configured
+description: 'TMOUT is an environmental setting that determines the timeout of a shell in seconds. • TMOUT=n - Sets the shell timeout to n seconds. A setting of TMOUT=0 disables timeout. • readonly TMOUT- Sets the TMOUT environmental variable as readonly, preventing unwanted modification during run-time. • export TMOUT - exports the TMOUT variable System Wide Shell Configuration Files: • /etc/profile - used to set system wide environmental variables on users shells. The variables are sometimes the same ones that are in the .bash_profile, however this file is used to set an initial PATH or PS1 for all shell '
+target: linux
+os_family:
+- debian-10
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Debian Linux 10 Benchmark v2.0.0 ARCHIVE - 4.5.5
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   l_tmv_max=\"900\"\n   l_searchloc=\"/etc/bashrc /etc/bash.bashrc /etc/profile /etc/profile.d/*.sh\"\n   a_tmofile=()\n   while read -r l_file; do\n      [ -e \"$l_file\" ] && a_tmofile+=(\"$(readlink -f $l_file)\")\n   done < <(grep -PRils '\"'\"'^\\h*([^#\\n\\r]+\\h+)?TMOUT=\\d+\\b'\"'\"' $l_searchloc)\n   if ! (( ${#a_tmofile[@]} > 0 )); then\n      l_output2=\"$l_output2\\n - TMOUT is not set\"\n   elif (( ${#a_tmofile[@]} > 1 )); then\n      l_output2=\"$l_output2\\n - TMOUT is set in multiple locations.\\n  - List of files where TMOUT is set:\\n$(printf '\"'\"'%s\\n'\"'\"' \"${a_tmofile[@]}\")\\n  - end of list\\n\"\n   else\n      for l_file in ${a_tmofile[@]}; do\n         if (( \"$(grep -Pci '\"'\"'^\\h*([^#\\n\\r]+\\h+)?TMOUT=\\d+'\"'\"' \"$l_file\")\" > 1 )); then\n            l_output2=\"$l_output2\\n - TMOUT is set multiple times in \\\"$l_file\\\"\"\n         else\n            l_tmv=\"\
+    $(grep -Pi '\"'\"'^\\h*([^#\\n\\r]+\\h+)?TMOUT=\\d+'\"'\"' \"$l_file\" | grep -Po '\"'\"'\\d+'\"'\"')\"\n            if (( \"$l_tmv\" > \"$l_tmv_max\" )); then\n               l_output2=\"$l_output\\n - TMOUT is \\\"$l_tmv\\\" in \\\"$l_file\\\"\\n  - Should be \\\"$l_tmv_max\\\" or less and not \\\"0\\\"\"\n            else\n               l_output=\"$l_output\\n- TMOUT is correctly set to \\\"$l_tmv\\\" in \\\"$l_file\\\"\"\n               if grep -Piq '\"'\"'^\\h*([^#\\n\\r]+\\h+)?readonly\\h+TMOUT\\b'\"'\"' \"$l_file\"; then\n                  l_output=\"$l_output\\n- TMOUT is correctly set to \\\"readonly\\\" in \\\"$l_file\\\"\"\n               else\n                  l_output2=\"$l_output2\\n- TMOUT is not set to \\\"readonly\\\"\"\n               fi\n               if grep -Piq '\"'\"'^(\\h*|\\h*[^#\\n\\r]+\\h*;\\h*)export\\h+TMOUT\\b'\"'\"' \"$l_file\"; then\n                  l_output=\"$l_output\\n- TMOUT is correctly set to \\\"export\\\" in \\\"$l_file\\\"\"\n          \
+    \     else\n                  l_output2=\"$l_output2\\n- TMOUT is not set to \\\"export\\\"\"\n               fi\n            fi\n         fi\n      done\n   fi\n   unset a_tmofile # Remove array\n   if [ -z \"$l_output2\" ]; then\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n - * Correctly configured * :\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - * Reasons for audit failure * :\\n$l_output2\"\n      [ -n \"$l_output\" ] && echo -e \"- * Correctly configured * :\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_ts=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] || return 0; ls "$1".tmaegis.bak.* >/dev/null 2>&1 || cp -a "$1" "$1.tmaegis.bak.$tma_ts"; }
+    tma_applied() { return 0; }
+
+    # make every umask line in the given files at least 027
+    tma_umask_fix() { for f in "$@"; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      grep -Eqi '^[[:space:]]*umask[[:space:]]' "$f" || continue
+      t=$(mktemp); ch=0
+      while IFS= read -r line || [ -n "$line" ]; do
+        if [[ $line =~ ^([[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+)0*([0-7]{1,4})([[:space:]#].*)?$ ]]; then
+          v=$((8#${BASH_REMATCH[2]})); n=$((v | 8#027))
+          if [ "$n" != "$v" ]; then line="${BASH_REMATCH[1]}$(printf '%03o' $n)${BASH_REMATCH[3]}"; ch=1; fi
+        elif [[ $line =~ ^[[:space:]]*[Uu][Mm][Aa][Ss][Kk][[:space:]]+[ugoa]*= ]] && [[ $line =~ (g=[rwx]*w|o=[rwx]*[rwx]) ]]; then
+          line="umask 027"; ch=1
+        fi
+        printf '%s\n' "$line" >> "$t"
+      done < "$f"
+      if [ $ch = 1 ]; then tma_bak "$f"; cat "$t" > "$f"; fi
+      rm -f "$t"
+    done; }
+    N=900
+    # one authoritative file; any other TMOUT assignment is commented out (audit demands readonly+export in each file mentioning it)
+    for f in /etc/profile /etc/bashrc /etc/bash.bashrc /etc/bash/bashrc /etc/profile.d/*.sh; do
+      [ -f "$f" ] && [ ! -L "$f" ] || continue
+      [ "$f" = /etc/profile.d/50-tmaegis-tmout.sh ] && continue
+      grep -Eq '^[^#]*\bTMOUT\b' "$f" || continue
+      tma_bak "$f"; sed -i -E '/^[[:space:]]*#/! s/^([^#]*\bTMOUT\b.*)$/# tmaegis: \1/' "$f"
+    done
+    mkdir -p /etc/profile.d
+    printf '# CIS: idle shell timeout\nTMOUT=%s\nreadonly TMOUT\nexport TMOUT\n' "$N" > /etc/profile.d/50-tmaegis-tmout.sh
+    chmod 644 /etc/profile.d/50-tmaegis-tmout.sh
+    for f in /etc/bash/bashrc /etc/profile; do [ -f "$f" ] && ! grep -q '^TMOUT=' "$f" && [ "$f" = /etc/bash/bashrc ] && printf 'TMOUT=%s\nreadonly TMOUT\nexport TMOUT\n' "$N" >> "$f"; done
+    true
+  guidance: "Review /etc/bash.bashrc, /etc/profile, and all files ending in *.sh in the /etc/profile.d/ directory and remove or edit all TMOUT=_n_ entries to follow local site policy. TMOUT should: • Be configured once, as multiple lines, or a single line, in one and only one of the following locations: o A file in the /etc/profile.d/ directory ending in .sh o /etc/profile o /etc/bash.bashrc • Not exceed 900 • Not be equal to 0 Multiple line example: TMOUT=900 readonly TMOUT export TMOUT Single line example: readonly TMOUT=900 ; export TMOUT"

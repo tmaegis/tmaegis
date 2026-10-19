@@ -1,0 +1,16 @@
+id: TMA-DB2-ZOS-3.1.1
+title: Ensure that audit tracing is enabled during Db2 start up
+description: It is recommended that audit traces that are critical for protecting the security of the system and data should be specified to start during Db2 start up. Enabling audit traces to audit critical information is crucial for securing and discovering issues within your databases. Lack of critical audit data can cause issues to go undiscovered.
+target: db2-zos
+level: 1
+severity: medium
+tags:
+- db2-zos
+- audit
+reference: CIS IBM Db2 13 for z/OS Benchmark v1.0.0 - 3.1.1 Ensure that audit tracing is enabled during Db2 start up
+audit:
+  type: manual
+  command: '1. Run the DSNTEJ6Z job to obtain the current value of the AUDITST subsystem parameter. Verify that the value is set to the list of classes that are required to be started during Db2 start up. 2. Issue the following SQL statement to verify whether the required audit policies are defined to be started during Db2 start up: SELECT * FROM SYSIBM.SYSAUDITPOLICIES WHERE DB2START IN (''Y'',''S'',''T'');'
+remediation:
+  type: iac_patch
+  command: 1. Edit the DSNTIJUZ job and set the DSN6SYSP.AUDITST subsystem parameter to the required list of classes. Submit DSNTIJUZ to assemble the subsystem parameter. The specified list of classes will be automatically started during Db2 restart. 2. Define new audit policies or update existing audit policies to start automatically during Db2 start up by specifying the DB2START column value of 'Y', 'S', or 'T'.

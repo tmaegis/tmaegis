@@ -1,0 +1,18 @@
+id: TMA-GITLAB-2.2.8
+title: Ensure resource consumption of build workers is monitored
+description: Monitor the resource consumption of build workers and set alerts for high consumption that can lead to resource exhaustion. Resource exhaustion is when machine resources or services are highly consumed until exhausted. Resource exhaustion may lead to DOS (Denial of Service). When such a situation happens to build workers, it slows down and even stops the build process, which harms the production of artifacts and the organization's ability to deliver software on schedule. To prevent that, it is recommended to monitor resources consumption in the build workers and set alerts to notify when they are highly consumed. That way resource exhaustion can be acknowledged and prevented at an early stage.
+target: gitlab
+level: 1
+severity: medium
+tags:
+- devsecops
+- gitlab
+- monitoring
+reference: CIS GitLab Benchmark v1.0.1 - 2.2.8 Ensure resource consumption of build workers is monitored
+audit:
+  type: manual
+  command: 'Verify that there is monitoring of resources consumption for each build worker. GitLab Runner is instrumented with native Prometheus metrics, which can be exposed via an embedded HTTP server on the /metrics path. The server - if enabled - can be scraped by the Prometheus monitoring system or accessed with any other HTTP client. This is the list of available metrics: - #HELP gitlab_runner_api_request_statuses_total The total number of api requests, partitioned by runner, endpoint and status. - #HELP gitlab_runner_autoscaling_machine_creation_duration_seconds Histogram of machine creation time. - #HELP gitlab_runner_autoscaling_machine_states The current number of machines per state in this provider. - #HELP gitlab_runner_concurrent The current value of concurrent setting - #HELP gitlab_runner_errors_total The number of caught errors. - #HELP gitlab_runner_limit The current value of limit setting - #HELP gitlab_runner_request_concurrency The current number of concurrent requests
+    for a new job - #HELP gitlab_runner_request_concurrency_exceeded_total Count of excess requests above the configured request_concurrency limit - #HELP gitlab_runner_version_info A metric with a constant ''1...'
+remediation:
+  type: iac_patch
+  command: 'Set resources consumption monitoring for each build worker. To learn how to set up a Prometheus server to scrape this HTTP endpoint and make use of the collected metrics, see Prometheus’s Getting started guide. Once this is done, the following information will be exposed: The exposed information includes: - Runner business logic metrics (e.g., the number of currently running jobs) - Go-specific process metrics (garbage collection stats, goroutines, memstats, etc.) - general process metrics (memory usage, CPU usage, file descriptor usage, etc.) - build version information'

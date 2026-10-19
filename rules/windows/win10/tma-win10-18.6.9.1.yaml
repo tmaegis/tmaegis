@@ -1,0 +1,22 @@
+id: TMA-WIN10-18.6.9.1
+title: Ensure 'Turn on Mapper I/O (LLTDIO) driver' is set to 'Disabled'
+description: 'This policy setting changes the operational behavior of the Mapper I/O network protocol driver. LLTDIO allows a computer to discover the topology of a network it''s connected to. It also allows a computer to initiate Quality-of-Service requests such as bandwidth estimation and network health analysis. The recommended state for this setting is: Disabled.'
+target: windows
+os_family:
+- windows-10
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.6.9.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''AllowLLTDIOOnDomain'' -ErrorAction SilentlyContinue).''AllowLLTDIOOnDomain''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowLLTDIOOnDomain='' + $v }; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''AllowLLTDIOOnPublicNet'' -ErrorAction SilentlyContinue).''AllowLLTDIOOnPublicNet''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowLLTDIOOnPublicNet='' + $v }; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''EnableLLTDIO'' -ErrorAction SilentlyContinue).''EnableLLTDIO''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''EnableLLTDIO='' + $v }; $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'' -Name ''ProhibitLLTDIOOnPrivateNet''
+    -ErrorAction SilentlyContinue).''ProhibitLLTDIOOnPrivateNet''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''ProhibitLLTDIOOnPrivateNet='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Name 'AllowLLTDIOOnDomain' -Value 0 -PropertyType DWord -Force | Out-Null; if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Name 'AllowLLTDIOOnPublicNet' -Value 0 -PropertyType DWord -Force | Out-Null; if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD'
+    -Name 'EnableLLTDIO' -Value 0 -PropertyType DWord -Force | Out-Null; if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\LLTD' -Name 'ProhibitLLTDIOOnPrivateNet' -Value 0 -PropertyType DWord -Force | Out-Null

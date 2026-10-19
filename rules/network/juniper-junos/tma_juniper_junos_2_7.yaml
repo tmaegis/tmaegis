@@ -1,0 +1,35 @@
+id: TMA-JUNIPER-JUNOS-2.7
+title: Ensure internal sources are blocked on external networks
+description: 'Deny traffic with an internal source or reserved IP address from external source. An attacker may attempt to bypass security controls and Intrusion Detection Systems (IDS) by using the source address of a trusted (generally internal) host, a technique known as spoofing. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: juniper-junos
+level: 2
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 2.7 Ensure internal sources are blocked on external networks
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. Due to the range of options available as to Filter Name, Term Name and terms; it is not possible to score this recommendation. Firewall filters may be viewed by issuing the following command: [edit] user@host#show firewall NOTE - In Junos, Firewall Filters may be used for a wide range of purposes in addition to actually filtering traffic in or out of interfaces. This could include Quality of Service (QoS) Classifiers, Packet Capture & Analysis or Filter Based Forwarding/Policy Based Routing.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! To create a firewall filter term enter the following command from the hierarchy.
+    edit firewall family inet filter <filter name> term <term name>
+    set firewall family inet filter <filter name> term <term name> from source-address 127.0.0.0/8
+    set firewall family inet filter <filter name> term <term name> from source-address 10.0.0.0/8
+    set firewall family inet filter <filter name> term <term name> from source-address 0.0.0.0/32
+    set firewall family inet filter <filter name> term <term name> from source-address 172.16.0.0/12
+    set firewall family inet filter <filter name> term <term name> from source-address 192.168.0.0/16
+    set firewall family inet filter <filter name> term <term name> from source-address 192.0.2.0/24
+    set firewall family inet filter <filter name> term <term name> from source-address 169.254.0.0/16
+    set firewall family inet filter <filter name> term <term name> from source-address 198.18.0.0/15
+    set firewall family inet filter <filter name> term <term name> from source-address 198.51.100.0/24
+    set firewall family inet filter <filter name> term <term name> from source-address 203.0.113.0/24
+    set firewall family inet filter <filter name> term <term name> from source-address 224.0.0.0/8
+    set firewall family inet filter <filter name> term <term name> from source-address 255.255.255.255/32
+    set firewall family inet filter <filter name> term <term name> from source-address
+    set firewall family inet filter <filter name> term <term name> then discard
+    set firewall family inet filter <filter name> term <term name> then syslog
+    ! ... see the benchmark for the full procedure

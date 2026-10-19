@@ -1,0 +1,21 @@
+id: TMA-VMWARE-5.10
+title: Host must restrict the use of Virtual Guest Tagging (VGT) on standard virtual switches
+description: When a port group is set to VLAN 4095 on standard virtual switches, it enables Virtual Guest Tagging (VGT), letting all network frames pass to the attached virtual machines (VMs) without altering the VLAN tags. This requires VMs to process VLAN information themselves via an 802.1Q driver. The audit lists standard port groups and fails any using VLAN ID 4095 (Virtual Guest Tagging); document the exception when VGT is required. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- network
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 5.10 Host must restrict the use of Virtual Guest Tagging (VGT) on standard virtual switches
+audit:
+  type: command
+  command: |-
+    out=$(esxcli --formatter=csv network vswitch standard portgroup list 2>/dev/null) || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F, 'NR==1 {for (i = 1; i <= NF; i++) {if ($i == "Name") n = i; if ($i == "VLANID") l = i}; next} n && l && $l == "4095" {print $n}')
+    [ -z "$bad" ] && echo compliant || { echo 'port groups on VLAN 4095 (VGT):'; printf '%s\n' "$bad"; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To set port groups to values other than 4095 and 0 unless VGT is required, perform the following: 1. From the vSphere Web Client, select the host. 2. Click Configure then expand Networking. 3. Select Virtual switches. 4. Expand the Standard vSwitch. 5. View the topology diagram of the switch, which shows the various port groups associated with that switch. 6. For each port group on the vSwitch, verify and record the VLAN IDs used. 7. If a VLAN ID change is needed, click the name of the port group in the topology diagram of the virtual switch. 8. Click the Edit settings option. 9. In the Properties section, enter an appropriate name in the Network label field. 10.'

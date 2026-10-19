@@ -1,0 +1,20 @@
+id: TMA-AWS-COMPUTE-18.4
+title: Ensure private ECR repositories do not allow public access via resource policies
+description: 'Amazon ECR private repositories support resource-based IAM policies that grant other principals permission to pull, push, or describe images. A repository policy that grants ECR actions to Principal: "*" or AWS: "*" without a restrictive Condition makes the repository''s images effectively public — any AWS account, and in some cases any unauthenticated caller, can read or modify them. This recommendation requires that no private ECR repository have a resource-based policy that grants ECR read or write actions to all principals without a Condition that limits access to specific accounts or organizations. Container image layers in private repositories often contain proprietary application code, internal API endpoint configurations, embedded certificates, baked-in third-party credentials, and infrastructure details that can be used to identify application vulnerabilities. An overly permis...'
+target: aws
+level: 1
+severity: high
+tags:
+- access-control
+- aws
+- cloud
+- compute
+reference: CIS AWS Compute Services Benchmark v2.0.0 - 18.4 Ensure private ECR repositories do not allow public access via resource policies
+audit:
+  type: manual
+  command: '1. List all private ECR repositories in the region: aws ecr describe-repositories --region $AWS_REGION \ --query ''repositories[].repositoryName'' --output table 2. For each repository returned above, retrieve its repository policy (if any) and inspect the principal and conditions on each statement: aws ecr get-repository-policy --repository-name <repo-name> --region $AWS_REGION \ --query ''policyText'' --output text - A repository with no policy returns RepositoryPolicyNotFoundException — this is a Pass (default-deny applies). - The repository Fails if its policy contains any statement where all of the following are true: o Effect is Allow o Action includes any of ''ecr:*'', ''ecr:BatchGetImage'', ''ecr:GetDownloadUrlForLayer'', ''ecr:BatchCheckLayerAvailability'', ''ecr:DescribeImages'', ''ecr:GetAuthorizationToken'', ''ecr:PutImage'', ''ecr:InitiateLayerUpload'', ''ecr:UploadLayerPart'', ''ecr:CompleteLayerUpload'', or any wildcard expansion thereof o Principal is * or "AWS":
+    "*" o Condition is absent OR does not restrict access to specific accounts/organizations (e.g., no ''aws:PrincipalAccount'', ''aws:PrincipalOrgID'', ''aws:SourceVpce'', or equivalent constraint) 3. Also check the registry-wide policy...'
+remediation:
+  type: iac_patch
+  command: '1. For each repository that Failed the audit, retrieve the current policy and edit the offending statement so the principal is restricted to specific accounts (or removed if no cross-account access is needed): # Retrieve current policy aws ecr get-repository-policy --repository-name <repo-name> --region $AWS_REGION \ --query ''policyText'' --output text > /tmp/repo-policy.json Edit ''/tmp/repo-policy.json''. Replace "Principal": "*" (or "Principal": {"AWS": "*"}) with one of the following, depending on the intent: - No cross-account access needed — delete the entire statement. - Specific external accounts — "Principal": { "AWS": ["arn:aws:iam::<account-id-1>:root", "arn:aws:iam::<account-id- 2>:root"] } - All accounts within your AWS Organization — keep "Principal": "*" but add a Condition: "Condition": { "StringEquals": { "aws:PrincipalOrgID": "<o-xxxxxxxxxx>" } } 2. Apply the corrected policy: aws ecr set-repository-policy --repository-name <repo-name> --region $AWS_REGION
+    \ --policy-text file:///tmp/repo-policy.json - If the repository should have no policy at all, delete it instead: aws ecr delete-repository-policy --repository-name <repo-name> --region $AWS_REGION 3. For a Fail...'

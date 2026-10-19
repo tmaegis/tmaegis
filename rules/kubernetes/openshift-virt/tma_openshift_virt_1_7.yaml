@@ -1,0 +1,24 @@
+id: TMA-OPENSHIFT-VIRT-1.7
+title: Ensure KSM is disabled
+description: 'Kernel Samepage Merging (KSM) is a Linux kernel feature that merges identical memory pages across virtual machines running on a single host, potentially reducing memory usage and improving system performance. Audit: Passes when .spec.ksmConfiguration of the HyperConverged resource is unset or false (KSM is disabled by default); any KSM node selector configuration fails. Requires oc logged in to the cluster with read access.'
+target: openshift-virt
+level: 2
+severity: low
+tags:
+- openshift-virt
+- memory
+- ksm
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.7 Ensure KSM is disabled
+audit:
+  type: command
+  shell: bash
+  command: command -v oc >/dev/null 2>&1 || exit 1; v=$(oc get hyperconvergeds kubevirt-hyperconverged -n openshift-cnv -o jsonpath='{.spec.ksmConfiguration}') || exit 1; case "$v" in ""|false|null|"{}") echo compliant;; *) echo noncompliant;; esac
+  expected_output: compliant
+  requires_file:
+  - /usr/local/bin/oc
+  - /usr/bin/oc
+  - /opt/homebrew/bin/oc
+  - /snap/bin/oc
+remediation:
+  type: iac_patch
+  command: Disable the KSM feature.For example, by directly editing the object with oc edit hyperconverged kubevirt-hyperconverged -n openshift-cnv and set the field to false

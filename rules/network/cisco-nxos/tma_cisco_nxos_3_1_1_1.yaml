@@ -1,0 +1,26 @@
+id: TMA-CISCO-NXOS-3.1.1.1
+title: Configure EIGRP Authentication on all EIGRP Routing Devices
+description: 'You can configure authentication between neighbors for EIGRP. You can configure EIGRP authentication for the EIGRP process or for individual interfaces. Interface EIGRP authentication configuration overrides the EIGRP process-level authentication configuration. CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: high
+tags:
+- cisco-nxos
+- network
+- aaa
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.1.1.1 Configure EIGRP Authentication on all EIGRP Routing Devices
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. The "show running-configuration eigrp" command will show all of the EIGRP configuration, ensure that in the main EIGRP address-family section (whether that is ipv4 or ipv6) has both "authentication mode md5" set, and the appropriate key-chain assigned switch(config-if)# sho run eigrp !Command: show running-config eigrp !Running configuration last done at: Wed May 20 14:39:55 2020 !Time: Wed May 20 14:48:11 2020 version 9.3(3) Bios:version feature eigrp router eigrp 10 address-family ipv4 unicast passive-interface default ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Ensure that you have enabled the EIGRP feature. Ensure that all neighbors for an EIGRP process share the same authentication configuration, including the shared authentication key. Create the key-chain for this authentication configuration. See the Cisco NX-OS Security Configuration Guide. Ensure that you are in the correct VDC (or use the switchto vdc command) Configure authentication:
+    router eigrp [instance-tag]
+    address-family {ipv4 | ipv6} unicast
+    authentication key-chain [key-chain]
+    authentication mode md5 Next assign the interface:
+    interface [interface-type slot/port]
+    router eigrp [instance-tag]
+    authentication key-chain eigrp [instance-tag key-chain]
+    authentication mode eigrp [instance-tag] md5 Every EIGRP routeable interface should be set to either passive-interface, or be configured with authentication keys.

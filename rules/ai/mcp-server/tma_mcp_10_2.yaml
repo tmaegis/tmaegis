@@ -1,0 +1,19 @@
+id: TMA-MCP-10.2
+title: Ensure request and response body size limits, token budgets, and per-principal quotas are enforced
+description: Without body-size limits, a large request or response can exhaust memory or bandwidth, which is a straightforward denial-of-service path. Token budgets bound the cost and blast radius of model-proxying calls. Per-principal quotas, enforced independently of global limits, prevent a single principal from consuming shared capacity. Enforcing size limits at both the proxy and the application means a single misconfiguration does not open the denial-of-service path.
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 10.2 Ensure request and response body size limits, token budgets, and per-principal quotas are enforced
+audit:
+  type: manual
+  command: 'Confirm that a maximum request-body size is enforced. Send a normal well-formed request as a baseline and an oversized request, and confirm that the oversized request is rejected while the normal one is accepted. Set <MAX_REQUEST_BYTES> to the configured limit so the padded body exceeds it. The request carries the 2026-07-28 envelope (the MCP-Protocol-Version and Mcp-Method headers and a body _meta), so a conforming 2026-07-28 server accepts the baseline. tools/list does not name a target, so no Mcp-Name header is sent. Run the following command. It reports a single verdict: URL="https://<SERVER_URL>/mcp" MAX_REQUEST_BYTES="<MAX_REQUEST_BYTES>" PROTO="2026-07-28" meta=''"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07- 28","io.modelcontextprotocol/clientCapabilities":{},"io.modelcontextprotocol/clientIn fo":{"name":"cis-mcp-audit","version":"1.0"}}'' normal="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{$meta}}" pad=$(head -c "$MAX_REQUEST_BYTES"
+    /dev/zero | tr ''\0'' ''X'') big="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{$meta,\"pad\ ":\"${pad}X\"}}" post() { code=$(printf ''%s'' "$1" | curl -s -m 20 -o /dev/null -w ''%{http_code...'
+remediation:
+  type: iac_patch
+  command: 'Configure a maximum request-body size at the reverse proxy and, independently, in MCP application middleware. Set a maximum size for non-streaming response payloads and a per-message size bound for streamed responses. Configure per- request and per-workload caps on the token budget for model-proxying calls. Set per- principal and per-tenant rate quotas distinct from global limits. These are server, middleware, and proxy settings. At the proxy, the following nginx directive caps the request body as one layer of the defense in depth. Set the value to the deployment''s chosen limit: client_max_body_size 1m; Set the application-layer limits (request and response bytes, token budgets, per- principal quotas) in the server configuration to match, so that a proxy misconfiguration does not remove the only enforcement point.'

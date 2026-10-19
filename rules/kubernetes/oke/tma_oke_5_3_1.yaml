@@ -1,0 +1,17 @@
+id: TMA-OKE-5.3.1
+title: Use customer managed KMS keys for OKE envelope encryption of Kubernetes secrets
+description: Using customer managed OCI Vault keys for OKE Kubernetes secrets encryption adds a customer managed protection layer for Kubernetes secrets stored through the Kubernetes API. This strengthens data at rest protection while allowing organizations to manage key ownership, rotation, policy, and audit visibility for the key used to protect secret data. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- managed-services
+- secrets
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.3.1 Use customer managed KMS keys for OKE envelope encryption of Kubernetes secrets
+audit:
+  type: manual
+  command: Review the OKE cluster configuration and verify that Kubernetes secrets are protected with a customer managed OCI Vault key, not only the default Oracle managed encryption for the block volumes used by etcd. For this control, the important check is whether the cluster is associated with a customer managed key for Kubernetes secrets encryption. Also verify that the key is usable by the cluster and has not been disabled, deleted, or stripped of required permissions.
+remediation:
+  type: iac_patch
+  command: Configure the OKE cluster to use a customer managed OCI Vault key for envelope encryption of Kubernetes secrets so secret data stored through the Kubernetes API is protected with a customer managed master encryption key. This requires an existing master encryption key in OCI Vault, with policy permissions that allow OKE clusters to use the key. OKE does not allow you to enable customer managed Kubernetes secrets encryption on an existing cluster after creation. Oracle documents that this option is selected when creating a new cluster through the Custom Create workflow or with the OCI CLI by specifying the Vault key OCID. • After the new cluster is created, the key must remain enabled and accessible. Disabling, deleting, or breaking access to the associated key can place the cluster in a degraded or unrecoverable state.

@@ -1,0 +1,51 @@
+id: TMA-DOCKER-2.2
+title: Ensure network traffic is restricted between containers on the default bridge
+description: 'By default all containers on the default bridge can talk to each other without restriction. The audit reads the com.docker.network.bridge.enable_icc option of the default "bridge" network, which must be false (set by "icc": false).'
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- daemon
+- network
+reference: CIS Docker Benchmark v1.9.0 - 2.2 Ensure network traffic is restricted between containers on the default bridge
+audit:
+  type: command
+  command: docker network inspect bridge --format '{{index .Options "com.docker.network.bridge.enable_icc"}}'
+  expected_output: 'false'
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v docker >/dev/null 2>&1 || command -v dockerd >/dev/null 2>&1 || exit 0
+    command -v jq >/dev/null 2>&1 || { echo "jq is required to edit /etc/docker/daemon.json" >&2; exit 1; }
+    f=/etc/docker/daemon.json
+    mkdir -p /etc/docker
+    [ -s "$f" ] || echo '{}' > "$f"
+    jq -e . "$f" >/dev/null 2>&1 || { echo "$f is not valid JSON, not touching it" >&2; exit 1; }
+    cp -p "$f" "$f.tmaegis.bak"
+    jq '.icc=false' "$f.tmaegis.bak" > "$f.tma.new" || { rm -f "$f.tma.new"; exit 1; }
+    if command -v dockerd >/dev/null 2>&1 && ! dockerd --validate --config-file "$f.tma.new" >/dev/null 2>&1; then
+      rm -f "$f.tma.new"; echo "dockerd rejected the new configuration, left unchanged" >&2; exit 1; fi
+    if cmp -s "$f.tma.new" "$f"; then rm -f "$f.tma.new"; exit 0; fi
+    cat "$f.tma.new" > "$f"; rm -f "$f.tma.new"
+    # reload (SIGHUP) only; a full restart interrupts containers unless live-restore is on
+    systemctl reload docker 2>/dev/null || true; true
+  guidance: "Set \"icc\": false in /etc/docker/daemon.json (or start dockerd with --icc=false) and restart the Docker daemon; use user-defined networks and --link for containers that must communicate."

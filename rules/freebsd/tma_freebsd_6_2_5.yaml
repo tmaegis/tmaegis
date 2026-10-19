@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-6.2.5
+title: Ensure no duplicate GIDs exist
+description: 'Although the pw program will not let you create a duplicate Group ID (GID), it is possible for an administrator to manually edit the /etc/group file and change the GID field. User groups must be assigned unique GIDs for accountability and to ensure appropriate access protections. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 6.2.5 Ensure no duplicate GIDs exist
+audit:
+  type: command
+  command: 'command -v cut >/dev/null 2>&1 || exit 1; out=$( { cut -d: -f3 /etc/group | sort -n | uniq -d ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Based on the audit script's results, establish unique GIDs and review all files owned by the shared GID to determine which group they are supposed to belong to.

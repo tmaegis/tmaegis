@@ -1,0 +1,17 @@
+id: TMA-FREEBSD-1.1.2.2.1
+title: Ensure separate partition exists for /home
+description: 'The /home directory is used to support disk storage needs of local users. The reasoning for mounting /home on a separate partition is as follows. Protection from resource exhaustion The default installation only creates a single / partition. Audit: `mount -p` must list /home as its own mount point.'
+target: freebsd
+level: 2
+severity: medium
+tags:
+- freebsd
+- accounts
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.1.2.2.1 Ensure separate partition exists for /home
+audit:
+  type: command
+  command: command -v mount >/dev/null 2>&1 || exit 1; l=$(mount -p | awk '$2=="/home"'); [ -n "$l" ] && echo compliant || echo "/home is not a separate mount"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: For new installations, during installation create a custom partition setup and specify a separate partition for /home. For systems that were previously installed, create a new partition and configure /etc/fstab as appropriate.

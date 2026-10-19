@@ -1,0 +1,22 @@
+id: TMA-OCI-6.1
+title: Create at least one compartment in your tenancy to store cloud resources
+description: When you sign up for Oracle Cloud Infrastructure, Oracle creates your tenancy, which is the root compartment that holds all your cloud resources. You then create additional compartments within the tenancy (root compartment) and corresponding policies to control access to the resources in each compartment. Compartments are a logical group that adds an extra layer of isolation, organization and authorization making it harder for unauthorized users to gain access to OCI resources. Resource search must return at least one ACTIVE child compartment of the tenancy other than ManagedCompartmentForPaaS. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: medium
+tags:
+- oci
+- asset-management
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 6.1 Create at least one compartment in your tenancy to store cloud resources
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    n=$(oci search resource structured-search --query-text "query compartment resources where (compartmentId='$t' && lifecycleState='ACTIVE')" --query 'length(data.items[?"display-name"!=`"ManagedCompartmentForPaaS"`])' --raw-output 2>/dev/null) || exit 1
+    [ "${n:-0}" -ge 1 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: oci iam compartment create --compartment-id <tenancy-ocid> --name <name> --description <text>, and move workloads into it.

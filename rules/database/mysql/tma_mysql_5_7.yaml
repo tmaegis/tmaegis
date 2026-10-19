@@ -1,0 +1,18 @@
+id: TMA-MYSQL-5.7
+title: Ensure 'GRANT OPTION' is Not Granted to Non-Administrative Users
+description: The GRANT OPTION privilege exists in different contexts (mysql.user, mysql.db) for the purpose of governing the ability of a privileged user to manipulate the privileges of other users.
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- authorization
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 5.7 Ensure 'GRANT OPTION' is Not Granted to Non-Administrative Users
+audit:
+  type: manual
+  command: Run SELECT DISTINCT GRANTEE FROM INFORMATION_SCHEMA.USER_PRIVILEGES WHERE IS_GRANTABLE = 'YES'; Ensure only administrative users are returned in the result set.
+remediation:
+  type: iac_patch
+  command: REVOKE GRANT OPTION ON *.* FROM '<user>'@'<host>'; for each non-administrative grantee.

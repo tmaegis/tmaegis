@@ -1,0 +1,21 @@
+id: TMA-OKE-4.4.1
+title: Prefer exposing secrets as mounted files rather than environment variables
+description: Secrets for OKE workloads are better exposed as mounted files than as environment variables. Kubernetes secrets can be consumed either way, and Oracle supports mounting secrets from OCI Vault into Kubernetes Pods through the OCI Secrets Store CSI Driver Provider with the Secrets Store CSI Driver. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions. Reports containers using env valueFrom.secretKeyRef or envFrom.secretRef.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- policies
+- secrets
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.4.1 Prefer exposing secrets as mounted files rather than environment variables
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$c:=.name}}{{range .env}}{{if .valueFrom}}{{if .valueFrom.secretKeyRef}}{{$ns}} {{$p}} {{$c}} env{{"\n"}}{{end}}{{end}}{{end}}{{range .envFrom}}{{if .secretRef}}{{$ns}} {{$p}} {{$c}} envFrom{{"\n"}}{{end}}{{end}}{{end}}{{range .spec.initContainers}}{{$c:=.name}}{{range .env}}{{if .valueFrom}}{{if .valueFrom.secretKeyRef}}{{$ns}} {{$p}} {{$c}} env{{"\n"}}{{end}}{{end}}{{end}}{{range .envFrom}}{{if .secretRef}}{{$ns}} {{$p}} {{$c}} envFrom{{"\n"}}{{end}}{{end}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && (1)')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Update workloads to consume secrets as mounted files instead of environment variables. Replace env[].valueFrom.secretKeyRef and envFrom[].secretRef usage with Kubernetes Secret volumes or the OCI Secrets Store CSI Driver Provider with the Secrets Store CSI Driver, then update the application to read the secret from the mounted file path. This reduces the chance of secret values appearing in logs and aligns with the OCI Vault based file delivery pattern for OKE workloads. Replace secret environment variables with mounted secret files and update the application to read from the mounted path.

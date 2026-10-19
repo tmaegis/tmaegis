@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-16.1.8
+title: Ensure Storage for Critical Data are Encrypted with Customer Managed Keys (CMK)
+description: 'Enable sensitive data encryption at rest using Customer Managed Keys (CMK) rather than Microsoft Managed keys. By default, data in the storage account is encrypted using Microsoft Managed Keys at rest. All Azure Storage resources are encrypted, including blobs, disks, files, queues, and tables. All object metadata is also encrypted. If you want to control and manage this encryption key yourself, however, you can specify a customer-managed key. That key is used to protect and control access to the key that encrypts your data. You can also choose to automatically update the key version used for Azure Storage encryption whenever a new version is available in the associated Key Vault. Azure Storage uses envelope encryption: data is encrypted with an AES-256 account encryption key, and that account key is itself wrapped (encrypted) by the customer- managed key - the key encryption key (KEK...'
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- crypto
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.1.8 Ensure Storage for Critical Data are Encrypted with Customer Managed Keys (CMK)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage Accounts 2. For each storage account, under Security + networking, go to Encryption 3. Ensure that Encryption type is set to Customer-managed keys Audit from PowerShell Connect-AzAccount Set-AzContext -Subscription <subscription id> Get-AzStorageAccount |Select-Object -ExpandProperty Encryption PowerShell Output - Compliant KeySource : Microsoft.Keyvault PowerShell Output - Non-Compliant KeySource : Microsoft.Storage Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 6fac406b-40ca-413b-bf8e-0bf964659c25 - Name: ''Storage accounts should use customer-managed key for encryption'''
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal 1. Go to Storage Accounts 2. For each storage account, under Security + networking, go to Encryption 3. Set Encryption type to Customer-managed keys 4. Select an encryption key or enter a key URI 5. Click Save Remediate from PowerShell First ensure the storage account has a managed identity that holds the Key Vault Crypto Service Encryption User role on the target key vault, then set customer- managed key encryption: $keyVault = Get-AzKeyVault -VaultName <key-vault-name> $key = Get-AzKeyVaultKey -VaultName <key-vault-name> -Name <key-name> Set-AzStorageAccount -ResourceGroupName <resource-group> -Name <storage- account-name> -KeyvaultEncryption -KeyVaultUri $keyVault.VaultUri -KeyName $key.Name'

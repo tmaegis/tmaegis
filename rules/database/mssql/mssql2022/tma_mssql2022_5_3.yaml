@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-5.3
+title: Ensure 'Login Auditing' is set to 'failed logins'
+description: This setting will record failed authentication attempts for SQL Server logins to the SQL Server Errorlog. This is the default setting for SQL Server. Historically, this setting has been available in all versions and editions of SQL Server. Prior to the availability of SQL Server Audit, this was the only provided mechanism for capturing logins (successful or failed). Capturing failed logins provides key information that can be used to detect\confirm password guessing attacks. Capturing successful login attempts can be used to confirm server access during forensic investigations, but using this audit level setting to also capture successful logins creates excessive noise in the SQL Server Errorlog which can hamper a DBA trying to troubleshoot problems. Elsewhere in this benchmark, we recommend using the newer lightweight SQL Server Audit feature to capture both successful and failed log...
+target: mssql
+level: 1
+severity: medium
+tags:
+- logging
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 5.3 Ensure 'Login Auditing' is set to 'failed logins'
+audit:
+  type: sql_query
+  command: 'sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; CREATE TABLE #l (name sysname, config_value sysname); INSERT INTO #l EXEC master.dbo.xp_loginconfig ''audit level''; SELECT CASE WHEN config_value IN (''failure'',''all'') THEN ''compliant'' ELSE ''noncompliant'' END FROM #l; DROP TABLE #l;"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform either the GUI or T-SQL method shown: GUI Method 1. Open SQL Server Management Studio. 2. Right click the target instance and select Properties and navigate to the Security tab. 3. Select the option Failed logins only under the Login Auditing section and click OK. 4. Restart the SQL Server instance. T-SQL Method 1. Run: EXEC xp_instance_regwrite N''HKEY_LOCAL_MACHINE'', N''Software\Microsoft\MSSQLServer\MSSQLServer'', N''AuditLevel'', REG_DWORD, 2 2. Restart the SQL Server instance.'

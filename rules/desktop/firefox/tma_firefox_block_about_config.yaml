@@ -1,0 +1,17 @@
+id: TMA-FIREFOX-BLOCK-ABOUT-CONFIG
+title: Ensure 'Block About Config' is set to 'Enabled'
+description: about:config lets users change any preference, including security settings not locked by policy. Audit reads the Group Policy value HKLM:\SOFTWARE\Policies\Mozilla\Firefox\BlockAboutConfig (prints the value or 'unset'); compliant when it is 1. An unset policy means the browser default applies and is reported as a FAIL. Remediation writes the policy value locally; in a domain, set it through the ADMX template instead so GPO does not revert it.
+target: firefox
+level: 2
+severity: medium
+tags:
+- firefox
+- lockdown
+reference: CIS Mozilla Firefox Benchmark - Block About Config
+audit:
+  type: registry
+  command: $v = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Mozilla\Firefox' -Name 'BlockAboutConfig' -ErrorAction SilentlyContinue).'BlockAboutConfig'; if ($null -eq $v) { 'unset' } else { "$v" }
+  expected_output: '1'
+remediation:
+  type: command
+  command: $p = 'HKLM:\SOFTWARE\Policies\Mozilla\Firefox'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; Set-ItemProperty -Path $p -Name 'BlockAboutConfig' -Value 1 -Type DWord

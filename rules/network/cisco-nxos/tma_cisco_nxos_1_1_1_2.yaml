@@ -1,0 +1,23 @@
+id: TMA-CISCO-NXOS-1.1.1.2
+title: Configure AAA Authentication - Local SSH keys
+description: Using the client's public key to authenticate their SSH sessions circumvents the need for using passwords for an administrative login to the switch. This is primarily an ease-of-use feature. It means that the administrators don't need to remember or key in passwords. It also can be used to significantly improve the security of any scripts or API calls that might use SSH. Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- aaa
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.1.1.2 Configure AAA Authentication - Local SSH keys
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. To list the status of one user account: switch# sho user-account rvadmin user:rvadmin this user account has no expiry date roles:network-operator network-admin ssh public key: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAy19oF6QaZl9G+3f1XswK 3OiW4H7YyUyuA50rv7gsEPjhOBYmsi6PAVKui1nIf/DQhum+lJNqJP/eLowb7ubO+lVKRXFY/G+lJ NIQ W3g9igG30c6k6+XVn+NjnI1B7ihvpVh7dLddMOXwOnXHYshXmSiH3UD/vKyziEh5S4Tplx8= To list all users that have SSH key authentication: switch# sho run | i sshkey username rvadmin sshkey ssh-rsa ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Create the client's SSH public and private keys. The keys must be in OpenSSH format for the NX-OS switch to interpret them correctly. Use either RSA or DSA algorithms, and be sure to specify enough bits for entropy (2048 minimum, more is of course better)
+    - Upload the client's SSH public key, and store it on the bootflash of the switch.
+    - Be sure that the file has a meaningful name, often the users's initials and the key algorithm (RSA or DSA) is in the filename. This makes it easier to remove or replace that file as keys are expired out, workstations migrate or administrators leave the organization.
+    - To enable key-based authentication for one local user (for instance, Davey Jones), enter the command:
+    username djadmin sshkey file bootflash:dj_rsa.pub Alternatively, the ssh key can be defined in the username configuration line:
+    username djadmin sshkey ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAy19oF6QaZl9G+3f1XswK3OiW4H7YyUyuA50rv7gsEPjhOBYms i6PAVKui1nIf/DQhum+lJNqJP/eLowb7ubO+lVKRXFY/G+lJNIQW3g9igG30c6k6+XVn+NjnI1B7i hvpVh7dLddMOXwOnXHYshXmSiH3UD/vKyziEh5S4Tplx8= The file based method is usually preferred, as they keys can be changed without modifying the configuration of the switch. Also, the keys are not stored in any archived copy of the configuration. Note that the username and file name will vary depending on your organization's policies, procedures and standards

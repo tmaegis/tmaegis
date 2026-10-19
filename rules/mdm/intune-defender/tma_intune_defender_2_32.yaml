@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.32
+title: Ensure 'Enable Dynamic Signature Dropped Event Reporting' is set to 'Dynamic Security intelligence update events will be reported.'
+description: 'This policy setting configures whether to report Dynamic Signature dropped events. Dynamic Signature events are Microsoft Defender Antivirus log events that relate to cloud-delivered, on-demand threat signatures that Microsoft pushes to endpoints outside of the normal scheduled signature update cycle. The recommended state for this setting is: Dynamic Security intelligence update events will be reported.. Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: high
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.32 Ensure 'Enable Dynamic Signature Dropped Event Reporting' is set to 'Dynamic Security intelligence update events will be reported.'
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Reporting'' -Name ''EnableDynamicSignatureDroppedEventReporting'' -ErrorAction SilentlyContinue).''EnableDynamicSignatureDroppedEventReporting''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''EnableDynamicSignatureDroppedEventReporting='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Dynamic Security intelligence update events will be reported.: Defender\Enable Dynamic Signature Dropped Event Reporting'

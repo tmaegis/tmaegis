@@ -1,0 +1,20 @@
+id: TMA-REDIS-TLS
+title: Ensure TLS is enabled
+description: tls-port (Redis 6+) with tls-cert-file/tls-key-file encrypts client traffic; also set 'port 0' to disable the plain-text listener. Checks /etc/redis/redis.conf (SKIP when it does not exist; RHEL uses /etc/redis.conf).
+target: redis
+level: 2
+severity: medium
+tags:
+- redis
+- database
+- tls
+reference: CIS Redis Benchmark - Network Security / TLS (verify section number for your release)
+audit:
+  type: file_regex
+  file_path: /etc/redis/redis.conf
+  pattern: (?m)^[ \t]*tls-port[ \t]+[1-9][0-9]*\b
+  requires_file:
+  - /etc/redis/redis.conf
+remediation:
+  type: iac_patch
+  command: Set tls-port 6379, tls-cert-file, tls-key-file, tls-ca-cert-file and port 0 in redis.conf, restart Redis and configure clients for TLS

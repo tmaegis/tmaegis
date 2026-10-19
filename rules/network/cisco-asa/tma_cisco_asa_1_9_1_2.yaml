@@ -1,0 +1,21 @@
+id: TMA-CISCO-ASA-1.9.1.2
+title: Ensure 'NTP authentication key' is configured correctly
+description: Sets the key used to authenticate NTP servers. When authentication is not enabled, attackers can disguise as NTP servers and broadcast wrong time and it will be difficult to correlate events upon an incident. In some other cases, attackers can perform NTP DDoS attacks such as NTP Amplification. Audited against the output of 'show running-config' (run 'terminal pager 0' first; 'more system:running-config' also works and shows unmasked secrets).
+target: cisco-asa
+level: 1
+severity: high
+tags:
+- cisco-asa
+- network
+- ntp
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 1.9.1.2 Ensure 'NTP authentication key' is configured correctly
+audit:
+  type: config_regex
+  pattern: (?m)^ntp authentication-key \d+ \S+ \S
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Run the following to set the authentication key ID <key_id>
+    ntp trusted-key <key_id>
+    - Step 2: Run the following to configure the authentication key <authentication_key>
+    ntp authentication-key <key_id> md5 <authentication_key>

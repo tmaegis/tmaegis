@@ -1,0 +1,19 @@
+id: TMA-INTUNE-OFFICE-2.5.14.5
+title: Ensure 'Disable 'Remember password' for Internet e-mail accounts' is set to 'Enabled'
+description: 'This policy setting hides the user''s ability to cache passwords locally in the computer''s registry. When configured, this policy will hide the Remember Password checkbox and not allow users to have Outlook remember their password. Note: POP3, IMAP, and HTTP e-mail accounts are all considered Internet e-mail accounts in Outlook. E-mail account options are listed on the Server Type dialog box when users choose ''New'' under Tools | Account Settings. The recommended state for this setting is: Enabled. Audit: reads the registry value(s) enablerememberpwd that the Intune policy writes for every loaded user profile (HKEY_USERS) and prints compliant only when each satisfies the benchmark value.'
+target: intune-office
+level: 1
+severity: high
+tags:
+- intune-office
+- intune
+- registry
+reference: CIS Microsoft Intune for Office Benchmark v1.1.0 - 2.5.14.5 Ensure 'Disable 'Remember password' for Internet e-mail accounts' is set to 'Enabled'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $bad += @(Get-ChildItem Registry::HKEY_USERS | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $_.PSChildName + ''\SOFTWARE\Policies\Microsoft\office\16.0\outlook\security'') -Name ''enablerememberpwd'' -ErrorAction SilentlyContinue).''enablerememberpwd''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $_.PSChildName + '':enablerememberpwd='' + $v } }); if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended state via configuration profiles, set the following Settings Catalog path to Enabled: Microsoft Outlook 2016\Security\Disable ''Remember password'' for Internet e- mail accounts'

@@ -1,0 +1,17 @@
+id: TMA-OKE-3.2.4
+title: Ensure the kubelet read-only port is disabled
+description: In OKE, this setting is intended to keep kubelet access limited to the standard secured management path used for node operations, instead of exposing an additional legacy interface on the worker node. In practice, it should be assessed in the node’s effective kubelet configuration because OKE applies managed node behavior through cloud-init initialization, node pool configuration, and worker node replacement workflows rather than relying only on ... The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- worker-node
+- kubelet
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 3.2.4 Ensure the kubelet read-only port is disabled
+audit:
+  type: manual
+  command: To audit whether the kubelet read-only port is disabled on an OKE worker node, query the live effective kubelet configuration through the Kubernetes API server proxy and inspect the kubelet configz output for readOnlyPort set to 0. Kubernetes identifies configz as the view of the kubelet’s final actuated configuration, and the kubelet configuration schema defines readOnlyPort as the setting that controls the unauthenticated read-only kubelet service.
+remediation:
+  type: iac_patch
+  command: If the audit returns a nonzero readOnlyPort``, the worker node is exposing the kubelet read-only service and should be treated as noncompliant. If the field is missing from configz, first confirm whether it is simply omitted because the effective value is 0, since the kubelet configuration schema defines readOnlyPortas the unauthenticated read-only service and states that0` disables it. Once a noncompliant state is confirmed, remediation in OKE should be performed through the supported managed node initialization, node pool update, or node replacement workflow, not by directly editing the kubelet config file on the host. Oracle documents that OKE managed nodes use cloud-init initialization scripts, that custom logic can be added without modifying the default OKE initialization logic, and that updated worker node properties are applied by starting replacement worker nodes.

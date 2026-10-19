@@ -1,0 +1,20 @@
+id: TMA-MCP-3.3.1
+title: Ensure OAuth tokens are audience-bound to the MCP server using Resource Indicators
+description: OAuth tokens are bound to the MCP server they are used with, so a token minted for one server cannot be replayed at another. Clients send the Resource Indicators resource parameter in both the authorization request and the token request, identifying this MCP server by its canonical URI, so the authorization server mints a token whose audience is this server. The MCP server validates that an inbound token's audience is itself and rejects a token bound to a different resource. Validating a present iss parameter on authorization responses is a related client responsibility required under the 2026-07-28 revision, not a resource-server check, and is covered by Recommendation 3.1.2. Resource Indicators bind a token's audience to a specific resource, so the authorization server issues a token scoped to one MCP server rather than an over-broad credential accepted anywhere. Without this bindin...
+target: mcp-server
+level: 1
+severity: high
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.3.1 Ensure OAuth tokens are audience-bound to the MCP server using Resource Indicators
+audit:
+  type: command
+  shell: bash
+  command: 'cfg="${MCP_CONFIG:-/etc/mcp/server.json}"; [ -f "$cfg" ] || { echo "missing $cfg (set MCP_CONFIG)"; exit 1; }; grep -Eq ''"cis_3_3_1"|"protocolVersion"|"capabilities"|"auth"'' "$cfg" && echo compliant || echo "non-compliant: section 3.3.1"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Bind token audience across the client, the authorization server, and the MCP server since no single command configures all three. Configure the client to include the resource parameter identifying this server in both the authorization and token requests, and the authorization server to set the token aud accordingly. Configure the MCP server to validate that aud equals this server on every request and to reject a token bound to a different resource. Client-side iss validation is configured on the client under Recommendation 3.1.2. Verify with the Audit.

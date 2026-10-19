@@ -1,0 +1,16 @@
+id: TMA-MONGODB-3.5
+title: Review Superuser/Admin Roles
+description: Roles provide several advantages that make it easier to manage privileges in a database system. Security administrators can control access to their databases in a way that mirrors the structure of their organizations (they can create roles in the database that map directly to the job functions in their organizations). The assignment of privileges is simplified.
+target: mongodb
+level: 2
+severity: high
+tags:
+- mongodb
+- privileges
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 3.5 Review Superuser/Admin Roles
+audit:
+  type: manual
+  command: 'In mongosh run db.runCommand({rolesInfo: 1, showBuiltinRoles: true}) and db.getSiblingDB("admin").system.users.find({"roles.role": {$in: ["root", "dbOwner", "userAdmin", "userAdminAnyDatabase", "readWriteAnyDatabase", "dbAdminAnyDatabase", "clusterAdmin", "hostManager", "restore"]}}, {user: 1, roles: 1}). Confirm each holder of a superuser/admin role is approved; revoke the rest with db.revokeRolesFromUser().'
+remediation:
+  type: iac_patch
+  command: To remove a user from one or more roles on the current database. use \<dbName\> db.revokeRolesFromUser( "\<username\>", [ \<roles\> ])

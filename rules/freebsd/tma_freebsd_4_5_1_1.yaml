@@ -1,0 +1,59 @@
+id: TMA-FREEBSD-4.5.1.1
+title: Ensure strong password hashing algorithm is configured
+description: 'A cryptographic hash function converts an arbitrary-length input into a fixed length output. Password hashing performs a one-way transformation of a password, turning the password into another string, called the hashed password. The SHA-512 algorithms provide a stronger hash than other algorithms used by FreeBSD for password hash generation. Audit: pattern match on /etc/login.conf as described in the CIS audit procedure.'
+target: freebsd
+level: 1
+severity: high
+tags:
+- freebsd
+- password-policy
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 4.5.1.1 Ensure strong password hashing algorithm is configured
+audit:
+  type: file_regex
+  file_path: /etc/login.conf
+  pattern: '(?m)^\s*:passwd_format=sha512:'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    f=/etc/login.conf
+    [ -f "$f" ] || exit 0
+    grep -Eq '^[[:space:]]*:passwd_format=sha512:' "$f" && exit 0
+    tma_bk "$f"
+    if grep -Eq '^[[:space:]]*:passwd_format=' "$f"; then
+      sed 's/^\([[:space:]]*\):passwd_format=[A-Za-z0-9]*:/\1:passwd_format=sha512:/' "$f" > "$f.tma.$$" && cat "$f.tma.$$" > "$f"
+    else
+      awk '{print} !d && /^default:/ {print "\t:passwd_format=sha512:\\"; d=1}' "$f" > "$f.tma.$$" && cat "$f.tma.$$" > "$f"
+    fi
+    rm -f "$f.tma.$$"
+    cap_mkdb /etc/login.conf
+  guidance: "Set password hashing algorithm to sha512. Edit /etc/login.conf and edit or add a line like the following for the default configuration: :passwd_format=sha512: After editing the file regenerate the login.conf.db with the command: # cap_mkdb /etc/login.conf Note: This only effects local users and passwords created after updating the files to use sha512. If it is determined that the password algorithm being used is not sha512, once it is changed, it is recommended that all group passwords be updated to use the stronger hashing algorithm."

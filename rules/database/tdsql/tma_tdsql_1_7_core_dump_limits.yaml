@@ -1,0 +1,16 @@
+id: TMA-TDSQL-1.7
+title: Ensure Appropriate Core Dump Limits Are Set
+description: 'Core dumps of TDSQL processes may contain sensitive data (encryption keys, passwords, query data). Core dump generation should be restricted in production. Note: TDSQL''s start.sh sets ulimit -c unlimited by default.'
+target: tdsql
+level: 2
+severity: low
+tags:
+- tdsql
+- os
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 1.7 Ensure Appropriate Core Dump Limits Are Set
+audit:
+  type: manual
+  command: Run ulimit -c for the TDSQL service account, cat /proc/sys/kernel/core_pattern and grep -r 'ulimit.*-c' <tdsql>/bin/start.sh (TDSQL start.sh sets unlimited). Core dumps must either be disabled or written only to a restricted directory (e.g. /var/core/tdsql, mode 700, owned by tdsql) with a size limit set by policy.
+remediation:
+  type: iac_patch
+  command: '# Create a restricted core dump directory mkdir -p /var/core/tdsql chmod 700 /var/core/tdsql chown tdsql:tdsql /var/core/tdsql echo ''kernel.core_pattern = /var/core/tdsql/core.%e.%p.%t'' >> /etc/sysctl.conf sysctl -p # Modify start.sh for production: # From: ulimit -c unlimited # To: ulimit -c 0 (or a reasonable limit)'

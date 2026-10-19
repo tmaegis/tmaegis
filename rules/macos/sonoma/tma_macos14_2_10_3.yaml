@@ -1,0 +1,41 @@
+id: TMA-MACOS14-2.10.3
+title: Ensure a Custom Message for the Login Screen Is Enabled
+description: An access warning informs the user that the system is reserved for authorized use only, and that the use of the system may be monitored. An access warning may reduce a casual attacker's tendency to target the system. Access warnings may also aid in the prosecution of an attacker by evincing the attacker's knowledge of the system's private status, acceptable use policy, and authorization requirements.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: low
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.10.3 Ensure a Custom Message for the Login Screen Is Enabled
+audit:
+  type: command
+  command: 'out=$(/usr/bin/pmset -g custom 2>/dev/null) || exit 1
+
+    n=$(printf ''%s\n'' "$out" | /usr/bin/awk ''$1 == "womp" && $2 != 0 {n++} END {print n+0}'')
+
+    p=$(/usr/bin/profiles -P -o stdout 2>/dev/null | /usr/bin/grep -c ''"Wake On LAN" = 1'')
+
+    if [ "$n" -eq 0 ] && [ "${p:-0}" -eq 0 ]; then echo compliant; else echo "womp enabled ($n) / profile Wake On LAN=1 ($p)"; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/pmset -a womp 0
+  guidance: "Graphical Method: Perform the following steps to enable a login banner set to your organization's required text: 1. Open System Settings 2. Select Lock Screen 3. Set Show message when locked to enabled 4. Select Set 5. Insert text in the Set a message to appear on the lock screen that matches your organization's required text 6. Select Done Terminal Method: Run the following command to enable a custom login screen message: % /usr/bin/sudo /usr/bin/defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \"<custom message>\" example: % /usr/bin/sudo /usr/bin/defaults write /Library/Preferences/com.apple.loginwindow LoginwindowText \"Center for Internet Security Test Message\" Profile Method: Create or edit a configuration profile with the following information: 1. The PayloadType string is com.apple.loginwindow 2. The key to include is LoginwindowText 3. The key must be set to <string><Your organization's required text></string>"

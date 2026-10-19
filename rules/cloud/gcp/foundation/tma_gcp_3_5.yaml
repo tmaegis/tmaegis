@@ -1,0 +1,17 @@
+id: TMA-GCP-3.5
+title: Ensure That RSASHA1 Is Not Used for the Zone-Signing Key in Cloud DNS DNSSEC
+description: 'NOTE: Currently, the SHA1 algorithm has been removed from general use by Google, and, if being used, needs to be whitelisted on a project basis by Google and will also, therefore, require a Google Cloud support contract. DNSSEC algorithm numbers in this registry may be used in CERT RRs. Zone signing (DNSSEC) and transaction security mechanisms (SIG(0) and TSIG) make use of particular subsets of these algorithms. The algorithm used for key signing should be a recommended one and it should be strong. DNSSEC algorithm numbers in this registry may be used in CERT RRs. Zone signing (DNSSEC) and transaction security mechanisms (SIG(0) and TSIG) make use of particular subsets of these algorithms. The algorithm used for key signing should be a recommended one and it should be strong. When enabling DNSSEC for a managed zone, or creating a managed zone with DNSSEC, the DNSSEC signing algorithms...'
+target: gcp
+level: 1
+severity: medium
+tags:
+- cloud
+- crypto
+- gcp
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 3.5 Ensure That RSASHA1 Is Not Used for the Zone-Signing Key in Cloud DNS DNSSEC
+audit:
+  type: manual
+  command: From Google Cloud CLI Ensure the property algorithm for keyType zone signing is not using RSASHA1. gcloud dns managed-zones describe -- format="json(dnsName,dnssecConfig.state,dnssecConfig.defaultKeySpecs)"
+remediation:
+  type: iac_patch
+  command: 'From Google Cloud CLI 1. If the need exists to change the settings for a managed zone where it has been enabled, DNSSEC must be turned off and then re-enabled with different settings. To turn off DNSSEC, run following command: gcloud dns managed-zones update ZONE_NAME --dnssec-state off 2. To update zone-signing for a reported managed DNS Zone, run the following command: gcloud dns managed-zones update ZONE_NAME --dnssec-state on --ksk-algorithm KSK_ALGORITHM --ksk-key-length KSK_KEY_LENGTH --zsk-algorithm ZSK_ALGORITHM - -zsk-key-length ZSK_KEY_LENGTH --denial-of-existence DENIAL_OF_EXISTENCE Supported algorithm options and key lengths are as follows. Algorithm KSK Length ZSK Length --------- ---------- ---------- RSASHA1 1024,2048 1024,2048 RSASHA256 1024,2048 1024,2048 RSASHA512 1024,2048 1024,2048 ECDSAP256SHA256 256 384 ECDSAP384SHA384 384 384'

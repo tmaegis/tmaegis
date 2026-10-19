@@ -1,0 +1,38 @@
+id: TMA-VMWARE-4.10
+title: Host must verify certificates for TLS remote logging endpoints
+description: When engaging in remote logging activities, it is of utmost importance to ensure that the logging endpoint is genuine and secure. To achieve this, hosts should verify the TLS certificates of these endpoints. This verification provides assurance that the endpoint is both authentic and trustworthy, mitigating the risk of transmitting logs to potentially malicious or untrusted ... The audit reads Syslog.global.certificate.checkSSLCerts with esxcli and requires true (1). Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 4.10 Host must verify certificates for TLS remote logging endpoints
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Syslog/global/certificate/checkSSLCerts 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | awk '$1=="Int" && $2=="Value:" {print $3; exit}')
+    case "$v" in ''|*[!0-9-]*) echo '/Syslog/global/certificate/checkSSLCerts: no integer value'; exit 1 ;; esac
+    if [ "$v" -eq 1 ]; then echo compliant; else echo "/Syslog/global/certificate/checkSSLCerts = $v (expected true/1)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Syslog/global/certificate/checkSSLCerts -i 1
+  guidance: "Execute command: esxcli system syslog config set --check-ssl-certs=true Verify with: esxcli system syslog config get remediated result should include: ssl://"

@@ -1,0 +1,16 @@
+id: TMA-NGINX-5.2.3
+title: Ensure the maximum buffer size for URIs is defined
+description: 'The large_client_header_buffers directive allocates the maximum number and size of buffers for reading the entire client request header, which includes both the request line (e.g., GET /path HTTP/1.1) and all subsequent header fields (e.g., Host:, Cookie:, Authorization:). If a client''s request header exceeds the total allocated buffer space, NGINX immediately rejects the request with a 400 Bad Request error. Manual review: the benchmark gives no reliable automated check for this control.'
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- request-limits
+reference: CIS NGINX Benchmark v3.0.0 - 5.2.3 Ensure the maximum buffer size for URIs is defined
+audit:
+  type: manual
+  command: 'This is a manual check that requires context. 1. Run the following command to see if the directive is explicitly set: nginx -T 2>/dev/null | grep ''large_client_header_buffers'' 2. Evaluate the result: No output: The server is using the default value of 4 8k. This is considered compliant and secure for general use. Output shows large_client_header_buffers 4 8k;: The default is explicitly set. This is compliant. Output shows a different value (e.g., 2 1k;): This is a deviation from the default.'
+remediation:
+  type: iac_patch
+  command: 'Unless you have a specific, documented requirement to restrict header sizes further, the recommended action is to rely on the secure default value. If your configuration has an overly restrictive value set without a clear reason, remove the large_client_header_buffers directive from your http or server blocks to allow NGINX to fall back to its default. Remediation Action: Remove any custom, overly restrictive large_client_header_buffers lines from your configuration files. # REMOVE THIS LINE if it exists without good reason: large_client_header_buffers 2 1k;'

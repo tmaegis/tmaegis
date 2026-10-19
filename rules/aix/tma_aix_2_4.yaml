@@ -1,0 +1,17 @@
+id: TMA-AIX-2.4
+title: Ensure Unauthorized Applications are reported
+description: 'At Level 1, utilize Trusted Execution (TE) to log execution of applications not yet allowlisted. This can be used to update the allowlist (TSD - /etc/security/tsd/tsd.dat) so that, at Profile Level 2, non-listed applications are actually prevented from executing. Trusted Execution (TE) provides an additional layer of access controls to processes on top of the base Discretionary Access Controls. Monitoring how processes access system resources can improve awareness of system integrity. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- hardening
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 2.4 Ensure Unauthorized Applications are reported
+audit:
+  type: command
+  command: command -v trustchk >/dev/null 2>&1 || exit 1; out=$(trustchk -p TE CHKEXEC 2>/dev/null) || exit 1; r=compliant; for p in "^TE=ON$" "^CHKEXEC=ON$"; do printf '%s\n' "$out" | grep -Eq "$p" || r="missing $p"; done; grep -Eq "^[[:blank:]]*kern\.info[[:blank:]]" /etc/syslog.conf 2>/dev/null || r="kern.info not collected in /etc/syslog.conf"; echo "$r"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: '1. Run the following command: # /usr/sbin/trustchk -p TE=ON CHKEXEC=ON 2. If logging for kern.info events is not already configured: Run the following commands: # /usr/bin/mkdir -p /var/log/syslog # /usr/bin/touch /var/log/syslog/kernel.log # print "kern.info /var/log/syslog/kernel.log rotate time 1d files 30 compress" >> /etc/syslog.conf # /usr/bin/refresh -s syslogd || /usr/bin/startsrc -s syslogd Note: Log retention periods should be configured as per site policy.'

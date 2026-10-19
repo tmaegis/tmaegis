@@ -1,0 +1,31 @@
+id: TMA-ARUBA-CX-3.7
+title: RA Guard
+description: 'RA (Router Advertisement) Guard is a security feature in AOS-CX switches that monitors and filters IPv6 Router Advertisement messages, allowing only authorized RAs to propagate. It helps prevent rogue or malicious routers from disrupting network operations. When RA guard policy is enabled (with ipv6 nd-snooping ra-guard policy), RA packets received on trusted ports are validated against a set of parameters configured on the policy and assigned to a port or VLAN. RA Guard policy options include: Hop Limit Managed Config Flag Other Config Flag Router Preference ACL Advertised Prefix Lists'
+target: aruba-cx
+level: 1
+severity: medium
+tags:
+- aruba-cx
+- layer2
+reference: CIS HPE Aruba Networking CX Switch Benchmark v1.0.1 - 3.7 RA Guard
+audit:
+  type: manual
+  command: Where IPv6 is used, run 'show nd-snooping ra-guard interface <id>' and confirm RA guard is enabled on user VLANs so router advertisements from untrusted ports are blocked.
+remediation:
+  type: iac_patch
+  command: |-
+    This command enables Routing Advertisement (RA) guard on the selected VLAN. When enabled, ingress Routing Advertisement (RA) packets on the selected VLAN are blocked on untrusted ports. The packets are forwarded when received on trusted ports -
+    nd-snooping enable
+    vlan <id>
+    nd-snooping ra-guard
+    exit
+    Following commands enables RA guard policy, hence RA packets received on trusted ports are validated against a set of parameters configured on the policy and assigned to a port or VLAN -
+    ipv6 nd-snooping ra-guard policy <POLICY-NAME>
+    hop-limit <enable | minimum | maximum>
+    match <access-list | prefix-list>
+    managed-config-flag <on | off>
+    other-config-flag <on | off>
+    router-preference <high | medium | low>
+    exit
+    vlan <id>
+    nd-snooping ra-guard attach-policy POLICY_NAME

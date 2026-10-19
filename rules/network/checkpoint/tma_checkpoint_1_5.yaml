@@ -1,0 +1,26 @@
+id: TMA-CHECKPOINT-1.5
+title: Ensure Password Expiration is set to 90 days
+description: The number of days for which a password is valid. After that time, the password expires. The count starts when the user changes their passwords. Users are required to change an expired password the next time they log in. If set to never, passwords do not expire. Does not apply to SNMP users. PASS requires password-expiration between 1 and 90 days. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 1
+severity: high
+tags:
+- checkpoint
+- authentication
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 1.5 Ensure Password Expiration is set to 90 days
+audit:
+  type: config_regex
+  pattern: (?m)^set password-controls password-expiration (?:[1-9]|[1-8]\d|90)[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    set password-controls password-expiration 90
+    save config
+    # note: the CIS remediation text shows 'history-length 90' by mistake; password-expiration is the setting audited
+    # CIS guidance:
+    Run the following command to set the history-length setting. CLI:
+    set password-controls history-length 90
+    GUI:
+    Navigate to User Management > Password Policy > Mandatory Password Changes:
+    Password Expiration:
+    Set 'Password expires after' setting to 90 or less

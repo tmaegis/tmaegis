@@ -1,0 +1,20 @@
+id: TMA-AZURE-STORAGE-3.2.4
+title: Ensure 'Use infrastructure encryption for this vault' is enabled on Recovery Services vaults
+description: In addition to using customer-managed keys for encryption at rest in the Recovery Services vault, you can enable an additional layer of platform-managed infrastructure encryption. This dual-layer approach enhances the protection of your backup data. Enabling infrastructure encryption on an Azure Recovery Services vault adds a second layer of protection to backup data, enhancing security and ensuring compliance for sensitive data storage. This dual-layer strategy reduces the risk of unauthorized access by keeping data encrypted even if one layer is compromised.
+target: azure
+level: 2
+severity: medium
+tags:
+- azure
+- cloud
+- encryption
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 3.2.4 Ensure 'Use infrastructure encryption for this vault' is enabled on Recovery Services vaults
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Recovery Services vaults. 2. Click the name of a Recovery Services vault. 3. Under Settings, click Properties. 4. Under Encryption Settings, click Update. 5. Under Infrastructure encryption, ensure the box next to Use infrastructure encryption for this vault is checked. 6. Repeat steps 1-5 for each Recovery Services vault. Audit from Azure CLI Run the following command to list Recovery Services vaults: az backup vault list For each Recovery Services vault, run the following command: az backup vault encryption show --resource-group <resource-group> --name <recovery-services-vault> Ensure that infrastructureEncryptionState is set to Enabled. Audit from PowerShell Run the following command to list Recovery Services vaults: Get-AzRecoveryServicesVault Run the following command to get the Recovery Services vault in a resource group with a given name: $vault = Get-AzRecoveryServicesVault -ResourceGroupName <resource-group> - Name <recovery-services-vault>
+    Run the following command to get the infrastructure encryption setting for the Recovery Services vault: $vault.Properties.EncryptionProperty.InfrastructureEncryption Ensure that the command returns En...'
+remediation:
+  type: iac_patch
+  command: 'Remediate from Azure Portal After configuring a customer-managed key for encryption, next to Infrastructure Encryption, click the radio button next to Enabled. Remediate from Azure CLI For each Recovery Services vault requiring remediation, run the following command to assign a customer-managed encryption key and enable infrastructure encryption: az backup vault encryption update --resource-group <resource-group> --name <recovery-services-vault> --encryption-key-id <cmk-uri> --mi-system-assigned --infrastructure-encryption Enabled Note: Use --mi-user-assigned with the above command to provide a UserAssigned Identity Id. Remediate from PowerShell For each Recovery Services vault requiring remediation, run the following command to assign a customer-managed encryption key and enable infrastructure encryption: Set-AzRecoveryServicesVaultProperty -VaultId <recovery-services-vault-id> - EncryptionKeyId <cmk-uri> -UseSystemAssignedIdentity $true - InfrastructureEncryption Note: Use
+    -UseSystemAssignedIdentity $false with the above command and - UserAssignedIdentity to provide a UserAssigned Identity Id.'

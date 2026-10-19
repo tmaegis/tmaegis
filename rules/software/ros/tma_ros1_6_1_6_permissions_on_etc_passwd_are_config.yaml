@@ -1,0 +1,25 @@
+id: TMA-ROS1-6.1.6
+title: Ensure permissions on /etc/passwd- are configured
+description: The /etc/passwd- file contains backup user account information. The audit requires /etc/passwd- owned by root, group root, mode 0600 or more restrictive. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- maintenance
+reference: CIS ROS Melodic Benchmark v1.0.0 - 6.1.6 Ensure permissions on /etc/passwd- are configured
+audit:
+  type: command
+  shell: bash
+  command: |-
+    [ -e /etc/passwd- ] || { echo '/etc/passwd- not found'; exit 1; }
+    set -- $(stat -Lc '%a %u %g' /etc/passwd-) || exit 1
+    m=$((8#$1)); [ $((m & ~8#0600)) -eq 0 ] || { echo "/etc/passwd- mode $1 exceeds 0600"; exit 1; }
+    [ "$2" = 0 ] || { echo "/etc/passwd- uid $2"; exit 1; }
+    case " 0 " in *" $3 "*) echo compliant ;; *) echo "/etc/passwd- gid $3" ;; esac
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to set permissions on /etc/passwd- : # chown root:root /etc/passwd- # chmod u-x,go-rwx /etc/passwd-'

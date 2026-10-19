@@ -1,0 +1,17 @@
+id: TMA-BIND-8.5
+title: Ensure each Zone has a Valid Digital Signature
+description: 'For each zone of the authoritative name server, verify that the signed zone file has a valid signature for each algorithm in the zone DNSKEY RRSet. Manual review: the check needs remote queries, architecture knowledge or site policy.'
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- dnssec
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 8.5 Ensure each Zone has a Valid Digital Signature
+audit:
+  type: manual
+  command: 'Perform the following command on each zone providing the signed zone file. The example file name is ''cisecurity.org.signed'' for the domain cisecurity.org. If the signed zone file is not generated from inline signing, then the format may be ASCII, and the -I raw should be omitted. # dnssec-verify -I raw -o cisecurity.org cisecurity.org.signed Loading zone ''cisecurity.org'' from file ''cisecurity.org.signed'' Verifying the zone using the following algorithms: ECDSAP256SHA256.'
+remediation:
+  type: iac_patch
+  command: 'Perform either of the following: ; Enable in-line signing in each zone configuration by setting inline-signing to yes value. For example: zone "cisecurity.org" { type master; file "/etc/named/masters/cisecurity.org"; key-directory "/etc/named/keys"; inline-signing yes; auto-dnssec maintain; }; Reload the server configuration and zones. rndc reload Or if using manual or scripted zone signing instead of inline-signing, then perform the following. ; Include the signing keys at the end of the zone file to be signed. Such as: $include Kcisecurity.com.+013+09768.key $include Kcisecurity.com.+013+45248.key'

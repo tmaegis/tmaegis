@@ -1,0 +1,50 @@
+id: TMA-FORTIGATE-5.1.1
+title: Enable Compromised Host Quarantine
+description: Default automation trigger configuration for when a high severity compromised host is detected. PASS requires the 'Compromised Host Quarantine' automation stitch with status enable. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: medium
+tags:
+- fortigate
+- hardening
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 5.1.1 Enable Compromised Host Quarantine
+audit:
+  type: config_regex
+  pattern: (?m)^config system automation-stitch\n(?:[ \t]+[^\n]*\n)*?[ \t]+edit "Compromised Host Quarantine"\n(?:[ \t]+(?:set|unset) [^\n]*\n)*?[ \t]+set status enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    GUI Security Fabric > Automation Edit and change Disabled to Enabled CLI config system automation-action
+    edit "Quarantine on FortiSwitch + FortiAP"
+        set description "Default automation action configuration for
+    quarantining a MAC address on FortiSwitches and FortiAPs."
+    set action-type quarantine
+    next
+    edit "Quarantine FortiClient EMS Endpoint"
+        set description "Default automation action configuration for
+    quarantining a FortiClient EMS endpoint device."
+    set action-type quarantine-forticlient
+    next
+    end
+    config system automation-trigger
+        edit "Compromised Host - High"
+            set description "Default automation trigger configuration for when a
+    high severity compromised host is detected."
+    next
+    end
+    config system automation-stitch
+        edit "Compromised Host Quarantine"
+            set description "Default automation stitch to quarantine a high
+    severity compromised host on FortiAPs, FortiSwitches, and FortiClient EMS."
+    set status enable
+    set trigger "Compromised Host - High"
+    config actions
+        edit 1
+            set action "Quarantine on FortiSwitch + FortiAP"
+        next
+        edit 2
+            set action "Quarantine FortiClient EMS Endpoint"
+        next
+    end
+    next
+    end

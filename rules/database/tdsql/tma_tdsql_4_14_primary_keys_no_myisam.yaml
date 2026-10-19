@@ -1,0 +1,17 @@
+id: TMA-TDSQL-4.14
+title: Ensure Primary Keys Are Enforced and MyISAM Engine Is Prohibited
+description: 'TXSQL enforces "mandatory primary keys" and an "engine allowlist" through two kernel parameters plus Gateway-layer supplementation: sql_require_primary_key (MySQL 8.0 upstream) - a primary key is required when creating/altering tables reject_table_no_pk (TXSQL enhancement) - reject DML on tables without a primary key reject_create_table_myisam (TXSQL enhancement) - reject creation of MyISAM tables ... Runs the mysql client against the TDSQL data node selected by TDSQL_MYSQL_OPTS (e.g. "-h10.0.0.5 -P4001 -utdsql_audit"); keep the password in ~/.my.cnf or a login path rather than MYSQL_PWD or the command line (see 1.4 and 1.5). Passes when sql_require_primary_key, reject_table_no_pk and reject_create_table_myisam all exist and are ON; also run the benchmark query to find existing tables without a primary key or using MyISAM.'
+target: tdsql
+level: 1
+severity: medium
+tags:
+- tdsql
+- hardening
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 4.14 Ensure Primary Keys Are Enforced and MyISAM Engine Is Prohibited
+audit:
+  type: sql_query
+  command: 'out=$(mysql ${TDSQL_MYSQL_OPTS:-} -NBe "SHOW GLOBAL VARIABLES WHERE Variable_name IN (''sql_require_primary_key'', ''reject_table_no_pk'', ''reject_create_table_myisam'')" 2>/dev/null) || exit 1; printf ''%s\n'' "$out" | awk -F''\t'' ''NF >= 2 {n++; v = toupper($2); if (v == "ON" || v == "1") ok++} END {print (n == 3 && ok == 3) ? "compliant" : "noncompliant"}'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: SET GLOBAL sql_require_primary_key = ON; SET GLOBAL reject_table_no_pk = ON; SET GLOBAL reject_create_table_myisam = ON; persist them in the parameter template and add primary keys / convert MyISAM tables to InnoDB.

@@ -1,0 +1,48 @@
+id: TMA-BIND-2.7
+title: Set Group Read-Only for BIND Files and Non-Runtime Directories
+description: All of the BIND files and all of directories except the run-time directories into which BIND will create files should have group permissions set to not be writable. Any run-time files created by BIND will be owned by BIND, and therefore need not be group writable. The audit lists group-writable directories (outside runtime directories) and group-writable files under $BIND_HOME and requires none. $BIND_HOME is taken as the existing ones of /var/named (RHEL, including a chroot), /etc/bind and /var/cache/bind (Debian/Ubuntu) and $RUNDIR as /run/named; the runtime directories (dynamic, slaves, data, run, log, tmp, /var/cache/bind) are excluded where the benchmark excludes them.
+target: bind
+level: 1
+severity: medium
+tags:
+- bind
+- dns
+- permissions
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 2.7 Set Group Read-Only for BIND Files and Non-Runtime Directories
+audit:
+  type: command
+  command: |-
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 1; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    out=$({ find $BH -type d -perm /020 -print 2>/dev/null | { grep -Ev "$RT" || true; }; find $BH -type f -perm /020 -print 2>/dev/null | { grep -Ev "$RT" || true; }; }) || exit 1
+    [ -z "$out" ] && echo compliant || { printf '%s\n' "$out" | head -n 20; echo 'group-writable BIND files or directories'; }
+  expected_output: compliant
+  requires_file:
+  - /var/named
+  - /etc/bind
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    BH=''; for d in /var/named /etc/bind /var/cache/bind; do [ -d "$d" ] && BH="$BH $d"; done
+    [ -n "$BH" ] || { echo 'no BIND directory found'; exit 0; }
+    RUN=''; for d in /run/named /var/run/named; do [ -d "$d" ] && { RUN=$d; break; }; done
+    G='-group root'; U='-user root'; for a in named bind; do grep -q "^$a:" /etc/group 2>/dev/null && G="$G -o -group $a"; grep -q "^$a:" /etc/passwd 2>/dev/null && U="$U -o -user $a"; done
+    RT='^(/var/named(/chroot/var/named)?/(dynamic|slaves|data)|/var/named/chroot/(var/)?run/named|/var/named/chroot/var/log|/var/named/chroot/(var/)?tmp|/var/cache/bind|/run/named|/var/run/named)(/|$)'
+    { find $BH -type d -perm /020 -print 2>/dev/null; find $BH -type f -perm /020 -print 2>/dev/null; } | { grep -Ev "$RT" || true; } | while IFS= read -r f; do chmod g-w "$f"; done; true
+  guidance: "Perform the following: ; Capture the output from the audit commands above into a file named write- dirs.txt ; Review the purpose for the identified directories and either delete them if the directory is not needed, or change the permissions of the directory to not be writable by group or other. ; The following command can be used to change the permissions of the directories that are appropriate. xargs -a write-dirs.txt chmod g-w"

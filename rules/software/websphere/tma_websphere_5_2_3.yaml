@@ -1,0 +1,16 @@
+id: TMA-WEBSPHERE-5.2.3
+title: Ensure 'identityAssertionTypes' is specified to the correct identity tokens in CSIv2 Attribute Layer - review/Zech
+description: The CSIv2 Attribute policy configures security at the Attribute layer when accessing EJB applications using RMI/IIOP. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: websphere
+level: 1
+severity: medium
+tags:
+- websphere
+- manual-review
+reference: CIS IBM WebSphere Liberty Benchmark v1.0.0 - 5.2.3 Ensure 'identityAssertionTypes' is specified to the correct identity tokens in CSIv2 Attribute Layer - review/Zech
+audit:
+  type: manual
+  command: Ensure the identityAssertionEnabled attribute in the ORB > serverPolicy.csiv2 > layers > attributeLayer element is set to true in the Liberty configuration grep -w -R -i 'identityAssertionEnabled' ${server.config.dir} And also ensure identityAssertionTypes is specified and does not include ITTAnonymous grep -w -R -i 'identityAssertionTypes' ${server.config.dir}
+remediation:
+  type: iac_patch
+  command: Set the identityAssertionEnabled attribute to true and identityAssertionTypes to ITTX509CertChain, ITTDistinguishedName in ORB > serverPolicy.csiv2 > layers > authenticationLayer in the ${server.config.dir}/configDropins/overrides/<any file name>.xml <orb id="defaultOrb"> <clientPolicy.csiv2> <layers> <attributeLayer identityAssertionEnabled="true" identityAssertionTypes="ITTX509CertChain, ITTDistinguishedName"/> </layers> </clientPolicy.csiv2> </orb>

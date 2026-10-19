@@ -1,0 +1,21 @@
+id: TMA-WIN2025-18.10.18.7
+title: Ensure 'Enable Windows Package Manager command line interfaces' is set to 'Disabled'
+description: 'This policy setting controls whether a user can perform actions using the Windows Package Manager through a command line interface (Windows CLI or PowerShell). The recommended state for this setting is: Disabled. Note: This policy does not override the Enable App Installer policy, which is set to Disabled in the L2 profile of the CIS Windows Operating System Benchmarks.'
+target: windows
+os_family:
+- windows-server-2025-dc
+- windows-server-2025-ms
+level: 2
+severity: medium
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows Server 2025 Benchmark v2.1.0 - 18.10.18.7
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller'' -Name ''EnableWindowsPackageManagerCommandLineInterfaces'' -ErrorAction SilentlyContinue).''EnableWindowsPackageManagerCommandLineInterfaces''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''EnableWindowsPackageManagerCommandLineInterfaces='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\AppInstaller' -Name 'EnableWindowsPackageManagerCommandLineInterfaces' -Value 0 -PropertyType DWord -Force | Out-Null

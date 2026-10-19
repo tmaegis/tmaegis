@@ -1,0 +1,17 @@
+id: TMA-OPENSHIFT-5.2.8
+title: Minimize the admission of containers with added capabilities
+description: Do not generally permit containers with capabilities assigned beyond the default set. The benchmark marks this recommendation Manual.
+target: openshift
+level: 1
+severity: medium
+tags:
+- openshift
+- policies
+- pod-security
+reference: CIS Red Hat OpenShift Container Platform Benchmark v2.0.0 - 5.2.8 Minimize the admission of containers with added capabilities
+audit:
+  type: manual
+  command: 'Use the following command to list all SCCs that prohibit users from defining container capabilities: oc get scc -A -o json | jq ''.items[] | select(.allowedCapabilities==null) | .metadata.name'' Verify at least one SCC is returned. Additionally, use the following command to list all SCCs that do not set default container capabilities: oc get scc -A -o json | jq ''.items[] | select(.defaultAddCapabilities==null) | .metadata.name'' Verify at least one SCC is returned.'
+remediation:
+  type: iac_patch
+  command: Utilize the restricted-v2 SCC or create an SCC that sets allowedCapabilities and defaultAddCapabilities to an empty list and take it into use by assigning it to applicable users and groups.

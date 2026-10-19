@@ -1,0 +1,33 @@
+id: TMA-FORTIGATE-3.2
+title: Ensure that policies do not use "ALL" as Service
+description: Ensure that all security policies in effect clearly state which protocols / services they are allowing. FAILs if an accept policy uses the "ALL" service (deny policies such as the CIS 3.3 ISDB rules may use ALL). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 1
+severity: high
+tags:
+- fortigate
+- firewall-policy
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 3.2 Ensure that policies do not use "ALL" as Service
+audit:
+  type: config_regex
+  pattern: (?m)^config firewall policy\n(?:[ \t]+[^\n]*\n)*?[ \t]+set action accept[ \t]*\n(?:[ \t]+(?:set|unset) [^\n]*\n)*?[ \t]+set service [^\n]*"ALL"
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config firewall policy
+        edit <id>
+            set service "HTTPS" "DNS"
+        next
+    end
+    # CIS guidance:
+    This is an example showing how to modify policy with ID of 2 to change the service from "ALL" to FTP and SNMP. In CLI:
+    config firewall policy
+        edit 2
+            set service "FTP" "SNMP"
+        end
+    In the GUI,
+    1. Go to Policy & Objects.
+    2. Click on Firewall Policy.
+    3. Select the policy, click "Edit".
+    4. In the Service section, click on it and select FTP and SNMP. Click OK.

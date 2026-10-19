@@ -1,0 +1,24 @@
+id: TMA-APACHE-6.2
+title: Ensure a Syslog Facility Is Configured for Error Logging
+description: The ErrorLog directive should be configured to send logs to a syslog facility so that the logs can be processed and monitored along with the system logs. The global ErrorLog must use syslog (e.g. syslog:local1) and no virtual host may override it with a file. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file. CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: apache
+level: 2
+severity: low
+tags:
+- apache
+- logging
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 6.2 Ensure a Syslog Facility Is Configured for Error Logging
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; printf '%s\n' "$cfg" | awk '{l=tolower($0)} l~/^<virtualhost/{vh=1} l~/^<\/virtualhost>/{vh=0} tolower($1)=="errorlog"{v=$2; gsub(/"/,"",v); if(v!~/^syslog/) bad=1;
+    else if(!vh) g=1} END{print (g&&!bad)?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Set ErrorLog "syslog:local1" in the main configuration and remove file-based ErrorLog directives from virtual hosts (or point them to syslog). Then run apachectl configtest and reload Apache.

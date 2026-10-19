@@ -1,0 +1,46 @@
+id: TMA-MACOS-3.3
+title: Ensure install.log Is Retained for 365 or More Days and No Maximum Size
+description: 'macOS writes information pertaining to system-related events to the file /var/log/install.log and has a configurable retention policy for this file. The default logging setting limits the file size of the logs and the maximum size for all logs. The default allows for an errant application to fill the log files and does not enforce sufficient log retention. Audit: Requires ttl >= 365 and no all_max= setting in /etc/asl/com.apple.install.'
+target: macos
+level: 1
+severity: medium
+tags:
+- macos
+- logging-auditing
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 3.3 Ensure install.log Is Retained for 365 or More Days and No Maximum Size
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    f=/etc/asl/com.apple.install
+    [ -r "$f" ] || exit 1
+    t=$(/usr/bin/grep -io 'ttl=[0-9]*' "$f" | /usr/bin/head -1 | /usr/bin/cut -d= -f2)
+    if [ -n "$t" ] && [ "$t" -ge 365 ] && ! /usr/bin/grep -qi 'all_max=' "$f"; then echo compliant; else echo "ttl=${t:-unset}; all_max present or ttl < 365"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_BK="/Library/Application Support/TMAegis/backup"; mkdir -p "$TMA_BK"; TMA_TS=$(/bin/date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && /bin/cp -p "$1" "$TMA_BK/$(/usr/bin/basename "$1").$TMA_TS.bak"; return 0; }
+    f=/etc/asl/com.apple.install
+    [ -f "$f" ] || exit 1
+    tma_bak "$f"
+    /usr/bin/sed -i '' -E 's/[[:space:]]+all_max=[^[:space:]]*//g' "$f"
+    t=$(/usr/bin/grep -io 'ttl=[0-9]*' "$f" | /usr/bin/head -1 | /usr/bin/cut -d= -f2)
+    if [ -z "$t" ]; then /usr/bin/sed -i '' -E '/^\*[[:space:]]+file[[:space:]]/ s/$/ ttl=365/' "$f"
+    elif [ "$t" -lt 365 ]; then /usr/bin/sed -i '' -E 's/ttl=[0-9]+/ttl=365/' "$f"; fi
+  guidance: "Terminal: Edit the /etc/asl/com.apple.install file and add or modify the ttl value to 365 or greater on the file line. Also, remove the all_max= setting and value from the file line."

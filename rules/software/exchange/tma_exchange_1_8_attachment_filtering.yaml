@@ -1,0 +1,18 @@
+id: TMA-EXCHANGE-1.8
+title: Ensure 'Attachment Filtering Agent' is configured
+description: The attachment filtering on Edge Transport servers restricts attachments that users receive in email messages. Attachment filtering is performed by the Attachment Filtering agent, which is available only on Edge Transport servers, and is unchanged from Exchange Server 2010. Ensure the Attachment Filtering Agent is Enabled, and the extension filtering list is configured to the desired state. Prints compliant when the Attachment Filtering Agent is enabled and every extension in the benchmark reference list is present in Get-AttachmentFilterEntry (FileName entries). The list is the one printed in the benchmark; trim it for documented organizational exceptions. Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- malware
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.8 Ensure 'Attachment Filtering Agent' is configured
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $a = Get-TransportAgent 'Attachment Filtering Agent' -ErrorAction Stop; $names = @(Get-AttachmentFilterEntry -ErrorAction Stop | ForEach-Object { "$($_.Name)".ToLowerInvariant() }); $want = @('*.ace','*.ade','*.adp','*.ani','*.app','*.appx','*.arj','*.asx','*.bas','*.bat','*.cab','*.chm','*.cmd','*.com','*.cpl','*.crt','*.csh','*.dbf','*.dcr','*.deb','*.dex','*.dif','*.dir','*.dll','*.doc','*.dot','*.docm','*.elf','*.exe','*.fxp','*.hlp','*.hta','*.htc','*.htm','*.html','*.img','*.inf','*.ins','*.iso','*.isp','*.jar','*.jnlp','*.js','*.jse','*.kext','*.ksh','*.lha','*.lib','*.lnk','*.lzh','*.macho','*.mda','*.mdb','*.mde','*.mdt','*.mdw','*.mdz','*.mht','*.mhtml','*.msc','*.msi','*.msix','*.msp','*.mst','*.ops','*.pcd','*.pif','*.plg','*.ppa','*.ppt','*.ppam','*.prf','*.prg','*.ps1','*.ps11','*.ps11xml','*.ps1xml','*.ps2','*.ps2xml','*.psc1','*.psc2','*.reg','*.rev','*.scf','*.scr','*.sct','*.shb','*.shs','*.shtm','*.shtml','*.slk','*.spl','*.stm','*.swf','*.sys','*.uif','*.url','*.vb','*.vbe','*.vbs','*.vxd','*.wsc','*.wsf','*.wsh','*.xlam','*.xla','*.xlc','*.xll','*.xls','*.xlsm','*.xlt','*.xlw','*.xml','*.xnk','*.xz','*.z');
+    $missing = @($want | Where-Object { $names -notcontains $_ }); if ($a.Enabled -eq $true -and $missing.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable-TransportAgent ''Attachment Filtering Agent''; then add each missing extension from the benchmark list: foreach ($e in @(''*.ace'',''*.ade'',...)) { Add-AttachmentFilterEntry -Name $e -Type FileName -ErrorAction SilentlyContinue }'

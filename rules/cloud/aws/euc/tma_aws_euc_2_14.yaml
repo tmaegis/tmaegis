@@ -1,0 +1,18 @@
+id: TMA-AWS-EUC-2.14
+title: Ensure WorkSpaces that are not being utilized are removed.
+description: Identify and remove any WorkSpace instances available within your AWS account that are not being utilized. An AWS WorkSpaces instance is considered unused if has 0 (zero) known user connections registered within the past 30 days.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- euc
+reference: CIS AWS End User Compute Services Benchmark v1.2.0 - 2.14 Ensure WorkSpaces that are not being utilized are removed.
+audit:
+  type: manual
+  command: 'Perform the following to ensure WorkSpaces not being utilized have been removed. From the Console: 1. Log in to the WorkSpaces dashboard at https://console.aws.amazon.com/workspaces/. 2. In the left panel click WorkSpaces 3. Choose the WorkSpaces instance that you want to examine. 4. Click on WorkSpace id link. -Verify the User Last Active attribute value is less than 30 days old 5. Repeat step 4 to verify the last user login, returned by the User Last Active attribute value, for all WorkSpaces. 6. Change the AWS region and repeat the audit process for other regions. If the User Last Active was registered more than 30 days ago (e.g. Feb 16, 2017 10:32:54 UTC), the selected WorkSpaces instance is not in use anymore and can be safely removed from your AWS account. Refer to the remediation procedure below. From the Command line: 1. Run the describe-workspaces command to list the IDs of all WorkSpaces instances available within the selected region: aws workspaces describe-workspaces
+    --region us-east-1 --output table --query ''Workspaces[*].WorkspaceId'' 2. The command should return a table with the requested WorkSpaces IDs: -------------------- |DescribeWorkspaces| +------------------...'
+remediation:
+  type: iac_patch
+  command: 'Perform the following to remove unused WorkSpaces based on the output collected from the audit procedure From the Console: 1. Log in to WorkSpaces dashboard at https://console.aws.amazon.com/workspaces/. 2. In the left panel click WorkSpaces 3. Select the WorkSpace ID that you have identified as not being used. 4. Click Actions, Remove WorkSpaces 5. Confirm using the Audit that this is the WorkSpaces ID you should remove. 6. Click Remove WorkSpaces From the Command line: Note that running this command does not prompt you to confirm that you are removing the correct WorkSpaces ID. 1. Run terminate-workspaces command using the ID of the WorkSpaces instance from the Audit that you want to delete: aws workspaces terminate-workspaces --region us-east-1 --terminate-workspace-requests ws-0cgsl1k23'

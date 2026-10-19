@@ -1,0 +1,17 @@
+id: TMA-AWS-S3-DENY-HTTP
+title: Ensure S3 bucket policies deny HTTP requests
+description: A Deny statement on aws:SecureTransport=false forces TLS for every request to the bucket. Every bucket must have a policy containing a Deny with an aws:SecureTransport false condition. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 2
+severity: medium
+tags:
+- aws
+- storage
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Storage - S3 bucket policy denies HTTP requests (verify section number for your release)
+audit:
+  type: command
+  command: "buckets=$(aws s3api list-buckets --query 'Buckets[].Name' --output text 2>/dev/null) || exit 1\nbad=0\nfor b in $buckets; do\n  if pol=$(aws s3api get-bucket-policy --bucket \"$b\" --query Policy --output text 2>&1); then\n    if ! { printf '%s\\n' \"$pol\" | grep -q '\"Effect\" *: *\"Deny\"' && printf '%s\\n' \"$pol\" | grep -Eqi '\"aws:SecureTransport\" *: *\"?false'; }; then\n      echo \"no TLS-only statement: $b\"; bad=1\n    fi\n  else\n    printf '%s\\n' \"$pol\" | grep -q NoSuchBucketPolicy || exit 1\n    echo \"no bucket policy: $b\"; bad=1\n  fi\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Add to each bucket policy: {"Effect":"Deny","Principal":"*","Action":"s3:*","Resource":["arn:aws:s3:::<bucket>","arn:aws:s3:::<bucket>/*"],"Condition":{"Bool":{"aws:SecureTransport":"false"}}} (merge with existing statements; aws s3api put-bucket-policy or aws_s3_bucket_policy).'

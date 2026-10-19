@@ -1,0 +1,20 @@
+id: TMA-CISCO-IOS-1.4.3
+title: Set 'username secret' for all local users
+description: Username secret password type 5 and enable secret password type 5 must be migrated to the stronger password type 8 or 9. IF a device is upgraded from IOS XE 16.9 or later the type 5 is auto converted to type 9. The username secret command provides an additional layer of security over the username password. Default device configuration does not require strong user authentication potentially enabling unfettered access to an attacker that is able to reach the device. Fails if any 'username' line is configured without 'secret'. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all' or 'show startup-config').
+target: cisco-ios
+level: 1
+severity: high
+tags:
+- cisco-ios
+- network
+- aaa
+reference: CIS Cisco IOS XE 17.x Benchmark v2.2.1 - 1.4.3 Set 'username secret' for all local users
+audit:
+  type: config_regex
+  pattern: (?m)^username \S+ (?:(?:[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^r \t\n][^ \t\n]*|r(?:|[^e \t\n][^ \t\n]*|e(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*)))))))[ \t]+)*(?:(?:[^s \t\n][^ \t\n]*|s(?:|[^e \t\n][^ \t\n]*|e(?:|[^c \t\n][^ \t\n]*|c(?:|[^r \t\n][^ \t\n]*|r(?:|[^e \t\n][^ \t\n]*|e(?:|[^t \t\n][^ \t\n]*|t(?:[^ \t\n][^ \t\n]*))))))))?$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Create a local user with an encrypted, complex (not easily guessed) password.
+    username {LOCAL_USERNAME} secret {LOCAL_PASSWORD}

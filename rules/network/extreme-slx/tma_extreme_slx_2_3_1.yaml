@@ -1,0 +1,24 @@
+id: TMA-EXTREME-SLX-2.3.1
+title: Ensure system is running TLS 1.2 or later
+description: Ensuring secure data transmission is crucial in our digital age. TLS 1.2 stands out by offering advanced encryption algorithms, improved key exchange mechanisms, and enhanced protection against known vulnerabilities. This level of security ensures the privacy and integrity of sensitive information transmitted over the internet. As a result, most modern browsers and services now mandate the use of TLS 1.2 or higher for secure connections. PASS requires the management-security server SSL profile to set tls min-version 1.2 (or 1.3); also check the client profile. Audited against SLX-OS 'show running-config' output (saved in full).
+target: extreme-slx
+level: 1
+severity: high
+tags:
+- extreme-slx
+- crypto
+reference: CIS ExtremeNetworks SLX-OS 20.X.X Benchmark v1.0.1 - 2.3.1 Ensure system is running TLS 1.2 or later
+audit:
+  type: config_regex
+  pattern: (?m)^management-security[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+ssl-profile server[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+tls min-version 1\.[23][ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+    management-security
+     ssl-profile server
+      tls min-version 1.2
+     !
+     ssl-profile client
+      tls min-version 1.2
+    end

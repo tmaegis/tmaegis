@@ -1,0 +1,23 @@
+id: TMA-JUNIPER-JUNOS-6.9.3
+title: Ensure SSH Key Authentication is not set for Root Login
+description: SSH Key Based Authentication should not be used for Root Login. Due to the sensitive nature of SSH, potentially allowing full management of the targeted device, protecting SSH access using strong authentication methods is essential to the security of the device. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.9.3 Ensure SSH Key Authentication is not set for Root Login
+audit:
+  type: config_regex
+  pattern: (?m)^set system root-authentication ssh-
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If SSH Key based Authentication is configured for the Root Authentication, remove it using the following command from the hierarchy:
+    delete system root-authentication To set a new Root Password in plain text type:
+    set system root-authentication plain-text-password You will be prompted to enter the new Password twice and, if the Passwords match, JUNOS will add a hash of the Password to the configuration. If you already have a hash of your Root Password (from an existing router configuration, for example), enter the following command:
+    set system root-authentication encrypted-password "<hash>" Note
+    - Hashes use SHA1 by default, but may use other hashing mechanisms depending on the device configuration - ensure the device you are copying from is configured to use the same hashing method. If JWEB is installed on your router, the Root Password may also be changed through the Configuration > Quick Configuration > Setup page.

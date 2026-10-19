@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-3.1.12
+title: Ensure syslog messages are not lost due to size
+description: PostgreSQL log messages can exceed 1024 bytes, which is a typical size limit for traditional Syslog implementations. When syslog_split_messages is off, PostgreSQL server log messages are delivered to the Syslog service as is, and it is up to the Syslog service to cope with the potentially bulky messages. Runs psql as ${PGUSER:-postgres} against ${PGDATABASE:-postgres}; set PGHOST/PGPORT and use ~/.pgpass (not PGPASSWORD, see 1.6/1.7) when peer authentication is not available.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- logging
+- syslog
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 3.1.12 Ensure syslog messages are not lost due to size
+audit:
+  type: sql_query
+  command: out=$(psql -X -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -tAc "SHOW syslog_split_messages" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: 'on'
+remediation:
+  type: sql_exec
+  command: psql -X -U "${PGUSER:-postgres}" -c "ALTER SYSTEM SET syslog_split_messages = 'on'" -c "SELECT pg_reload_conf()"

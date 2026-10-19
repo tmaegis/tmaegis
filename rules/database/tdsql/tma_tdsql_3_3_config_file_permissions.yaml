@@ -1,0 +1,17 @@
+id: TMA-TDSQL-3.3
+title: Ensure Correct Permissions on TDSQL Configuration Files
+description: 'TDSQL configuration files contain sensitive information (encrypted passwords, ZK connection strings, encryption keys, network topology). Key files include: scheduler.xml - main configuration file oss.json - OSS runtime configuration manager.json - Manager runtime configuration mysql.xml - MySQL variable whitelist proxy.json - Proxy configuration backupConf.xml - backup configuration plugin.json - plugin configuration The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Uses TDSQL_HOME (install directory with bin/, conf/, boot/, log/; default /data/tdsql). Counts files that grant the listed permission to other users; any match fails, and a missing directory fails. (o+r). Expected: files 0640, directories 0750.'
+target: tdsql
+level: 1
+severity: high
+tags:
+- tdsql
+- permissions
+reference: CIS Tencent TDSQL 10.3.22 Benchmark v1.0.0 - 3.3 Ensure Correct Permissions on TDSQL Configuration Files
+audit:
+  type: command
+  command: n=0; for p in "${TDSQL_HOME:-/data/tdsql}/conf"; do [ -e "$p" ] && n=$((n+1)); done; [ $n -gt 0 ] || exit 1; c=0; for p in "${TDSQL_HOME:-/data/tdsql}/conf"; do [ -e "$p" ] || continue; c=$((c + $(find "$p" ! -type l -perm /o+r -print 2>/dev/null | wc -l))); done; echo $c
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: chmod 750 <tdsql>/conf; chown -R tdsql:tdsql <tdsql>/conf; chmod 640 <tdsql>/conf/*.xml <tdsql>/conf/*.json

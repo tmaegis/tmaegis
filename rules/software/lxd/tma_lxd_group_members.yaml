@@ -1,0 +1,14 @@
+id: TMA-LXD-GROUP-MEMBERS
+title: Ensure membership of the lxd group is limited to administrators
+description: 'Members of the lxd group can talk to the LXD unix socket and therefore create privileged containers that mount the host filesystem; membership is equivalent to root. Group membership is site policy, so this is a review item.'
+target: lxd
+level: 1
+severity: high
+tags: [lxd, containers, access-control]
+reference: CIS-style LXD hardening guidance - Restrict access to the LXD socket (no CIS benchmark section; verify against your hardening standard)
+audit:
+  type: manual
+  command: 'Run "getent group lxd" and confirm every listed user is an authorised host administrator. Also review "lxc config trust list" for unexpected client certificates and enable restricted certificates or projects for non-admin users.'
+remediation:
+  type: iac_patch
+  command: 'gpasswd -d <user> lxd for unauthorised members; remove unexpected certificates with lxc config trust remove <fingerprint>; give limited users a restricted project (lxc config trust add --restricted --projects <p>).'

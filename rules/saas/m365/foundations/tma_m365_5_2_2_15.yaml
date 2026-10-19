@@ -1,0 +1,18 @@
+id: TMA-M365-5.2.2.15
+title: Ensure exclusionary geographic access controls are utilized
+description: 'Conditional Access Policies can be used to block access from geographic locations that are deemed out-of-scope for your organization or application. The scope and variables for this policy should be carefully examined and defined. The recommended state is to configure at least one policy to block access from untrusted locations. Using Conditional Access as a deny list at the tenant or subscription level enables an organization to block inbound and outbound traffic from geographic locations that fall outside its operational scope (e.g., customers, suppliers) or legal jurisdiction. Restricting access to only required regions significantly reduces unnecessary exposure to international threat actors, including advanced persistent threats (APTs), and helps maintain a more controlled and defensible security posture. Note: Because the selection of allowed or blocked locations is unique to ea...'
+target: m365
+level: 2
+severity: low
+tags:
+- access-control
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.15 Ensure exclusionary geographic access controls are utilized
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria: o Under Users or agents (Preview) verify All users is included o Verify that only documented user exclusions exist and that they are reviewed annually o Under Target resources verify All resources (formerly ''All cloud apps'') is selected o Under Network verify Include> Selected networks and locations contains at least one untrusted location o Under Network verify Exclude contains trusted locations through either All trusted networks and locations or Selected networks and locations o Under Grant verify Block access is selected 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies
+    2. For each policy returned, verify the following criteria: o conditions.users.includeUsers is All o conditions.applications.includeApplications is All o conditions.locations.includ...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Create a new policy by selecting New policy. o Under Users or agents (Preview) include All users o Under Target resources include All resources (formerly ''All cloud apps''). ▪ Under Exclude exclude any break-glass accounts. o Under Network set Configure to Yes: ▪ Select Include, then add entries for untrusted locations that should be blocked ▪ Select Exclude, then add entries for trusted locations that should be allowed 4. Under Access Controls, select Grant select Block Access. 5. Under Enable policy set it to Report-only. 6. Click Create. 7. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On.'

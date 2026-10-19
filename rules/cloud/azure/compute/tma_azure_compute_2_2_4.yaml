@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-2.2.4
+title: Ensure 'Basic Authentication Publishing Credentials' are 'Disabled'
+description: Basic Authentication Publishing Credentials provides the ability to publish—or deploy to—an App Service deployment slot without a centralized Identity Provider. For a more effective, capable, and secure solution for Identity, Authentication, Authorization, and Accountability, a centralized Identity Provider such as Entra ID is strongly advised. Basic Authentication introduces an identity silo for privileged access to a resource and produces logging which may not provide a full chain of accountability. This can be exploited in numerous ways and represents a significant vulnerability and attack vector.
+target: azure
+level: 1
+severity: medium
+tags:
+- auth
+- azure
+- cloud
+- compute
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 2.2.4 Ensure 'Basic Authentication Publishing Credentials' are 'Disabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings tab, under Platform settings, ensure that SCM Basic Auth Publishing Credentials and FTP Basic Auth Publishing Credentials are set to Off. 7. Repeat steps 1-6 for each app and deployment slot. Audit from Azure CLI Run the following command to list apps: az webapp list For each app, run the following command to list deployment slots: az webapp deployment slot list --resource-group <resource-group-name> --name <app-name> For each deployment slot, run the following command to get the basic authentication for FTP setting: az resource show --resource-group <resource-group-name> --name ftp -- namespace Microsoft.Web --resource-type basicPublishingCredentialsPolicies -- parent sites/<app-name>/slots/<deployment-slot-name> --query properties.allow Ensure that false
+    is returned. For each deployment slot, run the following command to get the basic authentication for SCM setting: az resource show --resource-group <resource-group-name> --name scm -- namespace Microsof...'
+remediation:
+  type: iac_patch
+  command: 'CAUTION: Applying changes may cause your App Service resource to restart. Remediate from Azure Portal 1. Go to App Services. 2. Click the name of an app. 3. Under Deployment, click Deployment slots. 4. Click the name of a deployment slot. 5. Under Settings, click Configuration. 6. In the General settings tab, under Platform settings, set SCM Basic Auth Publishing Credentials and FTP Basic Auth Publishing Credentials to Off. 7. Click Save. 8. Click Continue. 9. Repeat steps 1-8 for each app and deployment slot requiring remediation. Remediate from Azure CLI For each deployment slot requiring remediation, run the following command to disable basic authentication for FTP: az resource update --resource-group <resource-group-name> --name ftp -- namespace Microsoft.Web --resource-type basicPublishingCredentialsPolicies -- parent sites/<app-name>/slots/<deployment-slot-name> --set properties.allow=false For each deployment slot requiring remediation, run the following command to disable
+    basic authentication for SCM: az resource update --resource-group <resource-group-name> --name scm -- namespace Microsoft.Web --resource-type basicPublishingCredentialsPolicies -- parent sites/<app-name...'

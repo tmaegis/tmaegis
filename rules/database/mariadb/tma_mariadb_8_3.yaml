@@ -1,0 +1,18 @@
+id: TMA-MARIADB-8.3
+title: Set Maximum Connection Limits for Server and per User
+description: Limiting concurrent connections to a MariaDB server can be used to reduce risk of Denial of Service (DoS) attacks performed by exhausting connection resources.
+target: mariadb
+level: 1
+severity: low
+tags:
+- mariadb
+- database
+- availability
+- manual
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 8.3 Set Maximum Connection Limits for Server and per User
+audit:
+  type: manual
+  command: Run SELECT VARIABLE_NAME, VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE VARIABLE_NAME LIKE 'max_%connections'; (max_user_connections 0 = no limit) and SELECT user, host, max_user_connections FROM mysql.user WHERE user NOT LIKE 'mysql.%' AND user <> 'root'; (0 = global value applies). No server or per-user limit is a fail.
+remediation:
+  type: iac_patch
+  command: Set max_connections and max_user_connections under [mariadbd] (SET GLOBAL to apply now) and per account with ALTER USER '<user>'@'<host>' WITH MAX_USER_CONNECTIONS <n>;

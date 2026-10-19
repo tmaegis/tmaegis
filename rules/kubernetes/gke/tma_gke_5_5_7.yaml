@@ -1,0 +1,20 @@
+id: TMA-GKE-5.5.7
+title: Ensure Secure Boot is enabled for Shielded GKE node pools
+description: Enable Secure Boot for Shielded GKE node pools to verify the digital signature of node VM boot components, including the kernel and bootloader, during the boot process. Secure Boot helps ensure that only trusted boot components are allowed to run when the node starts. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project). Every node pool is checked.
+target: gke
+level: 2
+severity: medium
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.5.7 Ensure Secure Boot is enabled for Shielded GKE node pools
+audit:
+  type: command
+  command: |-
+    out=$(gcloud container node-pools list --cluster "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(name,config.shieldedInstanceConfig.enableSecureBoot)') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -F '\t' 'NF && !($2=="True") {print $1 ": " $2}')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Create a replacement node pool with Secure Boot enabled for any node pool where the audit result is not true. Secure Boot is disabled by default for node pools and should be explicitly enabled when creating the replacement node pool. gcloud container node-pools create $POOL_NAME \ --cluster $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --shielded-secure-boot • Before migrating workloads, validate that Secure Boot will not block required boot components or node level dependencies. On Ubuntu nodes, Secure Boot blocks unsigned third party kernel modules from loading. Migrate workloads from the noncompliant node pool to the new Secure Boot enabled node pool, validate workload health, and then drain and delete the old node pool. After remediation, rerun the audit command and confirm that enableSecureBoot returns true.

@@ -1,0 +1,24 @@
+id: TMA-JUNIPER-JUNOS-3.1.2
+title: Ensure access profile is set to use CHAP
+description: CHAP Authentication MUST be used when Incoming calls are permitted. Some JUNOS routers support the use of a dial in modem connection for Telnet/SSH administration of the router from a remote connection over the telephone network. Passes when no dialer interface accepts incoming calls; otherwise requires CHAP. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: medium
+tags:
+- juniper-junos
+- network
+- hardening
+reference: CIS Juniper OS Benchmark v2.1.0 - 3.1.2 Ensure access profile is set to use CHAP
+audit:
+  type: config_regex
+  pattern: (?m)\A(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^f\n]|f(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^d\n]|d(?:$|[^l\n])))))))))))))))))[^\n]*|[ \t]*set interfaces dl(?:(?:[^c \t\n][^ \t\n]*|c(?:|[^h \t\n][^ \t\n]*|h(?:|[^a \t\n][^ \t\n]*|a(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^ \t\n]*)))))[ \t]+)*(?:(?:[^c \t\n][^ \t\n]*|c(?:|[^h \t\n][^ \t\n]*|h(?:|[^a \t\n][^ \t\n]*|a(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^ \t\n]*))))))?)\n)*[ \t]*set interfaces dl[^\n]*\bincoming-map\b[^\n]*(?:\n(?:(?:[ \t]*(?:$|[^s \t\n]|s(?:$|[^e\n]|e(?:$|[^t\n]|t(?:$|[^ \n]| (?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^f\n]|f(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^e\n]|e(?:$|[^s\n]|s(?:$|[^ \n]| (?:$|[^d\n]|d(?:$|[^l\n])))))))))))))))))[^\n]*|[ \t]*set interfaces dl(?:(?:[^c \t\n][^ \t\n]*|c(?:|[^h \t\n][^ \t\n]*|h(?:|[^a \t\n][^ \t\n]*|a(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^
+    \t\n]*)))))[ \t]+)*(?:(?:[^c \t\n][^ \t\n]*|c(?:|[^h \t\n][^ \t\n]*|h(?:|[^a \t\n][^ \t\n]*|a(?:|[^p \t\n][^ \t\n]*|p(?:[^ \t\n][^ \t\n]*))))))?)))*\n?\z
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! If you have configured a dialer interface to accept incoming calls, you should configure CHAPS authentication using the following commands from the indicated hierarchy (where n is the interface number);
+    set access profile <profile name> client <username> chap-secret <password>
+    top
+    edit access interface dl <n> unit 0
+    set interfaces dl <n> unit 0 ppp-options chap access-profile <profile name> Repeat the first command for each user that is required.

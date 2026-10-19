@@ -1,0 +1,17 @@
+id: TMA-AIX-3.4
+title: Ensure world writable files are secured
+description: 'The system is audited for world writable files. An audit should be performed on the system to search for the presence of world writable files. In an extreme case - where this permission is required - the file needs to be added to the TSD and audit configurations. The preference is no world writeable files. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: aix
+level: 1
+severity: high
+tags:
+- aix
+- permissions
+reference: CIS IBM AIX 7 Benchmark v1.2.0 - 3.4 Ensure world writable files are secured
+audit:
+  type: command
+  command: command -v find >/dev/null 2>&1 || exit 1; out=$( { find / \( -fstype jfs -o -fstype jfs2 \) -type f -perm -o+w -ls ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf '%s\n' "$out" | head -n 20
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to remove the write bit from other: find / \( -fstype jfs -o -fstype jfs2 \) -type f -perm -o+w -exec chmod o-w {} +'

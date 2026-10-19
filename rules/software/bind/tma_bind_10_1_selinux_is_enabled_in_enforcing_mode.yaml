@@ -1,0 +1,22 @@
+id: TMA-BIND-10.1
+title: Ensure SELinux Is Enabled in Enforcing Mode
+description: SELinux (Security-Enhanced Linux) is a Linux kernel security module that provides mandatory access control security policies with type enforcement that are checked after the traditional discretionary access controls. It was created by the US National Security Agency and can enforce rules on files and processes in a Linux system, and restrict actions, based on defined policies. The audit runs sestatus and requires both the current mode and the mode from the config file to be enforcing.
+target: bind
+level: 2
+severity: low
+tags:
+- bind
+- dns
+- selinux
+reference: CIS ISC BIND DNS Server 9.11 Benchmark v1.0.0 - 10.1 Ensure SELinux Is Enabled in Enforcing Mode
+audit:
+  type: command
+  command: |-
+    out=$(sestatus 2>/dev/null) || exit 1
+    c=$(printf '%s\n' "$out" | awk -F: '/^Current mode/{gsub(/ /,"",$2); print $2}')
+    f=$(printf '%s\n' "$out" | awk -F: '/^Mode from config file/{gsub(/ /,"",$2); print $2}')
+    [ "$c" = enforcing ] && [ "$f" = enforcing ] && echo compliant || echo "SELinux current=${c:-?} config=${f:-?}"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Perform the following to implement the recommended state: If SELinux is not enabled in the configuration file, edit the file /etc/selinux/config and set the value of SELINUX as enforcing and reboot the system for the new configuration to be effective. SELINUX=enforcing If the current mode is not enforcing, and an immediate reboot is not possible, the current mode can be set to enforcing with the setenable command shown below. # setenforce 1'

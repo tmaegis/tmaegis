@@ -1,0 +1,21 @@
+id: TMA-DOCKER-3.3
+title: Ensure that docker.socket file ownership is set to root:root
+description: The docker.socket unit file must be owned by root:root so that unprivileged users cannot alter Docker behaviour. The audit stats every existing candidate path (/usr/lib/systemd/system/docker.socket, /lib/systemd/system/docker.socket, /etc/systemd/system/docker.socket); not applicable when none exists.
+target: docker
+level: 1
+severity: high
+tags:
+- docker
+- permissions
+reference: CIS Docker Benchmark v1.9.0 - 3.3 Ensure that docker.socket file ownership is set to root:root
+audit:
+  type: command
+  command: for f in /usr/lib/systemd/system/docker.socket /lib/systemd/system/docker.socket /etc/systemd/system/docker.socket; do [ -e "$f" ] || continue; o=$(stat -Lc '%U:%G' "$f") || exit 1; [ "$o" = root:root ] || { echo "$f $o"; exit 0; }; done; echo compliant
+  expected_output: compliant
+  requires_file:
+  - /usr/lib/systemd/system/docker.socket
+  - /lib/systemd/system/docker.socket
+  - /etc/systemd/system/docker.socket
+remediation:
+  type: command
+  command: for f in /usr/lib/systemd/system/docker.socket /lib/systemd/system/docker.socket /etc/systemd/system/docker.socket; do if [ -e "$f" ]; then chown root:root "$f" || exit 1; fi; done

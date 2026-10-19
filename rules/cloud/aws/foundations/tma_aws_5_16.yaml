@@ -1,0 +1,17 @@
+id: TMA-AWS-5.16
+title: Ensure AWS Security Hub is enabled
+description: Security Hub collects security data from various AWS accounts, services, and supported third-party partner products, helping you analyze your security trends and identify the highest-priority security issues. When you enable Security Hub, it begins to consume, aggregate, organize, and prioritize findings from the AWS services that you have enabled, such as Amazon GuardDuty, Amazon Inspector, and Amazon Macie. You can also enable integrations with AWS partner security products. AWS Security Hub provides you with a comprehensive view of your security state in AWS and helps you check your environment against security industry standards and best practices, enabling you to quickly assess the security posture across your AWS accounts.
+target: aws
+level: 2
+severity: low
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 5.16 Ensure AWS Security Hub is enabled
+audit:
+  type: manual
+  command: 'Follow this process to evaluate AWS Security Hub configuration per region: From Console: 1. Sign in to the AWS Management Console and open the AWS Security Hub console at https://console.aws.amazon.com/securityhub/. 2. On the top right of the console, select the target Region. 3. If the Security Hub > Summary page is displayed, then Security Hub is set up for the selected region. 4. If presented with "Setup Security Hub" or "Get Started With Security Hub," refer to the remediation steps. 5. Repeat steps 2 to 4 for each region. From Command Line: Run the following command to verify the Security Hub status: aws securityhub describe-hub This will list the Security Hub status by region. Check for a ''SubscribedAt'' value. Example output: { "HubArn": "<security-hub-arn>", "SubscribedAt": "2022-08-19T17:06:42.398Z", "AutoEnableControls": true } An error will be returned if Security Hub is not enabled. Example error: An error occurred (InvalidAccessException) when calling the DescribeHub
+    operation: Account <Account ID> is not subscribed to AWS Security Hub'
+remediation:
+  type: iac_patch
+  command: 'To grant the permissions required to enable Security Hub, attach the Security Hub managed policy AWSSecurityHubFullAccess to an IAM user, group, or role. Enabling Security Hub: From Console: 1. Use the credentials of the IAM identity to sign in to the Security Hub console. 2. When you open the Security Hub console for the first time, choose Go to Security Hub. 3. The Security standards section on the welcome page lists supported security standards. Check the box for a standard to enable it. 4. Choose Enable Security Hub. From Command Line: 1. Run the enable-security-hub command, including --enable-default- standards to enable the default standards: aws securityhub enable-security-hub --enable-default-standards 2. To enable Security Hub without the default standards, include --no-enable- default-standards: aws securityhub enable-security-hub --no-enable-default-standards'

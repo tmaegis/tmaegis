@@ -1,0 +1,45 @@
+id: TMA-MACOS14-2.3.3.4
+title: Ensure Remote Login Is Disabled
+description: Remote Login allows an interactive terminal connection to a computer. Disabling Remote Login mitigates the risk of an unauthorized person gaining access to the system via Secure Shell (SSH). While SSH is an industry standard to connect to POSIX servers, the scope of the benchmark is for Apple macOS clients, not servers. macOS does have an IP-based firewall available (pf, ipfw has been deprecated) that is not enabled or configured. There are more details and links in the Network sub-section. macOS no longer has TCP Wrappers support built in and does not have strong Brute- Force password guessing mitigations, or frequent patching of OpenSSH by Apple. Since most macOS computers are mobile workstations, managing IP-based firewall rules on mobile devices can be very resource intensive. All of these factors can be parts of running a hardened SSH server.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- logging
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 2.3.3.4 Ensure Remote Login Is Disabled
+audit:
+  type: command
+  command: 'a=$(/usr/sbin/systemsetup -getremotelogin 2>/dev/null) || exit 1
+
+    b=$(/bin/launchctl print-disabled system 2>/dev/null | /usr/bin/grep -c ''"com.openssh.sshd" => disabled'')
+
+    c=$(/bin/launchctl list 2>/dev/null | /usr/bin/grep -c "com.openssh.sshd")
+
+    if printf ''%s'' "$a" | /usr/bin/grep -q "Remote Login: Off" && [ "$b" -eq 1 ] && [ "$c" -eq 0 ]; then echo compliant; else echo "$a; disabled=$b; running=$c"; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    if [ -n "${SSH_CONNECTION:-}${SSH_CLIENT:-}${SSH_TTY:-}" ]; then echo "TMAegis: skipped - running over SSH, this would cut the operator's session" >&2; exit 1; fi
+    /usr/sbin/systemsetup -f -setremotelogin off 2>/dev/null
+    /bin/launchctl disable system/com.openssh.sshd 2>/dev/null
+    /bin/launchctl bootout system/com.openssh.sshd 2>/dev/null
+    /bin/launchctl unload -w /System/Library/LaunchDaemons/ssh.plist 2>/dev/null; true
+  guidance: "Perform the following to disable Remote Login: Graphical Method: Perform the following steps to disable Remote Login: 1. Open System Settings 2. Select General 3. Select Sharing 4. Set Remote Login to disabled Terminal Method: Run the following command to disable Remote Login: % /usr/bin/sudo /usr/sbin/systemsetup -setremotelogin off Do you really want to turn remote login off? If you do, you will lose this connection and can only turn it back on locally at the server (yes/no)? Entering yes will disable remote login. Note: This command will disable the service as well as stop it running in time."

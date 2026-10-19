@@ -1,0 +1,20 @@
+id: TMA-CISCO-IOSXR-1.5.3
+title: Do not set 'RW' for any 'snmp-server community'
+description: Specifies read-write access. Authorized management stations can both retrieve and modify MIB objects. Enabling SNMP read-write enables remote management of the device. Unless absolutely necessary, do not allow simple network management protocol (SNMP) write access. CIS marks this Manual; automated as a config-line check. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 1
+severity: high
+tags:
+- cisco-iosxr
+- network
+- snmp
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.5.3 Do not set 'RW' for any 'snmp-server community'
+audit:
+  type: config_regex
+  pattern: (?m)(?i)^snmp-server community \S+ (?:[^\n]* )?RW\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Disable SNMP write access.
+    no snmp-server community {community_string}

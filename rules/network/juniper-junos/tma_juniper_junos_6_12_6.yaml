@@ -1,0 +1,27 @@
+id: TMA-JUNIPER-JUNOS-6.12.6
+title: Ensure Local Logging is Set to Messages File
+description: Logging data should be saved locally to the default messages file. As part of the factory-default configuration, all JUNOS devices are configured to log SYSLOG events from several Facilities to a standard /var/log/messages file. Requires 'file messages authorization info' and 'file messages any critical' (more verbose levels accepted). Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: low
+tags:
+- juniper-junos
+- network
+- logging
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.12.6 Ensure Local Logging is Set to Messages File
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^set system syslog file messages authorization (?:info|any)\b.*^set system syslog file messages any (?:critical|error|warning|notice|info|any)\b)|(?s:^set system syslog file messages any (?:critical|error|warning|notice|info|any)\b.*^set system syslog file messages authorization (?:info|any)\b)
+remediation:
+  type: iac_patch
+  command: |-
+    ! To configure a local SYSLOG messages file, issue the following commands from the hierarchy;
+    set system syslog file messages any critical
+    set system syslog file messages authorization info On some JUNOS platforms, the factory-default configuration may include additional elements to be logged to the /var/log/messages file. You can confirm what the factory-default settings for SYSLOG are on your JUNOS Device by issuing the following commands from a new configuration mode session - which does not have any outstanding changes. First, confirm that there are no pending changes:
+    show | compare If any difference were highlighted do not proceed with the next set of commands until you have either rolled back or committed the outstanding changes. Next load the factory-default configuration (do not commit this configuration):
+    load factory-default Now we can compare the factory-default configuration to your current Active Configuration (rollback 0):
+    edit system syslog file messages
+    show | compare Finally, roll the Candidate Configuration back to the current Active Configuration and quit from Configuration Mode:
+    top
+    rollback 0 load complete
+    quit Any logging which was missing from the current Active Configuration should be added to restore the original configuration.

@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-1.2.8
+title: Ensure that inapplicable PPT entries have been invalidated
+description: The program properties table (PPT) contains entries for special attributes of programs. One of these entries indicates whether or not the program is allowed to bypass datasets password protection (PPTNOPAS), or access key protected storage. If invalid or inapplicable PPT entries exist, a venue is provided for the introduction of Trojan Horse modules with security bypass capabilities.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- hardening
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 1.2.8 Ensure that inapplicable PPT entries have been invalidated
+audit:
+  type: manual
+  command: 'Request the following DSMON report: FUNCTION SYSTEM SYSPPT Verify that each privileged PROGRAM NAME entry is valid. Note: To determine if a program entry is valid issue the following TSO command: ISRDDN LOAD <privileged-module> If the return message is Load Failed the entry can be considered invalid.'
+remediation:
+  type: iac_patch
+  command: 'Although you cannot remove entries from the PPT, you can create the effect of removing an entry from the PPT by defining the program name in the PARMLIB member SCHEDxx without special attributes. This statement overrides the existing entry in the PPT, and causes any APF-authorized program with a matching name to run with the same attributes as a problem program. Update the SCHEDxx member: PPT PGMNAME(<privileged-module>) Notes: If you specify more than one PPT statement with the same program name, the systems accept only the first occurrence of the name and issues error message IEF732I for all subsequent occurrences of that name. When referring to a DD statement, the system does not honor requests for special properties as defined in the PPT.'

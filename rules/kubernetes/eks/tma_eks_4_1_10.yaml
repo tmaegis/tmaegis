@@ -1,0 +1,17 @@
+id: TMA-EKS-4.1.10
+title: Minimize access to the proxy sub-resource of nodes
+description: Access to the nodes/proxy subresource in EKS should be limited to identities with a documented node-administration or troubleshooting need. This review should cover custom Role and ClusterRole rules, RoleBinding and ClusterRoleBinding assignments, and any service accounts that receive node subresource access. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: high
+tags:
+- eks
+- policies
+- rbac
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.1.10 Minimize access to the proxy sub-resource of nodes
+audit:
+  type: manual
+  command: Review EKS RBAC to identify custom Role and ClusterRole objects that grant access to the nodes/proxy subresource, and validate that each permission is required for an approved troubleshooting, maintenance, or platform-administration function. Focus this review on customer-managed RBAC because EKS creates its own default RBAC identities for cluster components, while customer-defined node-proxy access is usually introduced through native Kubernetes RBAC.
+remediation:
+  type: iac_patch
+  command: Reduce custom RBAC access to the nodes/proxy API path so it is limited to approved administrative identities that require node-level access. In EKS, use access entries and associated access policies for standard cluster access wherever possible, and reserve custom Kubernetes RBAC for cases where the predefined access policies do not meet the requirement. Keep nodes/proxy limited to tightly controlled troubleshooting, maintenance, or platform-administration use cases, and avoid assigning it to workload service accounts. • Remove nodes/proxy from any custom Role or ClusterRole where node-level proxying is not explicitly required. • Where some node-related access is still needed, replace nodes/proxy with narrower permissions on only the specific resources and verbs required, and reduce scope from ClusterRole to namespace-scoped Role where the function allows it.

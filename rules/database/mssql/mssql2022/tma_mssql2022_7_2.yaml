@@ -1,0 +1,18 @@
+id: TMA-MSSQL2022-7.2
+title: Ensure Asymmetric Key Size is set to 'greater than or equal to 2048' in non-system databases
+description: Microsoft Best Practices recommend to use at least a 2048-bit encryption algorithm for asymmetric keys. The RSA_2048 encryption algorithm for asymmetric keys in SQL Server is the highest bit-level provided and therefore the most secure available choice (other choices are RSA_512 and RSA_1024).
+target: mssql
+level: 1
+severity: medium
+tags:
+- crypto
+- mssql
+- sqlserver-2022
+reference: CIS Microsoft SQL Server 2022 Benchmark v1.3.0 - 7.2 Ensure Asymmetric Key Size is set to 'greater than or equal to 2048' in non-system databases
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; DECLARE @n int = 0, @k int, @db sysname, @s nvarchar(max); DECLARE c CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.databases WHERE state = 0 AND HAS_DBACCESS(name) = 1 AND database_id > 4; OPEN c; FETCH NEXT FROM c INTO @db; WHILE @@FETCH_STATUS = 0 BEGIN SET @s = N'USE ' + QUOTENAME(@db) + N'; SELECT @k = COUNT(*) FROM (SELECT name FROM sys.asymmetric_keys WHERE key_length < 2048) AS x;'; EXEC sp_executesql @s, N'@k int OUTPUT', @k = @k OUTPUT; SET @n = @n + @k; FETCH NEXT FROM c INTO @db; END; CLOSE c; DEALLOCATE c; SELECT @n;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'Refer to Microsoft SQL Server Books Online ALTER ASYMMETRIC KEY entry: https://docs.microsoft.com/en-us/sql/t-sql/statements/alter-asymmetric-key-transact-sql'

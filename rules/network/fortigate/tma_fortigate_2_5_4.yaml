@@ -1,0 +1,29 @@
+id: TMA-FORTIGATE-2.5.4
+title: Ensure High Availability Group-ID is configured
+description: Ensure that FortiGate High Availability (HA) configuration has non-default "Group-ID" PASS requires a non-zero HA group-id. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: medium
+tags:
+- fortigate
+- high-availability
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 2.5.4 Ensure High Availability Group-ID is configured
+audit:
+  type: config_regex
+  pattern: (?m)^config system ha\n(?:[ \t]+[^\n]*\n)*?[ \t]+set group-id [1-9]\d*[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config system ha
+        set group-id 10
+    end
+    # CIS guidance:
+    To modify High Availability (HA) Group-ID From the CLI:
+    config system ha
+        set group-id 10
+    end
+    The Group ID can be any integer value from 0-1023 From the GUI:
+    1. System > HA
+    2. Select Primary device and either double click or single click and select "Edit"
+    3. Under Cluster Settings enter a value in the "Group ID"
+    4. Click OK to apply The Group ID can be any integer value from 0-1023

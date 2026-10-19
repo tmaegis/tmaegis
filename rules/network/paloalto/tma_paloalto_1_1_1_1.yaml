@@ -1,0 +1,27 @@
+id: TMA-PALOALTO-1.1.1.1
+title: Syslog logging should be configured
+description: 'Syslog logging is a standard logging protocol that is widely supported. It is recommended for a level 1 deployment only, as syslog does not support encryption. PASS requires a syslog server profile with a server and System log forwarding to syslog; also confirm Configuration, User-ID, HIP Match and IP-Tag log settings forward to it. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'', then ''configure'' and ''show'' (or ''show config running'') and save the full output.'
+target: paloalto
+level: 1
+severity: medium
+tags:
+- paloalto
+- logging
+reference: CIS Palo Alto Firewall 11 Benchmark v1.2.0 - 1.1.1.1 Syslog logging should be configured
+audit:
+  type: config_regex
+  pattern: (?m)(?:^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings syslog (?:"[^"\n]*"|\S+) server (?:"[^"\n]*"|\S+) server \S+(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings system match-list (?:"[^"\n]*"|\S+) send-syslog \S+|^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings system match-list (?:"[^"\n]*"|\S+) send-syslog \S+(?s:.*?)^set (?:shared |vsys \S+ |device-group \S+ |template \S+ config (?:shared |vsys \S+ )?)?log-settings syslog (?:"[^"\n]*"|\S+) server (?:"[^"\n]*"|\S+) server \S+)
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set shared log-settings syslog SYSLOG-PROFILE server SYSLOG1 server 10.0.0.50 transport UDP port 514 facility LOG_USER format BSD
+    set shared log-settings system match-list ALL-SYSTEM filter "All Logs" send-syslog SYSLOG-PROFILE
+    set shared log-settings config match-list ALL-CONFIG filter "All Logs" send-syslog SYSLOG-PROFILE
+    set shared log-settings userid match-list ALL-USERID filter "All Logs" send-syslog SYSLOG-PROFILE
+    set shared log-settings hipmatch match-list ALL-HIP filter "All Logs" send-syslog SYSLOG-PROFILE
+    set shared log-settings iptag match-list ALL-IPTAG filter "All Logs" send-syslog SYSLOG-PROFILE
+    commit
+    # CIS guidance:
+    Navigate to Device > Server Profiles > Syslog Choose Add Assign a Name to the Profile. Choose Add, and assign a server name in the Name field, add an IP address or FQDN in the Syslog Server field. Edit other fields as appropriate for your server. Repeat if multiple Syslog destinations are required.
+    Navigate to Device > Log Settings Under System, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a Syslog Profile in the Syslog section. Ensure that at least one of the Log Settings Configuration entries has it's Filter setting at All Logs Under Configuration, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a Syslog Profile in the Syslog section. Ensure that at least one of the Log Settings Configuration entries has it's Filter setting at All Logs Under User-ID, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a Syslog Profile in the Syslog section. Ensure that at least one of the Log Settings Configuration entries has it's Filter setting at All Logs Under HIP Match (Host Information Profile), add an entry. Define a Name and a Filter setting. Under Forward Methods, add a Syslog Profile in the Syslog section. Ensure that at least one of the Log Settings Configuration entries has it's Filter setting at All Logs Under IP-Tag, add an entry. Define a Name and a Filter setting. Under Forward Methods, add a Syslog Profile in the Syslog section. Ensure that at least one of the Log Settings Configuration entries has it's Filter setting at All Logs

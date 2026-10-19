@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-5.2
+title: Use LockOut Realms
+description: 'A LockOut realm wraps around standard realms adding the ability to lock a user out after multiple failed logins. server.xml must contain a LockOutRealm. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored.'
+target: tomcat
+level: 2
+severity: low
+tags:
+- tomcat
+- authentication
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 5.2 Use LockOut Realms
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; s=$(x "$B/conf/server.xml") || exit 1; printf '%s\n' "$s" | grep -E '^Realm[[:space:]]' | grep -Eq 'org\.apache\.catalina\.realm\.LockOutRealm' && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: 'Wrap the authenticating realm: <Realm className="org.apache.catalina.realm.LockOutRealm" failureCount="3" lockOutTime="600"> ... </Realm>. Restart Tomcat afterwards.'

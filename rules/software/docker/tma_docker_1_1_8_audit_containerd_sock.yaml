@@ -1,0 +1,39 @@
+id: TMA-DOCKER-1.1.8
+title: Ensure auditing is configured for Docker files and directories - containerd.sock
+description: Auditing the containerd socket /run/containerd/containerd.sock records changes and use of a security-critical Docker component, supporting incident investigation. The audit lists the loaded kernel audit rules (auditctl -l, needs root) and looks for a watch on containerd.sock. Not applicable when the containerd socket /run/containerd/containerd.sock is not present.
+target: docker
+level: 2
+severity: medium
+tags:
+- docker
+- auditd
+- host
+reference: CIS Docker Benchmark v1.9.0 - 1.1.8 Ensure auditing is configured for Docker files and directories - containerd.sock
+audit:
+  type: command
+  command: out=$(auditctl -l 2>/dev/null) || exit 1; printf '%s\n' "$out" | grep -q -e 'containerd.sock' && echo compliant || echo missing
+  expected_output: compliant
+  requires_file:
+  - /run/containerd/containerd.sock
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v auditctl >/dev/null 2>&1 || exit 0
+    mkdir -p /etc/audit/rules.d
+    f=/etc/audit/rules.d/docker.rules
+    grep -qxF -e '-w /run/containerd/containerd.sock -k docker' "$f" 2>/dev/null || echo '-w /run/containerd/containerd.sock -k docker' >> "$f"
+    augenrules --load >/dev/null 2>&1 || auditctl -w /run/containerd/containerd.sock -k docker 2>/dev/null || true; true
+  guidance: "Add '-w /run/containerd/containerd.sock -k docker' to /etc/audit/rules.d/docker.rules, then load it with 'augenrules --load' (or restart auditd)."

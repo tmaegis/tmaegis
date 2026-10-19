@@ -1,0 +1,17 @@
+id: TMA-AWS-IAM-ACCESS-KEYS-ROTATED
+title: Ensure active IAM access keys are rotated every 90 days or less
+description: Long-lived access keys are the most common leaked AWS credential. Every Active key must have been created within the last 90 days. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- iam
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Identity and Access Management - access keys rotated every 90 days (verify section number for your release)
+audit:
+  type: command
+  command: "cut=$(date -u -d '90 days ago' +%Y-%m-%dT%H:%M:%S 2>/dev/null || date -u -v-90d +%Y-%m-%dT%H:%M:%S 2>/dev/null) || exit 1\nusers=$(aws iam list-users --query 'Users[].UserName' --output text 2>/dev/null) || exit 1\nbad=0\nfor u in $users; do\n  d=$(aws iam list-access-keys --user-name \"$u\" --query 'AccessKeyMetadata[?Status==`\"Active\"`].CreateDate' --output text 2>/dev/null) || exit 1\n  old=$(printf '%s\\n' \"$d\" | tr '\\t' '\\n' | awk -v c=\"$cut\" 'NF && $1 < c')\n  [ -z \"$old\" ] || { echo \"stale key: $u\"; bad=1; }\ndone\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'For each listed user: aws iam create-access-key, deploy the new key, aws iam update-access-key --status Inactive on the old one, then aws iam delete-access-key. Prefer roles or IAM Identity Center over long-lived keys.'

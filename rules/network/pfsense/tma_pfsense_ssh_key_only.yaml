@@ -1,0 +1,19 @@
+id: TMA-PFSENSE-SSH-KEY-ONLY
+title: Ensure SSH, when enabled, accepts public key authentication only
+description: FAILs when the <ssh> block has <enable>enabled</enable> and sshdkeyonly is absent or set to 'both' (password or key). Passes when SSH is disabled. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: high
+tags:
+- pfsense
+- management
+- ssh
+- authentication
+reference: CIS pfSense Firewall Benchmark - Secure Shell - SSHd Key Only (verify section number for your pfSense release)
+audit:
+  type: config_regex
+  pattern: <ssh>\s*(?:(?:<(?:port|sshport|sshdagentforwarding)>[^<]*</[a-z_]+>|<sshdkeyonly>(?:both|disabled)?</sshdkeyonly>|<[a-z_]+\s*/>)\s*)*<enable>enabled</enable>\s*(?:(?:<(?:port|sshport|sshdagentforwarding)>[^<]*</[a-z_]+>|<sshdkeyonly>(?:both|disabled)?</sshdkeyonly>|<[a-z_]+\s*/>)\s*)*</ssh>
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: 'GUI: System > Advanced > Admin Access > Secure Shell > SSHd Key Only = Public Key Only (add keys under System > User Manager first), Save. Or clear Enable Secure Shell.'

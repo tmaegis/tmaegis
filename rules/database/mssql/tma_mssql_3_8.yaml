@@ -1,0 +1,18 @@
+id: TMA-MSSQL-3.8
+title: Ensure only the default permissions specified by Microsoft are granted to the public server role
+description: 'public is a special fixed server role containing all logins. Unlike other fixed server roles, permissions can be changed for the public role. In keeping with the principle of least privileges, the public server role should not be used to grant permissions at the server scope as these would be inherited by all users. Default: By default, the public server role is granted VIEW ANY DATABASE permission and the CONNECT permission on the default endpoints (TSQL Local Machine, TSQL Named Pipes, TSQL Default TCP, TSQL ... Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- privileges
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 3.8 Ensure only the default permissions specified by Microsoft are granted to the public server role
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM master.sys.server_permissions WHERE (grantee_principal_id = SUSER_SID(N'public') AND state_desc LIKE 'GRANT%') AND NOT (state_desc = 'GRANT' AND permission_name = 'VIEW ANY DATABASE' AND class_desc = 'SERVER') AND NOT (state_desc = 'GRANT' AND permission_name = 'CONNECT' AND class_desc = 'ENDPOINT' AND major_id IN (2,3,4,5));"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 1. Add the extraneous permissions found in the Audit query results to the specific logins to user-defined server roles which require the access. 2. Revoke the <permission_name> from the public role as shown below USE [master] GO REVOKE <permission_name> FROM public; GO

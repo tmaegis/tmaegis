@@ -1,0 +1,21 @@
+id: TMA-MINT22-2.1.11
+title: Ensure openssh server services are not in use
+description: Secure Shell (SSH) is a secure, encrypted replacement for common login services such as telnet, ftp, rlogin, rsh, and rcp. It is strongly recommended that sites abandon older clear-text login protocols and use SSH to prevent session hijacking and sniffing of sensitive data off the network.
+target: linux
+os_family:
+- linuxmint-22
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Linux Mint 22 Benchmark v1.0.0 - 2.1.11
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v dpkg-query >/dev/null 2>&1 || { echo "step1: dpkg-query not installed"; return 1; }; o=$(bash -c ''dpkg-query -s openssh-server &>/dev/null && echo "openssh-server is installed"'' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; }; alt1() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-enabled ssh.socket ssh.service 2>/dev/null | grep ''"''"''enabled''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step1: $o" | head -c 300; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; command -v systemctl >/dev/null 2>&1 || { echo "step2: systemctl not installed"; return 1; }; o=$(bash -c ''systemctl is-active ssh.socket ssh.service 2>/dev/null | grep ''"''"''^active''"''"'''' 2>/dev/null); [ -z "$o" ] || { echo "step2: $o" | head -c 300; return
+    1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following commands to stop ssh.socket and ssh.service, and remove the openssh-server package: # systemctl stop ssh.socket ssh.service # apt purge openssh-server - OR - - IF - the openssh-server package is required as a dependency: Run the following commands to stop and mask ssh.socket and ssh.service: # systemctl stop ssh.socket ssh.service # systemctl mask ssh.socket ssh.service'

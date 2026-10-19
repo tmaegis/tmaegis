@@ -1,0 +1,48 @@
+id: TMA-ROCKY8-5.1.5
+title: Ensure access to SSH public host key files is configured
+description: An SSH public key is one of two files used in SSH public key authentication. In this authentication method, a public key is a key that can be used for verifying digital signatures generated using a corresponding private key. Only a public key that corresponds to a private key will be able to authenticate successfully.
+target: linux
+os_family:
+- rocky-8
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Rocky Linux 8 Benchmark v3.0.0 - 5.1.5
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   a_output=(); a_output2=()\n   l_pmask=\"0133\"; l_maxperm=\"$( printf '\"'\"'%o'\"'\"' $(( 0777 & ~$l_pmask )) )\"\n   f_file_chk()\n   {\n      while IFS=: read -r l_file_mode l_file_owner l_file_group; do\n         a_out2=()\n         if [ $(( $l_file_mode & $l_pmask )) -gt 0 ]; then\n            a_out2+=(\"    Mode: \\\"$l_file_mode\\\" should be mode: \\\"$l_maxperm\\\" or more restrictive\")\n         fi\n         if [ \"$l_file_owner\" != \"root\" ]; then\n            a_out2+=(\"    Owned by: \\\"$l_file_owner\\\" should be owned by: \\\"root\\\"\")\n         fi\n         if [ \"$l_file_group\" != \"root\" ]; then\n            a_out2+=(\"    Owned by group \\\"$l_file_group\\\" should be group owned by group: \\\"root\\\"\")\n         fi\n         if [ \"${#a_out2[@]}\" -gt \"0\" ]; then\n            a_output2+=(\"  - File: \\\"$l_file\\\"\" \"${a_out2[@]}\")\n         else\n            a_output+=(\"  - File: \\\"$l_file\\\
+    \"\" \\\n            \"    Correct: mode: \\\"$l_file_mode\\\", owner: \\\"$l_file_owner\\\" and group owner: \\\"$l_file_group\\\" configured\")\n         fi\n      done < <(stat -Lc '\"'\"'%#a:%U:%G'\"'\"' \"$l_file\")\n   }\n   while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_file; do\n      if ssh-keygen -lf &>/dev/null \"$l_file\"; then\n         file \"$l_file\" | grep -Piq -- '\"'\"'\\bopenssh\\h+([^#\\n\\r]+\\h+)?public\\h+key\\b'\"'\"' && f_file_chk\n      fi\n   done < <(find -L /etc/ssh -xdev -type f -print0 2>/dev/null)\n   if [ \"${#a_output2[@]}\" -le 0 ]; then\n      [ \"${#a_output[@]}\" -le 0 ] && a_output+=(\"  - No openSSH public keys found\")\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** PASS **\" \"${a_output[@]}\" \"\"\n   else\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** FAIL **\" \" - Reason(s) for audit failure:\" \"${a_output2[@]}\"\n      [ \"${#a_output[@]}\" -gt 0 ] && printf '\"'\"'%s\\n'\"'\"' \"\" \"- Correctly set:\"\
+    \ \"${a_output[@]}\" \"\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    [ -d /etc/ssh ] || exit 0
+    grp=root; grep -q '^ssh_keys:' /etc/group && grp_keys=ssh_keys || grp_keys=
+    for f in $(find /etc/ssh -xdev -maxdepth 1 -type f -name 'ssh_host_*'); do
+      case "$f" in
+        *.pub) chown root:root "$f"; m=$(stat -Lc %a "$f"); chmod "$(printf '%o' $((8#$m & 8#0644)))" "$f";;
+        *)
+          g=$(stat -Lc %G "$f"); m=$(stat -Lc %a "$f")
+          if [ -n "$grp_keys" ] && [ "$g" = ssh_keys ]; then chown root:ssh_keys "$f"; chmod "$(printf '%o' $((8#$m & 8#0640)))" "$f"
+          else chown root:root "$f"; chmod "$(printf '%o' $((8#$m & 8#0600)))" "$f"; fi;;
+      esac
+    done
+    exit 0
+  guidance: "Run the following script to set mode, ownership, and group on the public SSH host key files: #!/usr/bin/env bash { a_output=(); a_output2=() l_pmask=\"0133\"; l_maxperm=\"$( printf '%o' $(( 0777 & ~$l_pmask )) )\" f_file_access_fix() { while IFS=: read -r l_file_mode l_file_owner l_file_group; do a_out2=() [ $(( $l_file_mode & $l_pmask )) -gt 0 ] && \\ a_out2+=(\" Mode: \\\"$l_file_mode\\\" should be mode: \\\"$l_maxperm\\\" or more restrictive\" \\ \" updating to mode: \\\"$l_maxperm\\\"\") && chmod u-x,go-wx \"$l_file\" [ \"$l_file_owner\" != \"root\" ] && \\ a_out2+=(\" Owned by: \\\"$l_file_owner\\\" should be owned by \\\"root\\\"\" \\ \" Changing ownership to \\\"root\\\"\") && chown root \"$l_file\" [ \"$l_file_group\" != \"root\" ] &&…"

@@ -1,0 +1,42 @@
+id: TMA-UBUNTU1804-1.1.2
+title: Ensure /tmp is configured
+description: The /tmp directory is a world-writable directory used for temporary storage by all users and some applications.
+target: linux
+os_family:
+- ubuntu-18.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Ubuntu Linux 18.04 LTS Benchmark v2.0.1 ARCHIVE - 1.1.2
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v grep >/dev/null 2>&1 || { echo "step1: grep not installed"; return 1; }; command -v mount >/dev/null 2>&1 || { echo "step1: mount not installed"; return 1; }; o=$(bash -c ''mount | grep -E ''"''"''\s/tmp\s''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''tmpfs on /tmp type tmpfs (rw,nosuid,nodev,noexec,relatime)'' || { echo step1: missing ''tmpfs on /tmp type tmpfs (rw,nosuid,nodev,noexec,relatime)''; return 1; }; command -v grep >/dev/null 2>&1 || { echo "step2: grep not installed"; return 1; }; o=$(bash -c ''grep -E ''"''"''\s/tmp\s''"''"'' /etc/fstab | grep -E -v ''"''"''^\s*#''"''"'''' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''tmpfs /tmp tmpfs defaults,noexec,nosuid,nodev 0 0'' || { echo step2: missing ''tmpfs /tmp tmpfs defaults,noexec,nosuid,nodev 0 0''; return 1; }; }; alt1() { command -v systemctl >/dev/null 2>&1 || { echo "step1: systemctl not installed";
+    return 1; }; o=$(bash -c ''systemctl is-enabled tmp.mount'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- enabled || { echo step1: missing enabled; return 1; }; }; if alt0 || alt1; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    findmnt -kn /tmp >/dev/null 2>&1 && exit 0
+    if ! grep -qE '^[^#][^[:space:]]*[[:space:]]+/tmp[[:space:]]' /etc/fstab; then
+      cp -a /etc/fstab /etc/fstab.tmaegis.bak.$(date +%Y%m%d%H%M%S)
+      echo 'tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0' >> /etc/fstab
+    fi
+    systemctl unmask tmp.mount 2>/dev/null; systemctl daemon-reload 2>/dev/null
+    mount /tmp 2>/dev/null || mount -t tmpfs -o rw,nosuid,nodev,noexec,relatime tmpfs /tmp; true
+  guidance: "Configure /etc/fstab as appropriate. Example: tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime 0 0 OR Run the following commands to enable systemd /tmp mounting: systemctl unmask tmp.mount systemctl enable tmp.mount Edit /etc/systemd/system/local-fs.target.wants/tmp.mount to configure the /tmp mount: [Mount] What=tmpfs Where=/tmp Type=tmpfs Options=mode=1777,strictatime,noexec,nodev,nosuid"

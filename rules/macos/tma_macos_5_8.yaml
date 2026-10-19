@@ -1,0 +1,45 @@
+id: TMA-MACOS-5.8
+title: Ensure a Login Window Banner Exists
+description: 'A Login window banner warning informs the user that the system is reserved for authorized use only. It enforces an acknowledgment by the user that they have been informed of the use policy in the banner if required. The system recognizes either the .txt and the .rtf formats. Audit: A /Library/Security/PolicyBanner.* file must exist and its mode must have 4 as the third digit.'
+target: macos
+level: 2
+severity: medium
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 5.8 Ensure a Login Window Banner Exists
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    set -- /Library/Security/PolicyBanner.*
+    [ -e "$1" ] || exit 1
+    for f in "$@"; do
+      p=$(/usr/bin/stat -f %A "$f") || exit 1
+      case "$p" in ??4) ;; *) echo "$f mode $p"; exit 0;; esac
+    done
+    echo compliant
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    set -- /Library/Security/PolicyBanner.*
+    if [ ! -e "$1" ]; then
+      printf '%s\n' "Authorized use only. Activity may be monitored and reported." > /Library/Security/PolicyBanner.txt
+    fi
+    for f in /Library/Security/PolicyBanner.*; do /usr/sbin/chown root:wheel "$f"; /bin/chmod 644 "$f"; done
+  guidance: "Terminal: sudo /bin/chmod o+r /Library/Security/PolicyBanner.txt ; sudo /bin/chmod o+r /Library/Security/PolicyBanner.rtf."

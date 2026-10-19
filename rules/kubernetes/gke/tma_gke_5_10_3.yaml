@@ -1,0 +1,19 @@
+id: TMA-GKE-5.10.3
+title: Enable the GKE security posture dashboard for cluster security insights
+description: Enable the GKE security posture dashboard to surface cluster and workload security insights, including workload configuration auditing, actionable security concerns, and security bulletin related findings. The dashboard provides a centralized view of security posture findings so teams can identify, prioritize, and remediate issues across eligible GKE clusters and workloads. Requires gcloud with container.clusters.get; the cluster comes from GKE_CLUSTER and GKE_LOCATION (optional GKE_PROJECT, else the gcloud default project).
+target: gke
+level: 2
+severity: low
+tags:
+- gke
+- managed-services
+reference: CIS Google Kubernetes Engine (GKE) Benchmark v2.0.0 - 5.10.3 Enable the GKE security posture dashboard for cluster security insights
+audit:
+  type: command
+  command: |-
+    v=$(gcloud container clusters describe "${GKE_CLUSTER:?set GKE_CLUSTER}" --location "${GKE_LOCATION:?set GKE_LOCATION}" ${GKE_PROJECT:+--project=$GKE_PROJECT} --format='value(securityPostureConfig.mode)') || exit 1
+    if case "$v" in BASIC|ENTERPRISE) true;; *) false;; esac; then echo compliant; else echo "noncompliant: securityPostureConfig.mode=$v"; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Enable the GKE security posture dashboard for workload configuration auditing when the audit shows that securityPostureConfig.mode is not BASIC. GKE supports enabling configuration auditing on existing clusters by setting the security posture mode to standard, which maps to BASIC in the cluster configuration. gcloud container clusters update $CLUSTER_NAME \ --location $LOCATION \ --project $PROJECT_ID \ --security-posture=standard For new clusters, include --security-posture=standard during cluster creation when this setting must be explicitly enforced. Rerun the audit command and confirm that securityPostureConfig.mode returns BASIC. Initial configuration audit results can take several minutes to appear in the security posture dashboard and related logs.

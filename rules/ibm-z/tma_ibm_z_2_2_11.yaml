@@ -1,0 +1,17 @@
+id: TMA-IBM-Z-2.2.11
+title: Ensure that access to the SYS1.NUCLEUS data set is controlled
+description: The SYS1.NUCLEUS data set contains a large portion of the system Initial Program Load (IPL) programs and pointers to the master and alternate master catalog. Unauthorized access could result in the compromise of the operating system environment, RACF, and customer data.
+target: ibm-z
+level: 1
+severity: medium
+tags:
+- ibm-z
+- permissions
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 2.2.11 Ensure that access to the SYS1.NUCLEUS data set is controlled
+audit:
+  type: manual
+  command: 'Request the following DSMON report: FUNCTION SYSTEM RACGAC Verify that the DATASET entry has: -- GLOBAL INACTIVE -- or -- NO ENTRIES -- or contains no entries covering SYS1.NUCLEUS Request reports generated using IRRDBU00 output that will allow you to: Verify That the SYS1.NUCLEUS data set is secured by a profile in the DATASET class that: Has UACC of NONE Is not in WARNING mode AUDIT a minimum of SUCCESS(UPDATE) and FAILURES(READ) ID(*) is not used to grant access greater than READ UPDATE and higher permits are restricted to: o Systems Programmers'
+remediation:
+  type: iac_patch
+  command: 'To create a DATASET profile use the RACF ADDSD and PERMIT commands: ADDSD ''SYS1.NUCLEUS'' GENERIC + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + DATA(''SYSTEM SUPERVISOR (KERNEL) MODULES'') PERMIT ''SYS1.NUCLEUS'' GENERIC + ACCESS(READ) ID(*) PERMIT ''SYS1.NUCLEUS'' GENERIC + ACCESS(ALTER) ID(SYSPROG) SETROPTS REFRESH GENERIC(DATASET) To modify the UACC, WARN, or AUDIT settings for a DATASET profile use the RACF ALTDSD command: ALTDSD ''SYS1.NUCLEUS'' GENERIC + UACC(NONE) + AUDIT(SUCCESS(UPDATE),FAILURES(READ)) + NOWARNING SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant access list entries use the RACF PERMIT command: PERMIT ''SYS1.NUCLEUS'' GENERIC + DELETE ID(<non-compliant>) SETROPTS REFRESH GENERIC(DATASET) To remove a non-compliant GAC entry you need to use both RACF RALTER and SETROPTS commands: RALTER GLOBAL <class> DELMEM(<entry>) SETROPTS REFRESH GLOBAL(<class>) Note: Access gained via global access checking is not logged, so caution must be used
+    when making changes to GAC entries. To disable GAC for a class you will need to use both RACF RDELETE to remove the associated GLOBAL profile and RACF SETROPTS to fully disable GAC for the ... (see CIS section 2.2.11)'

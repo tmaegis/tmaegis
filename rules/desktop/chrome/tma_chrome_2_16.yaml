@@ -1,0 +1,18 @@
+id: TMA-CHROME-2.16
+title: 'Ensure ''Notify a user that a browser relaunch or device restart is recommended or required'' is set to ''Enabled: Show a recurring prompt to the user indication that a relaunch is required'''
+description: 'Google Chrome can notify users that it must be restarted to apply a pending update once the notification period defined by the recommendation Set the time period for update notifications is passed. Rationale: The end-user will receive a notification informing them that an update has been applied and that the browser must be restarted in order for the update to be completed. Once updates have been pushed by the organization it is pertinent that the update is applied as soon as possible. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:RelaunchNotification (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 1
+severity: low
+tags:
+- chrome
+- browser
+- cis-l1
+reference: 'CIS Google Chrome Benchmark v3.0.0 - 2.16 Ensure ''Notify a user that a browser relaunch or device restart is recommended or required'' is set to ''Enabled: Show a recurring prompt to the user indication that a relaunch is required'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''RelaunchNotification'' -ErrorAction SilentlyContinue).''RelaunchNotification''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'RelaunchNotification' -Value 2 -PropertyType DWord -Force | Out-Null

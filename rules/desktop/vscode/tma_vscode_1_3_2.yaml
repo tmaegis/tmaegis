@@ -1,0 +1,18 @@
+id: TMA-VSCODE-1.3.2
+title: 'Ensure ''TelemetryLevel'' is set to ''Enabled: off'''
+description: 'This policy setting controls telemetry for VS Code and extensions. The recommended state for this setting is: Enabled: off. Rationale: Enabling this feature sends data to Microsoft and potentially third-party extension developers, which could lead to sensitive data being exposed. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\VSCode:TelemetryLevel (REG_SZ); compliant when it is ''off'' (whitespace-insensitive). Remediation writes off locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: vscode
+level: 1
+severity: low
+tags:
+- vscode
+- developer-tools
+- cis-l1
+reference: 'CIS Visual Studio Code GPO Benchmark v1.0.0 - 1.3.2 Ensure ''TelemetryLevel'' is set to ''Enabled: off'''
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'' -Name ''TelemetryLevel'' -ErrorAction SilentlyContinue).''TelemetryLevel''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and ("$v" -replace ''\s'','''') -eq ''off'')) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\VSCode'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'TelemetryLevel' -Value 'off' -PropertyType String -Force | Out-Null

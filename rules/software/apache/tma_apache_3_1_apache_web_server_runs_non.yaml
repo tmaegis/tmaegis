@@ -1,0 +1,24 @@
+id: TMA-APACHE-3.1
+title: Ensure the Apache Web Server Runs As a Non-Root User
+description: Although Apache is typically started with root privileges in order to listen on port 80 and 443, it can and should run as another non-root user in order to perform the web services. The Apache User and Group directives are used to designate the user and group that the Apache worker processes will assume. The User directive (Debian ${APACHE_RUN_USER} is resolved from /etc/apache2/envvars) must name a non-root system account with a UID below UID_MIN from /etc/login.defs. Reads the main configuration (APACHE_CONF overrides; default /etc/apache2/apache2.conf, /etc/httpd/conf/httpd.conf or /usr/local/apache2/conf/httpd.conf) and every Include/IncludeOptional file.
+target: apache
+level: 1
+severity: high
+tags:
+- apache
+- accounts
+reference: CIS Apache HTTP Server 2.4 Benchmark v2.4.0 - 3.1 Ensure the Apache Web Server Runs As a Non-Root User
+audit:
+  type: command
+  shell: bash
+  command: c=${APACHE_CONF:-}; if [ -z "$c" ]; then for f in /etc/apache2/apache2.conf /etc/httpd/conf/httpd.conf /usr/local/apache2/conf/httpd.conf /etc/apache2/httpd.conf; do [ -f "$f" ] && { c=$f; break; }; done; fi; [ -r "$c" ] || exit 1; R=$(awk 'tolower($1)=="serverroot"{v=$2; gsub(/"/,"",v); print v; exit}' "$c"); [ -n "$R" ] || R=$(dirname "$c"); shopt -s nocasematch; inc(){ local p g l; [ ${#FUNCNAME[@]} -lt 16 ] || return 0; p=$1; case $p in /*) ;; *) p=$R/$p;; esac; [ -d "$p" ] && p="$p/*"; for g in $p; do [ -f "$g" ] || continue; while IFS= read -r l || [ -n "$l" ]; do if [[ $l =~ ^[[:space:]]*include(optional)?[[:space:]]+\"?([^\"[:space:]]+) ]]; then inc "${BASH_REMATCH[2]}"; else printf '%s\n' "$l"; fi; done < "$g"; done; }; cfg=$(inc "$c" | sed -e 's/^[[:space:]]*//' -e '/^#/d' -e '/^$/d'); shopt -u nocasematch; ev(){ case $1 in '${'*'}') local n=${1#??}; n=${n%?}; local v; v=$(sed -n "s/^[[:space:]]*export[[:space:]]*$n=//p" "${APACHE_ENVVARS:-/etc/apache2/envvars}" 2>/dev/null
+    | tail -n1 | tr -d "\"'"); printf '%s\n' "${v:-$1}";; *) printf '%s\n' "$1";; esac; }; u=$(ev "$(printf '%s\n' "$cfg" | awk 'tolower($1)=="user"{v=$2} END{print v}')"); [ -n "$u" ] && [ "${u#\$}" = "$u" ] || { echo noncompliant; exit 0; }; id=$(id -u "$u" 2>/dev/null) || { echo noncompliant; exit 0; }; mn=$(awk '$1=="UID_MIN"{print $2}' /etc/login.defs 2>/dev/null); [ "$id" != 0 ] && [ "$id" -lt "${mn:-1000}" ] && echo compliant || echo noncompliant
+  expected_output: compliant
+  requires_file:
+  - /etc/apache2/apache2.conf
+  - /etc/httpd/conf/httpd.conf
+  - /usr/local/apache2/conf/httpd.conf
+  - /etc/apache2/httpd.conf
+remediation:
+  type: iac_patch
+  command: Create a system account (groupadd -r apache; useradd apache -r -g apache -d /var/www -s /sbin/nologin) and set User apache / Group apache in the main configuration. Then run apachectl configtest and reload Apache.

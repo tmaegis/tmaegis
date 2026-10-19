@@ -1,0 +1,45 @@
+id: TMA-MONGODB-6.3
+title: Ensure that server-side scripting is disabled if not needed
+description: 'MongoDB supports the execution of JavaScript code for certain server-side operations: mapReduce, group, $where, $accumulator, and $function aggregation operations that allow users to define custom aggregation expressions. If you do not use these operations, server-side scripting should be disabled. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Checks the YAML config file /etc/mongod.conf (SKIP when it does not exist). Treat a FAIL as an accepted exception only where server-side JavaScript ($where, mapReduce, $function, $accumulator) is required.'
+target: mongodb
+level: 2
+severity: medium
+tags:
+- mongodb
+- hardening
+reference: CIS MongoDB 8 Benchmark v2.0.0 - 6.3 Ensure that server-side scripting is disabled if not needed
+audit:
+  type: file_regex
+  file_path: /etc/mongod.conf
+  pattern: (?m)^[ \t]*javascriptEnabled:[ \t]*['\x22]?false\b
+  requires_file:
+  - /etc/mongod.conf
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    f=/etc/mongod.conf
+    [ -f "$f" ] || exit 0
+    cp -p "$f" "$f.tmaegis.bak"
+    sec=security; key=javascriptEnabled; val=false
+    awk -v sec="$sec" -v key="$key" -v val="$val" '
+      function flush() { if (insec && !done) { print "  " key ": " val; done = 1 } }
+      /^[^ \t#][^:]*:/ { flush(); insec = ($0 ~ "^" sec ":[ \t]*(#.*)?$"); if (insec) seen = 1; print; next }
+      insec && $0 ~ "^[ \t]+" key ":" { if (!done) { print "  " key ": " val; done = 1 } ; next }
+      { print }
+      END { flush(); if (!seen) { print sec ":"; print "  " key ": " val } }' "$f.tmaegis.bak" > "$f.tma.new" && cat "$f.tma.new" > "$f"
+    rm -f "$f.tma.new"
+    echo "restart mongod for the change to take effect"; true
+  guidance: "If server-side scripting is not required set security.javascriptEnabled: false in /etc/mongod.conf (or start mongod/mongos with --noscripting) and restart."

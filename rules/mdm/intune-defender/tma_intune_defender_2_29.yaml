@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.29
+title: Ensure ‘Cloud Extended Timeout’ is set to '1 or higher, but not 0'
+description: 'This policy setting configures the Cloud Extended Timeout value for Microsoft Defender Antivirus cloud-delivered protection. The extended timeout determines how long Microsoft Defender waits for a response from the cloud-based protection service before allowing or blocking suspicious content. The recommended state for this setting is: 1 or higher, but not 0. Note: The default cloud check timeout is 10 seconds. The extended cloud check feature extends the time in seconds, up to an additional 50 seconds. For example, if the desired timeout is 60 seconds, specify 50 seconds in this setting, which will enable the extended cloud check feature, and will raise the total time to 60 seconds. ... Audit: CloudExtendedTimeout under HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine must be 1 or higher.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.29 Ensure ‘Cloud Extended Timeout’ is set to '1 or higher, but not 0'
+audit:
+  type: registry
+  shell: powershell
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\MpEngine'' -Name ''CloudExtendedTimeout'' -ErrorAction SilentlyContinue).''CloudExtendedTimeout''; if (-not ($null -ne $v -and [int64]$v -ge 1)) { $bad += ''CloudExtendedTimeout='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to 1 or higher, but not 0: Defender\Cloud Extended Timeout To establish the recommended configuration via Endpoint Security Blade: 1. Navigate to Endpoint Security 2. Click Antivirus 3. Click Create Profile 4. Select Windows for the Platform and Microsoft Defender Antivirus for Profile 5. Name the profile 6. Configure Cloud Extended Timeout to 1 or higher, but not 0'

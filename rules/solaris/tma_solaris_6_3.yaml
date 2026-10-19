@@ -1,0 +1,54 @@
+id: TMA-SOLARIS-6.3
+title: Restrict at/cron to Authorized Users
+description: 'The cron.allow and at.allow files contain a list of users who are allowed to run the crontab and at commands to submit jobs to be run at scheduled intervals. On many systems, only the system administrator needs the ability to schedule jobs. Even though a given user is not listed in cron.allow, cron jobs can still be run as that user. Audit: cron.deny and at.deny must be absent, cron.allow must list root, at.allow must exist and be empty.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 6.3 Restrict at/cron to Authorized Users
+audit:
+  type: command
+  command: r=compliant; [ -e /etc/cron.d/cron.deny ] && r="cron.deny exists"; [ -e /etc/cron.d/at.deny ] && r="at.deny exists"; grep -qx root /etc/cron.d/cron.allow 2>/dev/null || r="root not in cron.allow"; if [ -f /etc/cron.d/at.allow ]; then n=$(wc -l < /etc/cron.d/at.allow); [ "$n" -eq 0 ] || r="at.allow is not empty"; else r="at.allow missing"; fi; echo "$r"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_bk() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak" ] && cp -p "$1" "$1.tmaegis.bak"; return 0; }
+    # tma_setkv FILE KEY VALUE: KEY=VALUE, replacing any active KEY= line (file created if missing)
+    tma_setkv() {
+      f=$1; k=$2; v=$3; t="$f.tma.$$"
+      tma_bk "$f"
+      { [ -f "$f" ] && grep -v "^[[:space:]]*$k[[:space:]]*=" "$f"; echo "$k=$v"; } > "$t" || { rm -f "$t"; return 1; }
+      if [ -f "$f" ]; then cat "$t" > "$f"; else mv "$t" "$f"; fi
+      rm -f "$t"; return 0
+    }
+    # tma_comment FILE ERE: comment out active lines matching ERE (backup first)
+    tma_comment() {
+      f=$1; re=$2; [ -f "$f" ] || return 0
+      grep -Eq "$re" "$f" || return 0
+      tma_bk "$f"; t="$f.tma.$$"
+      awk -v re="$re" '$0 ~ re && $0 !~ /^[[:space:]]*#/ { print "#TMAegis# " $0; next } { print }' "$f" > "$t" || { rm -f "$t"; return 1; }
+      cat "$t" > "$f"; rm -f "$t"; return 0
+    }
+    rm -f /etc/cron.d/cron.deny /etc/cron.d/at.deny
+    grep -qx root /etc/cron.d/cron.allow 2>/dev/null || echo root >> /etc/cron.d/cron.allow
+    [ -f /etc/cron.d/at.allow ] || : > /etc/cron.d/at.allow
+    [ -s /etc/cron.d/at.allow ] && { tma_bk /etc/cron.d/at.allow; : > /etc/cron.d/at.allow; }
+    chown root:sys /etc/cron.d/cron.allow /etc/cron.d/at.allow; chmod 640 /etc/cron.d/cron.allow /etc/cron.d/at.allow
+    true
+  guidance: "Perform the following to implement the recommended state: # mv /etc/cron.deny /etc/cron.deny.cis # mv /etc/at.deny /etc/at.deny.cis # echo root > /etc/cron.allow # cp /dev/null at.allow # chown root:root cron.allow at.allow # chmod 400 cron.allow at.allow Note that the root/superuser is always allowed to use the at command and is not required to be specifically listed in at.allow."

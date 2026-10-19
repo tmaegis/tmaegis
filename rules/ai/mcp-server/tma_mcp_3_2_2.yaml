@@ -1,0 +1,19 @@
+id: TMA-MCP-3.2.2
+title: Ensure token passthrough to downstream APIs is forbidden
+description: An MCP server never forwards a client-presented inbound token to a downstream API. Under the MCP authorization specification, the server accepts only tokens whose audience is the MCP server itself. To call a downstream API, the server presents a separate token whose audience is that downstream API, never the inbound token. It obtains that token through OAuth token exchange when acting on behalf of a user, or through client_credentials when acting as itself. Because the inbound token's audience is the MCP server and not the downstream API, it is never valid there. The MCP authorization specification forbids token passthrough because it circumvents security controls such as rate limiting, request validation, and audience checks, breaks the audit trail by making downstream logs record the wrong origin identity, and widens the trust boundary so a token accepted at one service is honored a...
+target: mcp-server
+level: 1
+severity: medium
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.2.2 Ensure token passthrough to downstream APIs is forbidden
+audit:
+  type: manual
+  command: 'Inspect the proxy or gateway configuration and the token-handling middleware, and confirm the token presented downstream is a separate token audience-bound to the downstream API, not the inbound token. Run the following command to decode the inbound token and confirm its aud includes the MCP server and not the downstream API: TOKEN=''<CLIENT_INBOUND_JWT>'' MCP_SERVER_AUDIENCE="<MCP_SERVER_AUDIENCE>" DOWNSTREAM_API_AUDIENCE="<DOWNSTREAM_API_AUDIENCE>" seg=$(printf ''%s'' "$TOKEN" | cut -d. -f2 | tr ''_-'' ''/+'') pad=$(( (4 - ${#seg} % 4) % 4 )); seg="$seg$(printf ''=%.0s'' $(seq 1 $pad))" claims=$(printf ''%s'' "$seg" | base64 -d 2>/dev/null) [ -z "$claims" ] && { echo "ERROR: could not decode token (opaque token? use AS introspection)"; exit 0; } printf ''%s'' "$claims" | jq empty 2>/dev/null || { echo "ERROR: decoded payload is not JSON (opaque token? use AS introspection)"; exit 0; } echo "$claims" | jq ''{aud, iss}'' echo "$claims" | jq -e --arg mcp "$MCP_SERVER_AUDIENCE"
+    --arg down "$DOWNSTREAM_API_AUDIENCE" '' (.aud | if type=="array" then . else [.] end) as $a | ($a | index($mcp)) != null and ($a | index($down)) == null'' >/dev/null \ && echo "PASS: client token is bound to the MCP server,...'
+remediation:
+  type: iac_patch
+  command: This is server or gateway logic with no portable command. On an inbound request, validate that the token's audience is this MCP server and reject it otherwise. To call a downstream API, obtain a separate token whose audience is that downstream API, using token exchange when acting on behalf of a user or client_credentials when the server acts as itself, and never forward the inbound token. Pair with audience and issuer alerting (see Recommendation 7.2.1) so passthrough or wrong-audience tokens raise an alert in production.

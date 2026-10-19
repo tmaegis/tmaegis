@@ -1,0 +1,21 @@
+id: TMA-OKE-4.2.1
+title: Minimize the admission of privileged containers
+description: 'Minimize the admission of privileged containers in OKE by enforcing Pod Security Standards through Pod Security Admission or an equivalent policy engine, and restrict privileged workloads to only the limited system or platform namespaces that truly require them. Do not generally permit containers to run with securityContext.privileged: true in OKE clusters, except for narrowly approved system or platform workloads. Requires kubectl with cluster-wide read access (KUBECONFIG); system namespaces are excluded and listed resources must be remediated or documented as exceptions.'
+target: oke
+level: 1
+severity: critical
+tags:
+- oke
+- policies
+- pod-security
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 4.2.1 Minimize the admission of privileged containers
+audit:
+  type: command
+  command: |-
+    out=$(kubectl get pods -A -o go-template='{{range .items}}{{$ns:=.metadata.namespace}}{{$p:=.metadata.name}}{{range .spec.containers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.initContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{range .spec.ephemeralContainers}}{{$ns}} {{$p}} {{.name}} {{with .securityContext}}{{.privileged}}{{end}}{{"\n"}}{{end}}{{end}}') || exit 1
+    bad=$(printf '%s\n' "$out" | awk -v ex='^(kube-system|kube-public|kube-node-lease)$' 'NF && $1 !~ ex && ($4=="true")')
+    if [ -z "$bad" ]; then echo compliant; else printf '%s\n' "$bad" | head -n 25; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Configure Pod Security Admission on workload namespaces so privileged containers are denied when new pods are created. For this control, both baseline and restricted disallow privileged containers, but restricted is typically the stronger choice for user workloads. Only enforce blocks noncompliant pods. warn and audit are useful during rollout, but they do not remediate the issue by themselves. Label each workload namespace to enforce restricted. kubectl label ns NAMESPACE pod-security.kubernetes.io/enforce=restricted --overwrite Add warn and audit labels during transition so violations are surfaced before or alongside enforcement.

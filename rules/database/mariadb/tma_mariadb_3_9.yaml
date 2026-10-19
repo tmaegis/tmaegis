@@ -1,0 +1,20 @@
+id: TMA-MARIADB-3.9
+title: Ensure 'server_audit_file_path' Has Appropriate Permissions
+description: 'MariaDB can operate using a variety of log files, each used for different purposes. These are the binary log, error log, slow query log, relay log, audit log and general log. Because these are files on the host operating system, they are subject to the permissions and ownership structure provided by the host and may be accessible by users other than the mysql user. Fails when the server_audit plugin is not loaded (no server_audit_file_path); otherwise the audit file (relative paths resolve to datadir) must not be accessible to other users, executable, or owned by anyone but mysql:mysql. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: medium
+tags:
+- mariadb
+- database
+- filesystem
+- permissions
+- audit
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 3.9 Ensure 'server_audit_file_path' Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mariadb -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; f=$(mariadb -NBe "SELECT @@global.server_audit_file_path" 2>/dev/null) || exit 1; [ -n "$f" ] || exit 1; case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; [ -f "$f" ] || { echo "missing $f"; exit 0; }; [ -z "$(find "$f" -maxdepth 0 \( -perm /0117 -o ! -user mysql -o ! -group mysql \))" ] && echo compliant || echo "bad permissions on $f"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chmod 660 <server_audit_file_path> && chown mysql:mysql <server_audit_file_path>

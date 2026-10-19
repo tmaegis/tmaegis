@@ -1,0 +1,25 @@
+id: TMA-TOMCAT-6.4
+title: Ensure secure is set to true only for SSL-enabled Connectors
+description: 'The secure attribute is used to convey Connector security status to applications operating over the Connector. This is typically achieved by calling request.isSecure(). Ensure the secure attribute is only set to true for Connectors operating with the SSLEnabled attribute set to true. For every Connector: SSLEnabled="true" requires secure="true"; other connectors must have secure unset or "false". Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- tls
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 6.4 Ensure secure is set to true only for SSL-enabled Connectors
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; s=$(x "$B/conf/server.xml") || exit 1; printf '%s\n' "$s" | awk 'function at(n,  r){if(match($0,"[[:space:]]" n "[[:space:]]*=[[:space:]]*[\"\047][^\"\047]*")){r=substr($0,RSTART,RLENGTH); sub(/^[^=]*=[[:space:]]*./,"",r); return r} return "-unset-"} function fin(){ if(!inc) return; inc=0; if(se){ if(sx!="true") bad=1 } else if(sx!="-unset-" && sx!="false") bad=1; } /^Connector[[:space:]]/{fin(); inc=1; se=(at("SSLEnabled")=="true"); sc=at("scheme"); sx=at("secure"); pr=at("sslProtocol"); if(pr=="-unset-") pr=""; if($0~/\/>[[:space:]]*$/) fin(); next} /^SSLHostConfig[[:space:]]/ && inc {v=at("sslProtocol"); if(v=="-unset-") v=at("protocols"); if(v!="-unset-") pr=pr "," v} /^\/Connector>/{fin()} END{fin();
+    print bad?"noncompliant":"compliant"}'
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Set secure="true" on TLS connectors and secure="false" (or none) on the others in server.xml. Restart Tomcat afterwards.

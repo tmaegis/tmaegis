@@ -1,0 +1,26 @@
+id: TMA-SUPPLY-CHAIN-SECURITY-POLICY
+title: Ensure a SECURITY.md vulnerability disclosure policy is published
+description: A security policy tells researchers and consumers how to report vulnerabilities privately and which versions are supported, reducing the chance of public zero-day disclosure. The audit accepts a non-empty SECURITY.md (md/rst/txt/adoc) in the root, .github/, docs/ or .gitlab/. Run tmaegis from inside the repository; the audit fails when git is missing or the working directory is not a git repository.
+target: supply-chain
+level: 1
+severity: low
+tags:
+- supply-chain
+- source-code
+- vulnerability-disclosure
+reference: CIS Software Supply Chain Security Guide Benchmark v1.0.0 - Source Code - security policy / vulnerability reporting (verify section number for your release)
+audit:
+  type: command
+  command: 'top=$(git rev-parse --show-toplevel 2>/dev/null) || exit 1
+
+    cd "$top" || exit 1
+
+    files=$(git ls-files 2>/dev/null) || exit 1
+
+    f=$(printf ''%s\n'' "$files" | grep -ixE ''(\.github/|docs/|\.gitlab/)?security\.(md|markdown|rst|txt|adoc)'' | head -n 1)
+
+    if [ -n "$f" ] && [ -s "$f" ]; then echo compliant; else echo "no SECURITY.md (vulnerability disclosure policy) committed"; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add SECURITY.md describing supported versions, the private reporting channel (security contact or GitHub private vulnerability reporting) and the expected response time.

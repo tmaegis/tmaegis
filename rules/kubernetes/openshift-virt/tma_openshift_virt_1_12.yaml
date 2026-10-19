@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-1.12
+title: Restrict VNC access to cluster workloads
+description: Access to each workload’s virtual screen is provided via VNC. Permission to use VNC is granted via a role, which means users with role assigned can access the VNC console of all workloads in a namespace. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 1.12 Restrict VNC access to cluster workloads
+audit:
+  type: manual
+  command: 'Verify to which users have the necessary permissions to create tokens: $ oc get rolebinding - ojson | jq - c ''.items[] | select(.roleRef.name | contains("token.kubevirt.io:generate"))'''
+remediation:
+  type: iac_patch
+  command: Assign this RoleBinding only to users with approval to use it, otherwise remove unapproved users.

@@ -1,0 +1,19 @@
+id: TMA-GCP-3.8
+title: Ensure VPC Service Controls Is Enabled for Supported Google Cloud Services
+description: Ensure that VPC Service Controls are configured to create security perimeters around sensitive Google Cloud resources, preventing unauthorized data exfiltration and limiting access to resources from approved networks and identities. VPC Service Controls provide an additional layer of defense-in-depth by allowing organizations to define trust boundaries around GCP services and control data movement across those boundaries. VPC Service Controls provide critical protection against data exfiltration attacks by creating security perimeters that restrict data access based on client identity, device state, and network origin. Without VPC Service Controls, an attacker who compromises credentials or exploits misconfigurations can freely move data between projects, organizations, or external systems. VPC Service Controls enforce defense-in-depth by adding network-level access controls that comp...
+target: gcp
+level: 2
+severity: medium
+tags:
+- cloud
+- gcp
+- network
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - 3.8 Ensure VPC Service Controls Is Enabled for Supported Google Cloud Services
+audit:
+  type: manual
+  command: 'Note: The following audit instructions use Cloud Storage (GCS) as an example. Similar steps should be followed for other services supported by VPC Service Controls (BigQuery, Cloud SQL, Bigtable, etc.) by substituting the appropriate service API and project resources. From Google Cloud CLI 1. Check if Access Context Manager API is enabled (prerequisite check): gcloud services list --enabled \ --filter="name:accesscontextmanager.googleapis.com" \ --format="value(name)" - If the command returns accesscontextmanager.googleapis.com, the API is enabled. If it returns empty, the API is not enabled and VPC Service Controls are not configured. To check at the organization level if any Access Context Manager policy exists: gcloud access-context-manager policies list \ --organization=<ORG_ID> \ --format="table(name,title)" 2. List all VPC Service Controls perimeters in the organization: gcloud access-context-manager perimeters list \ --policy=<POLICY_ID> \ -- format="table(name,title,perimeterType,status.resources:label=PROTECTED_RESOU
+    RCES)" To get your Access Context Manager policy ID: gcloud access-context-manager policies list \ --organization=<ORG_ID> \ --format="value(name)" 3. Chec...'
+remediation:
+  type: iac_patch
+  command: 'Note: The following remediation instructions use Cloud Storage (GCS) as an example. Similar steps should be followed for other services supported by VPC Service Controls (BigQuery, Cloud SQL, Bigtable, etc.) by substituting the appropriate service API and project resources. From Google Cloud CLI 1: Create an Access Context Manager Policy: # Check if policy exists gcloud access-context-manager policies list --organization=<ORG_ID> # If no policy exists, create one gcloud access-context-manager policies create \ --organization=<ORG_ID> \ --title="VPC Service Controls Policy" 2. Create a Service Perimeter to protect Cloud Storage buckets: # Get policy ID POLICY_ID=$(gcloud access-context-manager policies list \ --organization=<ORG_ID> \ --format="value(name)") # Create perimeter in dry-run mode first gcloud access-context-manager perimeters create <PERIMETER_NAME> \ --title="Production Data Perimeter" \ --resources=projects/<PROJECT_NUMBER> \ --restricted-services=storage.googleapis.com
+    \ --policy=${POLICY_ID} \ --perimeter-type=regular \ --async 3. Add multiple projects and services to the perimeter: gcloud access-context-manager perimeters update <PERIMETER_NAME> \ --add-resource...'

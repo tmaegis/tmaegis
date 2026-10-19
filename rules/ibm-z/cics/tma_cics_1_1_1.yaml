@@ -1,0 +1,16 @@
+id: TMA-CICS-1.1.1
+title: Ensure that RACF changes are accepted immediately
+description: RACF sends a type 71 ENF signal to listening CICS regions when a RACF CONNECT or REMOVE command changes a user's resource authorization level. It also sends a type 71 ENF signal when a user ID is revoked. This can occur when a RACF REVOKE command is issued or when a user ID is revoked automatically as a result of too many failed password attempts.
+target: cics
+level: 1
+severity: medium
+tags:
+- cics
+- hardening
+reference: CIS IBM CICS Transaction Server 6.1 Benchmark v1.1.0 - 1.1.1 Ensure that RACF changes are accepted immediately
+audit:
+  type: manual
+  command: Issue the z/OSMF Compliance data collection REST API to drive collection of compliance evidence in the SMF 1154 record. https://{host}:{port}/zosmf/compliance/rest/v1/facts 1. Wait for the data to be collected; this may take up to a minute in some regions. 2. Customize and run the DFH$54P sample JCL to create a spreadsheet containing data for all of the CICS TS regions. 3. Open the spreadsheet and review the settings of the RACFSYNC column. They should all be set to YES.
+remediation:
+  type: iac_patch
+  command: 1. Set RACFSYNC=YES 2. Restart CICS

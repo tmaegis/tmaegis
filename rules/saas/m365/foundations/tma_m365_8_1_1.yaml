@@ -1,0 +1,16 @@
+id: TMA-M365-8.1.1
+title: Ensure external file sharing in Teams is enabled for only approved cloud storage services
+description: 'Microsoft Teams enables collaboration via file sharing. This file sharing is conducted within Teams, using SharePoint Online, by default; however, third-party cloud services are allowed as well. Note: Skype for business is deprecated as of July 31, 2021 although these settings may still be valid for a period of time. See the link in the references section for more information. Ensuring that only authorized cloud storage providers are accessible from Teams will help to dissuade the use of non-approved storage providers.'
+target: m365
+level: 2
+severity: low
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 8.1.1 Ensure external file sharing in Teams is enabled for only approved cloud storage services
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Teams admin center https://admin.teams.microsoft.com. 2. Select Settings & policies > Global (Org-wide default) settings. 3. Click Teams to open the Teams settings section. 4. Under files verify that only organizationally authorized cloud storage options are set to On and all others Off. To audit using PowerShell: 1. Connect to Teams PowerShell using Connect-MicrosoftTeams 2. Run the following to verify the recommended state: $Params = @( ''AllowDropbox'' ''AllowBox'' ''AllowGoogleDrive'' ''AllowShareFile'' ''AllowEgnyte'' ) Get-CsTeamsClientConfiguration -Identity Global | fl $Params 3. Verify that only authorized providers are set to True and all others False.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Teams admin center https://admin.teams.microsoft.com. 2. Select Settings & policies > Global (Org-wide default) settings. 3. Click Teams to open the Teams settings section. 4. Under files set storages providers to Off unless they have first been authorized by the organization. To remediate using PowerShell: 1. Connect to Teams PowerShell using Connect-MicrosoftTeams 2. Run the following PowerShell command to disable external providers that are not authorized. (the example disables Citrix Files, DropBox, Box, Google Drive and Egnyte) $Params = @{ Identity = ''Global'' AllowGoogleDrive = $false AllowShareFile = $false AllowBox = $false AllowDropBox = $false AllowEgnyte = $false } Set-CsTeamsClientConfiguration @Params'

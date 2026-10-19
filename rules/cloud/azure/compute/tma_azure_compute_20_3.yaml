@@ -1,0 +1,20 @@
+id: TMA-AZURE-COMPUTE-20.3
+title: Ensure that 'Unattached disks' are encrypted with 'Customer Managed Key' (CMK)
+description: Ensure that unattached disks in a subscription are encrypted with a Customer Managed Key (CMK). Managed disks are encrypted by default with Platform-managed keys. Using Customer- managed keys may provide an additional level of security or meet an organization's regulatory requirements. Encrypting managed disks ensures that its entire content is fully unrecoverable without a key and thus protects the volume from unwarranted reads. Even if the disk is not attached to any of the VMs, there is always a risk where a compromised user account with administrative access to VM service can mount/attach these data disks, which may lead to sensitive information disclosure and tampering.
+target: azure
+level: 2
+severity: low
+tags:
+- azure
+- cloud
+- compute
+- crypto
+- encryption
+reference: CIS Microsoft Azure Compute Services Benchmark v2.0.0 - 20.3 Ensure that 'Unattached disks' are encrypted with 'Customer Managed Key' (CMK)
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Disks 2. Click on Add Filter 3. In the filter field select Disk state 4. In the Value field select Unattached 5. Click Apply 6. for each disk listed ensure that Encryption type in the encryption blade is `Encryption at-rest with a customer-managed key'' Audit from Azure CLI Ensure command below does not return any output. az disk list --query ''[? diskstate == `Unattached`].{encryptionSettings: encryptionSettings, name: name}'' -o json Sample Output: [ { "encryptionSettings": null, "name": "<Disk1>" }, { "encryptionSettings": null, "name": "<Disk2>" } ] Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: ca91455f-eace-4f96-be59-e6e2c35b4816 - Name: ''Managed disks should be
+    double encrypted with both platform-managed and customer-managed keys'''
+remediation:
+  type: iac_patch
+  command: 'If data stored in the disk is no longer useful, refer to Azure documentation to delete unattached data disks at: -https://docs.microsoft.com/en-us/rest/api/compute/disks/delete -https://docs.microsoft.com/en-us/cli/azure/disk?view=azure-cli-latest#az- disk-delete If data stored in the disk is important, to encrypt the disk refer to azure documentation at: -https://docs.microsoft.com/en-us/azure/virtual-machines/disks-enable- customer-managed-keys-portal -https://docs.microsoft.com/en- us/rest/api/compute/disks/update#encryptionsettings'

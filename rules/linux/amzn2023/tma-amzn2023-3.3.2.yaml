@@ -1,0 +1,69 @@
+id: TMA-AMZN2023-3.3.2
+title: Ensure ICMP redirects are not accepted
+description: ICMP redirect messages are packets that convey routing information and tell your host (acting as a router) to send packets via an alternate path. It is a way of allowing an outside routing device to update your system routing tables.
+target: linux
+os_family:
+- amzn-2023
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Amazon Linux 2023 Benchmark v1.0.0 - 3.3.2
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   l_output=\"\" l_output2=\"\"\n   a_parlist=(\"net.ipv4.conf.all.accept_redirects=0\" \"net.ipv4.conf.default.accept_redirects=0\" \"net.ipv6.conf.all.accept_redirects=0\" \"net.ipv6.conf.default.accept_redirects=0\")\n   l_ufwscf=\"$([ -f /etc/default/ufw ] && awk -F= '\"'\"'/^\\s*IPT_SYSCTL=/ {print $2}'\"'\"' /etc/default/ufw)\"\n   kernel_parameter_chk()\n   {\n      l_krp=\"$(sysctl \"$l_kpname\" | awk -F= '\"'\"'{print $2}'\"'\"' | xargs)\" # Check running configuration\n      if [ \"$l_krp\" = \"$l_kpvalue\" ]; then\n         l_output=\"$l_output\\n - \\\"$l_kpname\\\" is correctly set to \\\"$l_krp\\\" in the running configuration\"\n      else\n         l_output2=\"$l_output2\\n - \\\"$l_kpname\\\" is incorrectly set to \\\"$l_krp\\\" in the running configuration and should have a value of: \\\"$l_kpvalue\\\"\"\n      fi\n      unset A_out; declare -A A_out # Check durable setting (files)\n      while read -r l_out; do\n\
+    \         if [ -n \"$l_out\" ]; then\n            if [[ $l_out =~ ^\\s*# ]]; then\n               l_file=\"${l_out//# /}\"\n            else\n               l_kpar=\"$(awk -F= '\"'\"'{print $1}'\"'\"' <<< \"$l_out\" | xargs)\"\n               [ \"$l_kpar\" = \"$l_kpname\" ] && A_out+=([\"$l_kpar\"]=\"$l_file\")\n            fi\n         fi\n      done < <(/usr/lib/systemd/systemd-sysctl --cat-config | grep -Po '\"'\"'^\\h*([^#\\n\\r]+|#\\h*\\/[^#\\n\\r\\h]+\\.conf\\b)'\"'\"')\n      if [ -n \"$l_ufwscf\" ]; then # Account for systems with UFW (Not covered by systemd-sysctl - -cat-config)\n         l_kpar=\"$(grep -Po \"^\\h*$l_kpname\\b\" \"$l_ufwscf\" | xargs)\"\n         l_kpar=\"${l_kpar//\\//.}\"\n         [ \"$l_kpar\" = \"$l_kpname\" ] && A_out+=([\"$l_kpar\"]=\"$l_ufwscf\")\n      fi\n      if (( ${#A_out[@]} > 0 )); then # Assess output from files and generate output\n         while IFS=\"=\" read -r l_fkpname l_fkpvalue; do\n            l_fkpname=\"${l_fkpname// /}\"; l_fkpvalue=\"\
+    ${l_fkpvalue// /}\"\n            if [ \"$l_fkpvalue\" = \"$l_kpvalue\" ]; then\n               l_output=\"$l_output\\n - \\\"$l_kpname\\\" is correctly set to \\\"$l_fkpvalue\\\" in \\\"$(printf '\"'\"'%s'\"'\"' \"${A_out[@]}\")\\\"\\n\"\n            else\n               l_output2=\"$l_output2\\n - \\\"$l_kpname\\\" is incorrectly set to \\\"$l_fkpvalue\\\" in \\\"$(printf '\"'\"'%s'\"'\"' \"${A_out[@]}\")\\\" and should have a value of: \\\"$l_kpvalue\\\"\\n\"\n            fi\n         done < <(grep -Po -- \"^\\h*$l_kpname\\h*=\\h*\\H+\" \"${A_out[@]}\")\n      else\n         l_output2=\"$l_output2\\n - \\\"$l_kpname\\\" is not set in an included file\\n   ** Note: \\\"$l_kpname\\\" May be set in a file that'\"'\"'s ignored by load procedure **\\n\"\n      fi\n   }\n   while IFS=\"=\" read -r l_kpname l_kpvalue; do # Assess and check parameters\n      l_kpname=\"${l_kpname// /}\"; l_kpvalue=\"${l_kpvalue// /}\"\n      if ! grep -Pqs '\"'\"'^\\h*0\\b'\"'\"' /sys/module/ipv6/parameters/disable\
+    \ && grep -q '\"'\"'^net.ipv6.'\"'\"' <<< \"$l_kpname\"; then\n         l_output=\"$l_output\\n - IPv6 is disabled on the system, \\\"$l_kpname\\\" is not applicable\"\n      else\n         kernel_parameter_chk\n      fi\n   done < <(printf '\"'\"'%s\\n'\"'\"' \"${a_parlist[@]}\")\n   if [ -z \"$l_output2\" ]; then # Provide output from checks\n      echo -e \"\\n- Audit Result:\\n  ** PASS **\\n$l_output\\n\"\n   else\n      echo -e \"\\n- Audit Result:\\n  ** FAIL **\\n - Reason(s) for audit failure:\\n$l_output2\\n\"\n      [ -n \"$l_output\" ] && echo -e \"\\n- Correctly set:\\n$l_output\\n\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=net.ipv4.conf.all.accept_redirects; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+    p=net.ipv4.conf.default.accept_redirects; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+    p=net.ipv6.conf.all.accept_redirects; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+    p=net.ipv6.conf.default.accept_redirects; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+  guidance: "Set the following parameters in /etc/sysctl.conf or a file in /etc/sysctl.d/ ending in .conf: • net.ipv4.conf.all.accept_redirects = 0 • net.ipv4.conf.default.accept_redirects = 0 Example: # printf \" net.ipv4.conf.all.accept_redirects = 0 net.ipv4.conf.default.accept_redirects = 0 \" >> /etc/sysctl.d/60-netipv4_sysctl.conf Run the following command to set the active kernel parameters: # { sysctl -w net.ipv4.conf.all.accept_redirects=0 sysctl -w net.ipv4.conf.default.accept_redirects=0 sysctl -w net.ipv4.route.flush=1 } -IF- IPv6 is enabled on the system: Set the following parameters in /etc/sysctl.conf or a file in /etc/sysctl.d/ ending in .conf: • net.ipv6.conf.all.accept_redirects = 0 • net…"

@@ -1,0 +1,44 @@
+id: TMA-AMZN2-3.3.2.2
+title: Ensure net.ipv6.conf.default.forwarding is configured
+description: 'The net.ipv6.conf.all.forwarding flag tells the system whether it can forward IPv6 on the default or newly added network interface. More information about the kernel parameter configuration files, their location, and load preference is available in the "Configure Network Kernel Parameters" section overview. Note: If IPv6 has been disabled, or this system is a router, this recommendation is not applicable.'
+target: linux
+os_family:
+- amzn-2
+level: 1
+severity: medium
+tags:
+- cis-converted
+- kernel
+- linux
+- sysctl
+reference: CIS Amazon Linux 2 Benchmark v4.0.0 - 3.3.2.2
+audit:
+  type: command
+  shell: bash
+  command: 'chk() { p=$1; allowed=" $2 "; case $p in net.ipv6.*) [ -d /proc/sys/net/ipv6 ] || return 0;; esac; v=$(sysctl -n "$p" 2>/dev/null) || { echo "$p: not available"; return 1; }; case "$allowed" in *" $v "*) ;; *) echo "$p is $v (running)"; return 1;; esac; sd=$(readlink -e /lib/systemd/systemd-sysctl || readlink -e /usr/lib/systemd/systemd-sysctl); f=$("$sd" --cat-config 2>/dev/null | grep -Po "^\h*${p//./\.}\h*=\h*\K\H+" | tail -n1); [ -n "$f" ] || { echo "$p is not set in any sysctl configuration file"; return 1; }; case "$allowed" in *" $f "*) ;; *) echo "$p is $f in configuration"; return 1;; esac; }; if chk net.ipv6.conf.default.forwarding 0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    p=net.ipv6.conf.default.forwarding; v=0
+    f=/etc/sysctl.d/60-tmaegis-$p.conf
+    for c in /etc/sysctl.conf /etc/sysctl.d/*.conf /run/sysctl.d/*.conf /usr/local/lib/sysctl.d/*.conf /usr/lib/sysctl.d/*.conf /lib/sysctl.d/*.conf; do
+      [ -f "$c" ] && [ "$c" != "$f" ] && [ -w "$c" ] && [ ! -L "$c" ] && sed -i -E "s|^([[:space:]]*$p[[:space:]]*=)|# \1|" "$c"
+    done
+    printf '%s = %s\n' "$p" "$v" > "$f"
+    sysctl -w "$p=$v" >/dev/null 2>&1 || true
+    sysctl --system >/dev/null 2>&1 || true; true
+  guidance: "1. Run the following command to comment out net.ipv6.conf.default.forwarding lines returned by the audit procedure that are not net.ipv6.conf.default.forwarding = 0: # sed -ri '^\\s*net.ipv6.conf.default.forwarding\\s*=\\s*1/s/^/#/g' \"path/to/file/in/audit/filename\" Example: # sed -ri '/^\\s*net.ipv6.conf.default.forwarding\\s*=\\s*1/s/^/#/g' /etc/sysctl.d/99-sysctl.conf 2. Create or edit a file in the /etc/sysctl.d/ directory ending in .conf and edit or add the following line: net.ipv6.conf.default.forwarding = 0 Example: # [ ! -d \"/etc/sysctl.d/\" ] && mkdir -p /etc/sysctl.d/ # printf '%s\\n' \"\" \"net.ipv6.conf.default.forwarding = 0\" >> /etc/sysctl.d/60-ipv6_sysctl.conf 3. Run the following comman…"

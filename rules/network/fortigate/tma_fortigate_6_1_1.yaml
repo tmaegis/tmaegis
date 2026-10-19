@@ -1,0 +1,24 @@
+id: TMA-FORTIGATE-6.1.1
+title: Apply a Trusted Signed Certificate for VPN Portal
+description: Apply a signed certificate from a trusted Certificate Authority (CA) to the SSL VPN portal to allow users to connect securely with confidence. FAILs if the SSL VPN still uses the factory self-signed certificate (Fortinet_Factory). Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: medium
+tags:
+- fortigate
+- crypto
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 6.1.1 Apply a Trusted Signed Certificate for VPN Portal
+audit:
+  type: config_regex
+  pattern: (?m)^config vpn ssl settings\n(?:[ \t]+[^\n]*\n)*?[ \t]+set servercert "Fortinet_Factory"[ \t]*$
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    config vpn ssl settings
+        set servercert "<trusted-cert>"
+    end
+    # CIS guidance:
+    Import a signed certificate from a trusted CA through the GUI:
+    1. Go to System > Certificates > Import.
+    2. Then assign the certificate to the SSL VPN portal by going to VPN > SSL- VPN Settings and selecting the proper certificate in the dropdown for "Server Certificate".

@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.38
+title: Ensure 'Quick Scan Include Exclusions' is set to '1'
+description: 'This policy setting manages whether or not Microsoft Defender Antivirus scans excluded files and directories when running a Quick Scan. The recommended state for this setting is: If you set this setting to 1, all files and directories that are excluded from real-time protection using contextual exclusions are scanned during a quick scan. Note: As of the publication of this Benchmark, the setting configuration state in Intune is the sentence above after The recommended state for this setting is: and not 1 as the title states. This was done to keep title length to a minimum. Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.38 Ensure 'Quick Scan Include Exclusions' is set to '1'
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\PolicyManager'' -Name ''QuickScanIncludeExclusions'' -ErrorAction SilentlyContinue).''QuickScanIncludeExclusions''; if (-not ($null -ne $v -and @(1) -contains [int64]$v)) { $bad += ''QuickScanIncludeExclusions='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to If you set this setting to 1, all files and directories that are excluded from real-time protection using contextual exclusions are scanned during a quick scan. Defender\Quick Scan Include Exclusions

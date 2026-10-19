@@ -1,0 +1,17 @@
+id: TMA-KUBERNETES-4.2.5
+title: Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+description: Do not disable timeouts on streaming connections. The benchmark marks this recommendation Manual.
+target: kubernetes
+level: 1
+severity: medium
+tags:
+- kubernetes
+- worker-node
+- kubelet
+reference: CIS Kubernetes Benchmark v2.1.0 - 4.2.5 Ensure that the --streaming-connection-idle-timeout argument is not set to 0
+audit:
+  type: manual
+  command: 'Run the following command on each node: ps -ef | grep kubelet Verify that the --streaming-connection-idle-timeout argument is not set to 0. If the argument is not present, and there is a Kubelet config file specified by --config, check that it does not set streamingConnectionIdleTimeout to 0.'
+remediation:
+  type: iac_patch
+  command: 'If using a Kubelet config file, edit the file to set streamingConnectionIdleTimeout to a value other than 0. If using command line arguments, edit the kubelet service file /etc/kubernetes/kubelet.conf on each worker node and set the below parameter in KUBELET_SYSTEM_PODS_ARGS variable. --streaming-connection-idle-timeout=5m Based on your system, restart the kubelet service. For example: systemctl daemon-reload systemctl restart kubelet.service'

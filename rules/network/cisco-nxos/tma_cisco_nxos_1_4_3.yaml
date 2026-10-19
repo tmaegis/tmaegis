@@ -1,0 +1,26 @@
+id: TMA-CISCO-NXOS-1.4.3
+title: Set password lifetime, warning time and grace time for local credentials
+description: NX-OS has commands to adjust the permitted lifetime of passphrases for local credentials, as well as the "warning time" before expiry and the "grace time" after expiry. If local credentials are in use, it is recommended that these be set to a value appropriate to the organization. Note that these timers cannot be set for the "admin" credential. Regularly changing passwords helps mitigate the risks associated with compromised credentials, as passwords can be compromised through various means such as phishing attacks, data breaches, or being shared inadvertently. Requires default lifetime, warntime and gracetime are all configured. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 1
+severity: high
+tags:
+- cisco-nxos
+- network
+- ntp
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.4.3 Set password lifetime, warning time and grace time for local credentials
+audit:
+  type: config_regex
+  pattern: (?m)(?s:^userpassphrase default-lifetime \d+.*^userpassphrase default-warntime \d+.*^userpassphrase default-gracetime \d+)|(?s:^userpassphrase default-lifetime \d+.*^userpassphrase default-gracetime \d+.*^userpassphrase default-warntime \d+)|(?s:^userpassphrase default-warntime \d+.*^userpassphrase default-lifetime \d+.*^userpassphrase default-gracetime \d+)|(?s:^userpassphrase default-warntime \d+.*^userpassphrase default-gracetime \d+.*^userpassphrase default-lifetime \d+)|(?s:^userpassphrase default-gracetime \d+.*^userpassphrase default-lifetime \d+.*^userpassphrase default-warntime \d+)|(?s:^userpassphrase default-gracetime \d+.*^userpassphrase default-warntime \d+.*^userpassphrase default-lifetime \d+)
+remediation:
+  type: iac_patch
+  command: |-
+    ! To set passphrase timers globally:
+    userpassphrase default-warntime <days>
+    userpassphrase default-gracetime <days>
+    userpassphrase default-lifetime <days> example:
+    userpassphrase default-warntime 10
+    userpassphrase default-gracetime 10
+    userpassphrase default-lifetime 365 To set passphrase time values per-user:
+    username <userid> passphrase lifetime <days> warntime <time in days> gradetime <time in days> example
+    username test passphrase lifetime 365 warntime 10 gracetime 10

@@ -1,0 +1,17 @@
+id: TMA-AWS-IAM-NO-FULL-ADMIN-POLICIES
+title: Ensure IAM policies that allow full "*:*" administrative privileges are not attached
+description: Customer managed policies with Effect Allow, Action * and Resource * grant full admin and defeat least privilege. Checks the default version of every attached customer managed policy. Read-only AWS CLI calls; credentials come from the CLI's normal configuration (AWS_PROFILE, ~/.aws/config and credentials, SSO, or an instance/task role). A missing CLI or credential fails the check.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- iam
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - Identity and Access Management - no full administrative customer managed policies (verify section number for your release)
+audit:
+  type: command
+  command: "pols=$(aws iam list-policies --scope Local --only-attached --query 'Policies[].[Arn,DefaultVersionId]' --output text 2>/dev/null) || exit 1\nbad=0\nwhile read -r arn ver; do\n  [ -n \"$arn\" ] || continue\n  n=$(aws iam get-policy-version --policy-arn \"$arn\" --version-id \"$ver\" --query 'length([PolicyVersion.Document.Statement][] | [?Effect==`\"Allow\"` && (Action==`\"*\"` || (type(Action)==`\"array\"` && contains(Action, `\"*\"`))) && (Resource==`\"*\"` || (type(Resource)==`\"array\"` && contains(Resource, `\"*\"`)))])' --output text 2>/dev/null </dev/null) || exit 1\n  [ \"$n\" -eq 0 ] || { echo \"full admin: $arn\"; bad=1; }\ndone <<EOF\n$pols\nEOF\n[ \"$bad\" -eq 0 ] && echo compliant"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Detach the listed policies (aws iam detach-user-policy / detach-group-policy / detach-role-policy) and replace them with scoped policies; use the AWS managed AdministratorAccess only for break-glass roles.

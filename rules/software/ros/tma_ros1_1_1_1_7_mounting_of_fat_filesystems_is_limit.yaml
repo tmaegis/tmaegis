@@ -1,0 +1,18 @@
+id: TMA-ROS1-1.1.1.7
+title: Ensure mounting of FAT filesystems is limited
+description: The FAT filesystem format is primarily used on older windows systems and portable USB drives or flash modules. It comes in three types FAT12 , FAT16 , and FAT32 all of which are supported by the vfat kernel module. Manual review against site policy. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.1.1.7 Ensure mounting of FAT filesystems is limited
+audit:
+  type: manual
+  command: 'If utilizing UEFI the FAT filesystem format is required. If this case, ensure that the FAT filesystem is only used where appropriate Run the following command grep -E -i ''\svfat\s'' /etc/fstab And review that any output is appropriate for your environment If not utilizing UEFI Run the following commands and verify the output is as indicated: # modprobe --showconfig | grep vfat install vfat /bin/true # lsmod | grep vfat <No output>'
+remediation:
+  type: iac_patch
+  command: 'Edit or create a file in the /etc/modprobe.d/ directory ending in .conf Example: vi /etc/modprobe.d/vfat.conf install vfat /bin/true Run the following command to unload the vfat module: # rmmod vfat'

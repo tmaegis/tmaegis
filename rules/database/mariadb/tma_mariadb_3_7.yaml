@@ -1,0 +1,20 @@
+id: TMA-MARIADB-3.7
+title: Ensure SSL Key Files Have Appropriate Permissions
+description: 'When configured to use SSL/TLS, MariaDB relies on Secure Sockets Layer (SSL) key files, which are stored on the host''s filesystem. These SSL key files are subject to the host''s permissions and ownership structure. Every file named by an ssl_ca/ssl_cert/ssl_key/ssl_crl variable must be -r-------- mysql:mysql (directories in ssl_capath/ssl_crlpath are skipped). Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- filesystem
+- permissions
+- tls
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 3.7 Ensure SSL Key Files Have Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mariadb -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; l=$(mariadb -NBe "SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_VARIABLES WHERE LOWER(VARIABLE_NAME) REGEXP ''^.*ssl_(ca|capath|cert|crl|crlpath|key)\$'' AND VARIABLE_VALUE <> ''''" 2>/dev/null) || exit 1; n=0; for f in $l; do case "$f" in /*) ;; *) f="$d/${f#./}" ;; esac; [ -f "$f" ] || continue; [ "$(stat -c ''%a %U %G'' "$f")" = "400 mysql mysql" ] || n=$((n+1)); done; [ "$n" -eq 0 ] && echo compliant || echo "$n noncompliant files"'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chown mysql:mysql <ssl_file> && chmod 400 <ssl_file> for every ssl_ca/ssl_cert/ssl_key/ssl_crl file in use.

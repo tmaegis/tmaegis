@@ -1,0 +1,17 @@
+id: TMA-AWS-EUC-2.15
+title: Ensure primary interface ports for Workspaces are not open to all inbound traffic.
+description: Ensure that the inbound traffic of the primary network interface for all WorkSpaces is not open to all connections 0.0.0.0\00. Attached security groups to the primary elastic network interface (ENI) to manage ports and network communication should not be open to all communication. They should be restricted to what is required by WorkSpaces, the Organization and other services.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- euc
+reference: CIS AWS End User Compute Services Benchmark v1.2.0 - 2.15 Ensure primary interface ports for Workspaces are not open to all inbound traffic.
+audit:
+  type: manual
+  command: 'Perform the steps below to confirm security groups are configured correctly From the console: 1. Login to the VPC console at https://console.aws.amazon.com/vpc/ 2. In the left pane, click Your VPCs 3. Note the VPC Id for WorkSpaces 4. In the left pane, click Security Groups 5. In the Filter security groups enter the name of the WorkSpaces VPC 6. Select the WorkSpaces Security Group 7. Click on Inbound rules 8. Confirm that there is no rule for All traffic, All, All, 0.0.0.0/0, - If there is a rule for Inbound traffic that is open to all traffic and all ip addresses refer to the remediation below.'
+remediation:
+  type: iac_patch
+  command: 'Perform the steps below to remove Inbound rule that allows all traffic from all IP addresses. From the console: 1. Login to the VPC console at https://console.aws.amazon.com/vpc/ 2. In the left pane, click Your VPCs 3. Note the VPC Id for WorkSpaces 4. In the left pane, click Security Groups 5. In the Filter security groups enter the name of the WorkSpaces VPC 6. Select the WorkSpaces Security Group 7. Click on Inbound rules 8. Click on Edit inbound rules 9. Click on Delete for the rule that shows -All traffic, All, All, 0.0.0.0/0, - 10. Click on Save rules Note - Make sure you have all the required ports add to Inbound rules as listed in the WorkSpaces documentation outlined in the references so that connectivity to WorkSpaces is not impacted.'

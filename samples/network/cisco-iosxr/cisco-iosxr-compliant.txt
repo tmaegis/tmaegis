@@ -1,0 +1,71 @@
+!! Synthetic sample: Cisco IOS XR running-config (hardened). Not a secure template.
+!! IOS XR Configuration 7.9.2
+hostname PE-RTR-01
+service timestamps log datetime msec
+service timestamps debug datetime msec
+!
+username admin
+ group root-lr
+ secret 10 $6$REDACTED$FAKEHASHFAKEHASHFAKEHASH
+!
+aaa accounting exec default start-stop group tacacs+
+aaa accounting commands default start-stop group tacacs+
+aaa accounting network default start-stop group tacacs+
+aaa accounting system default start-stop group tacacs+
+aaa authentication login default group tacacs+ local
+aaa authorization exec default group tacacs+ local
+!
+tacacs-server host 192.0.2.60 port 49
+ key 7 REDACTED
+!
+banner login ^Authorized access only^
+banner exec ^Authorized access only. Activity is logged.^
+!
+logging trap informational
+logging 192.0.2.50 vrf default severity info
+logging buffered 2097152
+logging console critical
+logging source-interface Loopback0
+logging facility local6
+!
+ntp
+ server 192.0.2.123
+ server 192.0.2.124
+ source Loopback0
+!
+snmp-server user nmsuser NMS v3 auth sha REDACTED priv aes 128 REDACTED
+snmp-server group NMS v3 priv
+snmp-server host 192.0.2.51 traps version 3 priv nmsuser
+snmp-server traps snmp linkup
+snmp-server traps snmp linkdown
+!
+ssh server v2
+ssh timeout 30
+ssh server rate-limit 60
+no cdp
+!
+line console
+ exec-timeout 5 0
+ login authentication default
+ accounting exec default
+ accounting commands default
+!
+line default
+ access-class ingress MGMT-ACL
+ exec-timeout 5 0
+ login authentication default
+ accounting exec default
+ accounting commands default
+ transport input ssh
+!
+ipv4 access-list MGMT-ACL
+ 10 permit tcp 192.0.2.0/24 any eq 22
+ 20 deny ipv4 any any log
+!
+interface Loopback0
+ ipv4 address 198.51.100.1 255.255.255.255
+!
+interface MgmtEth0/RP0/CPU0/0
+ ipv4 address 192.0.2.5 255.255.255.0
+!
+end

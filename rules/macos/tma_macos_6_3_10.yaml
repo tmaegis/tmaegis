@@ -1,0 +1,21 @@
+id: TMA-MACOS-6.3.10
+title: Ensure Show Status Bar Is Enabled
+description: The Status Bar in Safari shows the full URL of any link on hover. It protects the user from visiting sites where the domain has been obfuscated by allowing the user to review whether the link points to an unexpected location.
+target: macos
+level: 1
+severity: low
+tags:
+- macos
+- applications
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 6.3.10 Ensure Show Status Bar Is Enabled
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    out=$(/usr/sbin/system_profiler SPConfigurationProfileDataType 2>/dev/null) || exit 1
+    printf '%s\n' "$out" | /usr/bin/grep -E 'ShowOverlayStatusBar' | /usr/bin/tr -d ' '
+  expected_output: ShowOverlayStatusBar=1;
+remediation:
+  type: iac_patch
+  command: 'Profile (preferred): com.apple.Safari ShowOverlayStatusBar = <true/>.'

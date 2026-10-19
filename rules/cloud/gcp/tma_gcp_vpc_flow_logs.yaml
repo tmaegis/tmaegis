@@ -1,0 +1,19 @@
+id: TMA-GCP-VPC-FLOW-LOGS
+title: Ensure VPC Flow Logs are enabled for every subnet
+description: Flow logs record network flows for monitoring, forensics and anomaly detection. Every regular (PRIVATE purpose) subnet must have flow logs enabled; proxy-only and PSC subnets, which do not support them, are skipped. Read-only gcloud calls against the active project (gcloud config set project, or CLOUDSDK_CORE_PROJECT); credentials come from the SDK's normal configuration (gcloud auth login, a service account or ADC). A missing CLI, credential or disabled API fails the check.
+target: gcp
+level: 2
+severity: medium
+tags:
+- gcp
+- network
+reference: CIS Google Cloud Platform Foundation Benchmark v5.0.0 - Networking - VPC flow logs enabled for every subnet (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(gcloud compute networks subnets list --format=''value(name,region.basename(),purpose,enableFlowLogs,logConfig.enable)'' 2>/dev/null) || exit 1
+
+    printf ''%s\n'' "$out" | awk -F ''\t'' ''NF && ($3 == "" || $3 == "PRIVATE") && $4 != "True" && $5 != "True" { n++; print "no flow logs: " $1 " " $2 } END { if (!n) print "compliant" }'''
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: gcloud compute networks subnets update <subnet> --region <region> --enable-flow-logs --logging-aggregation-interval=interval-5-sec --logging-flow-sampling=1 --logging-metadata=include-all.

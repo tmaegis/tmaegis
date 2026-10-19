@@ -1,0 +1,22 @@
+id: TMA-CISCO-IOSXR-1.1.1.1
+title: TACACS+ (AAA server group)
+description: 'Cisco IOS XR devices can use the TACACS+ protocol to communicate with a central AAA server. Using a central authentication store ensures that all administrative actions are tied to named users, making the tracking of changes much easier. It also makes tracking compromised accounts and malicious activities much easier. Central authentication is key as it minimizes the effort in managing named user accounts. Keeping local admin accounts opens the door to all the issues inherent in shared accounts, namely: - Errors in implementation being done by generic admin accounts, which ... Passes with two or more ''tacacs-server host'' entries referenced by an ''aaa group server tacacs+'', or when RADIUS (and no TACACS+) is used instead. Audited against the hierarchical output of ''show running-config'' (run ''terminal length 0'' first; not ''show running-config formal'').'
+target: cisco-iosxr
+level: 2
+severity: high
+tags:
+- cisco-iosxr
+- network
+- aaa
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.1.1.1 TACACS+
+audit:
+  type: config_regex
+  pattern: (?m)(?:(?s:^tacacs-server host \S.*^tacacs-server host \S.*^aaa group server tacacs\+ \S))|(?:\A(?:[ \t]*(?:$|[^t \t\n]|t(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^s\n]|s(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))[^\n]*\n)*[ \t]*radius-server host [^\n]*(?:\n(?:[ \t]*(?:$|[^t \t\n]|t(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^s\n]|s(?:$|[^\-\n]|-(?:$|[^s\n]|s(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^v\n]|v(?:$|[^e\n]|e(?:$|[^r\n]|r(?:$|[^ \n]| (?:$|[^h\n]|h(?:$|[^o\n]|o(?:$|[^s\n]|s(?:$|[^t\n]|t(?:$|[^ \n])))))))))))))))))))[^\n]*))*\n?\z)
+remediation:
+  type: iac_patch
+  command: |-
+    ! For complete instructions how to configure AAA please refer to the configuration guide. Below you can find some minimum config snippets to implement a radius or tacacs+ server group.
+    tacacs-server host {tacacs_ip_address} port 49
+    key {tacacs_key}
+    aaa group server tacacs+ {tacacs_group_name}
+    server {tacacs_ip_address}

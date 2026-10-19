@@ -1,0 +1,19 @@
+id: TMA-MARIADB-8.2
+title: Ensure 'ssl_type' is Set to 'ANY', 'X509', or 'SPECIFIED' for All Remote Users
+description: 'All network traffic must use SSL/TLS when traveling over untrusted networks. SSL/TLS should be enforced on a per-user basis for users which enter the system through the network. Counts remote accounts whose ssl_type is not ANY, X509 or SPECIFIED. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- tls
+- authentication
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 8.2 Ensure 'ssl_type' is Set to 'ANY', 'X509', or 'SPECIFIED' for All Remote Users
+audit:
+  type: sql_query
+  command: out=$(mariadb -NBe "SELECT COUNT(*) FROM mysql.user WHERE host NOT IN ('::1', '127.0.0.1', 'localhost') AND ssl_type NOT IN ('ANY', 'X509', 'SPECIFIED')" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: ALTER USER '<user>'@'<host>' REQUIRE X509; (or REQUIRE SSL / ISSUER / SUBJECT) for every remote account listed by SELECT user, host, ssl_type FROM mysql.user WHERE host NOT IN ('::1','127.0.0.1','localhost');

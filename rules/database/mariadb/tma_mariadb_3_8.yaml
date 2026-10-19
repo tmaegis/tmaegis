@@ -1,0 +1,19 @@
+id: TMA-MARIADB-3.8
+title: Ensure Plugin Directory Has Appropriate Permissions
+description: 'The plugin directory is the location of the MariaDB plugins. Plugins are storage engines or user defined functions (UDFs). Expects plugin_dir mode 550 or 554. Runs mariadb -NBe with the client defaults: as root on the server the unix_socket plugin usually authenticates; otherwise put an administrative account in ~/.my.cnf (mode 0600), not MYSQL_PWD (see 1.4/1.6).'
+target: mariadb
+level: 1
+severity: high
+tags:
+- mariadb
+- database
+- filesystem
+- permissions
+reference: CIS MariaDB 10.11 Benchmark v1.0.0 - 3.8 Ensure Plugin Directory Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; p=$(mariadb -NBe "SELECT IFNULL(@@global.plugin_dir, '''')" 2>/dev/null) || exit 1; m=$(stat -c %a "$p" 2>/dev/null) || exit 1; case "$m" in 550|554) echo compliant ;; *) echo "mode $m" ;; esac'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: chmod 550 <plugin_dir> (or 554) && chown mysql:mysql <plugin_dir>; the server must not be able to write to it.

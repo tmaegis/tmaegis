@@ -1,0 +1,22 @@
+id: TMA-JUNIPER-JUNOS-6.7.7
+title: Ensure Strong Authentication Methods are used for NTP Authentication
+description: Strong authentication methods should be set for NTP Servers. Having established the need for NTP, it is essential to ensure that the devices time is not manipulated by an attacker as this could allow DoS to services relying on accurate time as well as replay attacks and other malicious activity. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 2
+severity: high
+tags:
+- juniper-junos
+- network
+- ntp
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.7.7 Ensure Strong Authentication Methods are used for NTP Authentication
+audit:
+  type: config_regex
+  pattern: (?m)^set system ntp authentication-key \d+ type (?:md5|sha1)\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Keys are configured on a key ring and identified by an ID number. To add a key enter the following command from the hierarchy;
+    set system ntp authentication-key <Key ID> type <algorithm> value <Key> <Key ID> is an arbitrary 32-bit non-zero integer used to identify this key locally on the device. The <algorithm> can be set to MD5 (the default), SHA1 or SHA256 (with SHA1 and SHA256 only being supported on some devices) - for Strong Authentication Methods you should use sha256 only. Configure the key as trusted so that the router will accept NTP traffic encrypted using it. This mechanism provides an easy method to retire keys in the event of compromise. Enter following command from the hierarchy;
+    set system ntp trusted-key <Key ID> The <Key ID> which is trusted can be one key or several keys by enclosing the list in square brackets or repeating the command. Finally, update the keys for each NTP servers using the following command under the hierarchy:
+    set system ntp server <Servers IP> key <key ID>

@@ -1,0 +1,19 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.4.4
+title: Ensure password reuse is limited
+description: 'The /etc/security/opasswd file stores the users'' old passwords and can be checked to ensure that users are not recycling recent passwords. Audit: Passes when pam_pwhistory.so on the password stack of /etc/pam.d/system-password and /etc/pam.d/system-auth sets remember to 5 or more.'
+target: azure-container-linux
+level: 1
+severity: high
+tags:
+- azure-container-linux
+- pam
+- passwords
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.4.4 Ensure password reuse is limited
+audit:
+  type: command
+  shell: bash
+  command: bad=0; for p in /etc/pam.d/system-password /etc/pam.d/system-auth; do grep -Pq "^\h*password\h+[^#\n\r]+\h+pam_pwhistory\.so\h+([^#\n\r]+\h+)?remember=([5-9]|[1-9][0-9]+)\b" $p 2>/dev/null || bad=1; done; [ $bad -eq 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Edit both the /etc/pam.d/system-password and /etc/pam.d/system-auth files to include the remember option and conform to site policy as shown: Note: Add or modify the line containing the pam_pwhistory.so after the first occurrence of password requisite: password requisite pam_pwhistory.so remember=5 Example: (Second line is modified) password requisite pam_pwquality.so try_first_pass local_users_only authtok_type= password requisite pam_pwhistory.so use_authtok remember=5 retry=3 password sufficient pam_unix.so sha512 shadow try_first_pass use_authtok password required pam_deny.so'

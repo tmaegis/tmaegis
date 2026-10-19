@@ -1,0 +1,37 @@
+id: TMA-VMWARE-4.4
+title: Host must set the logging informational level to info
+description: Set the logging informational level to "info" via the Config.HostAgent.log.level parameter to ensure audit logs contain adequate data for diagnostics and forensics. This level provides a balanced amount of detail, suitable for routine analysis and investigation. The parameter governing this behavior is Config.HostAgent.log.level with a recommended setting of info. The audit reads Config.HostAgent.log.level with esxcli and requires info. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: medium
+tags:
+- vmware
+- esxi
+- logging
+reference: CIS VMware ESXi 8.0 Benchmark v1.4.0 - 4.4 Host must set the logging informational level to info
+audit:
+  type: command
+  command: |-
+    out=$(esxcli system settings advanced list -o /Config/HostAgent/log/level 2>/dev/null) || exit 1
+    v=$(printf '%s\n' "$out" | sed -n 's/^ *String Value: *//p' | head -n 1)
+    if [ "$v" = info ]; then echo compliant; else echo "/Config/HostAgent/log/level = '$v' (expected info)"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v esxcli >/dev/null 2>&1 || exit 0
+    esxcli system settings advanced set -o /Config/HostAgent/log/level -s 'info'
+  guidance: "Using the vSphere client: Host → Configure → System → Advanced System Settings → Syslog.global.logLevel Set: info Execute command: esxcli system syslog config get | grep \"Log Level\" Verify - Log Level: info"

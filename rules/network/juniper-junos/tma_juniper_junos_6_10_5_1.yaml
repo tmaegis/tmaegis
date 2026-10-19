@@ -1,0 +1,20 @@
+id: TMA-JUNIPER-JUNOS-6.10.5.1
+title: Ensure REST is Not Set to HTTP
+description: Network devices should not be managed using unencrypted HTTP sessions. The JUNOS REST API can be configured for access using either HTTP or HTTPS for connections. HTTP transmits all data (including passwords) in clear text over the network and provides no assurance of the identity of the hosts involved. Audited against the output of 'show configuration | display set | no-more' (set format, not the curly-brace hierarchy).
+target: juniper-junos
+level: 1
+severity: high
+tags:
+- juniper-junos
+- network
+- management-plane
+reference: CIS Juniper OS Benchmark v2.1.0 - 6.10.5.1 Ensure REST is Not Set to HTTP
+audit:
+  type: config_regex
+  pattern: (?m)^set system services rest http(?:\s|$)
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! To disable REST HTTP, enter the following command from the hierarchy:
+    delete system services rest http

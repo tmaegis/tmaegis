@@ -1,0 +1,19 @@
+id: TMA-POSTGRES-6.7
+title: Ensure FIPS 140-2 OpenSSL Cryptography Is Used
+description: Install, configure, and use OpenSSL on a platform that has a NIST certified FIPS 140-2 installation of OpenSSL. This provides PostgreSQL instances the ability to generate and validate cryptographic hashes to protect unclassified information requiring confidentiality and cryptographic protection, in accordance with the data owner's requirements. Requires kernel FIPS mode (/proc/sys/crypto/fips_enabled = 1) and an active OpenSSL FIPS provider; the benchmark notes this is natively possible only on RHEL-family systems.
+target: postgres
+level: 1
+severity: medium
+tags:
+- postgres
+- database
+- crypto
+- fips
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 6.7 Ensure FIPS 140-2 OpenSSL Cryptography Is Used
+audit:
+  type: command
+  command: f=$(cat /proc/sys/crypto/fips_enabled 2>/dev/null) || exit 1; p=$(openssl list -providers 2>/dev/null) || exit 1; if [ "$f" = 1 ] && printf '%s\n' "$p" | grep -qi fips; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable FIPS mode on a FIPS-capable OS (RHEL/Rocky: fips-mode-setup --enable, then reboot) so OpenSSL, which PostgreSQL uses, runs with the FIPS provider; confirm with fips-mode-setup --check.'

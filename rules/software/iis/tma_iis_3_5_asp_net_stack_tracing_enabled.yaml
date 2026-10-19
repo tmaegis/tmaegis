@@ -1,0 +1,19 @@
+id: TMA-IIS-3.5
+title: Ensure ASP.NET stack tracing is not enabled
+description: The trace element configures the ASP.NET code tracing service that controls how trace results are gathered, stored, and displayed. When tracing is enabled, each page request generates trace messages that can be appended to the page output or stored in an application trace log. ASP.NET trace must not be enabled in the root web.config or any site (page-level Trace="true" is not checked). PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 2
+severity: low
+tags:
+- iis
+- information-disclosure
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 3.5 Ensure ASP.NET stack tracing is not enabled
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $paths = @('MACHINE/WEBROOT') + @(Get-Website | ForEach-Object { "IIS:\Sites\$($_.Name)" }); $bad = @($paths | Where-Object { $c = Get-WebConfiguration -Filter 'system.web/trace' -PSPath $_; $c.enabled -eq $true }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST/<site>' -Filter system.web/trace -Name enabled -Value False

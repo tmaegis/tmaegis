@@ -1,0 +1,37 @@
+id: TMA-MYSQL-3.1
+title: Ensure 'datadir' Has Appropriate Permissions
+description: 'The data directory is the location of the MySQL databases. Expects drwxr-x--- mysql:mysql (0700 also accepted); run as root on the database host. Runs mysql -NBe with the client defaults: put an administrative account in ~/.my.cnf (mode 0600) or a mysql_config_editor login path, not MYSQL_PWD (see 1.4/1.6).'
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- filesystem
+- permissions
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 3.1 Ensure 'datadir' Has Appropriate Permissions
+audit:
+  type: command
+  command: '[ "$(id -u)" -eq 0 ] || exit 1; d=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1; s=$(stat -c ''%a %U %G'' "$d" 2>/dev/null) || exit 1; case "$s" in "750 mysql mysql"|"700 mysql mysql") echo compliant ;; *) echo "$s" ;; esac'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    command -v mysql >/dev/null 2>&1 || exit 0
+    d=$(mysql -NBe "SELECT @@global.datadir" 2>/dev/null) || exit 1
+    [ -d "$d" ] || exit 1
+    chown mysql:mysql "$d" && chmod 750 "$d"
+  guidance: "chmod 750 <datadir> && chown mysql:mysql <datadir> (datadir from SELECT @@datadir)."

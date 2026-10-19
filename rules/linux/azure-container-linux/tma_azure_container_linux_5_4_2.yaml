@@ -1,0 +1,19 @@
+id: TMA-AZURE-CONTAINER-LINUX-5.4.2
+title: Ensure lockout for failed password attempts is configured
+description: 'Lock out users after n unsuccessful consecutive login attempts. • deny=<n> - Number of attempts before the account is locked • unlock_time=<n> - Time in seconds before the account is unlocked Note: The maximum configurable value for unlock_time is 604800. Audit: Passes when every pam_faillock auth line in /etc/pam.d/system-password and /etc/pam.d/system-auth has deny between 1 and 5 and unlock_time 0 or at least 900, and each file has such lines.'
+target: azure-container-linux
+level: 1
+severity: high
+tags:
+- azure-container-linux
+- pam
+- lockout
+reference: CIS Azure Container Linux Benchmark v1.0.0 - 5.4.2 Ensure lockout for failed password attempts is configured
+audit:
+  type: command
+  shell: bash
+  command: bad=0; for p in /etc/pam.d/system-password /etc/pam.d/system-auth; do l=$(grep -P "^\h*auth\h+[^#\n\r]+\h+pam_faillock\.so\s+" $p 2>/dev/null); [ -n "$l" ] || { bad=1; continue; }; for d in $(printf "%s\n" "$l" | grep -oP "deny=\K[0-9]+"); do [ "$d" -ge 1 ] && [ "$d" -le 5 ] || bad=1; done; for u in $(printf "%s\n" "$l" | grep -oP "unlock_time=\K[0-9]+"); do [ "$u" -eq 0 ] || [ "$u" -ge 900 ] || bad=1; done; printf "%s\n" "$l" | grep -q "deny=" || bad=1; done; [ $bad -eq 0 ] && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Set password lockouts and unlock times to conform to site policy. deny should be not greater than 5 and unlock_time should be 0 (never), or 900 seconds or greater. Edit the files /etc/pam.d/system-auth and /etc/pam.d/system-password and add the following lines: Modify the deny= and unlock_time= parameters to conform to local site policy, Not to be greater than deny=5: Add the following lines to the auth section: auth required pam_faillock.so preauth silent audit deny=5 unlock_time=900 auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=900 The auth sections should look similar to the following example: Note: The ordering on the lines in the auth section is important. The preauth line needs to below the line auth required pam_env.so and above all password validation lines. ...'

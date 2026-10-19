@@ -1,0 +1,30 @@
+id: TMA-ALIBABA-1.15
+title: Ensure RAM policies that allow full "*:*" administrative privileges are not created
+description: RAM policies represent permissions that can be granted to users, groups, or roles. It is recommended and considered a standard security advice to grant least privilege-that is, granting only the permissions required to perform tasks. It is more secure to start with a minimum set of permissions and grant additional permissions as necessary, rather than starting with permissions that exceed the necessity and then trying to tighten them later. Flags custom policies with AttachmentCount > 0 whose default version has a statement with Effect Allow, Action "*" and Resource "*". Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: high
+tags:
+- alibaba
+- ram
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 1.15 Ensure RAM policies that allow full "*:*" administrative privileges are not created
+audit:
+  type: command
+  command: |-
+    out=$(aliyun ram ListPolicies --PolicyType Custom --MaxItems 1000 2>/dev/null) || exit 1
+    pols=$(printf '%s\n' "$out" | sed -n 's/.*"PolicyName"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | sort -u)
+    bad=0
+    for p in $pols; do
+      g=$(aliyun ram GetPolicy --PolicyName "$p" --PolicyType Custom 2>/dev/null) || exit 1
+      n=$(printf '%s\n' "$g" | sed -n 's/.*"AttachmentCount"[[:space:]]*:[[:space:]]*\([0-9]\{1,\}\).*/\1/p' | head -n 1)
+      [ "${n:-0}" -gt 0 ] || continue
+      doc=$(printf '%s\n' "$g" | grep '"PolicyDocument"' | head -n 1 | sed 's/\\n//g; s/\\t//g; s/\\"/"/g' | tr -d ' \t')
+      if printf '%s\n' "$doc" | tr '{}' '\n\n' | grep '"Effect":"Allow"' | grep -E '"Action":(\["\*"\]|"\*")' | grep -Eq '"Resource":(\["\*"\]|"\*")'; then
+        echo "attached full-admin policy: $p"; bad=1
+      fi
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Detach the listed policies from all identities (aliyun ram DetachPolicyFromUser/Group/Role) and replace them with least-privilege policies; use the system AdministratorAccess policy only for a small, controlled group.

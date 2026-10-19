@@ -1,0 +1,21 @@
+id: TMA-IBMCLOUD-ACTIVITY-TRACKER-ROUTE
+title: Ensure Activity Tracker event routing is configured
+description: Activity Tracker Event Routing sends account audit events to a durable target (Cloud Logs, COS, Event Streams). At least one route with target_ids must exist (requires the atracker plugin). Read-only ibmcloud CLI calls using the current CLI session and targeted region (ibmcloud login, or IBMCLOUD_API_KEY); JSON output is parsed with grep/sed/awk. A missing CLI, plugin or session fails the check.
+target: ibmcloud
+level: 1
+severity: high
+tags:
+- ibmcloud
+- logging
+reference: CIS IBM Cloud Foundations Benchmark v2.0.0 - Logging and Monitoring - Activity Tracker event routing (verify section number for your release)
+audit:
+  type: command
+  command: 'out=$(ibmcloud atracker route ls --output json 2>/dev/null) || exit 1
+
+    n=$(printf ''%s\n'' "$out" | grep -c ''"target_ids"'' || true)
+
+    [ "$n" -gt 0 ] && echo compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ibmcloud atracker target create --name <t> --type cloud_object_storage|cloud_logs ... then ibmcloud atracker route create --name <r> --rules '[{"locations":["*","global"],"target_ids":["<target-id>"]}]'.

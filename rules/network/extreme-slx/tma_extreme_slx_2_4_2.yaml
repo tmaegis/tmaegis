@@ -1,0 +1,24 @@
+id: TMA-EXTREME-SLX-2.4.2
+title: Enable NTP Server Authentication
+description: The switch should be synchronized with NTP server with authentication turned on. Authenticating to the NTP servers prevent an adversary from spoofing the NTP address and establishing connection. PASS requires ntp authenticate (with trusted ntp authentication keys on the servers). Audited against SLX-OS 'show running-config' output (saved in full).
+target: extreme-slx
+level: 1
+severity: high
+tags:
+- extreme-slx
+- authentication
+reference: CIS ExtremeNetworks SLX-OS 20.X.X Benchmark v1.0.1 - 2.4.2 Enable NTP Server Authentication
+audit:
+  type: config_regex
+  pattern: (?m)^ntp authenticate\b
+remediation:
+  type: iac_patch
+  command: |-
+    configure terminal
+    ntp authentication-key 1 sha1 <key>
+    ntp server 192.168.0.10 key 1
+    ntp authenticate
+    end
+    # CIS guidance:
+    Configure the NTP Server configuration and authentication
+    ntp authenticate

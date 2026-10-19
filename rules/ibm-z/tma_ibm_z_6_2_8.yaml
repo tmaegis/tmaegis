@@ -1,0 +1,16 @@
+id: TMA-IBM-Z-6.2.8
+title: Ensure UNIX permission and user audit bits for FTP server are configured
+description: The FTP Server daemon uses privileged functions and accesses sensitive data. The files and directories the FTP daemon relies upon for its configuration, runtime environment and operation must be properly protected from unauthorized modifications or retrieval to ensure system integrity and privacy of sensitive data.
+target: ibm-z
+level: 1
+severity: high
+tags:
+- ibm-z
+- audit
+reference: CIS IBM z/OS with RACF Benchmark v1.0.0 - 6.2.8 Ensure UNIX permission and user audit bits for FTP server are configured
+audit:
+  type: manual
+  command: 'Verify that the permission bits and user audit bits for FTP server UNIX files match or are more restrictive than the specified settings listed in the table: File Permission Bits User Audit Bits /usr/sbin/ftpd 740 fff /usr/sbin/ftpdns 755 fff /etc/ftp.data 744 faf Notes: Some of the files listed above may not be used in every configuration. While the absence of a file is generally not a security issue, the existence of a file that has not been properly secured can often be an issue. Therefore, all files that do exist should have the specified permission and ... (full steps: CIS section 6.2.8)'
+remediation:
+  type: iac_patch
+  command: 'To modify the audit flags for a UNIX file use the chaudit command: chaudit rwx=f /usr/lpp/tcpip/sbin/ftpd chaudit rwx=f /usr/lpp/tcpip/sbin/ftpdns chaudit w=sf,rx+f /etc/ftp.data To modify the access permissions for a UNIX file use the chmod command: chmod 740 /usr/lpp/tcpip/sbin/ftpd chmod 755 /usr/lpp/tcpip/sbin/ftpdns chmod 744 /etc/ftp.data'

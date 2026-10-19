@@ -1,0 +1,16 @@
+id: TMA-AWS-2.11
+title: Ensure credentials unused for 45 days or more are disabled
+description: AWS IAM users can access AWS resources using different types of credentials, such as passwords or access keys. It is recommended that all credentials that have been unused for 45 days or more be deactivated or removed. Disabling or removing unused credentials reduces the window of opportunity for credentials associated with a compromised or abandoned account to be used.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.11 Ensure credentials unused for 45 days or more are disabled
+audit:
+  type: manual
+  command: 'Perform the following to determine if unused credentials exist: From Console: 1. Sign in to the AWS Management Console and open the IAM console at https://console.aws.amazon.com/iam 2. Click on Users 3. Click the Settings (gear) icon 4. Select Console last sign-in, Access key last used, and Access Key Id 5. Click on Confirm 6. Check and ensure that Console last sign-in is less than 45 days ago. Note - - means the user has never logged in. 7. If credentials have not been used within 45 days, refer to remediation From Command Line: Remove Access Key: 1. Generate and review the credential report: aws iam generate-credential-report aws iam get-credential-report --query ''Content'' --output text | base64 -d 2. Review the following fields: - password_last_used - access_key_1_last_used_date - access_key_2_last_used_date 3. Identify any credentials unused for 45 days or more'
+remediation:
+  type: iac_patch
+  command: 'From Console: Perform the following to deactivate or remove unused credentials: 1. Login to the AWS Management Console and open the IAM console 2. Click on the User 3. Select the user 4. Click Security Credentials Disable Console Access: 5. In the Console sign-in section, select Manage console access 6. If Console last sign-in is greater than 45 days, select Disable access Deactivate or Delete Access Keys: 7. In the Access keys section: - Deactivate unused keys, or - Delete keys that are no longer required From Command Line: 1. Delete unused access keys: aws iam delete-access-key --access-key-id <access-key-id> --user-name <user- name> 2. Remove console access: aws iam delete-login-profile --user-name <user-name>'

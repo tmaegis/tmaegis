@@ -1,0 +1,44 @@
+id: TMA-ROS1-1.1.1.2
+title: Ensure mounting of freevxfs filesystems is disabled
+description: The freevxfs filesystem type is a free version of the Veritas type filesystem. This is the primary filesystem type for HP-UX operating systems. The audit requires the freevxfs module to be unloaded and blocked (modprobe -n -v reports install /bin/true). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.1.1.2 Ensure mounting of freevxfs filesystems is disabled
+audit:
+  type: command
+  shell: bash
+  command: |-
+    command -v modprobe >/dev/null 2>&1 || exit 1
+    grep -qw '^freevxfs' /proc/modules 2>/dev/null && { echo 'freevxfs is loaded'; exit 1; }
+    cfg=$(modprobe -n -v freevxfs 2>&1)
+    case "$cfg" in *'install /bin/true'*|*'install /bin/false'*|*'not found'*) echo compliant; exit 0 ;; esac
+    modprobe --showconfig 2>/dev/null | grep -Eq '^\s*install\s+freevxfs\s+/bin/(true|false)' && echo compliant || echo 'freevxfs can be loaded'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    m=freevxfs
+    mkdir -p /etc/modprobe.d
+    f=/etc/modprobe.d/60-$m.conf
+    printf 'install %s /bin/false\nblacklist %s\n' "$m" "$m" > "$f"
+    modprobe -r "$m" 2>/dev/null; rmmod "$m" 2>/dev/null; true
+  guidance: "Edit or create a file in the /etc/modprobe.d/ directory ending in .conf Example: vi /etc/modprobe.d/freevxfs.conf and add the following line: install freevxfs /bin/true Run the following command to unload the freevxfs module: rmmod freevxfs"

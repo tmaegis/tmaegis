@@ -1,0 +1,20 @@
+id: TMA-EKS-4.3.1
+title: Ensure VPC CNI network policy support is enabled
+description: The Amazon VPC CNI plugin for Kubernetes can provide native Kubernetes NetworkPolicy enforcement in EKS when network policy support is enabled on a supported VPC CNI add-on version. This capability lets EKS apply Pod-to-Pod traffic restrictions through the VPC CNI data path instead of leaving Pod network communication broadly open by default. Requires the aws CLI with eks:DescribeCluster; the cluster comes from EKS_CLUSTER and the region from AWS_REGION/AWS_PROFILE. Checks the managed vpc-cni add-on configurationValues, falling back to the self-managed aws-node DaemonSet.
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- policies
+- network
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 4.3.1 Ensure VPC CNI network policy support is enabled
+audit:
+  type: command
+  command: |-
+    v=$(aws eks describe-addon --cluster-name "${EKS_CLUSTER:?set EKS_CLUSTER}" --addon-name vpc-cni --query addon.configurationValues --output text 2>/dev/null) || v=$(kubectl get daemonset aws-node -n kube-system -o yaml) || exit 1
+    if printf '%s\n' "$v" | grep -Eqi 'enableNetworkPolicy"?[[:space:]]*:[[:space:]]*"?true|--enable-network-policy=true'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Enable network policy support in the Amazon VPC CNI plugin for Kubernetes so EKS can enforce Kubernetes NetworkPolicy objects for Pod traffic. This feature is not enabled by default on newly provisioned clusters, and remediation requires a supported VPC CNI version plus network policy enabled in the VPC CNI configuration. For managed add-ons, set enableNetworkPolicy to true on the vpc-cni add-on. For self-managed installations, enable the network policy controller in the amazon-vpc-cni ConfigMap and set the aws-node DaemonSet argument --enable-network-policy=true. AWS CLI, managed add-on: Update the managed vpc-cni add-on and enable the feature. AWS’s current guide shows v1.14.0-eksbuild.3 or later in the example.'

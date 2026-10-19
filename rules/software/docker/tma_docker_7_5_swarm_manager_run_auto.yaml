@@ -1,0 +1,22 @@
+id: TMA-DOCKER-7.5
+title: Ensure that swarm manager is run in auto-lock mode
+description: Auto-lock protects the swarm raft keys at rest so a stolen manager disk cannot be used without the unlock key. On an active swarm manager the cluster spec must have AutoLockManagers true; compliant on non-swarm hosts and workers.
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- swarm
+reference: CIS Docker Benchmark v1.9.0 - 7.5 Ensure that swarm manager is run in auto-lock mode
+audit:
+  type: command
+  command: st=$(docker info --format '{{.Swarm.LocalNodeState}}') || exit 1; [ "$st" = active ] || { echo compliant; exit 0; }; m=$(docker info --format '{{.Swarm.ControlAvailable}}') || exit 1; [ "$m" = true ] || { echo compliant; exit 0; }; v=$(docker info --format '{{.Swarm.Cluster.Spec.EncryptionConfig.AutoLockManagers}}') || exit 1; [ "$v" = true ] && echo compliant || echo "autolock $v"
+  expected_output: compliant
+  requires_file:
+  - /usr/bin/docker
+  - /usr/local/bin/docker
+  - /usr/bin/dockerd
+  - /usr/local/bin/dockerd
+remediation:
+  type: iac_patch
+  command: docker swarm update --autolock=true on a manager and store the unlock key securely.

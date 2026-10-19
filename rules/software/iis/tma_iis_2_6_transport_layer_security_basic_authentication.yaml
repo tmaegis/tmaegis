@@ -1,0 +1,19 @@
+id: TMA-IIS-2.6
+title: Ensure transport layer security for 'basic authentication' is configured
+description: Basic Authentication can pass credentials across the network in clear text. It is therefore imperative that the traffic between client and server be encrypted, especially in cases where the site is publicly accessible and is recommended that TLS be configured and required for any Site or Application using Basic Authentication. For every site with Basic authentication enabled, system.webServer/security/access sslFlags must include Ssl (Require SSL). PowerShell 5.1 with the WebAdministration module; run elevated.
+target: iis
+level: 1
+severity: high
+tags:
+- iis
+- authentication
+reference: CIS Microsoft IIS 10 Benchmark v1.2.1 - 2.6 Ensure transport layer security for 'basic authentication' is configured
+audit:
+  type: command
+  command: Import-Module WebAdministration -ErrorAction Stop; $bad = @(Get-Website | Where-Object { $b = Get-WebConfiguration -PSPath 'MACHINE/WEBROOT/APPHOST' -Location $_.Name -Filter 'system.webServer/security/authentication/basicAuthentication'; $s = Get-WebConfiguration -PSPath 'MACHINE/WEBROOT/APPHOST' -Location $_.Name -Filter 'system.webServer/security/access'; $b.enabled -eq $true -and [string]$s.sslFlags -notmatch 'Ssl' }); if ($bad.Count -eq 0) { 'compliant' } else { 'noncompliant' }
+  expected_output: compliant
+  requires_file:
+  - C:\Windows\System32\inetsrv\config\applicationHost.config
+remediation:
+  type: iac_patch
+  command: Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Location '<site>' -Filter system.webServer/security/access -Name sslFlags -Value Ssl

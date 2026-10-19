@@ -1,0 +1,18 @@
+id: TMA-AWS-6.2
+title: Ensure no Network ACLs allow ingress from 0.0.0.0/0 to remote server administration ports
+description: The Network Access Control List (NACL) function provides stateless filtering of ingress and egress network traffic to AWS resources. It is recommended that no NACL allows unrestricted ingress access to remote server administration ports, such as SSH on port 22 and RDP on port 3389, using either the TCP (6), UDP (17), or ALL (-1) protocols. Public access to remote server administration ports, such as 22 (when used for SSH, not SFTP) and 3389, increases the attack surface of resources and unnecessarily raises the risk of resource compromise.
+target: aws
+level: 1
+severity: high
+tags:
+- aws
+- cloud
+- network
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 6.2 Ensure no Network ACLs allow ingress from 0.0.0.0/0 to remote server administration ports
+audit:
+  type: manual
+  command: 'From Console: Perform the following steps to determine if the account is configured as prescribed: 1. Login to the AWS VPC Console at https://console.aws.amazon.com/vpc/home. 2. In the left pane, click Network ACLs. 3. For each network ACL, check whether it is associated with one or more subnets. 4. If it is associated, proceed to Step 5 5. If it is not associated, you may still review the rules, but note it has no effect until attached 6. Select the network ACL 7. Click the Inbound Rules tab 8. Ensure that no rule exists which has a port range that includes port 22 or 3389, uses the protocols TCP (6), UDP (17), or ALL (-1), or other remote server administration ports for your environment, has a Source of 0.0.0.0/0, and shows ALLOW Note: - A port value of ALL or a port range such as 0-3389 includes port 22, 3389, and potentially other remote server administration ports - An effective ruleset that explicitly DENIES access to these ports (e.g., a DENY rule for ports 22 and 3389
+    from 0.0.0.0/0 placed before a broader ALLOW rule such as ANY/ANY) is considered acceptable, as NACLs are evaluated in order and the DENY rule will take precedence'
+remediation:
+  type: iac_patch
+  command: 'From Console: Perform the following steps to remediate a network ACL: 1. Login to the AWS VPC Console at https://console.aws.amazon.com/vpc/home. 2. In the left pane, click Network ACLs. 3. For each network ACL that needs remediation, perform the following: 4. Select the network ACL. 5. Click the Inbound Rules tab. 6. Click Edit inbound rules. 7. Either A) update the Source field to a range other than 0.0.0.0/0 B) click Delete to remove the offending inbound rule or C) Add an explicit DENY rule for the affected ports (e.g., 22, 3389) from 0.0.0.0/0 with a lower rule number than any broader ALLOW rule 8. Click Save'

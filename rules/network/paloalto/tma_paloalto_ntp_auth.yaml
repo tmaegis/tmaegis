@@ -1,0 +1,22 @@
+id: TMA-PALOALTO-NTP-AUTH
+title: Ensure NTP servers use authentication
+description: 'Unauthenticated NTP can be spoofed to shift the clock and invalidate logs and certificates. PASS requires a primary or secondary NTP server with authentication-type symmetric-key or autokey. Audited against the PAN-OS running configuration in set format: run ''set cli config-output-format set'' then ''show config running'' (or ''show'' in configure mode) and save the output.'
+target: paloalto
+level: 2
+severity: medium
+tags:
+- paloalto
+- time
+reference: CIS Palo Alto Firewall Benchmark - Device Setup - NTP servers (verify section number for your PAN-OS release)
+audit:
+  type: config_regex
+  pattern: (?m)^set deviceconfig system ntp-servers (?:primary|secondary)-ntp-server authentication-type (?:symmetric-key|autokey)\b
+remediation:
+  type: iac_patch
+  command: |-
+    configure
+    set deviceconfig system ntp-servers primary-ntp-server ntp-server-address <ntp1>
+    set deviceconfig system ntp-servers primary-ntp-server authentication-type symmetric-key key-id 1 algorithm sha1 authentication-key <key>
+    repeat for secondary-ntp-server
+    commit
+    GUI: Device > Setup > Services > NTP.

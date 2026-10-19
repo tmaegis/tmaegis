@@ -1,0 +1,33 @@
+id: TMA-COS-1.6
+title: Ensure AppArmor is installed
+description: SELinux and AppArmor provide Mandatory Access Controls. Without a Mandatory Access Control system installed only the default Discretionary Access Control system will be available.
+target: cos
+level: 1
+severity: medium
+tags:
+- container-optimized-os
+- cos
+reference: CIS Google Container-Optimized OS Benchmark v1.2.0 - 1.6 Ensure AppArmor is installed
+audit:
+  type: manual
+  command: 'Verify that AppArmor is installed with the following command: # grep ''\"name\": \"apparmor\"'' /etc/cos-package-info.json "name": "apparmor",'
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    tma_pkg_install apparmor apparmor-utils apparmor-parser apparmor-profiles
+    command -v apt-get >/dev/null 2>&1 && apt-get -y install --only-upgrade apparmor apparmor-utils 2>/dev/null
+    systemctl enable apparmor 2>/dev/null; true
+  guidance: "Update to an OS image that includes the the apparmor package."

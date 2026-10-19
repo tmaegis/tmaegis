@@ -1,0 +1,20 @@
+id: TMA-RHEL8-5.4.2.1
+title: Ensure root is the only UID 0 account
+description: Any account with UID 0 has superuser privileges on the system.
+target: linux
+os_family:
+- rhel-8
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Red Hat Enterprise Linux 8 Benchmark v4.0.0 - 5.4.2.1
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v awk >/dev/null 2>&1 || { echo "step1: awk not installed"; return 1; }; o=$(bash -c ''awk -F: ''"''"''($3 == 0) { print $1 }''"''"'' /etc/passwd'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- root || { echo step1: missing root; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Run the following command to change the root account UID to 0: # usermod -u 0 root Modify any users other than root with UID 0 and assign them a new UID.'

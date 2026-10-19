@@ -1,0 +1,18 @@
+id: TMA-POSTGRES-8.1
+title: Ensure PostgreSQL subdirectory locations are outside the data cluster
+description: The PostgreSQL cluster is organized to carry out specific tasks in subdirectories. For the purposes of performance, reliability, and security some of these subdirectories should be relocated outside the data cluster.
+target: postgres
+level: 1
+severity: low
+tags:
+- postgres
+- database
+- filesystem
+- manual
+reference: CIS PostgreSQL 18 Benchmark v1.0.0 - 8.1 Ensure PostgreSQL subdirectory locations are outside the data cluster
+audit:
+  type: manual
+  command: 'Run SELECT name, setting FROM pg_settings WHERE name ~ ''_directory$'' OR name ~ ''_tablespace''; and inspect the returned paths: log/stats/temp/tablespace locations should be outside the data cluster and only superusers and authorized users may access them.'
+remediation:
+  type: iac_patch
+  command: Relocate log_directory, tablespaces and other subdirectories outside PGDATA, owned by postgres with mode 0700, and update postgresql.conf accordingly.

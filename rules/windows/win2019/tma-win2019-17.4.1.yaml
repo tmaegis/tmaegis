@@ -1,0 +1,20 @@
+id: TMA-WIN2019-17.4.1
+title: Ensure 'Audit Directory Service Access' is set to include 'Failure' (DC only)
+description: 'This subcategory reports when an AD DS object is accessed. Only objects with SACLs cause audit events to be generated, and only when they are accessed in a manner that matches their SACL. These events are similar to the directory service access events in previous versions of Windows Server. This subcategory applies only to Domain Controllers. Events for this subcategory include: • 4662: An operation was performed on an object. The recommended state for this setting is to include: Failure.'
+target: windows
+os_family:
+- windows-server-2019-dc
+level: 1
+severity: high
+tags:
+- auditpol
+- cis-converted
+- windows
+reference: CIS Microsoft Windows Server 2019 Benchmark v5.0.0 - 17.4.1
+audit:
+  type: command
+  command: '$s = (auditpol /get /subcategory:''{0cce923b-69ae-11d9-bed3-505054503030}'' /r | ConvertFrom-Csv).''Inclusion Setting''; if (@(''Failure'',''Success and Failure'') -contains $s) { ''compliant'' } else { ''non-compliant: '' + $s }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: auditpol /set /subcategory:'{0cce923b-69ae-11d9-bed3-505054503030}' /failure:enable

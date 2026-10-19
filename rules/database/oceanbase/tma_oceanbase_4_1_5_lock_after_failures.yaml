@@ -1,0 +1,17 @@
+id: TMA-OCEANBASE-4.1.5
+title: Configure account locking after consecutive authentication failures
+description: OceanBase MySQL tenants support using the tenant-level configuration parameter connection_control_failed_connections_threshold to specify the threshold for failed login attempts. Accounts exceeding this threshold will be locked, and the lock duration can be set via the parameters connection_control_min_connection_delay and connection_control_max_connection_delay. Runs obclient with the connection options in OB_CONN (default "-h127.0.0.1 -P2881 -uroot@sys"); point it at the MySQL-mode tenant being assessed and supply the password via OB_CONN (-p...) or a [client] section in ~/.my.cnf. The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Passes when connection_control_failed_connections_threshold is not 0 on every server; confirm the threshold (5 or fewer) and connection_control_min/max_connection_delay meet policy.
+target: oceanbase
+level: 2
+severity: medium
+tags:
+- oceanbase
+- authentication
+reference: CIS OceanBase Enterprise Edition V4 Benchmark v1.0.0 - 4.1.5 Configure account locking after consecutive authentication failures
+audit:
+  type: sql_query
+  command: out=$(obclient ${OB_CONN:--h127.0.0.1 -P2881 -uroot@sys} -N -B -e "SELECT CASE WHEN COUNT(*) > 0 AND SUM(CASE WHEN value <> '0' THEN 0 ELSE 1 END) = 0 THEN 'compliant' ELSE 'noncompliant' END FROM oceanbase.GV\$OB_PARAMETERS WHERE name = 'connection_control_failed_connections_threshold'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: ALTER SYSTEM SET connection_control_failed_connections_threshold = 5; and set connection_control_min_connection_delay / connection_control_max_connection_delay (milliseconds) per policy.

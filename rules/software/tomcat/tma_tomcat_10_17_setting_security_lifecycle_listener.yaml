@@ -1,0 +1,24 @@
+id: TMA-TOMCAT-10.17
+title: Setting Security Lifecycle Listener
+description: 'The Security Lifecycle Listener performs a number of security checks when Tomcat starts and prevents Tomcat from starting if they fail. server.xml must contain the SecurityListener with checkedOsUsers and minimumUmask attributes. Reads $CATALINA_BASE (default /opt/tomcat) and $CATALINA_HOME (default: $CATALINA_BASE); set them for packaged installs (e.g. CATALINA_BASE=/var/lib/tomcat10, CATALINA_HOME=/usr/share/tomcat10). XML comments are ignored.'
+target: tomcat
+level: 1
+severity: medium
+tags:
+- tomcat
+- accounts
+reference: CIS Apache Tomcat 10.1 Benchmark v1.0.0 - 10.17 Setting Security Lifecycle Listener
+audit:
+  type: command
+  command: B=${CATALINA_BASE:-/opt/tomcat}; H=${CATALINA_HOME:-$B}; O=${TOMCAT_OWNER:-tomcat_admin}; G=${TOMCAT_GROUP:-tomcat}; x(){ [ -r "$1" ] || return 1; awk 'BEGIN{RS="<!--"} NR==1{print;next} {i=index($0,"-->"); if(i) print substr($0,i+3)}' "$1" | tr '\n\t\r' '   ' | tr '<' '\n'; }; s=$(x "$B/conf/server.xml") || exit 1; printf '%s\n' "$s" | awk 'function at(n,  r){if(match($0,"[[:space:]]" n "[[:space:]]*=[[:space:]]*[\"\047][^\"\047]*")){r=substr($0,RSTART,RLENGTH); sub(/^[^=]*=[[:space:]]*./,"",r); return r} return "-unset-"} /^Listener[[:space:]]/ && /org\.apache\.catalina\.security\.SecurityListener/ && at("checkedOsUsers")!="-unset-" && at("minimumUmask")!="-unset-"{ok=1} END{print ok?"compliant":"noncompliant"}'
+  expected_output: compliant
+  requires_file:
+  - /opt/tomcat/conf/server.xml
+  - /usr/local/tomcat/conf/server.xml
+  - /usr/share/tomcat/conf/server.xml
+  - /var/lib/tomcat9/conf/server.xml
+  - /var/lib/tomcat10/conf/server.xml
+  - /var/lib/tomcat11/conf/server.xml
+remediation:
+  type: iac_patch
+  command: Add <Listener className="org.apache.catalina.security.SecurityListener" checkedOsUsers="root" minimumUmask="0007"/> to server.xml and uncomment the umask line in catalina.sh. Restart Tomcat afterwards.

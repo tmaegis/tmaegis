@@ -1,0 +1,36 @@
+id: TMA-CISCO-FTD-1.2.1
+title: Create Periodic Backups of Firepower Management Center
+description: At a minimum, backing up the FMC server configuration is recommended. Backing up managed devices is usually not critical, the quickest recovery of a compromised Firepower device is to re-install it from scratch, then to use FMC to configure it by deploying the appropriate policies to it. While backups be default configured to run weekly, a minimum cadence of daily backups is recommended in most environments to minimize the impact of deploying an older backup. Not reliably checkable from an exported configuration. Reported as SKIP with review instructions.
+target: cisco-ftd
+level: 1
+severity: medium
+tags:
+- cisco-ftd
+- network
+- logging
+reference: CIS Cisco Firepower Threat Defense Benchmark v1.0.0 - 1.2.1 Create Periodic Backups of Firepower Management Center
+audit:
+  type: manual
+  command: 'Not reliably checkable from an exported configuration. Navigate to: - System (Gear Icon) > Backups - Verify that backups are occurring and completing periodically, in the lower part of this screen. - At a minimum, backups should have a "Yes" in the "Configurations" column - Select "Backup Profiles" - For each Backup Profile, open the profile and verify that the backups are configured to copy to a remote host.'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Navigate to System (Gear Icon) > Backup / Restore > Backup Profiles
+    - Choose "Create Profile"
+    - Assign a descriptive name
+    - At a minimum, choose "Back Up Configuration"
+    - If space permits, it is advised that "Back Up Events" is also selected, with "Back Up Threat Intelligence Director" as a second "if space permits" recommendation.
+    - If only these fields are completed, the backups are only stored locally on the FMC server. This is not recommended, as any event that affects the FMC server may make these backups unavailable, or in the case of a security event the integrity of the information in the backups may be suspect.
+    - Because of this, choose "Copy when complete"
+    - Fill in the values for your site, which define an SCP / SFTP service in your environment that will host your off-device backups
+    - You have the option of completing authentication for your backups as userid / password. In a more secure implementation, you also have the option to use SSH keys for authentication.
+    - When complete, select "Save as New" Next, navigate to: System (Gear Icon) > Scheduling
+    - Select "Add Task"
+    - For Job Type, select "Backup"
+    - Choose "Recurring"
+    - Choose a start time in the future, preferably in an off-peak time window
+    - Give the job a descriptive name
+    - Choose "Management Center" as the Backup Type (in most environments no critical data is hosted on the managed devices)
+    - Choose the Backup Profile that you have created.
+    - There is a comment field that can be used at your discretion.
+    ! ... see the benchmark for the full procedure

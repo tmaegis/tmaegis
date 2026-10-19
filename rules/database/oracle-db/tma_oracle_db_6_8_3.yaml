@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-6.8.3
+title: Review External Tables With Preprocessor
+description: A directory object specifies an alias for a directory on the server file system where external files and data are located.
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.8.3 Review External Tables With Preprocessor
+audit:
+  type: manual
+  command: SELECT CON_ID_TO_CON_NAME(C.CON_ID) AS CONTAINERNAME,O.ORACLE_MAINTAINED, REGEXP_SUBSTR(SUBSTR(ACCESS_PARAMETERS, INSTR(ACCESS_PARAMETERS, 'PREPROCESSOR ')), '''(.**)''', 1, 1, NULL, 1) AS FILENAME, C.* FROM CDB_EXTERNAL_TABLES C JOIN CDB_OBJECTS O ON C.CON_ID = O.CON_ID AND C.OWNER=O.OWNER AND O.OBJECT_NAME=C.TABLE_NAME AND O.OBJECT_TYPE='TABLE'; The flag oracle_maintained='N' indicates whether the directory object was created by Oracle or someone else. The non-Oracle objects should be checked carefully for possible problems.
+remediation:
+  type: iac_patch
+  command: Delete directories that are no longer required DROP DIRECTORY <DIRECTORY_NAME>;

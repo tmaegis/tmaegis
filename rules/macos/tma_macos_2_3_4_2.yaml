@@ -1,0 +1,22 @@
+id: TMA-MACOS-2.3.4.2
+title: Ensure Time Machine Volumes Are Encrypted If Time Machine Is Enabled
+description: 'One of the most important security tools for data protection on macOS is FileVault. With encryption in place, it makes it difficult for an outside party to access your data if they get physical possession of the computer. One very large weakness in data protection with FileVault is the level of protection on backup volumes. Audit: Time Machine not configured counts as compliant (no NotEncrypted destination).'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 2.3.4.2 Ensure Time Machine Volumes Are Encrypted If Time Machine Is Enabled
+os_family:
+- macos-26
+audit:
+  type: command
+  command: |-
+    [ -x /usr/bin/defaults ] || exit 1
+    out=$(/usr/bin/defaults read /Library/Preferences/com.apple.TimeMachine.plist 2>/dev/null)
+    printf '%s\n' "$out" | /usr/bin/grep -c NotEncrypted || true
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'GUI: System Settings > General > Time Machine > unencrypted drive > - to forget that drive as a destination > + to add a different drive as the destination > Set Up Disk > Set Encrypt Backup to enabled > Enter a password in the New Password and the same password in the Re-enter Password fields > A password hint is required, but it is recommended that you do not use any identifying information for the password.'

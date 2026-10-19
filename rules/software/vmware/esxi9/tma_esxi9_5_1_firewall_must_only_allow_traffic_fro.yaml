@@ -1,0 +1,23 @@
+id: TMA-ESXI9-5.1
+title: Host firewall must only allow traffic from authorized networks
+description: The host's firewall is designed to block all incoming and outgoing network traffic by default, unless exceptions are explicitly made, thus minimizing the attack surface and barring unauthorized access. The firewall settings, while simplistic, are akin to router ACLs, and might require reflexive rules to be configured for certain network scenarios. The audit lists enabled firewall rulesets (esxcli network firewall ruleset list) and fails any whose allowed IP list (ruleset allowedip list) is All; confirm the configured ranges are the authorized networks. Runs in the ESXi Shell (busybox sh) as root.
+target: vmware
+level: 1
+severity: high
+tags:
+- vmware
+- esxi
+- network
+reference: CIS VMware ESXi 9.0 Benchmark v1.0.0 - 5.1 Host firewall must only allow traffic from authorized networks
+audit:
+  type: command
+  command: |-
+    en=$(esxcli network firewall ruleset list 2>/dev/null | awk 'NR > 2 && $2 == "true" {print $1}') || exit 1
+    all=$(esxcli network firewall ruleset allowedip list 2>/dev/null | awk 'NR > 2 && $2 == "All" {print $1}') || exit 1
+    bad=''
+    for r in $en; do for a in $all; do [ "$r" = "$a" ] && bad="$bad $r"; done; done
+    [ -z "$bad" ] && echo compliant || echo "enabled rulesets allowing all IPs:$bad"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'To properly restrict access to services running on an ESXi host, perform the following from the vSphere web client: 1. Select a host 2. Click Configure then expand System then select Firewall. 3. Click Edit to view services which are enabled (indicated by a check). 4. For each enabled service, (e.g., ssh, vSphere Web Access, http client) provide a list of allowed IP addresses. 5. Click OK.'

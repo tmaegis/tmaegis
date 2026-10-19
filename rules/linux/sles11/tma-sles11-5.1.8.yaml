@@ -1,0 +1,41 @@
+id: TMA-SLES11-5.1.8
+title: Ensure at/cron is restricted to authorized users
+description: Configure /etc/cron.allow and /etc/at.allow to allow specific users to use these services. If /etc/cron.allow or /etc/at.allow do not exist, then /etc/at.deny and /etc/cron.deny are checked. Any user not specifically defined in those files is allowed to use at and cron. By removing the files, only users in /etc/cron.allow and /etc/at.allow are allowed to use at and cron. Note that even though a given user is not listed in cron.allow , cron jobs can still be run as that user. The cron.allow file only controls administrative access to the crontab command for scheduling and modifying cron jobs.
+target: linux
+os_family:
+- sles-11
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS SUSE Linux Enterprise 11 Benchmark v2.1.1 - 5.1.8
+audit:
+  type: command
+  shell: bash
+  command: 'alt0() { command -v stat >/dev/null 2>&1 || { echo "step1: stat not installed"; return 1; }; o=$(bash -c ''stat /etc/cron.deny'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''stat: cannot stat `/etc/cron.deny''"''"'': No such file or directory'' || { echo step1: missing ''stat: cannot stat `/etc/cron.deny''"''"'': No such file or director''; return 1; }; command -v stat >/dev/null 2>&1 || { echo "step2: stat not installed"; return 1; }; o=$(bash -c ''stat /etc/at.deny'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''stat: cannot stat` /etc/at.deny''"''"'': No such file or directory'' || { echo step2: missing ''stat: cannot stat` /etc/at.deny''"''"'': No such file or directory''; return 1; }; command -v stat >/dev/null 2>&1 || { echo "step3: stat not installed"; return 1; }; o=$(bash -c ''stat /etc/cron.allow'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' |
+    grep -Fxq -- ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)'' || { echo step3: missing ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)''; return 1; }; command -v stat >/dev/null 2>&1 || { echo "step4: stat not installed"; return 1; }; o=$(bash -c ''stat /etc/at.allow'' 2>&1); printf ''%s\n'' "$o" | tr -s '' \t'' ''  '' | sed ''s/^ //;s/ $//'' | grep -Fxq -- ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)'' || { echo step4: missing ''Access: (0600/-rw-------) Uid: ( 0/ root) Gid: ( 0/ root)''; return 1; }; }; if alt0; then echo compliant; fi'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    rm -f /etc/cron.deny
+    rm -f /etc/at.deny
+    touch /etc/cron.allow
+    if [ -e /etc/cron.allow ]; then chown 0:0 /etc/cron.allow; chmod 600 /etc/cron.allow; fi
+    touch /etc/at.allow
+    if [ -e /etc/at.allow ]; then chown 0:0 /etc/at.allow; chmod 600 /etc/at.allow; fi
+  guidance: "Run the following commands to remove /etc/cron.deny and /etc/at.deny and create and set permissions and ownership for /etc/cron.allow and /etc/at.allow: # rm /etc/cron.deny # rm /etc/at.deny # touch /etc/cron.allow # touch /etc/at.allow # chmod og-rwx /etc/cron.allow # chmod og-rwx /etc/at.allow # chown root:root /etc/cron.allow # chown root:root /etc/at.allow"

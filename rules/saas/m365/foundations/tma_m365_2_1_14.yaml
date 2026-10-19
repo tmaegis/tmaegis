@@ -1,0 +1,16 @@
+id: TMA-M365-2.1.14
+title: Ensure inbound anti-spam policies do not contain allowed domains
+description: 'Anti-spam protection is a feature of Exchange Online that utilizes policies to help to reduce the amount of junk email, bulk and phishing emails a mailbox receives. These policies contain lists to allow or block specific senders or domains. - The allowed senders list - The allowed domains list - The blocked senders list - The blocked domains list The recommended state is: Do not define any Allowed domains Messages from entries in the allowed senders list or the allowed domains list bypass most email protection (except malware and high confidence phishing) and email authentication checks (SPF, DKIM and DMARC). Entries in the allowed senders list or the allowed domains list create a high risk of attackers successfully delivering email to the Inbox that would otherwise be filtered. The risk is increased even more when allowing common domain names as these can be easily spoofed by attacke...'
+target: m365
+level: 1
+severity: medium
+tags:
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 2.1.14 Ensure inbound anti-spam policies do not contain allowed domains
+audit:
+  type: manual
+  command: 'To audit using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules > Threat policies. 3. Under Policies select Anti-spam. 4. Inspect each inbound anti-spam policy 5. Verify that Allowed domains does not contain any domain names. 6. Repeat as needed for any additional inbound anti-spam policy. To audit using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Get-HostedContentFilterPolicy | ft Identity,AllowedSenderDomains 3. Verify that AllowedSenderDomains is undefined for each inbound policy. Note: Each inbound policy must pass for this recommendation to be considered to be in a passing state.'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to Microsoft Defender https://security.microsoft.com. 2. Expand Email & collaboration > Policies & rules> Threat policies. 3. Under Policies select Anti-spam. 4. Open each out of compliance inbound anti-spam policy by clicking on it. 5. Click Edit allowed and blocked senders and domains. 6. Select Allow domains. 7. Delete each domain from the domains list. 8. Click Done > Save. 9. Repeat as needed. To remediate using PowerShell: 1. Connect to Exchange Online using Connect-ExchangeOnline. 2. Run the following PowerShell command: Set-HostedContentFilterPolicy -Identity <Policy name> -AllowedSenderDomains @{} Or, run this to remove allowed domains from all inbound anti-spam policies: $AllowedDomains = Get-HostedContentFilterPolicy | Where-Object {$_.AllowedSenderDomains} $AllowedDomains | Set-HostedContentFilterPolicy -AllowedSenderDomains @{}'

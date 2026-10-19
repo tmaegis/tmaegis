@@ -1,0 +1,22 @@
+id: TMA-PFSENSE-1.9
+title: Ensure a synchronized High Availability peer is configured
+description: Ensure a High Availability peer is fully synchronized and in a passive or active state. PASS requires <hasync> with a non-empty Synchronize Config to IP. Audited against the pfSense config.xml (Diagnostics > Backup & Restore > Download configuration, or /cf/conf/config.xml).
+target: pfsense
+level: 1
+severity: medium
+tags:
+- pfsense
+- high-availability
+reference: CIS pfSense Firewall Benchmark v1.1.0 - 1.9 Ensure a synchronized High Availability peer is configured
+audit:
+  type: config_regex
+  pattern: <hasync>(?:[^<]|<[^/<]|</[^h<]|</h[^a<]|</ha[^s<]|</has[^y<]|</hasy[^n<]|</hasyn[^c<]|</hasync[^><])*?<synchronizetoip>[^<\s][^<]*</synchronizetoip>
+remediation:
+  type: iac_patch
+  command: |-
+    GUI: System > High Avail. Sync: set Synchronize Config to IP, Remote System Username/Password and the sections to sync, Save.
+    # CIS guidance:
+    In the GUI:
+    -
+    Navigate to System > High Avail. Sync
+    - Setup each field and Hit Save

@@ -1,0 +1,62 @@
+id: TMA-MINT22-2.1.22
+title: Ensure mail transfer agents are configured for local-only mode
+description: Mail Transfer Agents (MTA), such as sendmail and Postfix, are used to listen for incoming mail and transfer the messages to the appropriate user or mail server. If the system is not intended to be a mail server, it is recommended that the MTA be configured to only process local mail.
+target: linux
+os_family:
+- linuxmint-22
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Linux Mint 22 Benchmark v1.0.0 - 2.1.22
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   a_output=(); a_output2=(); a_port_list=(\"25\" \"465\" \"587\")\n   for l_port_number in \"${a_port_list[@]}\"; do\n      if ss -plntu | grep -P -- '\"'\"':'\"'\"'\"$l_port_number\"'\"'\"'\\b'\"'\"' | grep -Pvq -- '\"'\"'\\h+(127\\.0\\.0\\.1|\\[?::1\\]?):'\"'\"'\"$l_port_number\"'\"'\"'\\b'\"'\"'; then\n         a_output2+=(\" - Port \\\"$l_port_number\\\" is listening on a non- loopback network interface\")\n      else\n         a_output+=(\" - Port \\\"$l_port_number\\\" is not listening on a non- loopback network interface\")\n      fi\n   done\n   if command -v postconf &> /dev/null; then\n      l_interfaces=\"$(postconf -n inet_interfaces)\"\n   elif command -v exim &> /dev/null; then\n      l_interfaces=\"$(exim -bP local_interfaces)\"\n   elif command -v sendmail &> /dev/null; then\n      l_interfaces=\"$(grep -i \"O DaemonPortOptions=\" /etc/mail/sendmail.cf | grep -oP '\"'\"'(?<=Addr=)[^,+]+'\"'\"' | grep -v '\"'\"'^127\\\
+    .0\\.0\\.1$'\"'\"')\"\n   fi\n   if [ -n \"$l_interfaces\" ]; then\n      if grep -Pqi '\"'\"'\\ball\\b'\"'\"' <<< \"$l_interfaces\"; then\n         a_output2+=(\" - MTA is bound to all network interfaces\")\n      elif ! grep -Pqi '\"'\"'(inet_interfaces\\h*=\\h*)?(0\\.0\\.0\\.0|::1|loopback- only)'\"'\"' <<< \"$l_interfaces\"; then\n         a_output2+=(\" - MTA is bound to a network interface\" \" \\\"$l_interfaces\\\"\")\n      else\n         a_output+=(\" - MTA is not bound to a non loopback network interface\" \"   \\\"$l_interfaces\\\"\")\n      fi\n   else\n      a_output+=(\" - MTA not detected or in use\")\n   fi\n   if [ \"${#a_output2[@]}\" -le 0 ]; then\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** PASS **\" \"${a_output[@]}\"\n   else\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** FAIL **\" \"  * Reasons for audit failure *\" \"${a_output2[@]}\" \"\"\n      [ \"${#a_output[@]}\" -gt 0 ] && printf '\"'\"'%s\\n'\"'\"' \"- Correctly set:\"\
+    \ \"${a_output[@]}\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    TMA_TS=$(date +%Y%m%d%H%M%S)
+    tma_bak() { [ -e "$1" ] && [ ! -e "$1.tmaegis.bak.$TMA_TS" ] && cp -a "$1" "$1.tmaegis.bak.$TMA_TS"; return 0; }
+    tma_has_pkg() { rpm -q "$1" >/dev/null 2>&1 && return 0
+      command -v dpkg-query >/dev/null 2>&1 && [ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null)" = installed ]; }
+    tma_pkg_upgrade() { if command -v dnf >/dev/null 2>&1; then dnf -y upgrade "$1"; elif command -v yum >/dev/null 2>&1; then yum -y update "$1";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install --only-upgrade "$1"; elif command -v zypper >/dev/null 2>&1; then zypper -n update "$1"; fi; }
+    tma_unit() { for u in "$@"; do systemctl list-unit-files "$u" 2>/dev/null | grep -q "^$u" && { echo "$u"; return 0; }; done; return 1; }
+    tma_svc_on() { systemctl unmask "$1" >/dev/null 2>&1; systemctl enable --now "$1"; }
+    tma_ssh_ports() { { { sshd -T 2>/dev/null || /usr/sbin/sshd -T 2>/dev/null; } | awk '$1=="port"{print $2}'
+      ss -tlnp 2>/dev/null | awk '/sshd/{n=split($4,a,":"); print a[n]}'
+      awk 'tolower($1)=="port"{print $2}' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null; echo 22; } | grep -E '^[0-9]+$' | sort -un; }
+    if command -v postconf >/dev/null 2>&1; then
+      tma_bak /etc/postfix/main.cf
+      postconf -e 'inet_interfaces = loopback-only'
+      systemctl try-restart postfix 2>/dev/null || postfix reload 2>/dev/null
+    elif [ -f /etc/exim4/update-exim4.conf.conf ]; then
+      tma_bak /etc/exim4/update-exim4.conf.conf
+      if grep -q '^dc_local_interfaces=' /etc/exim4/update-exim4.conf.conf; then sed -i "s/^dc_local_interfaces=.*/dc_local_interfaces='127.0.0.1 ; ::1'/" /etc/exim4/update-exim4.conf.conf
+      else echo "dc_local_interfaces='127.0.0.1 ; ::1'" >> /etc/exim4/update-exim4.conf.conf; fi
+      update-exim4.conf 2>/dev/null; systemctl try-restart exim4 2>/dev/null
+    elif [ -f /etc/exim/exim.conf ]; then
+      tma_bak /etc/exim/exim.conf
+      grep -q '^local_interfaces' /etc/exim/exim.conf && sed -i 's/^local_interfaces.*/local_interfaces = <; 127.0.0.1 ; ::1/' /etc/exim/exim.conf || sed -i '1i local_interfaces = <; 127.0.0.1 ; ::1' /etc/exim/exim.conf
+      systemctl try-restart exim 2>/dev/null
+    fi
+    true
+  guidance: "Edit /etc/postfix/main.cf and add the following line to the RECEIVING MAIL section. If the line already exists, change it to look like the line below: inet_interfaces = loopback-only Run the following command to restart postfix: # systemctl restart postfix Note: • This recommendation is designed around the postfix mail server. • Depending on your environment you may have an alternative MTA installed such as exim4 or sendmail. If this is the case consult the documentation for your installed MTA to configure the recommended state."

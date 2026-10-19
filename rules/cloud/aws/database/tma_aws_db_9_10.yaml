@@ -1,0 +1,17 @@
+id: TMA-AWS-DB-9.10
+title: Ensure Database has delete protection enabled
+description: Ensure that delete protection is enabled on database instances to prevent accidental or unauthorized deletion. This setting safeguards critical databases by requiring explicit disabling of delete protection before deletion, reducing the risk of data loss through human error or malicious activity. Delete protection provides a safeguard against inadvertent or malicious deletion of critical databases. By requiring deliberate action to disable deletion protection, organizations mitigate risks associated with accidental data deletion and enhance the overall resilience of their data storage platform.
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- database
+reference: CIS AWS Database Services Benchmark v2.0.0 - 9.10 Ensure Database has delete protection enabled
+audit:
+  type: manual
+  command: 'List deletion protection status for all Neptune DB clusters aws neptune describe-db-clusters \ --query "DBClusters[*].{DBClusterIdentifier:DBClusterIdentifier,Engine:Engine,Deletio nProtection:DeletionProtection}" - DeletionProtection: true ⇒ Deletion protection is enabled (compliant). - DeletionProtection: false ⇒ Deletion protection is not enabled (non-compliant).'
+remediation:
+  type: iac_patch
+  command: 'Enable deletion protection on a specific Neptune cluster: aws neptune modify-db-cluster \ --db-cluster-identifier <cluster-identifier> \ --deletion-protection \ --apply-immediately - --deletion-protection enables the deletion protection feature. - --apply-immediately applies the change without waiting for the next maintenance window.'

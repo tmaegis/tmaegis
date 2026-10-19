@@ -1,0 +1,18 @@
+id: TMA-MYSQL-5.6
+title: Ensure 'CREATE USER' is Not Granted to Non-Administrative Users
+description: The CREATE USER privilege governs the right of a given user to add or remove users, change existing users' names, or revoke existing users' privileges.
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- authorization
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 5.6 Ensure 'CREATE USER' is Not Granted to Non-Administrative Users
+audit:
+  type: manual
+  command: Run SELECT GRANTEE FROM INFORMATION_SCHEMA.USER_PRIVILEGES WHERE PRIVILEGE_TYPE = 'CREATE USER'; Ensure only administrative users are returned in the result set.
+remediation:
+  type: iac_patch
+  command: REVOKE CREATE USER ON *.* FROM '<user>'@'<host>'; for each non-administrative grantee.

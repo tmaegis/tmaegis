@@ -1,0 +1,18 @@
+id: TMA-ORACLE-DB-6.8.2
+title: Review Directory Objects Privileges
+description: A directory object specifies an alias for a directory on the server file system where external files and data are located.
+target: oracle-db
+level: 1
+severity: low
+tags:
+- oracle-db
+- database
+- oracle
+- manual
+reference: CIS Oracle Database 23ai Benchmark v1.1.0 - 6.8.2 Review Directory Objects Privileges
+audit:
+  type: manual
+  command: SELECT CON_ID_TO_CON_NAME(D.CON_ID) AS CONTAINERNAME,O.ORACLE_MAINTAINED, D.DIRECTORY_NAME,D.DIRECTORY_PATH, T.GRANTEE, T.GRANTOR, T.PRIVILEGE, T.GRANTABLE, T.HIERARCHY, T.COMMON, T.INHERITED, D.CON_ID --T.GRANTEE, T.PRIVILEGE, T.GRANTABLE FROM CDB_DIRECTORIES D LEFT JOIN CDB_TAB_PRIVS T ON D.CON_ID = T.CON_ID AND D.OWNER=T.OWNER AND D.DIRECTORY_NAME=T.TABLE_NAME AND T.TYPE='DIRECTORY' JOIN CDB_OBJECTS O ON D.CON_ID = O.CON_ID AND D.OWNER=O.OWNER AND O.OBJECT_NAME=D.DIRECTORY_NAME AND O.OBJECT_TYPE='DIRECTORY'; The flag oracle_maintained='N' indicates whether the directory object was ...
+remediation:
+  type: iac_patch
+  command: Delete directories that are no longer required DROP DIRECTORY <DIRECTORY_NAME>;

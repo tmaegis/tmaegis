@@ -1,0 +1,56 @@
+id: TMA-MACOS15-2.11.2
+title: Ensure Require Password After Screen Saver Begins or Display Is Turned Off Is Enabled for 5 Seconds or Immediately
+description: 'Sleep and screen saver modes are low power modes that reduce electrical consumption while the system is not in use. Audit: Passes when sysadminctl reports immediate/5 seconds for the console user or a profile sets askForPassword with askForPasswordDelay <= 5.'
+target: macos
+level: 1
+severity: high
+tags:
+- macos
+- system-settings
+reference: CIS Apple macOS 15.0 Sequoia Benchmark v2.1.0 - 2.11.2 Ensure Require Password After Screen Saver Begins or Display Is Turned Off Is Enabled for 5 Seconds or Immediately
+os_family:
+- macos-15
+audit:
+  type: command
+  command: |-
+    s=$(/usr/sbin/sysadminctl -screenLock status 2>&1) || exit 1
+    p=$(/usr/bin/osascript -l JavaScript <<'EOS'
+    function run() {
+      let pref1 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.screensaver').objectForKey('askForPassword'))
+      let pref2 = ObjC.unwrap($.NSUserDefaults.alloc.initWithSuiteName('com.apple.screensaver').objectForKey('askForPasswordDelay'))
+      if ( pref1 == 1 && pref2 <= 5 ) {
+        return("true")
+      } else {
+        return("false")
+      }
+    }
+    EOS
+    )
+    if printf '%s' "$s" | /usr/bin/grep -qE 'screenLock delay is (immediate|5 seconds)' || [ "$p" = true ]; then echo compliant; else echo "$s"; fi
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    /usr/bin/defaults write "/Library/Preferences/com.apple.screensaver" 'askForPassword' -int 1
+    /usr/bin/defaults write "/Library/Preferences/com.apple.screensaver" 'askForPasswordDelay' -int 0
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.screensaver" 'askForPassword' -int 1; true
+    u=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null)
+    [ -n "$u" ] && [ "$u" != root ] || u=$(/usr/bin/defaults read /Library/Preferences/com.apple.loginwindow lastUserName 2>/dev/null) || u=""
+    [ -n "$u" ] && [ -d "/Users/$u" ] && /usr/bin/sudo -u "$u" /usr/bin/defaults write "/Users/$u/Library/Preferences/com.apple.screensaver" 'askForPasswordDelay' -int 0; true
+    /usr/bin/killall cfprefsd 2>/dev/null; true
+  guidance: "Profile (preferred): com.apple.screensaver askForPassword = <true/>; com.apple.screensaver askForPasswordDelay = <integer><0,5></integer>. Terminal: sudo /usr/sbin/sysadminctl -screenLock immediate -password <administrator password> or ; sudo /usr/sbin/sysadminctl -screenLock 5 seconds -password <administrator password>. GUI: System Settings > Lock Screen > Set Require password after screensaver begins or display is turned off to either After 0 seconds or After 5 seconds."

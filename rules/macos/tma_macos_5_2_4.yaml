@@ -1,0 +1,18 @@
+id: TMA-MACOS-5.2.4
+title: Ensure Complex Password Must Contain Numeric Character Is Configured
+description: 'Complex passwords contain one character from each of the following classes: English uppercase letters, English lowercase letters, Westernized Arabic numerals, and non- alphanumeric characters. Ensure that a number or numeric value is part of the password policy on the computer.'
+target: macos
+level: 2
+severity: high
+tags:
+- macos
+- system-access
+reference: CIS Apple macOS 26 Tahoe Benchmark v1.1.0 - 5.2.4 Ensure Complex Password Must Contain Numeric Character Is Configured
+os_family:
+- macos-26
+audit:
+  type: manual
+  command: 'GUI: System Settings > General > Device Management > Verify that an installed profile has Requires Alphanumeric set to True. Terminal: pref1=$(sudo /usr/bin/pwpolicy -getaccountpolicies | /usr/bin/grep -e "Contain at least one number and one alphabetic character." | cut -b 13-68) && pref2=$(sudo /usr/bin/pwpolicy -getaccountpolicies | /usr/bin/grep -A1 ...'
+remediation:
+  type: iac_patch
+  command: 'Profile (preferred): com.apple.mobiledevice.passwordpolicy requireAlphanumeric = <true/>. Terminal: sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy -setaccountpolicies "requiresNumeric=<value≥1>" ; sudo /usr/bin/pwpolicy -n /Local/Default -setglobalpolicy "requiresNumeric=2".'

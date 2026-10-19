@@ -1,0 +1,20 @@
+id: TMA-M365-5.2.2.1
+title: Ensure multifactor authentication is enabled for all users in administrative roles
+description: 'Multifactor authentication is a process that requires an additional form of identification during the sign-in process, such as a code from a mobile device or a fingerprint scan, to enhance security. Ensure users in administrator roles have MFA capabilities enabled. Multifactor authentication requires an individual to present a minimum of two separate forms of authentication before access is granted. Multifactor authentication provides additional assurance that the individual attempting to gain access is who they claim to be. With multifactor authentication, an attacker would need to compromise at least two different authentication mechanisms, increasing the difficulty of compromise and thus reducing the risk. Note: To ensure that accounts cannot be easily used to enumerate resources (reconnaissance) through Microsoft Admin Portals or through Microsoft Azure Service Management API, bot...'
+target: m365
+level: 1
+severity: high
+tags:
+- auth
+- iam
+- m365
+- saas
+reference: CIS Microsoft 365 Foundations Benchmark v7.0.0 - 5.2.2.1 Ensure multifactor authentication is enabled for all users in administrative roles
+audit:
+  type: manual
+  command: 'Note: Break-glass accounts should be excluded from all Conditional Access policies. To audit using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Verify that a policy exists with the following criteria and is set to On: o Under Users or agents (Preview) verify Directory roles specific to administrators are included. o Verify that only documented user exclusions exist and that they are reviewed annually. o Under Target resources verify All resources (formerly ''All cloud apps'') is selected with no exclusions. o Under Grant verify Grant Access is on and either Require multifactor authentication or Require authentication strength is checked. 4. Verify that Enable policy is set to On. To audit using the Microsoft Graph API: 1. Execute a GET request to the following relative URI: v1.0/identity/conditionalAccess/policies 2. For each policy returned, verify the following criteria:
+    o Conditions.Users.IncludeRoles contains the directory roles specific to administrators* o Conditions.Applications.IncludeApplications is All o GrantControls.BuiltInControls contains mfa OR GrantControls.Authe...'
+remediation:
+  type: iac_patch
+  command: 'To remediate using the UI: 1. Navigate to the Microsoft Entra admin center https://entra.microsoft.com. 2. Expand Entra ID > Conditional Access and select Policies. 3. Click New policy. o Under Users or agents (Preview) include Select users and groups and check Directory roles. o At a minimum, include the directory roles listed below in this section of the document. o Under Target resources include All resources (formerly ''All cloud apps'') and do not create any exclusions. ▪ Under Exclude exclude any break-glass accounts. o Under Grant select Grant Access and check either Require multifactor authentication or Require authentication strength. o Click Select at the bottom of the pane. 4. Under Enable policy set it to Report-only. 5. Click Create. 6. After allowing the policy to run in Report-only mode for at least one week, review the Sign-in logs for any unexpected impact, then return to the policy and set Enable policy to On. At minimum these directory roles should be included
+    for MFA: - Application administrator - Authentication administrator - Billing administrator - Cloud application administrator - Conditional Access administrator - Exchange administrator - Global administra...'

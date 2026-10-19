@@ -1,0 +1,16 @@
+id: TMA-DOCKER-5.12
+title: Ensure that CPU priority is set appropriately on containers
+description: 'By default, all containers on a Docker host share resources equally. By using the resource management capabilities of the Docker host you can control the host CPU resources that a container may consume. By default, CPU time is divided between containers equally. If you wish to control available CPU resources amongst container instances, you can use the CPU sharing feature. Reported as a manual review item: the audit needs a site-specific judgement.'
+target: docker
+level: 1
+severity: medium
+tags:
+- docker
+- manual
+reference: CIS Docker Benchmark v1.9.0 - 5.12 Ensure that CPU priority is set appropriately on containers
+audit:
+  type: manual
+  command: 'You should run the following command: docker ps --quiet --all | xargs docker inspect --format ''{{ .Id }}: CpuShares={{ .HostConfig.CpuShares }}'' If the above command returns 0 or 1024, it means that CPU shares are not in place. If it returns a non-zero value other than 1024, it means that they are in place.'
+remediation:
+  type: iac_patch
+  command: 'You should manage the CPU runtime between your containers dependent on their priority within your organization. To do so start the container using the --cpu-shares argument. For example, you could run a container as below: docker run -d --cpu-shares 512 centos sleep 1000 In the example above, the container is started with CPU shares of 50% of what other containers use. So if the other container has CPU shares of 80%, this container will have CPU shares of 40%. Every new container will have 1024 shares of CPU by default.'

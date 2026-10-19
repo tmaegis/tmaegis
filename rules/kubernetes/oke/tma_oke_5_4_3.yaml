@@ -1,0 +1,17 @@
+id: TMA-OKE-5.4.3
+title: Ensure clusters are created with Private Nodes
+description: This recommendation is about the data plane, not the control plane. It means worker nodes are placed in private subnets and are not intended to have direct public internet exposure. In the common pattern, nodes run in private subnets while internet-facing ingress resources are placed in public subnets. The benchmark marks this recommendation Manual.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- managed-services
+- network
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.4.3 Ensure clusters are created with Private Nodes
+audit:
+  type: manual
+  command: Review the subnets used by each OKE node pool and verify that worker nodes are deployed in private subnets, not public subnets. For this control, the deciding evidence is node subnet placement, public IP behavior, and subnet routing, not the control plane endpoint settings. A compliant private-node design places nodes in subnets that prohibit public IP assignment on VNICs and do not have a default route to an Internet Gateway. If outbound access is required, the design should use a NAT gateway, service gateway, or other required private network path instead.
+remediation:
+  type: iac_patch
+  command: For existing worker nodes that run in public subnets, remediate the nodes by replacing them with a new node pool that uses only private subnets, then migrating workloads and retiring the original node pool. The target private subnets should prohibit public IP assignment on VNICs and should not have a default route to an Internet Gateway. If outbound access is required for image pulls or OCI API calls, provide it through a NAT gateway, service gateway, or the required private network path instead. • Create a new node pool that uses only private subnet IDs. Do not reuse public subnets for the replacement worker nodes. • Ensure the replacement subnets prohibit public IP assignment on VNICs, so new worker instances are launched without public IPs. • Ensure the route tables for those subnets do not send 0.0.0.0/0 directly to an Internet Gateway.

@@ -1,0 +1,19 @@
+id: TMA-MACOS14-5.1.4
+title: Ensure Signed System Volume (SSV) Is Enabled
+description: Signed System Volume is a security feature introduced in macOS 11.0 Big Sur. During system installation, a SHA-256 cryptographic hash is calculated for all immutable system files and stored in a Merkle tree which itself is hashed as the Seal. Both are stored in the metadata of the snapshot created of the System volume. The seal is verified by the boot loader at startup. macOS will not boot if system files have been tampered with. If validation fails, the user will be instructed to reinstall the operating system. During read operations for files located in the Signed System Volume, a hash is calculated and compared to the value stored in the Merkle tree. Running without Signed System Volume on a production system could run the risk of Apple software that integrates directly with macOS being modified.
+target: macos
+os_family:
+- macos-14
+level: 1
+severity: high
+tags:
+- macos
+- sonoma
+reference: CIS Apple macOS 14.0 Sonoma Benchmark v3.1.0 - 5.1.4 Ensure Signed System Volume (SSV) Is Enabled
+audit:
+  type: command
+  command: /usr/bin/csrutil authenticated-root status 2>/dev/null
+  expected_output: 'Authenticated Root status: enabled'
+remediation:
+  type: iac_patch
+  command: If SSV has been disabled, assume that the operating system has been compromised. Back up any files, and do a clean install to a known good Operating System.

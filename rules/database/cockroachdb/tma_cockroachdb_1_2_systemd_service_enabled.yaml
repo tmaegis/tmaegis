@@ -1,0 +1,16 @@
+id: TMA-COCKROACHDB-1.2
+title: Ensure CockroachDB systemd Service Files Are Enabled
+description: Confirm, and correct if necessary, that the CockroachDB systemd service is enabled on Linux-based systems. This ensures CockroachDB starts automatically at system boot, recovers gracefully from crashes, and is consistently managed under a dedicated non-root service account.
+target: cockroachdb
+level: 1
+severity: low
+tags:
+- cockroachdb
+- service
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 1.2 Ensure CockroachDB systemd Service Files Are Enabled
+audit:
+  type: manual
+  command: Run systemctl list-unit-files | grep cockroach, then systemctl is-enabled cockroach.service and systemctl status cockroach.service, and ps -u cockroach -f | grep cockroach. A CockroachDB unit must exist, be enabled at boot, be active, and run as the dedicated cockroach user.
+remediation:
+  type: iac_patch
+  command: 'For each initial node of your cluster, complete the following steps: 1. Create the Cockroach directory: mkdir /var/lib/cockroach 2. Create a Unix user named cockroach: useradd cockroach 3. Move the certs directory to the cockroach directory: mv certs /var/lib/cockroach/ 4. Change the ownership of the cockroach directory to the user cockroach: chown -R cockroach /var/lib/cockroach 5.'

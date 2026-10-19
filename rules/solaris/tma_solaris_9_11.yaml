@@ -1,0 +1,17 @@
+id: TMA-SOLARIS-9.11
+title: Check Permissions on User .netrc Files
+description: 'While the system administrator can establish secure permissions for users'' .netrc files, the users can easily override these. .netrc files may contain unencrypted passwords that can be used to attack other systems. Audit: automated read-only check derived from the CIS audit procedure; it prints "compliant" when the control is met.'
+target: solaris
+level: 1
+severity: high
+tags:
+- solaris
+- accounts
+reference: CIS Oracle Solaris 11.4 Benchmark v1.1.0 - 9.11 Check Permissions on User .netrc Files
+audit:
+  type: command
+  command: 'command -v logins >/dev/null 2>&1 || exit 1; out=$( { for dir in $(logins -ox | awk -F: ''($8 == "PS") { print $6 }''); do find "$dir"/.netrc -type f \( -perm -g+r -o -perm -g+w -o -perm -g+x -o -perm -o+r -o -perm -o+w -o -perm -o+x \) -ls; done ; } 2>/dev/null ); [ -z "$out" ] && echo compliant || printf ''%s\n'' "$out" | head -n 20'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Correct or justify any items discovered in the Audit step. Determine if any user .netrc files are group- or world-readable or writable, and work with those users to determine the best course of action in accordance with site policy.

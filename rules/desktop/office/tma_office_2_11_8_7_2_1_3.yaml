@@ -1,0 +1,60 @@
+id: TMA-OFFICE-2.11.8.7.2.1.3
+title: 'Ensure ''Word 2000 binary documents and templates'' is set to ''Enabled: Open/Save blocked, use open policy'''
+description: 'This policy setting determines whether users can open, view, edit, or save Word 2000 binary documents and templates. By choosing the Open/Save blocked, use open policy both the opening and saving of the file type will be blocked. The file will open based on the policy setting configured in the "default file block behavior" key. The recommended state for this setting is: Enabled: Open/Save blocked, use open policy. Rationale: By default, users can open, view, or edit this type of document in Word. This could allow malicious code to become active on a user computer or the network. User setting: the audit checks HKEY_USERS\<SID>\SOFTWARE\Policies\Microsoft\office\16.0\word\security\fileblock:word2000files (REG_DWORD) in every loaded user hive (S-1-5-21-*) and is compliant when each holds 2. It prints ''no-user-hive-loaded'' (FAIL) when no user profile is loaded, so scan while users are logged on.'
+target: office
+level: 1
+severity: medium
+tags:
+- office
+- productivity
+- cis-l1
+reference: 'CIS Microsoft Office Enterprise Benchmark v2.0.0 - 2.11.8.7.2.1.3 Ensure ''Word 2000 binary documents and templates'' is set to ''Enabled: Open/Save blocked, use open policy'''
+audit:
+  type: registry
+  command: '$sids = @(Get-ChildItem -Path ''Registry::HKEY_USERS'' -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -match ''^S-1-5-21-\d+-\d+-\d+-\d+$'' } | ForEach-Object { $_.PSChildName }); if ($sids.Count -eq 0) { ''no-user-hive-loaded'' } else { $bad = @(); foreach ($s in $sids) { $v = (Get-ItemProperty -Path (''Registry::HKEY_USERS\'' + $s + ''\SOFTWARE\Policies\Microsoft\office\16.0\word\security\fileblock'') -Name ''word2000files'' -ErrorAction SilentlyContinue).''word2000files''; if (-not ($null -ne $v -and @(2) -contains [int64]$v)) { $bad += $s + '':word2000files='' + $v } }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') } }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    $ErrorActionPreference = 'Stop'
+    $tmaBk = Join-Path $env:ProgramData 'TMAegis\backup'
+    function Backup-TmaKey([string]$p) {
+      try {
+        if (Test-Path -LiteralPath $p) {
+          $k = $p -replace '^Registry::', ''
+          New-Item -ItemType Directory -Force -Path $tmaBk | Out-Null
+          $f = Join-Path $tmaBk (($k -replace '[\\/:*?"<>|]', '_') + '.reg')
+          if (-not (Test-Path -LiteralPath $f)) { & reg.exe export $k $f | Out-Null }
+        }
+      } catch { }
+    }
+    function Set-TmaReg([string]$p, [string]$n, $v, [string]$t) {
+      Backup-TmaKey $p
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      New-ItemProperty -LiteralPath $p -Name $n -Value $v -PropertyType $t -Force | Out-Null
+    }
+    function Remove-TmaValue([string]$p, [string]$n) {
+      if ((Test-Path -LiteralPath $p) -and ($null -ne (Get-ItemProperty -LiteralPath $p -Name $n -ErrorAction SilentlyContinue))) {
+        Backup-TmaKey $p
+        Remove-ItemProperty -LiteralPath $p -Name $n -Force
+      }
+    }
+    function Remove-TmaKey([string]$p) {
+      if (Test-Path -LiteralPath $p) { Backup-TmaKey $p; Remove-Item -LiteralPath $p -Recurse -Force }
+    }
+    function Set-TmaList([string]$p, [string[]]$items, [bool]$replace) {
+      Backup-TmaKey $p
+      if ($replace) { Remove-TmaKey $p }
+      if (-not (Test-Path -LiteralPath $p)) { New-Item -Path $p -Force | Out-Null }
+      $have = @((Get-ItemProperty -LiteralPath $p -ErrorAction SilentlyContinue).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object { "$($_.Value)" })
+      $n = [int](@((Get-Item -LiteralPath $p).GetValueNames()) | ForEach-Object { $x = 0; if ([int]::TryParse($_, [ref]$x)) { $x } else { 0 } } | Measure-Object -Maximum).Maximum
+      foreach ($i in $items) {
+        if ($have -notcontains $i) { $n++; New-ItemProperty -LiteralPath $p -Name "$n" -Value $i -PropertyType String -Force | Out-Null }
+      }
+    }
+    $sids = @(Get-ChildItem -Path 'Registry::HKEY_USERS' -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -match '^S-1-5-21-\d+-\d+-\d+-\d+$' } | ForEach-Object { $_.PSChildName })
+    if ($sids.Count -eq 0) { Write-Output 'No loaded user hive (S-1-5-21-*): nothing changed. Re-run while users are logged on.'; return }
+    foreach ($s in $sids) {
+      Set-TmaReg ('Registry::HKEY_USERS\' + $s + '\SOFTWARE\Policies\Microsoft\office\16.0\word\security\fileblock') 'word2000files' 2 'DWord'
+    }
+  guidance: "Configure through Group Policy (User Configuration): User Configuration\\Administrative Templates\\Microsoft Word 2016\\Word Options\\Security\\Trust Center\\File Block Settings\\Word 2000 binary documents and templates = Enabled: Open/Save blocked, use open policy"

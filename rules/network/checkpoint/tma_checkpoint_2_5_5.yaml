@@ -1,0 +1,26 @@
+id: TMA-CHECKPOINT-2.5.5
+title: Ensure allowed-client is set to those necessary for device management
+description: Permit only the necessary IP addresses to be used to manage the device. FAILs if allowed-client still permits any host. Audited against the Gaia clish 'show configuration' output (run 'show configuration' in clish on each gateway and management server and save the full output).
+target: checkpoint
+level: 2
+severity: medium
+tags:
+- checkpoint
+- management
+reference: CIS Check Point Firewall Benchmark v1.1.0 - 2.5.5 Ensure allowed-client is set to those necessary for device management
+audit:
+  type: config_regex
+  pattern: (?m)^add allowed-client host any-host\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    add allowed-client network ipv4-address <mgmt-net> mask-length 24
+    delete allowed-client host any-host
+    save config
+    # CIS guidance:
+    Run the following command to remove the IP Address or Network from allowed-client list. CLI:
+    delete allowed-client host (ipv4-address | ipv6-address) <IP
+    delete allowed-client network (ipv4-address | ipv6-address)
+    <Network> GUI:
+    Navigate to System Management > Host Access > Allowed Hosts > Select and Delete the not required IP address or Network

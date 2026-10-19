@@ -1,0 +1,31 @@
+id: TMA-CISCO-NXOS-3.5.2
+title: Configure FCoE Zoning
+description: 'Cisco uses a construction called a "VSAN" (analagous to a VLAN) which is used to restrict access between hosts and SAN resources. In restrictive cases, a typical VSAN will include two entries for the two host FCoE interfaces, and two entries for the SAN Controller interfaces (usually an FCoE SAN will have at least two). CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-nxos
+level: 2
+severity: medium
+tags:
+- cisco-nxos
+- network
+- hardening
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 3.5.2 Configure FCoE Zoning
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. switch# sho vsan 101 vsan 101 information name:HOST_X_SAN_Y state:active interoperability mode:default loadbalancing:src-id/dst-id/oxid operational state:down switch# sho vsan membership vsan 1 interfaces: vsan 100 interfaces: vsan 101 interfaces: vfc1001 vfc1002 vsan 4079(evfp_isolated_vsan) interfaces: vsan 4094(isolated_vsan) interfaces: switch# sho int vfc 1001 vfc1001 is down (Administratively down) Bound MAC is 00:01:0b:00:00:02 Hardware is Ethernet Port WWN is 23:e8:8c:60:4f:a6:29:bf Admin port mode is F, trunk mode is on snmp ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! Create a VSAN. Give it a meaningful name
+    vsan database
+    vsan 101
+    vsan 101 name HOST_X_SAN_Y Create Virtual Fiber Channel Interfaces.
+    interface vfc 1001
+    bind mac-address 00:01:0b:00:00:02
+    int vfc 1002
+    bind mac-address 00:01:0b:00:00:08
+    int vfc 1003
+    bind interface e 1/4 Add VFC interfaces to the VSAN
+    vsan database
+    vsan 101 interface vfc 1001
+    vsan 101 interface vfc 1002
+    vsan 101 interface vfc 1003

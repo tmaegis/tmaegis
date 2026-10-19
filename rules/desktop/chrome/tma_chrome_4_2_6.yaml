@@ -1,0 +1,18 @@
+id: TMA-CHROME-4.2.6
+title: Ensure 'Default Window Management permissions setting' Is 'Enabled' to 'Deny Permission'
+description: 'This setting can automatically deny access to the window management permissions by sites. It can be configured to either: - Disabled (2): Does not allow access to the Window Management permission by any site - Enabled (3): A site must ask the user any time it wants to access the Window Management permission. Rationale: Denying access to Window Management can block rogue sites from opening additional browser windows. By blocking the additional windows, an organization could stop instances of nefarious sites being opened in locations of which the user is unaware. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Google\Chrome:DefaultWindowManagementSetting (REG_DWORD); compliant when it is 2. Remediation writes 2 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: chrome
+level: 2
+severity: low
+tags:
+- chrome
+- browser
+- cis-l2
+reference: CIS Google Chrome Benchmark v3.0.0 - 4.2.6 Ensure 'Default Window Management permissions setting' Is 'Enabled' to 'Deny Permission'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'' -Name ''DefaultWindowManagementSetting'' -ErrorAction SilentlyContinue).''DefaultWindowManagementSetting''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(2) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: $p = 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome'; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name 'DefaultWindowManagementSetting' -Value 2 -PropertyType DWord -Force | Out-Null

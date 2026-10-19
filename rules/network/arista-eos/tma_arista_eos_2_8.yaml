@@ -1,0 +1,23 @@
+id: TMA-ARISTA-EOS-2.8
+title: Telnet access
+description: Telnet transmits credentials and data in cleartext. It is disabled by default and should not be enabled. Telnet is an obsolete protocol vulnerable to eavesdropping. Telnet is shut down by default (block not shown); fails if 'management telnet' has 'no shutdown'. Audited against the output of 'show running-config' (not 'show running-config all').
+target: arista-eos
+level: 1
+severity: high
+tags:
+- arista-eos
+- network
+- management-plane
+reference: CIS Arista EOS Benchmark v1.0.0 - 2.8 Telnet access
+audit:
+  type: config_regex
+  pattern: (?m)^management telnet[^\n]*\n(?:[ \t][^\n]*\n)*?[ \t]+no shutdown\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Disable telnet
+    conf
+    management telnet
+    shutdown
+    end

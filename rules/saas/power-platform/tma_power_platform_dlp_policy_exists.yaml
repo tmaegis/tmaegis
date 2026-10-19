@@ -1,0 +1,17 @@
+id: TMA-POWERPLATFORM-DLP-POLICY
+title: Ensure at least one data loss prevention (DLP) policy exists
+description: Without a DLP policy every connector, including consumer services, can be combined freely in apps and flows. Prints the number of tenant DLP policies (expected at least one; compliant prints compliant). Requires Microsoft.PowerApps.Administration.PowerShell and an authenticated session (Add-PowerAppsAccount) as a Power Platform administrator; the audit throws if the module is missing.
+target: power-platform
+level: 1
+severity: high
+tags:
+- power-platform
+- data-loss
+reference: CIS Microsoft Dynamics 365 Power Platform Benchmark v1.0.1 - Data policies (DLP) (no dedicated CIS benchmark exists for Power Platform)
+audit:
+  type: command
+  command: '$ErrorActionPreference = ''Stop''; if (-not (Get-Command Get-TenantSettings -ErrorAction SilentlyContinue)) { throw ''Microsoft.PowerApps.Administration.PowerShell is not loaded: run Add-PowerAppsAccount first'' }; $n = @(Get-AdminDlpPolicy -ErrorAction Stop).Count; if ($n -ge 1) { ''compliant'' } else { ''noncompliant'' }'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Power Platform admin center > Security > Data and privacy > Data policies > New policy: classify business connectors, block high-risk connectors, scope to all environments (or New-DlpPolicy).'

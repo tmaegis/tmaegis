@@ -1,0 +1,30 @@
+id: TMA-CISCO-ASA-3.5
+title: Ensure DOS protection is enabled for untrusted interfaces
+description: 'Determines the maximum connections, maximum embryonic connections, maximum connections per client and maximum embryonic connections per client that can be accepted on the outside interface. Limiting the number of connections protects from a DoS attack. The ASA uses the per-client limits and the embryonic connection limits to trigger TCP Intercept, which protects inside systems from a DoS attack perpetrated by flooding an interface with TCP SYN ... CIS assessment: Manual. Reported as SKIP with review instructions.'
+target: cisco-asa
+level: 1
+severity: medium
+tags:
+- cisco-asa
+- network
+- hardening
+reference: CIS Cisco ASA 9.x Firewall Benchmark v1.1.0 - 3.5 Ensure DOS protection is enabled for untrusted interfaces
+audit:
+  type: manual
+  command: 'CIS assessment: Manual. - Step 1: Run the following to determine whether the DOS protection is enabled hostname#sh run policy-map | i set.connection The output should look like: set connection connection_type max_value The example below gives the values for maximum connections, maximum embryonic connections, maximum connections per client and maximum embryonic connections per client Asa#sh run policy-map | i set.connection set connection conn-max 9500 set connection embryonic-conn-max 5000 set connection per-client-embryonic-max 100 set connection ...'
+remediation:
+  type: iac_patch
+  command: |-
+    ! - Step 1: Acquire the enterprise standard values for maximum connections, maximum embryonic connections, maximum connections per client and maximum embryonic connections per client
+    - Step 2: Run the following to configure the class to identify the traffic on which DOS protection should be performed.
+    class-map <class_name>
+    match any
+    Step 3: Run the following to configure the policy that will determine the maximum connections to be applied on the class previously configured
+    policy-map <policy_name>
+    class <class_name>
+    set connection conn-max <enterprise_max_number>
+    set connection embryonic-conn-max <enterprise_max_number>
+    set connection per-client-embryonic-max <enterprise_max_number>
+    set connection per-client-max <enterprise_max_number> The enterprise_max_number parameter is to be taken between 0 and 65535.
+    - Step 4: Run the following to apply the policy previously configured on the untrusted
+    service-policy <policy_name> interface <untrusted_interface_name>

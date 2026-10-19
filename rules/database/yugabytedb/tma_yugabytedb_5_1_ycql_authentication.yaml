@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-5.1
+title: Ensure that authentication is enabled for YCQL interface of the YugabyteDB
+description: YCQL authentication is based on roles. Roles can be created with superuser, non- superuser, and login privileges. New roles can be created, and existing ones altered or dropped by administrators using YCQL commands. Reads the YB-TServer GFlags from the web UI at ${YB_TSERVER_WEB:-127.0.0.1:9000}/varz; run it against every TServer. Passes when use_cassandra_authentication=true.
+target: yugabytedb
+level: 2
+severity: critical
+tags:
+- yugabytedb
+- authentication
+reference: CIS YugabyteDB Benchmark v2.0.0 - 5.1 Ensure that authentication is enabled for YCQL interface of the YugabyteDB
+audit:
+  type: command
+  command: out=$(curl -sf "http://${YB_TSERVER_WEB:-127.0.0.1:9000}/varz?raw=1" 2>/dev/null) || exit 1; if printf '%s\n' "$out" | grep -qE -- '--use_cassandra_authentication=(true)([^[:alnum:]_]|$)'; then echo compliant; else echo noncompliant; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add --use_cassandra_authentication=true to every YB-TServer and restart it; then change the default cassandra password (5.2).

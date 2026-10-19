@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-4.3
+title: Secure the root User and Administrative Roles
+description: The root user in CockroachDB has unrestricted administrative privileges across the entire cluster. Because compromise of root grants full control, its use must be tightly restricted and secured. The root account should authenticate exclusively with TLS client certificates (mTLS), and password authentication must be disabled.
+target: cockroachdb
+level: 1
+severity: critical
+tags:
+- cockroachdb
+- authentication
+- privileges
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 4.3 Secure the root User and Administrative Roles
+audit:
+  type: manual
+  command: 'Run SHOW CLUSTER SETTING server.host_based_authentication.configuration; rules for root must use cert (cert-*) methods only and be limited to jump-host CIDRs, followed by host all root all reject. Run SHOW ROLES and SHOW GRANTS ON ROLE admin: membership of admin must be limited to approved administrators, and applications must not connect as root.'
+remediation:
+  type: iac_patch
+  command: '1. Enforce certificate-only authentication for root Update the HBA configuration to allow only certificate-based methods: SET CLUSTER SETTING server.host_based_authentication.configuration = '' TYPE DATABASE USER ADDRESS METHOD host all root <jumpbox-cidr> cert host all root all reject ''; Replace <jumpbox-cidr> with your actual admin network. 2. Restrict root usage operationally - Replace script usage with least-privilege service accounts.'

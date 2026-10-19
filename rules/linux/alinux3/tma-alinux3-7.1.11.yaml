@@ -1,0 +1,42 @@
+id: TMA-ALINUX3-7.1.11
+title: Ensure world writable files and directories are secured
+description: World writable files are the least secure. Data in world-writable files can be modified and compromised by any user on the system. World writable files may also indicate an incorrectly written script or program that could potentially be the cause of a larger compromise to the system's integrity. See the chmod(2) man page for more information. Setting the sticky bit on world writable directories prevents users from deleting or renaming files in that directory that are not owned by them.
+target: linux
+os_family:
+- alinux-3
+level: 1
+severity: medium
+tags:
+- cis-converted
+- linux
+reference: CIS Alibaba Cloud Linux 3 Benchmark v2.0.0 - 7.1.11
+audit:
+  type: command
+  shell: bash
+  command: "alt0() { o=$(bash -c '#!/usr/bin/env bash\n\n{\n   a_output=() a_output2=() a_file=() a_dir=()\n   l_smask='\"'\"'01000'\"'\"' l_limit=\"50\"\n   a_path=(-path \"*/containers/storage/*\" -o -path \"*/containerd/*\" -o -path \"*/kubelet/*\" -o -path \"/sys/*\" -o -path \"/snap/*\" -o -path \"/boot/efi/*\")\n   while IFS= read -r l_mount; do\n      while IFS= read -r -d $'\"'\"'\\0'\"'\"' l_file; do\n         if [ -e \"$l_file\" ]; then\n            [ -f \"$l_file\" ] && a_file+=(\"$l_file\")\n            if [ -d \"$l_file\" ]; then\n               l_mode=\"$(stat -Lc '\"'\"'%#a'\"'\"' \"$l_file\")\"\n               [ ! $(( $l_mode & $l_smask )) -gt 0 ] && a_dir+=(\"$l_file\")\n            fi\n         fi\n      done < <(find \"$l_mount\" -mount -xdev \\( \"${a_path[@]}\" \\) -prune -o \\( -type f -o -type d \\) -perm -0002 -print0 2> /dev/null)\n   done < <(findmnt -Dkerno fstype,target | awk '\"'\"'($1 !~ /^\\s*(nfs|proc|cifs|smb|vfat|iso9660|efivarfs|selinuxfs|ncpfs)/ && $2\
+    \ !~ /^(\\/run|\\/tmp|\\/var\\/tmp)(\\/|$)/){print $2}'\"'\"')\n   if [ \"${#a_file[@]}\" -le 0 ]; then\n      a_output+=(\"  - No world writable files exist on the local filesystem.\")\n   else\n      a_output2+=(\"\" \" - There are \\\"${#a_file[@]}\\\" World writable files on the system.\" \\\n      \"   - The following is a list of World writable files:\" \\\n      \"${a_file[@]:0:$l_limit}\" \"   - end of list\")\n   fi\n   if [ \"${#a_dir[@]}\" -le 0 ]; then\n      a_output+=(\"  - Sticky bit is set on world writable directories on the local filesystem.\")\n   else\n      a_output2+=(\"\" \" - There are \\\"${#a_dir[@]}\\\" World writable directories without the sticky bit on the system.\" \\\n      \"   - The following is a list of World writable directories without the sticky bit:\" \\\n      \"${a_dir[@]:0:$l_limit}\" \"   - end of list\")\n   fi\n   if [ \"${#a_output2[@]}\" -le 0 ]; then\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** PASS **\" \"${a_output[@]}\"\
+    \n   else\n      printf '\"'\"'%s\\n'\"'\"' \"\" \"- Audit Result:\" \"  ** FAIL **\" \"  * Reasons for audit failure *\" \"${a_output2[@]}\" \"\"\n      [ \"${#a_output[@]}\" -gt 0 ] && printf '\"'\"'%s\\n'\"'\"' \"- Correctly set:\" \"${a_output[@]}\"\n   fi\n}' 2>&1); printf '%s\\n' \"$o\" | grep -q '\\*\\* PASS \\*\\*' || { echo \"step1: script did not report PASS\"; return 1; }; }; if alt0; then echo compliant; fi"
+  expected_output: compliant
+remediation:
+  type: command
+  command: |
+    set -u
+    export DEBIAN_FRONTEND=noninteractive
+    tma_pkg_remove() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y remove "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y remove "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y purge "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n remove "$p"; fi; done; }
+    tma_pkg_install() { for p in "$@"; do
+      if command -v dnf >/dev/null 2>&1; then dnf -y install "$p";
+      elif command -v yum >/dev/null 2>&1; then yum -y install "$p";
+      elif command -v apt-get >/dev/null 2>&1; then apt-get -y install "$p";
+      elif command -v zypper >/dev/null 2>&1; then zypper -n install "$p"; fi; done; }
+    tma_svc_off() { for u in "$@"; do systemctl stop "$u" 2>/dev/null; systemctl mask "$u" 2>/dev/null; done; return 0; }
+    STICKY_ONLY=0
+    findmnt -Dkerno fstype,target 2>/dev/null | awk '($1 !~ /^[[:space:]]*(nfs|proc|cifs|smb|vfat|iso9660|efivarfs|selinuxfs|ncpfs|sysfs|devtmpfs|tmpfs|devpts|cgroup|overlay)/ && $2 !~ /^(\/run|\/tmp|\/var\/tmp|\/proc|\/sys|\/dev)(\/|$)/){print $2}' | while read -r mnt; do
+      find "$mnt" -mount -xdev \( -path '*/containers/storage/*' -o -path '*/containerd/*' -o -path '*/kubelet/*' -o -path '/sys/*' -o -path '/snap/*' -o -path '/boot/efi/*' \) -prune -o -type d -perm -0002 ! -perm -1000 -exec chmod +t {} + 2>/dev/null
+      [ "$STICKY_ONLY" = 1 ] || find "$mnt" -mount -xdev \( -path '*/containers/storage/*' -o -path '*/containerd/*' -o -path '*/kubelet/*' -o -path '/sys/*' -o -path '/snap/*' -o -path '/boot/efi/*' \) -prune -o -type f -perm -0002 -exec chmod o-w {} + 2>/dev/null
+    done
+    true
+  guidance: "• World Writable Files: o It is recommended that write access is removed from other with the command ( chmod o-w <filename> ), but always consult relevant vendor documentation to avoid breaking any application dependencies on a given file. • World Writable Directories: o Set the sticky bit on all world writable directories with the command ( chmod a+t <directory_name> ) Run the following script to: • Remove other write permission from any world writable files • Add the sticky bit to all world writable directories #!/usr/bin/env bash { l_smask='01000' a_file=() a_dir=() a_path=(-path \"*/containers/storage/*\" -o -path \"*/containerd/*\" -o -path \"*/kubelet/*\" -o -path \"/sys/*\" -o -path \"/snap/*\"…"

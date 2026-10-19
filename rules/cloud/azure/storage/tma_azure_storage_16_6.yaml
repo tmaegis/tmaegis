@@ -1,0 +1,19 @@
+id: TMA-AZURE-STORAGE-16.6
+title: Ensure 'Allow Azure services on the trusted services list to access this storage account' is Enabled for Storage Account Access
+description: 'NOTE: This recommendation assumes that the Public network access parameter is set to Enabled from selected virtual networks and IP addresses. Please ensure the prerequisite recommendation has been implemented before proceeding: - Ensure Default Network Access Rule for Storage Accounts is Set to Deny Some Azure services that interact with storage accounts operate from networks that can''t be granted access through network rules. To help this type of service work as intended, allow the set of trusted Azure services to bypass the network rules. These services will then use strong authentication to access the storage account. If the Allow Azure services on the trusted services list to access this storage account exception is enabled, the following services are granted access to the storage account: Azure Backup, Azure Data Box, Azure DevTest Labs, Azure Event Grid, Azure Event Hubs, Azure...'
+target: azure
+level: 2
+severity: low
+tags:
+- access-control
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.6 Ensure 'Allow Azure services on the trusted services list to access this storage account' is Enabled for Storage Account Access
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Security + networking, select Networking. 3. On the Firewalls and virtual networks tab, under Exceptions, confirm Allow Azure services on the trusted services list to access this storage account is checked. Audit from Azure CLI For each storage account, confirm bypass contains AzureServices: az storage account list --query "[*].{name:name, bypass:networkRuleSet.bypass}" Audit from PowerShell Sign in and set the subscription context, then read the bypass setting: Connect-AzAccount Set-AzContext -Subscription <subscription-id> (Get-AzStorageAccountNetworkRuleset -ResourceGroupName <resource-group> -Name <storage-account>).Bypass A response containing AzureServices is compliant; None is non-compliant. Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can
+    search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: c9d007d0-c057-4772-b18c-01e546713bcd - Name: ''Storage accounts should allow a...'
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Go to Storage accounts. 2. For each storage account, under Security + networking, select Networking. 3. On the Firewalls and virtual networks tab, under Exceptions, check Allow Azure services on the trusted services list to access this storage account. 4. Select Save. Remediate from Azure CLI az storage account update --name <storage-account> --resource-group <resource-group> --bypass AzureServices Remediate from PowerShell Update-AzStorageAccountNetworkRuleSet -ResourceGroupName <resource-group> - Name <storage-account> -Bypass AzureServices,Logging,Metrics

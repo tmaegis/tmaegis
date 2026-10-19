@@ -1,0 +1,19 @@
+id: TMA-OFFICE-1.3.2
+title: Ensure 'Restrict legacy JScript execution for Office' is set to 'Enabled'
+description: 'This policy setting controls JScript execution per Security Zone within Internet Explorer and WebBrowser Control (WebOC) for Office applications. JScript is Microsoft''s legacy dialect of the ECMAScript standard that is used in Microsoft''s Internet Explorer 11 and older. Rationale: Development on the JScript engine ended, and the component was deprecated with the release of Internet Explorer 8.0 in 2009, but the engine remained in all Windows OS versions as a legacy component inside IE. Due to this, it has been exploited by bad actors over the years, including nation-states. Audit reads the Group Policy registry value and prints ''compliant'', ''unset'' (policy not configured, reported as FAIL) or the non-compliant value. Registry value: HKLM\SOFTWARE\Policies\Microsoft\internetexplorer\main\featurecontrol\FEATURE_RESTRICT_LEGACY_JSCRIPT_PER_SECURITY_ZONE:<application>.exe Each application binary will have a value of 69632: excel.exe msaccess.exemspub.exe onenote.exe outlook.exe
+  powerpnt.exe visio.exewinproj.exe winword.exe (REG_DWORD); compliant when it is 69632. Remediation writes 69632 locally; in a domain set it through the ADMX so Group Policy does not revert it.'
+target: office
+level: 1
+severity: medium
+tags:
+- office
+- productivity
+- cis-l1
+reference: CIS Microsoft Office Enterprise Benchmark v2.0.0 - 1.3.2 Ensure 'Restrict legacy JScript execution for Office' is set to 'Enabled'
+audit:
+  type: registry
+  command: '$v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\internetexplorer\main\featurecontrol\FEATURE_RESTRICT_LEGACY_JSCRIPT_PER_SECURITY_ZONE'' -Name ''<application>.exe Each application binary will have a value of 69632: excel.exe msaccess.exemspub.exe onenote.exe outlook.exe powerpnt.exe visio.exewinproj.exe winword.exe'' -ErrorAction SilentlyContinue).''<application>.exe Each application binary will have a value of 69632: excel.exe msaccess.exemspub.exe onenote.exe outlook.exe powerpnt.exe visio.exewinproj.exe winword.exe''; if ($null -eq $v) { ''unset'' } elseif (($null -ne $v -and @(69632) -contains [int64]$v)) { ''compliant'' } else { "non-compliant: $v" }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: '$p = ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\internetexplorer\main\featurecontrol\FEATURE_RESTRICT_LEGACY_JSCRIPT_PER_SECURITY_ZONE''; if (-not (Test-Path -Path $p)) { New-Item -Path $p -Force | Out-Null }; New-ItemProperty -Path $p -Name ''<application>.exe Each application binary will have a value of 69632: excel.exe msaccess.exemspub.exe onenote.exe outlook.exe powerpnt.exe visio.exewinproj.exe winword.exe'' -Value 69632 -PropertyType DWord -Force | Out-Null'

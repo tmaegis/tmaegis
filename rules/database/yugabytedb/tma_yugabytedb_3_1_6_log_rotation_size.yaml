@@ -1,0 +1,17 @@
+id: TMA-YUGABYTEDB-3.1.6
+title: Ensure the maximum log file size is set correctly
+description: The log_rotation_size setting determines the maximum size of an individual log file. Once the maximum size is reached, automatic log file rotation will occur. Runs ysqlsh (add the YugabyteDB bin directory to PATH) against PGHOST/PGPORT (default 127.0.0.1:5433) as PGUSER (default yugabyte); supply the password through PGPASSWORD or ~/.pgpass. Passes when size-based rotation is enabled (log_rotation_size > 0, default 10MB); confirm the value matches the logging policy.
+target: yugabytedb
+level: 1
+severity: low
+tags:
+- yugabytedb
+- logging
+reference: CIS YugabyteDB Benchmark v2.0.0 - 3.1.6 Ensure the maximum log file size is set correctly
+audit:
+  type: sql_query
+  command: out=$(ysqlsh -h "${PGHOST:-127.0.0.1}" -p "${PGPORT:-5433}" -U "${PGUSER:-yugabyte}" -d "${PGDATABASE:-yugabyte}" -tAc "SELECT CASE WHEN setting::bigint > 0 THEN 'compliant' ELSE 'disabled' END FROM pg_settings WHERE name = 'log_rotation_size'" 2>/dev/null) || exit 1; printf '%s\n' "$out"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set it with the YB-TServer GFlag --ysql_pg_conf_csv="log_rotation_size='1GB'" (or the value your policy requires) on every YB-TServer and restart it.

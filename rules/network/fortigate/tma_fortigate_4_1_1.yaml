@@ -1,0 +1,25 @@
+id: TMA-FORTIGATE-4.1.1
+title: Detect Botnet connections
+description: Interfaces which are classified as "WAN" and are used by a policy should use an IPS sensor which blocks or monitors outgoing connections to botnet sites. PASS requires an IPS sensor with scan-botnet-connections block; confirm it is applied to all WAN-bound policies. Audited against FortiOS 'show full-configuration' output (run it from the global context on VDOM-enabled units and save the full output); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortigate
+level: 2
+severity: high
+tags:
+- fortigate
+- threat-prevention
+reference: CIS FortiGate 7.4.x Benchmark v1.0.1 - 4.1.1 Detect Botnet connections
+audit:
+  type: config_regex
+  pattern: (?m)^config ips sensor\n(?:[ \t]+[^\n]*\n)*?[ \t]+set scan-botnet-connections block[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config ips sensor
+        edit "<sensor>"
+            set scan-botnet-connections block
+        next
+    end
+    # CIS guidance:
+    On GUI:
+    1. Configure relevant IPS profiles with "Scan Outgoing Connections to Botnet Sites" set to "Block".
+    2. Apply relevant IPS profile on all firewall policies with traffic exiting the network to a "WAN" interface.

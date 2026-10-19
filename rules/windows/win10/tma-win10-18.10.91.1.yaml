@@ -1,0 +1,20 @@
+id: TMA-WIN10-18.10.91.1
+title: Ensure 'Allow clipboard sharing with Windows Sandbox' is set to 'Disabled'
+description: 'This policy setting enables or disables clipboard sharing with the Windows Sandbox. The recommended state for this setting is: Disabled. Note: The Windows Sandbox feature was first introduced in Windows 10 R1903, and allows a temporary "clean install" virtual instance of Windows to be run inside the host, for the ostensible purpose of testing applications without making changes to the host.'
+target: windows
+os_family:
+- windows-10
+level: 1
+severity: high
+tags:
+- cis-converted
+- registry
+- windows
+reference: CIS Microsoft Windows 10 Enterprise Benchmark v4.0.0 - 18.10.91.1
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Sandbox'' -Name ''AllowClipboardRedirection'' -ErrorAction SilentlyContinue).''AllowClipboardRedirection''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''AllowClipboardRedirection='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+remediation:
+  type: command
+  command: if (-not (Test-Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Sandbox')) { New-Item -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Sandbox' -Force | Out-Null }; New-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Sandbox' -Name 'AllowClipboardRedirection' -Value 0 -PropertyType DWord -Force | Out-Null

@@ -1,0 +1,18 @@
+id: TMA-MSSQL-3.2
+title: Ensure CONNECT permissions on the 'guest' user is Revoked within all SQL Server databases
+description: 'Remove the right of the guest user to connect to SQL Server databases, except for master, msdb, tempdb, and, on AWS RDS instances, rdsadmin. Iterates all online user databases (master, tempdb and msdb excluded; on AWS RDS rdsadmin is also acceptable). Default: The guest user cannot have the CONNECT permission revoked in master, msdb, tempdb, and, on AWS RDS instances, rdsadmin; however, this permission should be revoked in all other databases on the ... Runs one sqlcmd query with its defaults (Windows authentication to the local default instance); set SQLCMDSERVER, SQLCMDUSER and SQLCMDPASSWORD for another instance or SQL authentication. Needs VIEW SERVER STATE / sysadmin-level read access.'
+target: mssql
+level: 1
+severity: medium
+tags:
+- mssql
+- database
+- privileges
+reference: CIS Microsoft SQL Server 2025 Benchmark v1.0.0 - 3.2 Ensure CONNECT permissions on the 'guest' user is Revoked within all SQL Server databases
+audit:
+  type: sql_query
+  command: sqlcmd -b -h -1 -W -Q "SET NOCOUNT ON; DECLARE @n int = 0, @k int, @db sysname, @s nvarchar(max); DECLARE c CURSOR LOCAL FAST_FORWARD FOR SELECT name FROM sys.databases WHERE state = 0 AND HAS_DBACCESS(name) = 1 AND name NOT IN ('master','tempdb','msdb'); OPEN c; FETCH NEXT FROM c INTO @db; WHILE @@FETCH_STATUS = 0 BEGIN SET @s = N'USE ' + QUOTENAME(@db) + N'; SELECT @k = COUNT(*) FROM (SELECT permission_name FROM sys.database_permissions WHERE grantee_principal_id = DATABASE_PRINCIPAL_ID(''guest'') AND state_desc LIKE ''GRANT%'' AND permission_name = ''CONNECT'') AS x;'; EXEC sp_executesql @s, N'@k int OUTPUT', @k = @k OUTPUT; SET @n = @n + @k; FETCH NEXT FROM c INTO @db; END; CLOSE c; DEALLOCATE c; SELECT @n;"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: 'The following code snippet revokes CONNECT permissions from the guest user in a database. Replace <database_name> as appropriate: USE <database_name>; GO REVOKE CONNECT FROM guest;'

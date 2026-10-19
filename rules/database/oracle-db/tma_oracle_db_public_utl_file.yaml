@@ -1,0 +1,28 @@
+id: TMA-ORACLE-PUBLIC-UTL-FILE
+title: Ensure PUBLIC has no EXECUTE on UTL_FILE
+description: UTL_FILE reads and writes server files in directory objects; PUBLIC access exposes those files to every account. Run on the database host as the Oracle software owner with ORACLE_HOME, ORACLE_SID and PATH set; connects with 'sqlplus -S / as sysdba' (OS authentication).
+target: oracle-db
+level: 1
+severity: high
+tags:
+- oracle-db
+- database
+- oracle
+- privileges
+- filesystem
+reference: CIS Oracle Database Benchmark - Privileges / PUBLIC Execute on File System Packages (verify section number for your release)
+audit:
+  type: sql_query
+  command: |
+    out=$(sqlplus -S -L / as sysdba 2>/dev/null <<'EOF'
+    whenever sqlerror exit failure
+    set heading off feedback off pagesize 0 verify off echo off trimspool on
+    select count(*) from dba_tab_privs where grantee = 'PUBLIC' and privilege = 'EXECUTE' and table_name = 'UTL_FILE';
+    exit
+    EOF
+    ) || exit 1
+    printf '%s\n' "$out"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Grant EXECUTE ON UTL_FILE to the specific accounts that need it, then REVOKE EXECUTE ON UTL_FILE FROM PUBLIC;

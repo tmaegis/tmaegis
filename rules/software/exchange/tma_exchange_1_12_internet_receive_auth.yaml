@@ -1,0 +1,18 @@
+id: TMA-EXCHANGE-1.12
+title: Ensure 'Internet-facing receive connectors' is set to 'Tls, BasicAuth, BasicAuthRequireTLS'
+description: 'This policy setting configures the advertised and accepted authentication mechanisms for the receive connector. The primary function of receive connectors in the transport service is to accept authenticated and encrypted Simple Mail Transfer Protocol (SMTP) connections from other transport services on the local Mailbox server or remote Mailbox servers in the organization. Note: Some available... Prints the number of Receive connectors on this Edge server whose AuthMechanism does not include all of Tls, BasicAuth and BasicAuthRequireTLS (expected 0). All Edge receive connectors are treated as Internet-facing, as in the benchmark remediation. Run on each Edge Transport server. Run from an Exchange Management Shell or after `Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn`; the audit loads the snap-in itself when Get-ExchangeServer is missing and fails if it cannot.'
+target: exchange
+level: 1
+severity: high
+tags:
+- exchange
+- transport
+- tls
+reference: CIS Microsoft Exchange Server 2019 Benchmark v1.0.1 - 1.12 Ensure 'Internet-facing receive connectors' is set to 'Tls, BasicAuth, BasicAuthRequireTLS'
+audit:
+  type: command
+  command: $ErrorActionPreference = 'Stop'; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn -ErrorAction Stop }; if (-not (Get-Command Get-ExchangeServer -ErrorAction SilentlyContinue)) { throw 'Exchange Management Shell cmdlets are not available' }; $req = @('Tls','BasicAuth','BasicAuthRequireTLS'); $bad = @(Get-ReceiveConnector -ErrorAction Stop | Where-Object { $m = @("$($_.AuthMechanism)" -split ',' | ForEach-Object { $_.Trim() }); @($req | Where-Object { $m -notcontains $_ }).Count -gt 0 }); $bad.Count
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Get-ReceiveConnector | Set-ReceiveConnector -AuthMechanism 'Tls, BasicAuth, BasicAuthRequireTLS'

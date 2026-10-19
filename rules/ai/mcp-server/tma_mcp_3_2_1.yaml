@@ -1,0 +1,19 @@
+id: TMA-MCP-3.2.1
+title: Ensure per-tool authorization policies are enforced
+description: 'Authorization for tool invocation is deny-by-default: tools are allowlisted per role or identity, and every authorization decision (allow and deny) is logged with the tool name, calling identity, the policy rule that matched, a timestamp, and a request or correlation identifier that ties the decision to the invocation. Authorization is enforced server-side or at the gateway, never in the model or client. Tools can have powerful side effects, and without per-tool authorization any caller that reaches the server can invoke every tool it exposes, including destructive, irreversible, or data-exfiltrating ones. Role-based, deny-by-default authorization limits which identities can invoke which tools, so a compromised client, or a confused or injected model, is confined to the tools its identity is granted rather than the full set.'
+target: mcp-server
+level: 2
+severity: medium
+tags:
+- ai
+- auth
+- mcp
+- mcp-server
+reference: CIS MCP Server Benchmark v1.0.0 - 3.2.1 Ensure per-tool authorization policies are enforced
+audit:
+  type: manual
+  command: 'Compare the tool registry to the role-based authorization policy, then confirm a least- privileged identity is denied a privileged tool that an authorized identity is allowed. Both decisions are logged and correlated to the controlled requests. Set TOOL, ARGS, AUTH_TOKEN (an identity the policy permits, the positive control), and LP_TOKEN (a least-privileged identity that should be denied). Set AUTHZ_ERR_JQ to the boolean matching the deployment''s structured authorization-denial error, for example .error.code==<AUTHZ_DENY_CODE>. Run the following command: URL="https://<SERVER_URL>/mcp" TOOL="<PRIVILEGED_TOOL>" ARGS=''<VALID_ARGUMENTS_JSON>'' AUTH_TOKEN="<AUTHORIZED_TOKEN>" LP_TOKEN="<LEAST_PRIVILEGED_TOKEN>" PROTO="2026-07-28" AUTHZ_ERR_JQ="${AUTHZ_ERR_JQ:-.error.code==-32003}" CORR=$(head -c16 /dev/urandom 2>/dev/null | od -An -tx1 | tr -d '' \n''); [ -n "$CORR" ] || CORR=$(date +%s%N | sha1sum | cut -c1-32) echo "$CORR" > /tmp/cis_3_3_corr TP="00-$CORR-$(printf ''%016x'' 1)-01"
+    mkbody() { printf ''{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"%s","arguments":%s," _meta":{"io.modelcontextprotocol/protocolVersion":"%s","io.modelcontextprotocol/trace parent":"%s","io.m...'
+remediation:
+  type: iac_patch
+  command: Configure the server or gateway to enforce deny-by-default per-tool authorization keyed to role and identity, and to log every decision. This is application, server, or gateway logic with no portable config or command. Define a deny-by-default policy that allowlists tools per role, map identities to roles from the authenticated token, and reference the enterprise tool risk classification rather than server-provided annotations (see Recommendation 3.2.3). For every invocation, emit an authorization decision log entry (allow and deny) with the tool name, calling identity, matched rule, timestamp, and a correlation identifier. Verify with the Audit using least-privileged and authorized test identities.

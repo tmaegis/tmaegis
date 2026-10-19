@@ -1,0 +1,17 @@
+id: TMA-OKE-5.4.1
+title: Restrict OKE control plane endpoint access using private endpoints or approved CIDRs
+description: This recommendation is about reducing exposure of the Kubernetes API server without necessarily making it private only. The intended end state is that the OKE Kubernetes API endpoint is placed behind a private endpoint where possible, or if a public IP address is assigned, access is limited to approved source CIDRs through OCI network security rules. Reported as a manual review because it needs site-specific judgement.
+target: oke
+level: 1
+severity: high
+tags:
+- oke
+- managed-services
+- network
+reference: CIS Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) Benchmark v2.0.0 - 5.4.1 Restrict OKE control plane endpoint access using private endpoints or approved CIDRs
+audit:
+  type: manual
+  command: 'Check the OKE Kubernetes API endpoint configuration and determine whether the endpoint has a public IP address assigned. Also identify the endpoint subnet and any network security groups attached to the endpoint. oci ce cluster get \ --cluster-id $CLUSTER_ID \ --query ''data.{endpointConfig:"endpoint-config",endpoints:endpoints}'' \ --output json Expected Output: { "endpointConfig": { "is-public-ip-enabled": false, "nsg-ids": [ "ocid1.networksecuritygroup.oc1..." ], "subnet-id": "ocid1.subnet.oc1..." }, "endpoints": { "private-endpoint": "10.0.0.10:6443", "public-endpoint": null } } ...'
+remediation:
+  type: iac_patch
+  command: Restrict access to the OKE Kubernetes API endpoint by using a private endpoint where possible, or by limiting public endpoint access through OCI network security groups or security lists. The Kubernetes API endpoint is hosted in a VCN subnet, and Oracle recommends using network security groups or security lists to control access to that subnet. For new clusters, place the Kubernetes API endpoint in a private subnet when internet access to the API endpoint is not required.

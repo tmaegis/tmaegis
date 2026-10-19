@@ -1,0 +1,33 @@
+id: TMA-ALIBABA-1.5
+title: Ensure users not logged on for 90 days or longer are disabled for console logon
+description: Alibaba Cloud RAM users can logon to Alibaba Cloud console by using their user name and password. If a user has not logged on for 90 days or longer, it is recommended to disable the console access of the user. Disabling users from having unnecessary logon privileges will reduce the opportunity that an abandoned user or a user with compromised password to be used. For each RAM user with console access, LastLoginDate (or CreateDate when the user never signed in) must be less than 90 days old. Uses GNU date -d. Read-only aliyun CLI calls; credentials and default region come from the CLI's normal profile (aliyun configure, ~/.aliyun/config.json or ALIBABA_CLOUD_* environment variables). JSON output is parsed with sed/awk. A missing CLI or credential fails the check.
+target: alibaba
+level: 1
+severity: medium
+tags:
+- alibaba
+- ram
+reference: CIS Alibaba Cloud Foundation Benchmark v2.0.1 - 1.5 Ensure users not logged on for 90 days or longer are disabled for console logon
+audit:
+  type: command
+  command: |-
+    now=$(date -u +%s) || exit 1
+    out=$(aliyun ram ListUsers --MaxItems 1000 2>/dev/null) || exit 1
+    users=$(printf '%s\n' "$out" | sed -n 's/.*"UserName"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+    bad=0
+    for u in $users; do
+      if err=$(aliyun ram GetLoginProfile --UserName "$u" 2>&1); then
+        g=$(aliyun ram GetUser --UserName "$u" 2>/dev/null) || exit 1
+        d=$(printf '%s\n' "$g" | sed -n 's/.*"LastLoginDate"[[:space:]]*:[[:space:]]*"\([^"]\{1,\}\)".*/\1/p' | head -n 1)
+        [ -n "$d" ] || d=$(printf '%s\n' "$g" | sed -n 's/.*"CreateDate"[[:space:]]*:[[:space:]]*"\([^"]\{1,\}\)".*/\1/p' | head -n 1)
+        ts=$(date -u -d "$d" +%s 2>/dev/null) || exit 1
+        [ $(( (now - ts) / 86400 )) -lt 90 ] || { echo "no console logon for 90+ days: $u"; bad=1; }
+      else
+        printf '%s\n' "$err" | grep -q EntityNotExist || exit 1
+      fi
+    done
+    [ "$bad" -eq 0 ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Disable console logon for each listed user: aliyun ram DeleteLoginProfile --UserName <u> (or RAM console > Users > Console Logon Management > Disable).'

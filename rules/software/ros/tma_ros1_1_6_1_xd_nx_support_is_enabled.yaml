@@ -1,0 +1,22 @@
+id: TMA-ROS1-1.6.1
+title: Ensure XD/NX support is enabled
+description: 'Recent processors in the x86 family support the ability to prevent code execution on a per memory page basis. Generically and on AMD processors, this ability is called No Execute (NX), while on Intel processors it is called Execute Disable (XD). This ability can help prevent exploitation of buffer overflow vulnerabilities and should be activated whenever possible. The audit requires the nx CPU flag (or the kernel "NX (Execute Disable) protection: active" message) and no noexec=off on the kernel command line. Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.'
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- system
+reference: CIS ROS Melodic Benchmark v1.0.0 - 1.6.1 Ensure XD/NX support is enabled
+audit:
+  type: command
+  shell: bash
+  command: |-
+    grep -Eq 'noexec[0-9]*=off' /proc/cmdline && { echo 'NX disabled on the kernel command line'; exit 1; }
+    grep -Eqw 'nx' /proc/cpuinfo && echo compliant || { journalctl -k 2>/dev/null | grep -q 'protection: active' && echo compliant || echo 'NX/XD protection not active'; }
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'On 32 bit systems install a kernel with PAE support, no installation is required on 64 bit systems: If necessary configure your bootloader to load the new kernel and reboot the system. You may need to enable NX or XD support in your bios.'

@@ -1,0 +1,19 @@
+id: TMA-SOPHOS-3.1
+title: Ensure "Fully Synchronized" High Availability peer is configured
+description: High Availability (HA) is a clustering technology that is used to maintain uninterrupted service in the event of power, hardware, or software failure. Sophos Firewall devices can be configured in Active-Active or Active-Passive HA modes. The Devices (The Primary and Auxiliary Device) are physically connected over a dedicated HA link port. Reviewed in the Sophos Firewall web admin console (SFOS has no plain-text configuration export to audit offline).
+target: sophos
+level: 2
+severity: medium
+tags:
+- sophos
+- high-availability
+reference: CIS Sophos Firewall v22 Benchmark v1.0.0 - 3.1 Ensure "Fully Synchronized" High Availability peer is configured
+audit:
+  type: manual
+  command: Navigate to 'Configure > System Services > High Availability > High Availability Status'. Verify that 'HA status' is either 'Established[Active-Passive]' or 'Established[Active-Active]' and confirm 'Local' and 'Peer' devices are not showing 'Standalone' or 'Faulty'. Navigate to 'High Availability Configuration > Select ports to be monitored'. Verify that correct interfaces are monitored. 'Keepalive request interval' and 'Keepalive attempts' should be set to optimal setting or remain default value of '250' milliseconds and '16' attempts respectively.
+remediation:
+  type: iac_patch
+  command: |-
+    HA can be configured in two modes: QuickHA mode and Interactive mode. In QuickHA mode, Initial device role, Node name and Dedicated HA link is specified on each device. In Interactive mode, all the settings are specified such as monitored port, keep alive values and the preferred primary device.
+    Navigate to 'Configure > System Services > High Availability > High Availability Status'. When 'Local' and 'Peer' devices are shown as 'Standalone' or 'Faulty', connection to the auxiliary device could be lost or becomes a faulty node, re-configure HA and sync auxiliary device to a working state.
+    Navigate to 'High Availability Configuration > Select ports to be monitored'. Set the correct interfaces to be monitored. Configure default value of 'Keepalive request interval' to '250' milliseconds and 'Keepalive attempts' to '16' attempts or set to optimal setting respectively.

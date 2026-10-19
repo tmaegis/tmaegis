@@ -1,0 +1,22 @@
+id: TMA-CISCO-IOSXR-1.1.4.1
+title: exec accounting
+description: The router reports user activity to the TACACS+ or RADIUS security server in the form of accounting records. Each accounting record contains accounting AV pairs and is stored on the security server. Authentication, authorization and accounting (AAA) systems provide an authoritative source for managing and monitoring access for devices. Centralizing control improves consistency of access control, the services that may be accessed once authenticated and ... Fails if no 'aaa accounting exec' list exists or the console/line templates do not reference one. Audited against the hierarchical output of 'show running-config' (run 'terminal length 0' first; not 'show running-config formal').
+target: cisco-iosxr
+level: 1
+severity: medium
+tags:
+- cisco-iosxr
+- network
+- logging
+reference: CIS Cisco IOS XR 7.x Benchmark v1.0.1 - 1.1.4.1 exec accounting
+audit:
+  type: config_regex
+  pattern: (?m)(?:\A(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^a\n]|a(?:$|[^a\n]|a(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^g\n]|g(?:$|[^ \n]| (?:$|[^e\n]|e(?:$|[^x\n]|x(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^ \n]))))))))))))))))))))[^\n]*\n)*(?:[ \t]*(?:$|[^a \t\n]|a(?:$|[^a\n]|a(?:$|[^a\n]|a(?:$|[^ \n]| (?:$|[^a\n]|a(?:$|[^c\n]|c(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^g\n]|g(?:$|[^ \n]| (?:$|[^e\n]|e(?:$|[^x\n]|x(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^ \n]))))))))))))))))))))[^\n]*)?\z)|(?:^line (?:console|default|template \S+)[^\n]*\n(?:[ \t]+(?:$|[^a \t\n]|a(?:$|[^c\n]|c(?:$|[^c\n]|c(?:$|[^o\n]|o(?:$|[^u\n]|u(?:$|[^n\n]|n(?:$|[^t\n]|t(?:$|[^i\n]|i(?:$|[^n\n]|n(?:$|[^g\n]|g(?:$|[^ \n]| (?:$|[^e\n]|e(?:$|[^x\n]|x(?:$|[^e\n]|e(?:$|[^c\n]|c(?:$|[^ \n]))))))))))))))))[^\n]*\n)*(?:[^ \t]|\z))
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Configure an accounting list which for example includes the tacacs+ or radius server group, which was defined in the prerequisites or local or both:
+    aaa accounting exec default start-stop group {tacacs_group|radius_group}
+    line console accounting exec default
+    line default accounting exec default Note: exec accounting doesn't support the "local" / syslog target.

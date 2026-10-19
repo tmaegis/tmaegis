@@ -1,0 +1,17 @@
+id: TMA-PRINTER-FIRMWARE-CURRENT
+title: Ensure printer firmware is current and only signed firmware can be installed
+description: Printer firmware regularly receives fixes for remotely exploitable flaws (PJL/PostScript, IPP, EWS). Accepting unsigned firmware allows persistent implants.
+target: printer
+level: 1
+severity: high
+tags:
+- printer
+- firmware
+- patching
+reference: CIS Multi-Function Device Benchmark v1.0.0 - Firmware updates / firmware integrity (verify section number for your release)
+audit:
+  type: manual
+  command: 'In the Embedded Web Server (EWS: browse to https://<printer-ip>/ and sign in as administrator; HP: Security / Networking tabs, Xerox: Properties > Security / Connectivity, Ricoh: Device Management > Configuration, Canon: Settings/Registration > Network Settings / Security Settings): read the firmware version (HP: Information > Configuration Page / Firmware Upgrade; Xerox: Properties > General Setup > Configuration Report) and compare it with the latest release and security bulletins on the vendor support site. Confirm firmware signature verification / whitelisting is on (e.g. HP Code Signing / Sure Start, Xerox firmware verification, ''Allow firmware upgrade via PJL/print job'' disabled) and that remote firmware upgrade is restricted to administrators.'
+remediation:
+  type: iac_patch
+  command: Download the current firmware from the vendor support portal, verify its checksum/signature, and install via EWS (Firmware Upgrade) or fleet tooling during a maintenance window. Disable firmware upgrade via print jobs (PJL/port 9100) and enable signed-firmware enforcement.

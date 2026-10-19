@@ -1,0 +1,17 @@
+id: TMA-EKS-5.1.4
+title: Allow only approved container registries for images used by EKS workloads
+description: Allowing only approved container registries for images used by EKS workloads helps reduce supply chain risk by limiting where workloads can source their images. This creates a controlled image origin model in which clusters admit workloads only from trusted registries and can pair that control with image-signature verification before containers are allowed to run. The benchmark marks this recommendation Manual.
+target: eks
+level: 1
+severity: medium
+tags:
+- eks
+- managed-services
+- registry
+reference: CIS Amazon Elastic Kubernetes Service (EKS) Benchmark v2.0.0 - 5.1.4 Allow only approved container registries for images used by EKS workloads
+audit:
+  type: manual
+  command: Review the image sources currently used by the cluster and the admission controls that govern new deployments, then verify that workloads are limited to approved registries only. The strongest implementation for this control is an admission-time policy, because policy-as-code solutions such as Kyverno and OPA Gatekeeper can intercept Kubernetes API requests before the change is persisted, and image-security guidance for EKS describes using admission controllers to verify image trust conditions before deployment.
+remediation:
+  type: iac_patch
+  command: Restrict EKS workloads to approved container registries by enforcing image-source controls at admission time, rather than relying only on CI/CD checks or written standards. Enforcement is typically implemented with a policy-as-code admission controller such as Kyverno or Gatekeeper so image references are checked before the deployment is persisted. The allowlist must also include the Region-specific ECR registries required for EKS platform components and add-ons, because EKS add-on images are pulled from Amazon ECR private repositories replicated per Region. • Include internal ECR repositories, explicitly approved third-party registries, and the Region-specific ECR registries required for EKS add-ons and platform components in the approved registry allowlist.

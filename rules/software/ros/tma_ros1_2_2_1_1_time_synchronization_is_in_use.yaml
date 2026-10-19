@@ -1,0 +1,25 @@
+id: TMA-ROS1-2.2.1.1
+title: Ensure time synchronization is in use
+description: System time should be synchronized between all systems in an environment. This is typically done by establishing an authoritative time server or set of servers and having all systems synchronize their clocks to them. The audit requires systemd-timesyncd enabled or the chrony or ntp package installed (host-based VM time sync must be verified manually). Host-level control from the CIS ROS Melodic benchmark (Ubuntu 18.04 robot hosts); run as root.
+target: ros
+level: 1
+severity: medium
+tags:
+- ros
+- ros1
+- melodic
+- services
+reference: CIS ROS Melodic Benchmark v1.0.0 - 2.2.1.1 Ensure time synchronization is in use
+audit:
+  type: command
+  shell: bash
+  command: |-
+    s=$(systemctl is-enabled systemd-timesyncd 2>/dev/null)
+    [ "$s" = enabled ] && { echo compliant; exit 0; }
+    command -v dpkg-query >/dev/null 2>&1 || exit 1
+    for p in chrony ntp; do s=$(dpkg-query -W -f='${Status}' "$p" 2>/dev/null); case "$s" in *' installed') echo compliant; exit 0 ;; esac; done
+    echo 'no time synchronization (systemd-timesyncd, chrony or ntp) in use'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'On systems where host based time synchronization is not available, configure systemd- timesyncd. If "full featured" and/or encrypted time synchronization is required, install chrony or NTP. To install chrony: # atp install chrony To install ntp: # apt install ntp On virtual systems where host based time synchronization is available consult your virtualization software documentation and setup host based synchronization.'

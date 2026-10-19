@@ -1,0 +1,19 @@
+id: TMA-INTUNE-DEFENDER-2.39
+title: Ensure 'Real Time Scan Direction' is set to 'Monitor all files bi-directional'
+description: 'This policy setting configures monitoring for incoming and outgoing files, without having to turn off monitoring entirely. This setting only applies to NTFS volumes. For any other file system types, full monitoring of file and program activity will be present on those volumes. The recommended state for this setting is: Monitor all files bi-directional. Audit: reads the registry value(s) behind this Defender policy (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender) and prints compliant only when each satisfies the benchmark value. Policy delivered by Intune only appears here once it has been applied to the device.'
+target: intune-defender
+level: 1
+severity: medium
+tags:
+- intune-defender
+- intune
+- registry
+reference: CIS Microsoft Intune for Microsoft Defender Antivirus Benchmark v1.0.0 - 2.39 Ensure 'Real Time Scan Direction' is set to 'Monitor all files bi-directional'
+audit:
+  type: registry
+  command: '$bad = @(); $v = (Get-ItemProperty -Path ''Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender\Real-TimeProtection'' -Name ''RealtimeScanDirection'' -ErrorAction SilentlyContinue).''RealtimeScanDirection''; if (-not ($null -ne $v -and @(0) -contains [int64]$v)) { $bad += ''RealtimeScanDirection='' + $v }; if ($bad.Count -eq 0) { ''compliant'' } else { ''non-compliant: '' + ($bad -join '', '') }'
+  expected_output: compliant
+  shell: powershell
+remediation:
+  type: iac_patch
+  command: 'To establish the recommended configuration via configuration profiles, set the following Settings Catalog path to Monitor all files bi-directional: Defender/Real Time Scan Direction To establish the recommended configuration via Endpoint Security Blade: 1. Navigate to Endpoint Security 2. Click Antivirus 3. Click Create Profile 4. Select Windows for the Platform and Microsoft Defender Antivirus for Profile 5. Name the profile 6. Configure Real Time Scan Direction to Monitor all files bi- directional'

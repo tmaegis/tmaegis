@@ -1,0 +1,25 @@
+id: TMA-GITLAB-1.1.12
+title: Ensure verification of signed commits for new changes before merging
+description: Ensure every commit in a pull request is signed and verified before merging. Signing commits, or requiring to sign commits, gives other users confidence about the origin of a specific code change. It ensures that the author of the change is not hidden and is verified by the version control system, thus the change comes from a trusted source.
+target: gitlab
+level: 2
+severity: high
+tags:
+- devsecops
+- gitlab
+- source-control
+reference: CIS GitLab Benchmark v1.0.1 - 1.1.12 Ensure verification of signed commits for new changes before merging
+audit:
+  type: command
+  shell: bash
+  command: 'command -v glab >/dev/null 2>&1 || exit 1
+
+    glab auth status >/dev/null 2>&1 || exit 1
+
+    proj=$(glab repo view -F json 2>/dev/null) || exit 1
+
+    printf "%s" "$proj" | grep -q ''"id":'' && echo compliant || echo non-compliant'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Ensure only signed commits can be merged for every branch via branch protection rules by performing the following steps for each project: - Navigate to the main page of the project. - In the sidebar, select Settings > Repository. - Expand the Push rules section. - Under Select push rules select ''Reject unsigned commits''. - Select ''Save push rules''. As an administrator you can configure a secure default for new projects by performing the following steps: - Navigate to the Admin Area. - In the sidebar, select Push Rules. - Select ''Reject unsigned commits''. - Select ''Save push rules''.'

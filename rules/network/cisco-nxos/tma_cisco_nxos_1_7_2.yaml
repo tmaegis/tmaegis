@@ -1,0 +1,21 @@
+id: TMA-CISCO-NXOS-1.7.2
+title: Disable iPXE (Pre-boot eXecution Environment)
+description: iPXE allows a NX-OS device to boot from the network, usually using HTTP. This method allows the switch bootup image to be controlled centrally, often using DHCP services. Audited against the output of 'show running-config' (run 'terminal length 0' first; do not use 'show running-config all', which adds default values).
+target: cisco-nxos
+level: 2
+severity: medium
+tags:
+- cisco-nxos
+- network
+- management-plane
+reference: CIS Cisco NX-OS Benchmark v1.2.0 - 1.7.2 Disable iPXE (Pre-boot eXecution Environment)
+audit:
+  type: config_regex
+  pattern: (?m)^boot order [^\n]*\bpxe\b
+  must_not_match: true
+remediation:
+  type: iac_patch
+  command: |-
+    ! Setting the boot order explicity to "bootflash" will remediate a PXE configured device.
+    boot order bootflash You can also "no" the current boot order line to revert to the default setting. For instance, to remove the configuration line "boot order pxe bootflash" command, use
+    no boot order pxe bootflash

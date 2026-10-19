@@ -1,0 +1,17 @@
+id: TMA-COCKROACHDB-2.7
+title: Set the File Descriptor Limit to at Least 15,000 to Accommodate Cluster Growth
+description: 'CockroachDB can use a large number of open file descriptors, often more than is available by default. Therefore, note the following recommendations. For each CockroachDB node: - At a minimum, the file descriptors limit must be 1956 (1700 per store plus 256 for networking). If the limit is below this threshold, the node will not start. - It is recommended to set the file descriptors limit to unlimited; The benchmark rates this recommendation Manual; the automated check covers its objective pass criterion. Reads the hard "Max open files" limit of the running cockroach process; it must be unlimited or at least 15000.'
+target: cockroachdb
+level: 1
+severity: medium
+tags:
+- cockroachdb
+- os
+reference: CIS CockroachDB v25.x Benchmark v1.0.0 - 2.7 Set the File Descriptor Limit to at Least 15,000 to Accommodate Cluster Growth
+audit:
+  type: command
+  command: 'pid=$(pgrep -o -x cockroach) || exit 1; awk ''/^Max open files/ {print ($5 == "unlimited" || $5 + 0 >= 15000) ? "compliant" : "hard limit " $5}'' /proc/$pid/limits'
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Set LimitNOFILE=35000 (at least 15000) in the [Service] section of cockroach.service (or a hard nofile limit in /etc/security/limits.conf for non-systemd setups), raise fs.file-max if needed, then restart the node.

@@ -1,0 +1,17 @@
+id: TMA-NGINX-2.5.3
+title: Ensure hidden file serving is disabled
+description: Hidden files and directories (starting with a dot, e.g., .git, .env) often contain sensitive metadata, version control history, or environment configurations. Serving these files should be globally disabled. Looks for a regex location matching paths that start with a dot (e.g. location ~ /\. { deny all; }). Evaluated on the merged configuration printed by `nginx -T` (all included files; needs permission to read them). CIS marks this recommendation Manual; the automated check implements its audit procedure.
+target: nginx
+level: 1
+severity: medium
+tags:
+- nginx
+- information-disclosure
+reference: CIS NGINX Benchmark v3.0.0 - 2.5.3 Ensure hidden file serving is disabled
+audit:
+  type: command
+  command: out=$(nginx -T 2>/dev/null) || exit 1; printf '%s\n' "$out" | awk '{l=$0; o=""; q=""; for(i=1;i<=length(l);i++){c=substr(l,i,1); if(q!=""){o=o c; if(c==q) q=""; continue} if(c=="\""||c=="\047"){q=c; o=o c; continue} if(c=="#") break; if(c==";"||c=="{"){print o c; o=""; continue} if(c=="}"){if(o~/[^[:space:]]/) print o; print "}"; o=""; continue} o=o c} if(o~/[^[:space:]]/) print o}' | grep -Eq '^[[:space:]]*location[[:space:]]+~\*?[[:space:]]+["^]*/\\\.' && echo compliant || echo noncompliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add 'location ~ /\. { deny all; return 404; }' to each server block (allow /.well-known/ first if needed). Then run nginx -t and reload nginx.

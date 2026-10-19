@@ -1,0 +1,21 @@
+id: TMA-UBUNTU2004-1.1.2.1.1
+title: Ensure /tmp is a separate partition
+description: 'The /tmp directory is a world-writable directory used for temporary storage by all users and some applications. Note: If an entry for /tmp exists in /etc/fstab it will take precedence over entries in a systemd unit file. There is an exception to this when a system is diskless and connected to iSCSI, entries in /etc/fstab may not take precedence over a systemd unit file.'
+target: linux
+os_family:
+- ubuntu-20.04
+level: 1
+severity: medium
+tags:
+- cis-converted
+- filesystem
+- linux
+reference: CIS Ubuntu Linux 20.04 LTS Benchmark v3.0.0 - 1.1.2.1.1
+audit:
+  type: command
+  shell: bash
+  command: if findmnt -kn /tmp >/dev/null 2>&1; then echo compliant; else echo /tmp' is not a separate partition'; fi
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'First ensure that systemd is correctly configured to ensure that /tmp will be mounted at boot time. # systemctl unmask tmp.mount For specific configuration requirements of the /tmp mount for your environment, modify /etc/fstab. Example of using tmpfs with specific mount options: tmpfs /tmp tmpfs defaults,rw,nosuid,nodev,noexec,relatime,size=2G 0 0 Note: the size=2G is an example of setting a specific size for tmpfs. Example of using a volume or disk with specific mount options. The source location of the volume or disk will vary depending on your environment: <device> /tmp <fstype> defaults,nodev,nosuid,noexec 0 0'

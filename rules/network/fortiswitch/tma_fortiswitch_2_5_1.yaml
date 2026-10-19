@@ -1,0 +1,47 @@
+id: TMA-FORTISWITCH-2.5.1
+title: DHCP Snooping Enablement
+description: DHCP snooping protects the network from common DHCP attacks, including address spoofing resulting from a rogue DHCP server operating on the network or exhaustion of addresses on a DHCP server caused by mass address requests by an attacker on the network. DHCP snooping designates trusted DHCP servers and ports on which DHCP requests and responses are accepted. PASS requires dhcp-snooping enable on at least one VLAN; confirm all user VLANs and trusted uplink ports. Audited against FortiSwitchOS 'show full-configuration' output (standalone FortiSwitch, saved in full); patterns are scoped to the named 'config ... end' block, whose member lines are indented.
+target: fortiswitch
+level: 1
+severity: medium
+tags:
+- fortiswitch
+- layer2
+reference: CIS FortiSwitch Benchmark v1.0.0 - 2.5.1 DHCP Snooping Enablement
+audit:
+  type: config_regex
+  pattern: (?m)^config switch vlan\n(?:[ \t]+[^\n]*\n)*?[ \t]+set dhcp-snooping enable[ \t]*$
+remediation:
+  type: iac_patch
+  command: |-
+    config switch vlan
+        edit <vlan-id>
+            set dhcp-snooping enable
+        next
+    end
+    config switch interface
+        edit "<uplink>"
+            set dhcp-snooping trusted
+        next
+    end
+    # CIS guidance:
+    From the CLI:
+    config switch vlan
+        edit <vlan-id>
+            set dhcp-snooping enable
+            config dhcp-server-access-list
+                edit "DHCP Server"
+                    set server-ip 192.168.1.1
+                end
+            end
+            config switch interface
+                edit "portXX" (XX is the port number.)
+                    set dhcp-snooping trusted
+                end
+    By default, all ports are untrusted so you will need to specify trusted ports for uplinks to DHCP Servers or to a directly connected DHCP Server. Optionally specify a DHCP server for additional security. From the GUI:
+    1. Switch > VLAN > Select a VLAN > Edit
+    2. Under the DHCP Snooping section check the "Enable" checkbox.
+    3. Optionally, configure a DHCP Server under DHCP Snooping section within the DHCP Server Whitelist configuration.
+    4. Switch > DHCP Snooping click on button to enable "Only Allow DHCP from Whitelisted Servers".
+    5. Switch > Interfaces > Select an Interface > Edit
+    6. Under DHCP Snooping set the uplink and/or the connection to the DHCP Server to "Trusted". By default, all ports are untrusted so you will need to specify trusted ports for uplinks to DHCP Servers or to a directly connected DHCP Server. Optionally specify a DHCP server for additional security.

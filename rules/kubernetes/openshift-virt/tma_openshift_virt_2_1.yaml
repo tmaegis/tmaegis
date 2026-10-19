@@ -1,0 +1,16 @@
+id: TMA-OPENSHIFT-VIRT-2.1
+title: Restrict pass through of GPUs and Host devices to the Virtual Machine
+description: The ability to pass through certain devices like a GPU or NVMe can improve performance by offloading certain tasks from the CPU to the device itself, but it also introduces shared system resources and additional attack vectors for bad actors. Configuring GPUs or host devices for the virtual machine can put the guest at risk. It's important to be selective and only enable passthrough for devices that are critical to the operation of your workloads. The benchmark marks this recommendation Manual; TMAegis reports it as a manual review item with the audit steps.
+target: openshift-virt
+level: 1
+severity: medium
+tags:
+- openshift-virt
+- manual-review
+reference: CIS Red Hat OpenShift Virtual Machine Extension Benchmark v1.0.0 - 2.1 Restrict pass through of GPUs and Host devices to the Virtual Machine
+audit:
+  type: manual
+  command: 'Use the following command to list gpus associated with a virtual machine: $ oc get vm -A -ojson | jq ''.items[] | select(.spec.template.spec.domain.devices.gpus | length > 0) | {vm_name: .metadata.name, namespace: .metadata.namespace, gpus: .spec.template.spec.domain.devices.gpus}'' Use the following command to list hostDevices associated with a virtual machine: $ oc get vm -A -ojson | jq ''.items[].spec.template.spec.domain.devices.hostDevices'' This check applies to any created VMs. Results of this query will be in this form: [ { "deviceName": "<resource - name>", "name": "<device - name>" }, { "deviceName": "<resource - name>", "name": "<device - name>" } ]'
+remediation:
+  type: iac_patch
+  command: 'Only enable approved devices which are trust - worthy and strictly necessary by the workload. For example, if the first host device above (index 0, in bold) should not be permitted to be passed through to a given VM, here’s how to remove it: $ oc patch vm <vm-name> --type=''json'' -p=''[ {"op": "remove", "path": "/spec/template/spec/domain/devices/hostDevices/0"}, ]'''

@@ -1,0 +1,19 @@
+id: TMA-MYSQL-10.1
+title: Ensure All Group Replication Traffic is Secured
+description: MySQL Group communication connections and distributed recovery connections can be secured using SSL.
+target: mysql
+level: 1
+severity: high
+tags:
+- mysql
+- database
+- replication
+- tls
+- manual
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 10.1 Ensure All Group Replication Traffic is Secured
+audit:
+  type: manual
+  command: In MySQL Shell run dba.getCluster().status() and check ssl is not DISABLED, or run SELECT @@group_replication_ssl_mode; DISABLED is a finding; REQUIRED, VERIFY_CA or VERIFY_IDENTITY mean TLS is enforced. Also check group_replication_recovery_use_ssl = ON.
+remediation:
+  type: iac_patch
+  command: 'Create the cluster with memberSslMode REQUIRED/VERIFY_IDENTITY (dba.createCluster(name, {memberSslMode: ''VERIFY_IDENTITY''})) or set group_replication_ssl_mode=REQUIRED and group_replication_recovery_use_ssl=ON on every member.'

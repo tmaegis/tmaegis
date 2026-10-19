@@ -1,0 +1,19 @@
+id: TMA-AWS-2.17
+title: Ensure that all expired SSL/TLS certificates stored in AWS IAM are removed
+description: To enable HTTPS connections to your website or application in AWS, you need an SSL/TLS server certificate. You should use AWS Certificate Manager (ACM) to store and deploy server certificates, as storing certificates in IAM is no longer recommended. Use IAM only when you must support HTTPS connections in a region or service that is not supported by ACM. IAM securely encrypts your private keys and stores the encrypted version in IAM SSL certificate storage. IAM supports deploying server certificates in all regions, but you must obtain your certificate from an external provider for use with AWS. You cannot upload an ACM certificate to IAM. Additionally, you cannot manage your certificates from the IAM Console. Removing expired SSL/TLS certificates eliminates the risk that an invalid certificate will be deployed accidentally to a resource such as AWS Elastic Load Balancer (ELB), which ca...
+target: aws
+level: 1
+severity: medium
+tags:
+- aws
+- cloud
+- iam
+- tls
+reference: CIS Amazon Web Services Foundations Benchmark v7.0.0 - 2.17 Ensure that all expired SSL/TLS certificates stored in AWS IAM are removed
+audit:
+  type: manual
+  command: 'From Console: Getting certificate expiration information via the AWS Management Console is not currently supported for IAM-stored certificates. To request information about SSL/TLS certificates stored in IAM, use the Command Line Interface (CLI). From Command Line: 1. Run the following command to list all IAM-stored server certificates: aws iam list-server-certificates 2. The command output returns an array containing all SSL/TLS certificates and their metadata: { "ServerCertificateMetadataList": [ { "ServerCertificateId": "EHDGFRW7EJFYTE88D", "ServerCertificateName": "MyServerCertificate", "Expiration": "2018-07-10T23:59:59Z", "Path": "/", "Arn": "arn:aws:iam::012345678910:server- certificate/MySSLCertificate", "UploadDate": "2018-06-10T11:56:08Z" } ] } 3. Review the Expiration value for each certificate and determine if any certificates are expired 4. If expired certificates are identified, they should be removed 5. If the command returns: { { "ServerCertificateMetadataList":
+    [] } This indicates that no certificates are currently stored in IAM'
+remediation:
+  type: iac_patch
+  command: 'From Console: Removing expired certificates via the AWS Management Console is not currently supported. Use the CLI to delete IAM-stored certificates. From Command Line: 1. Run the following command to delete an expired certificate: aws iam delete-server-certificate --server-certificate-name <CERTIFICATE_NAME> 2. A successful command returns no output'

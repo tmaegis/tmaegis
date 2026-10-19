@@ -1,0 +1,26 @@
+id: TMA-GITHUB-1.1.6
+title: Ensure code owners are set for extra sensitive code or configuration
+description: 'Code owners are trusted users that are responsible for reviewing and managing an important piece of code or configuration. An organization is advised to set code owners for every extremely sensitive code or configuration. Configuring code owners protects data by verifying that trusted users will notice and review every edit, thus preventing unwanted or malicious changes from potentially compromising sensitive code or configurations. A CODEOWNERS file must exist in the root, .github/ or docs/ directory of the default branch (owners are not reviewed). Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 1
+severity: medium
+tags:
+- github
+- source-code
+reference: CIS GitHub Benchmark v1.2.0 - 1.1.6 Ensure code owners are set for extra sensitive code or configuration
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    for f in CODEOWNERS .github/CODEOWNERS docs/CODEOWNERS; do
+      gh api "repos/$R/contents/$f?ref=$B" --silent >/dev/null 2>&1 && { echo compliant; exit 0; }
+    done
+    echo "no CODEOWNERS file"
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: Add a CODEOWNERS file in the repository root, .github/ or docs/ assigning trusted owners to sensitive code and configuration.

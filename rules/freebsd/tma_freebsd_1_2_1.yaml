@@ -1,0 +1,16 @@
+id: TMA-FREEBSD-1.2.1
+title: Ensure update server certificate key fingerprints are configured
+description: FreeBSD downloads binary updates from an update server and uses Public Key Infrastructure to verify the downloads. This key fingerprint is used in the file /etc/freebsd-update.conf. This key fingerprint varies between different versions of FreeBSD and must be validated manually. Ensure that updates are obtained from a valid source to protect against spoofing that could lead to the inadvertent installation of malware on the system. Verify the key fingerprint being used is correctly configured in the file /etc/freebsd-update.conf.
+target: freebsd
+level: 1
+severity: medium
+tags:
+- freebsd
+- services
+reference: CIS FreeBSD 14 Benchmark v1.0.1 - 1.2.1 Ensure update server certificate key fingerprints are configured
+audit:
+  type: manual
+  command: 'Download the certificate files manually and verify. Get the public key. Verify the signature yourself [*] $ fetch http://update.freebsd.org/14.0-RELEASE/amd64/pub.ssl Get metadata $ fetch http://update.freebsd.org/14.0-RELEASE/amd64/latest.ssl Verify $ openssl rsautl -pubin -inkey pub.ssl -verify <latest.ssl The output looks like this: freebsd-update|amd64|14.0- RELEASE|5|d2152f1824dd0cda99d7c83899f27d4dca5f47cac4469444fc2e1aaae8a5de47|17 38281600 "5" in the output of this example refers to p5, the 5th patch level for 14.0-RELEASE amd64 The following ... (full steps: CIS section 1.2.1)'
+remediation:
+  type: iac_patch
+  command: If the previous outputs of the commands are not identical, there is a high possibility that something is wrong with the system. The verification of certificates might fail for various reasons, but the most common issue is improper date and time. Or in case the version of FreeBSD is too old and the specific running version has not been updated for a long time. Check the date and time before proceeding further.

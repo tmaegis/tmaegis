@@ -1,0 +1,17 @@
+id: TMA-AZURE-STORAGE-16.4
+title: Ensure that 'Secure transfer required' is set to 'Enabled'
+description: Enable data encryption in transit. The secure transfer option enhances the security of a storage account by only allowing requests to the storage account by a secure connection. For example, when calling REST APIs to access storage accounts, the connection must use HTTPS. Any requests using HTTP will be rejected when 'secure transfer required' is enabled. When using the Azure files service, connection without encryption will fail, including scenarios using SMB 2.1, SMB 3.0 without encryption, and some flavors of the Linux SMB client. Because Azure storage doesn’t support HTTPS for custom domain names, this option is not applied when using a custom domain name.
+target: azure
+level: 1
+severity: high
+tags:
+- azure
+- cloud
+- storage
+reference: CIS Microsoft Azure Storage Services Benchmark v2.0.0 - 16.4 Ensure that 'Secure transfer required' is set to 'Enabled'
+audit:
+  type: manual
+  command: 'Audit from Azure Portal 1. Go to Storage Accounts. 2. For each storage account, under Settings, click Configuration. 3. Ensure that Secure transfer required is set to Enabled. Audit from Azure CLI Use the below command to ensure the Secure transfer required is enabled for all the Storage Accounts by ensuring the output contains true for each of the Storage Accounts. az storage account list --query "[*].[name,enableHttpsTrafficOnly]" Audit from Azure Policy If referencing a digital copy of this Benchmark, clicking a Policy ID will open a link to the associated Policy definition in Azure. If referencing a printed copy, you can search Policy IDs from this URL: https://portal.azure.com/#view/Microsoft_Azure_Policy/PolicyMenuBlade/~/Definitions - Policy ID: 404c3081-a854-4457-ae30-26a93ef643f9 - Name: ''Secure transfer to storage accounts should be enabled'''
+remediation:
+  type: iac_patch
+  command: Remediate from Azure Portal 1. Go to Storage Accounts. 2. For each storage account, under Settings, click Configuration. 3. Set Secure transfer required to Enabled. 4. Click Save. Remediate from Azure CLI Use the below command to enable Secure transfer required for a Storage Account az storage account update --name <storageAccountName> --resource-group <resourceGroupName> --https-only true

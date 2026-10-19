@@ -1,0 +1,18 @@
+id: TMA-MYSQL-4.3
+title: Ensure 'allow-suspicious-udfs' is Set to 'OFF'
+description: This option prevents attaching arbitrary shared library functions as user-defined functions by checking for at least one corresponding method named _init, _deinit, _reset, _clear, or _add. Counts allow-suspicious-udfs settings in the server option groups (my_print_defaults mysqld) and on the running server command line.
+target: mysql
+level: 2
+severity: medium
+tags:
+- mysql
+- database
+- configuration
+reference: CIS Oracle MySQL Community Server 8.4 Benchmark v1.1.0 - 4.3 Ensure 'allow-suspicious-udfs' is Set to 'OFF'
+audit:
+  type: command
+  command: c=$(my_print_defaults mysqld 2>/dev/null) || exit 1; p=$(ps -eo comm=,args= 2>/dev/null) || exit 1; n=$( { printf '%s\n' "$c"; printf '%s\n' "$p" | awk '$1=="mysqld"||$1=="mariadbd"' | tr ' ' '\n'; } | grep -Eic '^--allow[-_]suspicious[-_]udfs(=(1|on|true|yes))?$' ); echo "$n"
+  expected_output: '0'
+remediation:
+  type: iac_patch
+  command: Remove allow-suspicious-udfs from the MySQL option files and from the server start-up command line, then restart.

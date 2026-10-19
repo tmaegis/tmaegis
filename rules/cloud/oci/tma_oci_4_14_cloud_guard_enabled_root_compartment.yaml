@@ -1,0 +1,22 @@
+id: TMA-OCI-4.14
+title: Ensure Cloud Guard is enabled in the root compartment of the tenancy
+description: Cloud Guard detects misconfigured resources and insecure activity within a tenancy and provides security administrators with the visibility to resolve these issues. Upon detection, Cloud Guard can suggest, assist, or take corrective actions to mitigate these issues. Cloud Guard provides an automated means to monitor a tenancy for resources that are configured in an insecure manner as well as risky network activity from these resources. oci cloud-guard configuration get on the tenancy must return status ENABLED. Read-only OCI CLI calls; credentials and home region come from the CLI's normal configuration (~/.oci/config, OCI_CLI_PROFILE, OCI_CLI_AUTH). The tenancy OCID is taken from OCI_TENANCY or the first tenancy= line of the config file. A missing CLI or credential fails the check.
+target: oci
+level: 1
+severity: high
+tags:
+- oci
+- logging
+reference: CIS Oracle Cloud Infrastructure Foundations Benchmark v3.1.1 - 4.14 Ensure Cloud Guard is enabled in the root compartment of the tenancy
+audit:
+  type: command
+  command: |-
+    t=${OCI_TENANCY:-$(sed -n 's/^[[:space:]]*tenancy[[:space:]]*=[[:space:]]*//p' "${OCI_CLI_CONFIG_FILE:-$HOME/.oci/config}" 2>/dev/null | head -n 1 | tr -d '\r[:space:]')}
+    [ -n "$t" ] || exit 1
+    bad=0
+    out=$(oci cloud-guard configuration get --compartment-id "$t" --query 'data.status' --raw-output 2>/dev/null) || exit 1
+    [ "$out" = ENABLED ] && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: oci cloud-guard configuration update --compartment-id <tenancy-ocid> --reporting-region <region> --status ENABLED, then create a target on the root compartment with the Oracle-managed detector and responder recipes.

@@ -1,0 +1,31 @@
+id: TMA-GITHUB-3.1.1
+title: Ensure third-party artifacts and open-source libraries are verified
+description: 'Ensure third-party artifacts and open-source libraries in use are trusted and verified. Verify third-party artifacts used in code are trusted and have not been infected by a malicious actor before use. This can be accomplished, for example, by comparing the checksum of the dependency to its checksum in a ... Actions permissions (organization, or else the repository) must be allowed_actions "selected" with GitHub-owned actions allowed. Uses the GitHub REST/GraphQL API through gh api (read-only). The repository comes from GH_REPO or the current git checkout (gh''s {owner}/{repo} resolution, GH_HOST for GitHub Enterprise Server); the organization comes from GH_ORG (default: the repository owner). Fails when gh is missing or unauthenticated (gh auth login or GH_TOKEN); organization settings and branch protection need an owner/admin token.'
+target: github
+level: 1
+severity: medium
+tags:
+- github
+- dependencies
+reference: CIS GitHub Benchmark v1.2.0 - 3.1.1 Ensure third-party artifacts and open-source libraries are verified
+audit:
+  type: command
+  command: |-
+    command -v gh >/dev/null 2>&1 || exit 1
+    gh auth status >/dev/null 2>&1 || exit 1
+    info=$(gh api 'repos/{owner}/{repo}' --jq '.full_name + " " + .default_branch' 2>/dev/null) || exit 1
+    R=${info% *}; B=${info#* }
+    [ -n "$R" ] && [ -n "$B" ] || exit 1
+    O=${GH_ORG:-${R%%/*}}
+    chk() {
+      a=$(gh api "$1/actions/permissions" --jq '.allowed_actions // ""' 2>/dev/null) || return 1
+      [ "$a" = selected ] || return 1
+      g=$(gh api "$1/actions/permissions/selected-actions" --jq '.github_owned_allowed' 2>/dev/null) || return 1
+      [ "$g" = true ]
+    }
+    chk "orgs/$O" && { echo compliant; exit 0; }
+    chk "repos/$R" && echo compliant
+  expected_output: compliant
+remediation:
+  type: iac_patch
+  command: 'Organization (or repository) Settings > Actions > General > Policies: Allow <owner>, and select non-<owner>, actions and reusable workflows; check Allow actions created by GitHub and list only verified third-party actions.'
